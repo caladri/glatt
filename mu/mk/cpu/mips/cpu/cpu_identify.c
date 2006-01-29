@@ -1,5 +1,6 @@
 #include <core/types.h>
 #include <core/string.h>
+#include <core/mp.h>
 #include <cpu/cpu.h>
 #include <io/device/console/console.h>
 
@@ -76,7 +77,7 @@ cpu_identify(void)
 		break;
 	}
 
-	kcprintf("cpu0: ");
+	kcprintf("cpu%u: ", mp_whoami());
 
 	if (company == NULL)
 		kcprintf("MIPS %x ", (unsigned)CP0_PRID_COMPANY(prid));

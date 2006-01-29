@@ -5,11 +5,12 @@
 #define	FB_COLUMNS(fb)	((fb)->fb_width / (fb)->fb_font->f_width)
 #define	FB_ROWS(fb)	((fb)->fb_height / (fb)->fb_font->f_height)
 
-static struct rgb foreground = { 0x00, 0x00, 0x80 };
-static struct rgb background = { 0xff, 0xff, 0xff };
+static struct bgr foreground = { 0x80, 0x00, 0x00 };
+static struct bgr background = { 0xff, 0xff, 0xff };
 
-static struct rgb buffer[640 * 480]; /* XXX I assume an ass out of u and me.  */
+static struct bgr buffer[640 * 480]; /* XXX I assume an ass out of u and me.  */
 
+static void framebuffer_clear(struct framebuffer *);
 static void framebuffer_flush(void *);
 static void framebuffer_putc(void *, char);
 static void framebuffer_putxy(struct framebuffer *, char, unsigned, unsigned);
@@ -29,9 +30,21 @@ framebuffer_init(struct framebuffer *fb, unsigned width, unsigned height)
 	fb->fb_width = width;
 	fb->fb_height = height;
 	fb->fb_column = 0;
-	fb->fb_row = FB_ROWS(fb) - 1;
+	fb->fb_row = 0;
+
+	framebuffer_clear(fb);
 
 	console_init(&fb->fb_console);
+}
+
+static void
+framebuffer_clear(struct framebuffer *fb)
+{
+	unsigned x, y;
+
+	for (x = 0; x < FB_COLUMNS(fb); x++)
+		for (y = 0; y < FB_ROWS(fb); y++)
+			framebuffer_putxy(fb, ' ', x, y);
 }
 
 static void
@@ -74,7 +87,7 @@ framebuffer_putc(void *sc, char ch)
 static void
 framebuffer_putxy(struct framebuffer *fb, char ch, unsigned x, unsigned y)
 {
-	struct rgb *bit;
+	struct bgr *bit;
 	uint8_t *character;
 	unsigned r, c, s;
 
@@ -105,7 +118,7 @@ framebuffer_scroll(struct framebuffer *fb)
 	lh = fb->fb_font->f_height;
 	skip = lh * fb->fb_width;
 	memcpy(fb->fb_buffer, &fb->fb_buffer[skip],
-	       ((fb->fb_height - lh) * fb->fb_width) * sizeof (struct rgb));
+	       ((fb->fb_height - lh) * fb->fb_width) * sizeof (struct bgr));
 	for (c = 0; c < FB_COLUMNS(fb); c++)
 		framebuffer_putxy(fb, ' ', c, FB_ROWS(fb) - 1);
 }

@@ -16,7 +16,7 @@ memcpy(void *dst, const void *src, size_t len)
 }
 
 static void
-testmips_framebuffer_load(struct framebuffer *fb, struct rgb *bitmap)
+testmips_framebuffer_load(struct framebuffer *fb, struct bgr *bitmap)
 {
 	memcpy(fb->fb_softc, bitmap,
 	       sizeof bitmap[0] * fb->fb_width * fb->fb_height);

@@ -6,6 +6,7 @@
 #include <cpu/memory.h>
 #include <io/device/console/console.h>
 #include <io/device/console/framebuffer.h>
+#include <platform/mp.h>
 #include <vm/page.h>
 
 void
@@ -45,16 +46,20 @@ platform_start(void)
 	kcputs(COPYRIGHT "\n");
 	kcputs("\n");
 
-	cpu_identify();
-
+	/* 
+	 * Add all global memory.  Processor-local memory will be added by
+	 * the processor that owns it.
+	 */
 	offset = 0;
 	while (membytes >= PAGE_SIZE) {
 		error = page_insert(offset);
-		if (error != 0)
-			kcprintf("page_insert %#lx: %d\n", offset, error);
+//		if (error != 0)
+//			kcprintf("page_insert %#lx: %d\n", offset, error);
 
 		offset += PAGE_SIZE;
 		membytes -= PAGE_SIZE;
 	}
-	kcprintf("%u page(s).\n", PAGE_TO_PA(offset));
+	kcprintf("%u global page(s).\n", PAGE_TO_PA(offset));
+
+	platform_mp_start_all();	/* XXX doesn't return.  */
 }

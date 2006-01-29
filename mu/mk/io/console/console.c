@@ -4,7 +4,7 @@
 
 static struct console *kernel_console;
 
-static void kcformat(uint64_t, unsigned);
+static void kcformat(uint64_t, unsigned, unsigned);
 static void kcputc_noflush(char);
 
 void
@@ -54,6 +54,11 @@ again:
 		case '%':
 			kcputc_noflush('%');
 			break;
+		case 'd':
+			if (lmod == 0)
+				val = va_arg(ap, signed int);
+			kcformat(val, 10, 1);
+			break;
 		case 'l':
 			if (lmod++ == 0)
 				val = va_arg(ap, long);
@@ -65,14 +70,14 @@ again:
 		case 'u':
 			if (lmod == 0)
 				val = va_arg(ap, unsigned int);
-			kcformat(val, 10);
+			kcformat(val, 10, 0);
 			break;
 		case 'x':
 			if (lmod == 0)
 				val = va_arg(ap, unsigned int);
 			if (alt)
 				kcputs("0x");
-			kcformat(val, 0x10);
+			kcformat(val, 0x10, 0);
 			break;
 		default:
 			kcputc_noflush('%');
@@ -85,18 +90,26 @@ again:
 }
 
 static void
-kcformat(uint64_t val, unsigned base)
+kcformat(uint64_t val, unsigned base, unsigned sign)
 {
 	char set[] = "0123456789abcdef";
 	char this;
 
+	if (sign) {
+		sign = 0;
+		if ((int64_t)val < 0) {
+			kcputc_noflush('-');
+			val = (~val);
+			val = val + 1;
+		}
+	}
 	if (val == 0) {
 		kcputc_noflush('0');
 		return;
 	}
 	this = set[val % base];
 	if (val / base != 0)
-		kcformat(val / base, base);
+		kcformat(val / base, base, sign);
 	kcputc_noflush(this);
 }
 

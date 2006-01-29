@@ -4,6 +4,9 @@
 #include <core/_stdarg.h>
 #include <cpu/types.h>
 
+	/* Special pointers.  */
+#define	NULL		((void *)0x0)
+
 	/* Size types and friends.  */
 
 typedef	uint64_t	size_t;

@@ -1,12 +1,17 @@
-# $Id: Makefile,v 1.3 2006-01-29 03:42:13 juli Exp $
+# $Id: Makefile,v 1.4 2006-01-29 07:01:57 juli Exp $
 
-KERNEL?=	mu.mk
+KERNEL?=	mu-mk
 
 kernel: ${KERNEL}
 simulate: simulate-${KERNEL}
 
 KERNEL_ROOT?=	${.CURDIR}/..
-.PATH: ${KERNEL_ROOT}/core ${KERNEL_ROOT}/io
+BUILD_ROOT=	${KERNEL_ROOT}/build
+
+.PATH: ${KERNEL_ROOT}/core
+.PATH: ${KERNEL_ROOT}/io/device/console
+
+.include "${BUILD_ROOT}/build.mk"
 
 PLATFORM?=	testmips
 PLATFORM_ROOT=	${KERNEL_ROOT}/platform/${PLATFORM}

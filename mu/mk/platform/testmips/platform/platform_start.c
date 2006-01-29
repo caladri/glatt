@@ -1,28 +1,36 @@
 #include <core/types.h>
 #include <core/startup.h>
 #include <cpu/memory.h>
+#include <io/device/console/console.h>
+#include <io/device/console/framebuffer.h>
 
-#define	WIDTH	640
-#define	HEIGHT	20
+void
+memcpy(void *dst, const void *src, uint64_t len)
+{
+	uint8_t *d = dst;
+	const uint8_t *s = src;
 
-struct bitmap {
-	uint8_t r;
-	uint8_t g;
-	uint8_t b;
-} __attribute__ ((__packed__));
+	while (len--)
+		*d++ = *s++;
+}
+
+static void
+testmips_framebuffer_load(struct framebuffer *fb, struct rgb *bitmap)
+{
+	memcpy(fb->fb_softc, bitmap,
+	       sizeof bitmap[0] * fb->fb_width * fb->fb_height);
+}
+
+static struct framebuffer testmips_framebuffer = {
+	.fb_softc = XKPHYS_MAP(XKPHYS_UC, 0x12000000),
+	.fb_load = testmips_framebuffer_load,
+};
 
 void
 platform_start(void)
 {
-	struct bitmap *framebuffer;
-	int i, j;
-
-	framebuffer = XKPHYS_MAP(XKPHYS_UC, 0x12000000);
-	for (j = 0;; j++) {
-		for (i = 0; i < WIDTH * HEIGHT; i++) {
-			framebuffer[i].r = (((j % 3) == 2) * i) * j;
-			framebuffer[i].g = (((j % 3) == 1) * i) * j;
-			framebuffer[i].b = (((j % 3) == 0) * i) * j;
-		}
+	framebuffer_init(&testmips_framebuffer, 640, 480);
+	for (;;) {
+		kcputs("Hello, world!\n");
 	}
 }

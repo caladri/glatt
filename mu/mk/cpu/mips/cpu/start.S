@@ -35,14 +35,6 @@ ENTRY(start)
 	/* Set up the GP.  */
 	dla	gp, _gp
 
-	/* Setup a boot console (or debugger.)  */
-	//jal	console_init
-	nop
-
-	/* Start CPU rolling.  */
-	//jal	cpu_start
-	nop
-
 	/* Start platform rolling.  */
 	jal	platform_start
 	nop

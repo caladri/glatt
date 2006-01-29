@@ -1,3 +1,4 @@
+#include <core/copyright.h>
 #include <core/types.h>
 #include <core/startup.h>
 #include <core/string.h>
@@ -34,9 +35,10 @@ platform_start(void)
 
 	framebuffer_init(&testmips_framebuffer, 640, 480);
 
-	kcprintf("%#x\n", cpu_read_status());
-	kcprintf("%#x\n", cpu_read_config());
-	kcprintf("%#x\n", cpu_read_cause());
+	kcputs("\n");
+	kcputs(MK_NAME "\n");
+	kcputs(COPYRIGHT "\n");
+	kcputs("\n");
 
 	//cpu_start();
 }

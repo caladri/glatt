@@ -1,4 +1,5 @@
 #include <core/types.h>
+#include <core/string.h>
 #include <io/device/console/framebuffer.h>
 
 #define	FB_COLUMNS(fb)	((fb)->fb_width / (fb)->fb_font->f_width)
@@ -95,5 +96,16 @@ framebuffer_putxy(struct framebuffer *fb, char ch, unsigned x, unsigned y)
 static void
 framebuffer_scroll(struct framebuffer *fb)
 {
-	framebuffer_flush(fb);
+	unsigned c;
+	unsigned lh, skip;
+
+	/*
+	 * Shift up by one line-height.
+	 */
+	lh = fb->fb_font->f_height;
+	skip = lh * fb->fb_width;
+	memcpy(fb->fb_buffer, &fb->fb_buffer[skip],
+	       ((fb->fb_height - lh) * fb->fb_width) * sizeof (struct rgb));
+	for (c = 0; c < FB_COLUMNS(fb); c++)
+		framebuffer_putxy(fb, ' ', c, FB_ROWS(fb) - 1);
 }

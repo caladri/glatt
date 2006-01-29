@@ -2,11 +2,11 @@
 #include <core/types.h>
 #include <core/startup.h>
 #include <core/string.h>
+#include <core/mp.h>
 #include <cpu/cpu.h>
 #include <cpu/memory.h>
 #include <io/device/console/console.h>
 #include <io/device/console/framebuffer.h>
-#include <platform/mp.h>
 #include <vm/page.h>
 
 void
@@ -59,6 +59,11 @@ platform_start(void)
 	uint64_t membytes = *(volatile uint64_t *)XKPHYS_MAP(XKPHYS_UC, 0x11000000 | 0x0090);
 	paddr_t offset;
 	int error;
+
+	error = mp_block_but_one(mp_whoami());
+	if (error != 0) {
+		/* XXX panic.  */
+	}
 
 	if (use_framebuffer)
 		framebuffer_init(&testmips_framebuffer, 640, 480);

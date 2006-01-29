@@ -40,5 +40,5 @@ platform_start(void)
 	kcputs(COPYRIGHT "\n");
 	kcputs("\n");
 
-	//cpu_start();
+	cpu_identify();
 }

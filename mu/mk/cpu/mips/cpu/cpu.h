@@ -79,6 +79,7 @@ struct __hack
 CP0_RW32(config, CP0_CONFIG);
 CP0_RW32(cause, CP0_CAUSE);
 CP0_RW32(status, CP0_STATUS);
+CP0_RW32(prid, CP0_PRID);
 
 #undef CP0_RW32
 

@@ -1,11 +1,12 @@
 #include <core/types.h>
 #include <core/startup.h>
+#include <core/string.h>
 #include <cpu/memory.h>
 #include <io/device/console/console.h>
 #include <io/device/console/framebuffer.h>
 
 void
-memcpy(void *dst, const void *src, uint64_t len)
+memcpy(void *dst, const void *src, size_t len)
 {
 	uint8_t *d = dst;
 	const uint8_t *s = src;

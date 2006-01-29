@@ -7,6 +7,10 @@
 #define	_REGNUM(r)	r
 #endif
 
+#ifndef	ASSEMBLER
+typedef	uint64_t	register_t;
+#endif
+
 	/* General-purpose registers.  */
 
 #define	zero	_REGNUM(0)
@@ -46,14 +50,14 @@
 
 #define	CP0_TLBINDEX	_REGNUM(0)
 #define	CP0_TLBRANDOM	_REGNUM(1)
-#define	CP0_TLBLO0	_REGNUM(2)
-#define	CP0_TLBLO1	_REGNUM(3)
+#define	CP0_ENTRYLO0	_REGNUM(2)
+#define	CP0_ENTRYLO1	_REGNUM(3)
 #define	CP0_TLBCONTEXT	_REGNUM(4)
 #define	CP0_TLBPAGEMASK	_REGNUM(5)
 #define	CP0_TLBWIRED	_REGNUM(6)
 #define	CP0_BADVADDR	_REGNUM(8)
 #define	CP0_COUNT	_REGNUM(9)
-#define	CP0_TLBHI	_REGNUM(10)
+#define	CP0_ENTRYHI	_REGNUM(10)
 #define	CP0_COMPARE	_REGNUM(11)
 #define	CP0_STATUS	_REGNUM(12)
 #define	CP0_CAUSE	_REGNUM(13)

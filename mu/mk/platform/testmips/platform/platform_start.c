@@ -1,6 +1,7 @@
 #include <core/types.h>
 #include <core/startup.h>
 #include <core/string.h>
+#include <cpu/cpu.h>
 #include <cpu/memory.h>
 #include <io/device/console/console.h>
 #include <io/device/console/framebuffer.h>
@@ -30,8 +31,12 @@ static struct framebuffer testmips_framebuffer = {
 void
 platform_start(void)
 {
+
 	framebuffer_init(&testmips_framebuffer, 640, 480);
-	for (;;) {
-		kcputs("Hello, world!\n");
-	}
+
+	kcprintf("%#x\n", cpu_read_status());
+	kcprintf("%#x\n", cpu_read_config());
+	kcprintf("%#x\n", cpu_read_cause());
+
+	//cpu_start();
 }

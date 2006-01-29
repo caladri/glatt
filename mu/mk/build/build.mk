@@ -1,4 +1,4 @@
-# $Id: build.mk,v 1.4 2006-01-29 22:20:14 juli Exp $
+# $Id: build.mk,v 1.5 2006-01-29 23:52:26 juli Exp $
 
 .PATH: ${KERNEL_ROOT}/core
 .PATH: ${KERNEL_ROOT}/io/device/console
@@ -6,6 +6,7 @@
 
 # core
 KERNEL_SOURCES+=mp.c
+KERNEL_SOURCES+=spinlock.c
 
 # io/devices/console
 KERNEL_SOURCES+=console.c

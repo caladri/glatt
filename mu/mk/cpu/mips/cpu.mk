@@ -1,9 +1,11 @@
-# $Id: cpu.mk,v 1.5 2006-01-29 09:09:25 juli Exp $
+# $Id: cpu.mk,v 1.6 2006-01-29 23:52:28 juli Exp $
 
 .PATH: ${CPU_ROOT}/cpu
 
-KERNEL_SOURCES+=start.S
+KERNEL_SOURCES+=cpu_interrupt.c
+KERNEL_SOURCES+=cpu_critical.c
 KERNEL_SOURCES+=identify.c
+KERNEL_SOURCES+=start.S
 
 KERNEL_CC=	mips64-gxemul-elf-gcc
 KERNEL_AS=	mips64-gxemul-elf-as

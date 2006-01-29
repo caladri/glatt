@@ -1,5 +1,6 @@
 #include <core/types.h>
 #include <core/mp.h>
+#include <core/spinlock.h>
 #include <core/startup.h>
 #include <cpu/memory.h>
 #include <io/device/console/console.h>
@@ -18,6 +19,8 @@
 	(volatile uint64_t *)XKPHYS_MAP(XKPHYS_UC, TEST_MP_DEV_BASE + (f))
 
 static void platform_mp_start_one(void);
+
+static struct spinlock startup_lock;
 
 cpu_id_t
 platform_mp_whoami(void)
@@ -45,15 +48,23 @@ platform_mp_start_all(void)
 	cpu_id_t cpu;
 	uint64_t ncpus;
 
+	spinlock_init(&startup_lock, "startup");
+
 	ncpus = *TEST_MP_DEV_FUNCTION(TEST_MP_DEV_NCPUS);
 
 	kcprintf("cpu%u: Starting %lu processors.\n", mp_whoami(), ncpus);
+	*TEST_MP_DEV_FUNCTION(TEST_MP_DEV_STARTADDR) =
+		(uintptr_t)&platform_mp_start_one;
+	spinlock_lock(&startup_lock);
 	for (cpu = 0; cpu < ncpus; cpu++) {
 		if (cpu == mp_whoami())
 			continue;
-		/* XXX allocate new stack, set its address, start the CPU.  */
-		kcprintf("cpu%u: skipping.\n", cpu);
+		/* XXX allocate and set new stack.  */
+		spinlock_unlock(&startup_lock);
+		*TEST_MP_DEV_FUNCTION(TEST_MP_DEV_START) = cpu;
+		spinlock_lock(&startup_lock);
 	}
+	spinlock_unlock(&startup_lock);
 	kcprintf("cpu%u: Started processors, continuing.\n", mp_whoami());
 	platform_mp_start_one();
 }
@@ -61,21 +72,23 @@ platform_mp_start_all(void)
 static void
 platform_mp_start_one(void)
 {
-	int error;
-
-	error = mp_block_but_one(mp_whoami());
-	if (error != 0) {
-		/* XXX panic.  */
-	}
+	spinlock_lock(&startup_lock);
 
 	cpu_identify();
 
-	error = mp_unblock_but_one(mp_whoami());
-	if (error != 0) {
-		/* XXX panic.  */
-	}
+	/* XXX install exception handlers.  */
 
-	for (;;) {
-		continue;
-	}
+	/* XXX enable interrupts.  */
+
+	/*
+	 * XXX
+	 * install a wired TLB entry for per-CPU data, point it at our stack.
+	 */
+
+	spinlock_unlock(&startup_lock);
+
+	/*
+	 * XXX Create a task+thread for us and switch to it.
+	 */
+	for (;;)	continue;
 }

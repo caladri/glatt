@@ -1,8 +1,13 @@
-# $Id: Makefile,v 1.1.1.1 2006-01-29 01:52:41 juli Exp $
+# $Id: Makefile,v 1.2 2006-01-29 02:28:51 juli Exp $
 
 KERNEL?=	mu.mk
 
+kernel: ${KERNEL}
+simulate: simulate-${KERNEL}
+
 KERNEL_ROOT?=	${.CURDIR}/..
+.PATH: ${KERNEL_ROOT}/core ${KERNEL_ROOT}/io
+
 PLATFORM?=	testmips
 PLATFORM_ROOT=	${KERNEL_ROOT}/platform/${PLATFORM}
 
@@ -13,7 +18,8 @@ CPU_ROOT=	${KERNEL_ROOT}/cpu/${CPU}
 .include "${CPU_ROOT}/cpu.mk"
 
 KERNEL_CPPFLAGS=-I${KERNEL_ROOT} -I${PLATFORM_ROOT} -I${CPU_ROOT}
-KERNEL_CFLAGS=	${KERNEL_ABI} ${KERNEL_CPU}
+KERNEL_CFLAGS=	${KERNEL_ABI} ${KERNEL_CPU} -nostdinc -fno-builtin -O2
+KERNEL_CFLAGS+=	-W -Wall -Werror
 KERNEL_LDFLAGS=	-e ${KERNEL_ENTRY} -Ttext ${KERNEL_TEXT}
 
 KERNEL_OBJECTS=	${KERNEL_SOURCES:R:S/$/.o/g}

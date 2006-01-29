@@ -6,6 +6,7 @@
 #include <cpu/memory.h>
 #include <io/device/console/console.h>
 #include <io/device/console/framebuffer.h>
+#include <vm/page.h>
 
 void
 memcpy(void *dst, const void *src, size_t len)
@@ -32,6 +33,10 @@ static struct framebuffer testmips_framebuffer = {
 void
 platform_start(void)
 {
+	/* XXX test::mp function memory() */
+	uint64_t membytes = *(volatile uint64_t *)XKPHYS_MAP(XKPHYS_UC, 0x11000000 | 0x0090);
+	paddr_t offset;
+	int error;
 
 	framebuffer_init(&testmips_framebuffer, 640, 480);
 
@@ -41,4 +46,15 @@ platform_start(void)
 	kcputs("\n");
 
 	cpu_identify();
+
+	offset = 0;
+	while (membytes >= PAGE_SIZE) {
+		error = page_insert(offset);
+		if (error != 0)
+			kcprintf("page_insert %#lx: %d\n", offset, error);
+
+		offset += PAGE_SIZE;
+		membytes -= PAGE_SIZE;
+	}
+	kcprintf("%u page(s).\n", PAGE_TO_PA(offset));
 }

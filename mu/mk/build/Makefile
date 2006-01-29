@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.5 2006-01-29 09:26:50 juli Exp $
+# $Id: Makefile,v 1.6 2006-01-29 10:02:49 juli Exp $
 
 KERNEL?=	mu-mk
 
@@ -21,7 +21,7 @@ CPU_ROOT=	${KERNEL_ROOT}/cpu/${CPU}
 
 KERNEL_CPPFLAGS=-I${KERNEL_ROOT} -I${PLATFORM_ROOT} -I${CPU_ROOT}
 KERNEL_CFLAGS=	${KERNEL_ABI} ${KERNEL_CPU} -nostdinc -fno-builtin -O2
-KERNEL_CFLAGS+=	-W -Wall -Werror
+KERNEL_CFLAGS+=	-W -Wall -Werror -Wno-unused
 KERNEL_LDFLAGS=	-e ${KERNEL_ENTRY} -Ttext ${KERNEL_TEXT}
 
 KERNEL_OBJECTS=	${KERNEL_SOURCES:R:S/$/.o/g}

@@ -1,4 +1,4 @@
-# $Id: cpu.mk,v 1.3 2006-01-29 03:42:15 juli Exp $
+# $Id: cpu.mk,v 1.4 2006-01-29 04:53:53 juli Exp $
 
 .PATH: ${CPU_ROOT}/cpu
 
@@ -10,7 +10,6 @@ KERNEL_LD=	mips64-gxemul-elf-ld
 KERNEL_SIM=	gxemul
 
 KERNEL_ABI=	-mabi=64
-KERNEL_TEXT=	0xa800000000030000
 KERNEL_ENTRY=	start
 KERNEL_CPU=	-mips3
 KERNEL_FORMAT=	elf64-bigmips

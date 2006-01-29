@@ -34,7 +34,7 @@ kcprintf(const char *s, ...)
 {
 	va_list ap;
 	const char *p, *q;
-	int lmod, alt;
+	bool lmod, alt;
 	long val;
 
 	va_start(ap, s);
@@ -43,37 +43,42 @@ kcprintf(const char *s, ...)
 			kcputc_noflush(*p);
 			continue;
 		}
-		lmod = 0;
-		alt = 0;
+		lmod = false;
+		alt = false;
 		val = -1; /* Not necessary, but GCC is still dumb in 2006 XXX */
 again:
 		switch (*++p) {
 		case '#':
-			alt = 1;
+			alt++;
 			goto again;
 		case '%':
 			kcputc_noflush('%');
 			break;
 		case 'd':
-			if (lmod == 0)
+			if (!lmod)
 				val = va_arg(ap, signed int);
 			kcformat(val, 10, 1);
 			break;
 		case 'l':
-			if (lmod++ == 0)
+			if (!lmod++)
 				val = va_arg(ap, long);
 			goto again;
+		case 'p':
+			val = va_arg(ap, uintptr_t);
+			kcputs("0x");
+			kcformat(val, 0x10, 0);
+			break;
 		case 's':
 			q = va_arg(ap, const char *);
 			kcputs(q);
 			break;
 		case 'u':
-			if (lmod == 0)
+			if (!lmod)
 				val = va_arg(ap, unsigned int);
 			kcformat(val, 10, 0);
 			break;
 		case 'x':
-			if (lmod == 0)
+			if (!lmod)
 				val = va_arg(ap, unsigned int);
 			if (alt)
 				kcputs("0x");

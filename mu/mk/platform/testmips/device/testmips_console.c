@@ -31,15 +31,39 @@ static struct framebuffer testmips_framebuffer = {
 	.fb_load = testmips_framebuffer_load,
 };
 
+static void
+testmips_console_putc(void *sc, char ch)
+{
+	volatile char *putcp = sc;
+	*putcp = ch;
+}
+
+static void
+testmips_console_flush(void *sc)
+{
+	(void)sc;
+}
+
+static struct console testmips_console = {
+	.c_name = "testmips",
+	.c_softc = XKPHYS_MAP(XKPHYS_UC, 0x10000000),
+	.c_putc = testmips_console_putc,
+	.c_flush = testmips_console_flush,
+};
+
 void
 platform_start(void)
 {
+	static const int use_framebuffer = 0;
 	/* XXX test::mp function memory() */
 	uint64_t membytes = *(volatile uint64_t *)XKPHYS_MAP(XKPHYS_UC, 0x11000000 | 0x0090);
 	paddr_t offset;
 	int error;
 
-	framebuffer_init(&testmips_framebuffer, 640, 480);
+	if (use_framebuffer)
+		framebuffer_init(&testmips_framebuffer, 640, 480);
+	else
+		console_init(&testmips_console);
 
 	kcputs("\n");
 	kcputs(MK_NAME "\n");
@@ -59,7 +83,7 @@ platform_start(void)
 		offset += PAGE_SIZE;
 		membytes -= PAGE_SIZE;
 	}
-	kcprintf("%u global page(s).\n", PAGE_TO_PA(offset));
+	kcprintf("%u global page(s).\n", PA_TO_PAGE(offset));
 
 	platform_mp_start_all();	/* XXX doesn't return.  */
 }

@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.2 2006-01-29 02:28:51 juli Exp $
+# $Id: Makefile,v 1.3 2006-01-29 03:42:13 juli Exp $
 
 KERNEL?=	mu.mk
 
@@ -25,7 +25,7 @@ KERNEL_LDFLAGS=	-e ${KERNEL_ENTRY} -Ttext ${KERNEL_TEXT}
 KERNEL_OBJECTS=	${KERNEL_SOURCES:R:S/$/.o/g}
 
 ${KERNEL}: ${KERNEL_OBJECTS}
-	${KERNEL_LD} ${KERNEL_LDFLAGS} ${KERNEL_OBJECTS} \
+	${KERNEL_LD} ${KERNEL_LDFLAGS} start.o ${KERNEL_OBJECTS:Nstart.o} \
 		--oformat=${KERNEL_FORMAT} -o $@
 
 clean:

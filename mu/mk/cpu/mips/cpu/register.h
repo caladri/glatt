@@ -43,6 +43,7 @@
 #define	ra	_REGNUM(31)
 
 	/* Coprocessor 0 registers.  */
+
 #define	CP0_TLBINDEX	_REGNUM(0)
 #define	CP0_TLBRANDOM	_REGNUM(1)
 #define	CP0_TLBLO0	_REGNUM(2)
@@ -68,5 +69,14 @@
 #define	CP0_TAGLO	_REGNUM(28)
 #define	CP0_TAGHI	_REGNUM(29)
 #define	CP0_ERRORPC	_REGNUM(30)
+
+	/* Coprocessor 0 status register bits. */
+
+#define	CP0_STATUS_IE	0x00000001	/* Interrupts enabled.  */
+#define	CP0_STATUS_UX	0x00000020	/* User extended mode.  */
+#define	CP0_STATUS_SX	0x00000040	/* Supervisor extended mode.  */
+#define	CP0_STATUS_KX	0x00000080	/* Kernel extended mode.  */
+#define	CP0_STATUS_SR	0x00100000	/* Soft reset.  */
+#define	CP0_STATUS_BEV	0x00400000	/* Using boot exception vectors.  */
 
 #endif /* !_CPU_REGISTER_H_ */

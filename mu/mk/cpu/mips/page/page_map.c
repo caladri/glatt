@@ -31,8 +31,10 @@ pmap_unmap(struct vm *vm, vaddr_t vaddr)
 }
 
 int
-pmap_unmap_direct(struct vm *, vaddr_t vaddr)
+pmap_unmap_direct(struct vm *vm, vaddr_t vaddr)
 {
+	if (vm != &kernel_vm)
+		panic("%s: not implemented.", __func__);
 	/* Don't have to do anything to get rid of direct-mapped memory.  */
 	return (0);
 }

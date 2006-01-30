@@ -8,10 +8,12 @@
 #define	CONCAT(x, y)		_CONCAT(x, y)
 #define	STRING(t)		#t
 
+#ifndef	ASSEMBLER
 #define	COMPILE_TIME_ASSERT(p)						\
 	typedef	uint8_t CONCAT(ctassert_, __LINE__) [!(p) * -1]
 
 COMPILE_TIME_ASSERT(true);
 COMPILE_TIME_ASSERT(!false);
+#endif
 
 #endif /* !_CORE_MACRO_H_ */

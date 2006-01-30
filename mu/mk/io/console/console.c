@@ -5,7 +5,9 @@
 static struct console *kernel_console;
 
 static void kcformat(uint64_t, unsigned, unsigned);
+static void kcflush(void);
 static void kcputc_noflush(char);
+static void kcputs_noflush(const char *);
 
 void
 console_init(struct console *console)
@@ -20,7 +22,7 @@ kcputc(char ch)
 {
 	spinlock_lock(&kernel_console->c_lock);
 	kcputc_noflush(ch);
-	kernel_console->c_flush(kernel_console->c_softc);
+	kcflush();
 	spinlock_unlock(&kernel_console->c_lock);
 }
 
@@ -28,9 +30,8 @@ void
 kcputs(const char *s)
 {
 	spinlock_lock(&kernel_console->c_lock);
-	while (*s != '\0')
-		kcputc_noflush(*s++);
-	kernel_console->c_flush(kernel_console->c_softc);
+	kcputs_noflush(s);
+	kcflush();
 	spinlock_unlock(&kernel_console->c_lock);
 }
 
@@ -79,12 +80,12 @@ again:
 			goto again;
 		case 'p':
 			val = va_arg(ap, uintptr_t);
-			kcputs("0x");
+			kcputs_noflush("0x");
 			kcformat(val, 0x10, 0);
 			break;
 		case 's':
 			q = va_arg(ap, const char *);
-			kcputs(q);
+			kcputs_noflush(q);
 			break;
 		case 'u':
 			if (!lmod)
@@ -95,7 +96,7 @@ again:
 			if (!lmod)
 				val = va_arg(ap, unsigned int);
 			if (alt)
-				kcputs("0x");
+				kcputs_noflush("0x");
 			kcformat(val, 0x10, 0);
 			break;
 		default:
@@ -104,7 +105,7 @@ again:
 			break;
 		}
 	}
-	kernel_console->c_flush(kernel_console->c_softc);
+	kcflush();
 	spinlock_unlock(&kernel_console->c_lock);
 }
 
@@ -133,9 +134,20 @@ kcformat(uint64_t val, unsigned base, unsigned sign)
 }
 
 static void
+kcflush(void)
+{
+	kernel_console->c_flush(kernel_console->c_softc);
+}
+
+static void
 kcputc_noflush(char ch)
 {
-	spinlock_lock(&kernel_console->c_lock);
 	kernel_console->c_putc(kernel_console->c_softc, ch);
-	spinlock_unlock(&kernel_console->c_lock);
+}
+
+static void
+kcputs_noflush(const char *s)
+{
+	while (*s != '\0')
+		kcputc_noflush(*s++);
 }

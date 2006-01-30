@@ -13,6 +13,7 @@ struct vm;
 int pmap_map(struct vm *, vaddr_t, paddr_t);
 int pmap_map_direct(struct vm *, paddr_t, vaddr_t *);
 int pmap_unmap(struct vm *, vaddr_t);
+int pmap_unmap_direct(struct vm *, vaddr_t);
 #endif
 
 #endif /* !_PAGE_PAGE_H_ */

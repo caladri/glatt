@@ -1,15 +1,15 @@
 #ifndef	_CPU_MEMORY_H_
 #define	_CPU_MEMORY_H_
 
-	/* 64-bit user virtual address space.  */
+	/* 64-bit user virtual address space.  Skip one page for NULL.  */
 
-#define	XUSEG_BASE	0x0000000000000000
-#define	XUSEG_END	0x000000ffffffffff
+#define	XUSEG_BASE	(0x0000000000000000 + PAGE_SIZE)
+#define	XUSEG_END	(0x000000ffffffffff)
 
 	/* 64-bit kernel virtual address space.  */
 
-#define	XKSEG_BASE	0xc000000000000000
-#define	XKSEG_END	0xc00000ff7fffffff
+#define	XKSEG_BASE	(0xc000000000000000)
+#define	XKSEG_END	(0xc00000ff7fffffff)
 
 	/* 64-bit kernel physical address space mapping.  */
 

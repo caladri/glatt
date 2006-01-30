@@ -6,6 +6,25 @@
 #include <vm/vm.h>
 
 int
+pmap_extract(struct vm *vm, vaddr_t vaddr, paddr_t *paddrp)
+{
+	if (vaddr >= XKSEG_BASE && vaddr <= XKSEG_END) {
+		if (vm != &kernel_vm)
+			return (ERROR_NOT_PERMITTED);
+		return (ERROR_NOT_IMPLEMENTED);
+	}
+	if (vaddr >= XUSEG_BASE && vaddr <= XUSEG_END) {
+		return (ERROR_NOT_IMPLEMENTED);
+	}
+	/*
+	 * XXX Check that it's actually an XKPHYS address, or at least be
+	 * super-sure that it has to be.
+	 */
+	*paddrp = XKPHYS_EXTRACT(vaddr);
+	return (0);
+}
+
+int
 pmap_map(struct vm *vm, vaddr_t vaddr, paddr_t paddr)
 {
 	if (vm != &kernel_vm)

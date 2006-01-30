@@ -9,8 +9,8 @@
 
 #define	EXCEPTION_SPACE			(0x80)
 
-#define	EXCEPTION_BASE_GENERAL		(XKPHYS_MAP(XKPHYS_UC, 0x80000180))
-#define	EXCEPTION_BASE_XTLBMISS		(XKPHYS_MAP(XKPHYS_UC, 0x80000080))
+#define	EXCEPTION_BASE_GENERAL		(XKPHYS_MAP(XKPHYS_UC, 0x00000180))
+#define	EXCEPTION_BASE_XTLBMISS		(XKPHYS_MAP(XKPHYS_UC, 0x00000080))
 
 extern char exception_vector[], exception_vector_end[];
 extern char xtlb_vector[], xtlb_vector_end[];

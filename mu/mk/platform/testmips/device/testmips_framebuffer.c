@@ -82,10 +82,16 @@ platform_start(void)
 
 	/* 
 	 * Add all global memory.  Processor-local memory will be added by
-	 * the processor that owns it.
+	 * the processor that owns it.  We skip the first 4MB of physical
+	 * RAM because that's where the kernel will be loaded.  If we start
+	 * to need more than 4MB, we're screwed.
 	 */
-	error = page_insert_pages(0, PA_TO_PAGE(membytes));
+#define	KERNEL_MAX_SIZE		(4 * 1024 * 1024)
+	if (membytes <= KERNEL_MAX_SIZE)
+		panic("%s: not enough attached memory.");
+	membytes -= KERNEL_MAX_SIZE;
+	error = page_insert_pages(KERNEL_MAX_SIZE, PA_TO_PAGE(membytes));
 	if (error != 0)
-		panic("page_insert_pages 0..%lu failed: %d",
-		      PA_TO_PAGE(membytes), error);
+		panic("page_insert_pages %lu..%lu failed: %d",
+		      PA_TO_PAGE(KERNEL_MAX_SIZE), PA_TO_PAGE(membytes), error);
 }

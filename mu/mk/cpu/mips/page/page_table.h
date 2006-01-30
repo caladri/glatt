@@ -4,7 +4,7 @@
 /*
  * 64-bit PTE.
  */
-#ifndef	LOCORE
+#ifndef	ASSEMBLER
 typedef	uint64_t	pt_entry_t;
 #endif
 
@@ -40,7 +40,7 @@ typedef	uint64_t	pt_entry_t;
  * to bit 8 there is a 5-bit 0 field.  Low byte is ASID.
  */
 #define	TLBHI_R_SHIFT		62
-#ifdef LOCORE
+#ifdef ASSEMBLER
 #define	TLBHI_R_USER		(0x00 << TLBHI_R_SHIFT)
 #define	TLBHI_R_SUPERVISOR	(0x01 << TLBHI_R_SHIFT)
 #define	TLBHI_R_KERNEL		(0x03 << TLBHI_R_SHIFT)
@@ -56,7 +56,7 @@ typedef	uint64_t	pt_entry_t;
 #define	TLBHI_FILL_MASK		((0x7FFFFFUL) << TLBHI_FILL_SHIFT)
 #define	TLBHI_VA_FILL(va)	((((va) & (1UL << 63)) != 0 ? TLBHI_FILL_MASK : 0))
 #define	TLBHI_VPN2_SHIFT	(PAGE_SHIFT + 1)
-#ifdef LOCORE
+#ifdef ASSEMBLER
 #define	TLBHI_VPN2_MASK		(((~((1 << TLBHI_VPN2_SHIFT) - 1)) << (63 - TLBHI_FILL_SHIFT)) >> (63 - TLBHI_FILL_SHIFT))
 #else
 #define	TLBHI_VPN2_MASK		(((~((1UL << TLBHI_VPN2_SHIFT) - 1)) << (63 - TLBHI_FILL_SHIFT)) >> (63 - TLBHI_FILL_SHIFT))

@@ -1,4 +1,5 @@
 #include <core/types.h>
+#include <core/macro.h>
 #include <core/mp.h>
 #include <core/spinlock.h>
 #include <core/startup.h>
@@ -81,6 +82,7 @@ platform_mp_start_all(void)
 static void
 platform_mp_start_one(void)
 {
+	asm volatile ("dla $" STRING(gp) ", _gp");
 	spinlock_lock(&startup_lock);
 
 	cpu_identify();

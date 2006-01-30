@@ -1,4 +1,5 @@
 #include <core/types.h>
+#include <db/db.h>
 #include <vm/page.h>
 #include <vm/vm.h>
 
@@ -23,8 +24,7 @@ page_alloc_virtual(struct vm *vm, vaddr_t *vaddrp)
 	if (error != 0) {
 		error2 = page_release(vm, paddr);
 		if (error2 != 0) {
-			/* XXX panic("Can't release paddr."); */
-			return (error2);
+			panic("%s: can't release paddr.", __func__);
 		}
 		return (error);
 	}
@@ -33,8 +33,7 @@ page_alloc_virtual(struct vm *vm, vaddr_t *vaddrp)
 	if (error != 0) {
 		error2 = vm_free_address(vm, vaddr);
 		if (error2 != 0) {
-			/* XXX panic("Can't release vaddr."); */
-			return (error2);
+			panic("%s: can't release vaddr.", __func__);
 		}
 		return (error);
 	}

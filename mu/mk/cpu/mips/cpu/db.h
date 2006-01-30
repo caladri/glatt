@@ -4,7 +4,7 @@
 static inline void __attribute__ ((__noreturn__))
 cpu_break(void)
 {
-	asm volatile ("break 7" : : : "memory");
+	__asm __volatile ("break 7" : : : "memory");
 	for (;;) continue;
 }
 

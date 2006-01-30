@@ -88,6 +88,4 @@ platform_start(void)
 	if (error != 0)
 		panic("page_insert_pages 0..%lu failed: %d\n",
 		      PA_TO_PAGE(membytes), error);
-
-	platform_mp_start_all();	/* XXX doesn't return.  */
 }

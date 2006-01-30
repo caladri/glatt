@@ -19,7 +19,6 @@ void page_init(void);
 int page_alloc(struct vm *, paddr_t *);
 int page_alloc_direct(struct vm *, vaddr_t *);
 int page_alloc_virtual(struct vm *, vaddr_t *);
-int page_insert(paddr_t);
 int page_insert_pages(paddr_t, size_t);
 int page_map(struct vm *, vaddr_t, paddr_t);
 int page_map_direct(struct vm *, paddr_t, vaddr_t *);

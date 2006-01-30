@@ -119,12 +119,6 @@ page_alloc_virtual(struct vm *vm, vaddr_t *vaddrp)
 }
 
 int
-page_insert(paddr_t paddr)
-{
-	return (ERROR_NOT_IMPLEMENTED);
-}
-
-int
 page_insert_pages(paddr_t base, size_t pages)
 {
 	struct page_index *pi;

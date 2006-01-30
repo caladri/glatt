@@ -3,6 +3,8 @@
 #include <core/mp.h>
 #include <core/spinlock.h>
 #include <core/startup.h>
+#include <cpu/exception.h>
+#include <cpu/interrupt.h>
 #include <cpu/memory.h>
 #include <db/db.h>
 #include <io/device/console/console.h>
@@ -89,10 +91,8 @@ platform_mp_start_one(void)
 	spinlock_lock(&startup_lock);
 
 	cpu_identify();
-
-	/* XXX install exception handlers.  */
-
-	/* XXX enable interrupts.  */
+	cpu_exception_init();
+	cpu_interrupt_enable();
 
 	/*
 	 * XXX

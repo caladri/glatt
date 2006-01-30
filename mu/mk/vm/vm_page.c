@@ -155,6 +155,9 @@ page_map(struct vm *vm, vaddr_t vaddr, paddr_t paddr)
 int
 page_map_direct(struct vm *vm, paddr_t paddr, vaddr_t *vaddrp)
 {
+	if (vm != &kernel_vm)
+		panic("%s: can't direct map for non-kernel address space.",
+		      __func__);
 	return (pmap_map_direct(vm, paddr, vaddrp));
 }
 

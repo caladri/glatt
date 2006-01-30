@@ -6,6 +6,8 @@
 struct vm {
 };
 
+extern struct vm kernel_vm;
+
 int vm_find_address(struct vm *, vaddr_t *);
 int vm_free_address(struct vm *, vaddr_t);
 

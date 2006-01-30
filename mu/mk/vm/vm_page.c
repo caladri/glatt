@@ -90,7 +90,7 @@ page_insert_pages(paddr_t base, size_t pages)
 	int error;
 
 	while (pages != 0) {
-		error = page_map_direct(NULL, base, &va);
+		error = page_map_direct(&kernel_vm, base, &va);
 		if (error != 0)
 			panic("%s: couldn't map page index directly: %d\n",
 			      __func__, error);
@@ -132,7 +132,7 @@ page_map(struct vm *vm, vaddr_t vaddr, paddr_t paddr)
 int
 page_map_direct(struct vm *vm, paddr_t paddr, vaddr_t *vaddrp)
 {
-	return (ERROR_NOT_IMPLEMENTED);
+	return (pmap_map_direct(vm, paddr, vaddrp));
 }
 
 int

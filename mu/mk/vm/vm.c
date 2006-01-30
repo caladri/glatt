@@ -2,6 +2,8 @@
 #include <core/error.h>
 #include <vm/vm.h>
 
+struct vm kernel_vm;
+
 int
 vm_find_address(struct vm *vm, vaddr_t *vaddrp)
 {

@@ -102,7 +102,6 @@ framebuffer_putxy(struct framebuffer *fb, char ch, unsigned x, unsigned y)
 	uint8_t *character;
 	unsigned r, c, s;
 
-	spinlock_lock(&fb->fb_lock);
 	character = &fb->fb_font->f_charset[ch * fb->fb_font->f_height];
 	for (r = 0; r < fb->fb_font->f_height; r++) {
 		for (c = 0; c < fb->fb_font->f_width; c++) {
@@ -116,7 +115,6 @@ framebuffer_putxy(struct framebuffer *fb, char ch, unsigned x, unsigned y)
 				*bit = foreground;
 		}
 	}
-	spinlock_unlock(&fb->fb_lock);
 }
 
 static void

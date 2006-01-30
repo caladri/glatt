@@ -1,4 +1,5 @@
 #include <cpu/asm.h>
+#include <page/page.h>
 
 	NOREORDER
 
@@ -39,8 +40,17 @@ ENTRY(start)
 	jal	platform_start
 	nop
 
-	/* Go into main loop.  */
-	//jal	main
+	/* Allocate a proper stack page and switch to it.  */
+	dla	a0, kernel_vm
+	dsubu	sp, 8
+1:	jal	page_alloc_direct
+	move	a1, sp
+	bnez	v0, 1b
+	nop
+	ld	sp, 0(sp)		/* Bam!  */
+
+	/* Start all processors.  */
+	jal	platform_mp_start_all
 	nop
 
 	/* NOTREACHED */

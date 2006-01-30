@@ -1,4 +1,5 @@
 #include <core/types.h>
+#include <core/error.h>
 #include <db/db.h>
 #include <vm/page.h>
 #include <vm/vm.h>
@@ -6,7 +7,7 @@
 int
 page_alloc(struct vm *vm, paddr_t *paddrp)
 {
-	return (-1);
+	return (ERROR_NOT_IMPLEMENTED);
 }
 
 int
@@ -44,23 +45,23 @@ page_alloc_virtual(struct vm *vm, vaddr_t *vaddrp)
 int
 page_insert(paddr_t paddr)
 {
-	return (-1);
+	return (ERROR_NOT_IMPLEMENTED);
 }
 
 int
 page_map(struct vm *vm, vaddr_t vaddr, paddr_t paddr)
 {
-	return (-1);
+	return (ERROR_NOT_IMPLEMENTED);
 }
 
 int
 page_release(struct vm *vm, paddr_t paddr)
 {
-	return (-1);
+	return (ERROR_NOT_IMPLEMENTED);
 }
 
 int
 page_unmap(struct vm *vm, vaddr_t vaddr)
 {
-	return (-1);
+	return (ERROR_NOT_IMPLEMENTED);
 }

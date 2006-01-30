@@ -3,7 +3,10 @@
 #include <core/spinlock.h>
 #include <core/startup.h>
 #include <cpu/memory.h>
+#include <db/db.h>
 #include <io/device/console/console.h>
+#include <vm/page.h>
+#include <vm/vm.h>
 
 #define	TEST_MP_DEV_BASE	0x11000000
 
@@ -47,6 +50,8 @@ platform_mp_start_all(void)
 {
 	cpu_id_t cpu;
 	uint64_t ncpus;
+	vaddr_t stack;
+	int error;
 
 	spinlock_init(&startup_lock, "startup");
 
@@ -59,8 +64,12 @@ platform_mp_start_all(void)
 	for (cpu = 0; cpu < ncpus; cpu++) {
 		if (cpu == mp_whoami())
 			continue;
-		/* XXX allocate and set new stack.  */
+		error = page_alloc_direct(&kernel_vm, &stack);
+		if (error != 0)
+			panic("%s: stack allocation failed: %u", __func__,
+			      error);
 		spinlock_unlock(&startup_lock);
+		*TEST_MP_DEV_FUNCTION(TEST_MP_DEV_STACK) = stack + PAGE_SIZE;
 		*TEST_MP_DEV_FUNCTION(TEST_MP_DEV_START) = cpu;
 		spinlock_lock(&startup_lock);
 	}

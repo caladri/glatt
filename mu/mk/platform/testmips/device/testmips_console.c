@@ -86,6 +86,6 @@ platform_start(void)
 	 */
 	error = page_insert_pages(0, PA_TO_PAGE(membytes));
 	if (error != 0)
-		panic("page_insert_pages 0..%lu failed: %d\n",
+		panic("page_insert_pages 0..%lu failed: %d",
 		      PA_TO_PAGE(membytes), error);
 }

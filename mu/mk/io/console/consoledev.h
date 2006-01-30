@@ -1,8 +1,11 @@
 #ifndef	_IO_DEVICE_CONSOLE_CONSOLEDEV_H_
 #define	_IO_DEVICE_CONSOLE_CONSOLEDEV_H_
 
+#include <core/spinlock.h>
+
 struct console {
 	const char *c_name;
+	struct spinlock c_lock;
 	void *c_softc;
 	void (*c_putc)(void *, char);
 	void (*c_flush)(void *);

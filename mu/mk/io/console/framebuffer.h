@@ -1,6 +1,7 @@
 #ifndef	_IO_DEVICE_CONSOLE_FRAMEBUFFER_H_
 #define	_IO_DEVICE_CONSOLE_FRAMEBUFFER_H_
 
+#include <core/spinlock.h>
 #include <io/device/console/consoledev.h>
 
 struct font {
@@ -17,6 +18,7 @@ struct bgr {
 
 struct framebuffer {
 	struct console fb_console;	/* Associated console.  */
+	struct spinlock fb_lock;	/* Protects data.  */
 	struct font *fb_font;		/* Current font.  */
 	struct bgr *fb_buffer;
 #if 0 /* XXX assuming 24-bit.  */

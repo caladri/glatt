@@ -24,6 +24,9 @@ framebuffer_init(struct framebuffer *fb, unsigned width, unsigned height)
 	fb->fb_console.c_putc = framebuffer_putc;
 	fb->fb_console.c_flush = framebuffer_flush;
 
+	spinlock_init(&fb->fb_lock, "framebuffer");
+
+	spinlock_lock(&fb->fb_lock);
 	fb->fb_font = &framebuffer_font_miklic_bold8x16;
 	fb->fb_buffer = buffer;
 
@@ -35,6 +38,7 @@ framebuffer_init(struct framebuffer *fb, unsigned width, unsigned height)
 	framebuffer_clear(fb);
 
 	console_init(&fb->fb_console);
+	spinlock_unlock(&fb->fb_lock);
 }
 
 static void
@@ -42,9 +46,11 @@ framebuffer_clear(struct framebuffer *fb)
 {
 	unsigned x, y;
 
+	spinlock_lock(&fb->fb_lock);
 	for (x = 0; x < FB_COLUMNS(fb); x++)
 		for (y = 0; y < FB_ROWS(fb); y++)
 			framebuffer_putxy(fb, ' ', x, y);
+	spinlock_unlock(&fb->fb_lock);
 }
 
 static void
@@ -54,7 +60,9 @@ framebuffer_flush(void *sc)
 
 	fb = sc;
 
+	spinlock_lock(&fb->fb_lock);
 	fb->fb_load(fb, fb->fb_buffer);
+	spinlock_unlock(&fb->fb_lock);
 }
 
 static void
@@ -64,12 +72,14 @@ framebuffer_putc(void *sc, char ch)
 
 	fb = sc;
 
+	spinlock_lock(&fb->fb_lock);
 	if (ch == '\n') {
 		if (fb->fb_row == FB_ROWS(fb) - 1)
 			framebuffer_scroll(fb);
 		else
 			fb->fb_row++;
 		fb->fb_column = 0;
+		spinlock_unlock(&fb->fb_lock);
 		return;
 	}
 
@@ -82,6 +92,7 @@ framebuffer_putc(void *sc, char ch)
 			fb->fb_row++;
 		fb->fb_column = 0;
 	}
+	spinlock_unlock(&fb->fb_lock);
 }
 
 static void
@@ -91,6 +102,7 @@ framebuffer_putxy(struct framebuffer *fb, char ch, unsigned x, unsigned y)
 	uint8_t *character;
 	unsigned r, c, s;
 
+	spinlock_lock(&fb->fb_lock);
 	character = &fb->fb_font->f_charset[ch * fb->fb_font->f_height];
 	for (r = 0; r < fb->fb_font->f_height; r++) {
 		for (c = 0; c < fb->fb_font->f_width; c++) {
@@ -104,6 +116,7 @@ framebuffer_putxy(struct framebuffer *fb, char ch, unsigned x, unsigned y)
 				*bit = foreground;
 		}
 	}
+	spinlock_unlock(&fb->fb_lock);
 }
 
 static void
@@ -112,6 +125,7 @@ framebuffer_scroll(struct framebuffer *fb)
 	unsigned c;
 	unsigned lh, skip;
 
+	spinlock_lock(&fb->fb_lock);
 	/*
 	 * Shift up by one line-height.
 	 */
@@ -121,4 +135,5 @@ framebuffer_scroll(struct framebuffer *fb)
 	       ((fb->fb_height - lh) * fb->fb_width) * sizeof (struct bgr));
 	for (c = 0; c < FB_COLUMNS(fb); c++)
 		framebuffer_putxy(fb, ' ', c, FB_ROWS(fb) - 1);
+	spinlock_unlock(&fb->fb_lock);
 }

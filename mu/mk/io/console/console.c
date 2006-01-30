@@ -10,6 +10,7 @@ static void kcputc_noflush(char);
 void
 console_init(struct console *console)
 {
+	spinlock_init(&console->c_lock, "console");
 	kernel_console = console;
 	kcprintf("Switched to console: %s\n", console->c_name);
 }
@@ -17,16 +18,20 @@ console_init(struct console *console)
 void
 kcputc(char ch)
 {
+	spinlock_lock(&kernel_console->c_lock);
 	kcputc_noflush(ch);
 	kernel_console->c_flush(kernel_console->c_softc);
+	spinlock_unlock(&kernel_console->c_lock);
 }
 
 void
 kcputs(const char *s)
 {
+	spinlock_lock(&kernel_console->c_lock);
 	while (*s != '\0')
 		kcputc_noflush(*s++);
 	kernel_console->c_flush(kernel_console->c_softc);
+	spinlock_unlock(&kernel_console->c_lock);
 }
 
 void
@@ -46,6 +51,7 @@ kcvprintf(const char *s, va_list ap)
 	bool lmod, alt;
 	long val;
 
+	spinlock_lock(&kernel_console->c_lock);
 	for (p = s; *p != '\0'; p++) {
 		if (*p != '%') {
 			kcputc_noflush(*p);
@@ -99,6 +105,7 @@ again:
 		}
 	}
 	kernel_console->c_flush(kernel_console->c_softc);
+	spinlock_unlock(&kernel_console->c_lock);
 }
 
 static void
@@ -128,5 +135,7 @@ kcformat(uint64_t val, unsigned base, unsigned sign)
 static void
 kcputc_noflush(char ch)
 {
+	spinlock_lock(&kernel_console->c_lock);
 	kernel_console->c_putc(kernel_console->c_softc, ch);
+	spinlock_unlock(&kernel_console->c_lock);
 }

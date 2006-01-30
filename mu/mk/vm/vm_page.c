@@ -89,6 +89,9 @@ page_insert_pages(paddr_t base, size_t pages)
 	size_t cnt;
 	int error;
 
+	/*
+	 * XXX check if these pages belong in an existing pool.
+	 */
 	while (pages != 0) {
 		error = page_map_direct(&kernel_vm, base, &va);
 		if (error != 0)
@@ -126,7 +129,7 @@ page_insert_pages(paddr_t base, size_t pages)
 int
 page_map(struct vm *vm, vaddr_t vaddr, paddr_t paddr)
 {
-	return (ERROR_NOT_IMPLEMENTED);
+	return (pmap_map(vm, vaddr, paddr));
 }
 
 int
@@ -138,11 +141,29 @@ page_map_direct(struct vm *vm, paddr_t paddr, vaddr_t *vaddrp)
 int
 page_release(struct vm *vm, paddr_t paddr)
 {
-	return (ERROR_NOT_IMPLEMENTED);
+	struct page_entry *pe;
+	struct page_index *pi;
+	size_t off;
+
+	for (pi = page_index; pi != NULL; pi = pi->pi_header.ph_next) {
+		if (paddr < pi->pi_header.ph_base)
+			continue;
+		/*
+		 * If this is not one first PAGE_ENTRY_PAGES pages after the
+		 * base address, then we should keep scanning.
+		 */
+		off = PA_TO_PAGE(paddr - pi->pi_header.ph_base);
+		if (off >= PAGE_ENTRY_PAGES)
+			continue;
+		pe = &pi->pi_entries[off / PAGE_ENTRY_PAGES];
+		pe->pe_bitmask |= 1 << (off % PAGE_ENTRY_PAGES);
+		return (0);
+	}
+	return (ERROR_NOT_FOUND);
 }
 
 int
 page_unmap(struct vm *vm, vaddr_t vaddr)
 {
-	return (ERROR_NOT_IMPLEMENTED);
+	return (pmap_unmap(vm, vaddr));
 }

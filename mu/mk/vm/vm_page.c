@@ -157,6 +157,7 @@ page_release(struct vm *vm, paddr_t paddr)
 			continue;
 		pe = &pi->pi_entries[off / PAGE_ENTRY_PAGES];
 		pe->pe_bitmask |= 1 << (off % PAGE_ENTRY_PAGES);
+		pi->pi_header.ph_pages++;
 		return (0);
 	}
 	return (ERROR_NOT_FOUND);

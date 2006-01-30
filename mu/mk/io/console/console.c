@@ -33,11 +33,19 @@ void
 kcprintf(const char *s, ...)
 {
 	va_list ap;
+
+	va_start(ap, s);
+	kcvprintf(s, ap);
+	va_end(ap);
+}
+
+void
+kcvprintf(const char *s, va_list ap) 
+{
 	const char *p, *q;
 	bool lmod, alt;
 	long val;
 
-	va_start(ap, s);
 	for (p = s; *p != '\0'; p++) {
 		if (*p != '%') {
 			kcputc_noflush(*p);
@@ -90,7 +98,6 @@ again:
 			break;
 		}
 	}
-	va_end(ap);
 	kernel_console->c_flush(kernel_console->c_softc);
 }
 

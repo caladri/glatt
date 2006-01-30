@@ -1,5 +1,11 @@
-#ifndef	_CORE_MACRO_H_
-#define	_CORE_MACRO_H_
+#ifndef	_CORE__MACRO_H_
+#define	_CORE__MACRO_H_
+
+#ifndef	_IN_CORE_TYPES_H_
+#ifndef	ASSEMBLER
+#error "Do not directly include <core/_macro.h> from C."
+#endif
+#endif
 
 	/* Handy macros.  */
 
@@ -28,4 +34,4 @@ COMPILE_TIME_ASSERT(true);
 COMPILE_TIME_ASSERT(!false);
 #endif
 
-#endif /* !_CORE_MACRO_H_ */
+#endif /* !_CORE__MACRO_H_ */

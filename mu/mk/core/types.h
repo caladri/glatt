@@ -1,6 +1,8 @@
 #ifndef	_CORE_TYPES_H_
 #define	_CORE_TYPES_H_
 
+#define	_IN_CORE_TYPES_H_
+
 #include <core/_stdarg.h>
 #include <cpu/types.h>
 
@@ -22,5 +24,7 @@ typedef	enum _bool {
 	/* Pull in helper macros.  */
 
 #include <core/_macro.h>
+
+#undef _IN_CORE_TYPES_H_
 
 #endif /* !_CORE_TYPES_H_ */

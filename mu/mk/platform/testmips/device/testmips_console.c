@@ -75,6 +75,11 @@ platform_start(void)
 	kcputs(COPYRIGHT "\n");
 	kcputs("\n");
 
+	/*
+	 * Startup our physical page pool.
+	 */
+	page_init();
+
 	/* 
 	 * Add all global memory.  Processor-local memory will be added by
 	 * the processor that owns it.

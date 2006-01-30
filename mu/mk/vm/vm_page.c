@@ -2,6 +2,7 @@
 #include <core/error.h>
 #include <core/macro.h>
 #include <db/db.h>
+#include <io/device/console/console.h>
 #include <vm/page.h>
 #include <vm/vm.h>
 
@@ -28,6 +29,13 @@ static struct page_index {
 } *page_index;
 
 COMPILE_TIME_ASSERT(sizeof (struct page_index) == PAGE_SIZE);
+
+void
+page_init(void)
+{
+	kcprintf("PAGE: page size is %uK, %u pages per index entry.\n",
+		 PAGE_SIZE / 1024, PAGE_INDEX_COUNT);
+}
 
 int
 page_alloc(struct vm *vm, paddr_t *paddrp)
@@ -99,9 +107,15 @@ page_insert_pages(paddr_t base, size_t pages)
 		base += (pi->pi_header.ph_pages) * PAGE_SIZE;
 		pages -= pi->pi_header.ph_pages;
 
-		for (cnt = 0; cnt < pi->pi_header.ph_pages; cnt++) {
+		for (cnt = 0; cnt < PAGE_INDEX_ENTRIES; cnt++) {
 			struct page_entry *pe;
 			
+			pe = &pi->pi_entries[cnt];
+			pe->pe_bitmask = 0;
+		}
+		for (cnt = 0; cnt < pi->pi_header.ph_pages; cnt++) {
+			struct page_entry *pe;
+
 			pe = &pi->pi_entries[cnt / PAGE_ENTRY_PAGES];
 			pe->pe_bitmask |= 1 << (cnt % PAGE_ENTRY_PAGES);
 		}

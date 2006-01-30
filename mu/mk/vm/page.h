@@ -14,6 +14,8 @@ struct vm;
 
 	/* It's grim up north.  */
 
+void page_init(void);
+
 int page_alloc(struct vm *, paddr_t *);
 int page_alloc_virtual(struct vm *, vaddr_t *);
 int page_insert(paddr_t);

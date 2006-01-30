@@ -19,4 +19,8 @@ typedef	enum _bool {
 	true =		1 == 1,
 } bool;
 
+	/* Pull in helper macros.  */
+
+#include <core/_macro.h>
+
 #endif /* !_CORE_TYPES_H_ */

@@ -1,4 +1,4 @@
-#include <core/macro.h>
+#include <core/_macro.h>
 #include <cpu/asm.h>
 
 	/* Vectors for exception, interrupt and TLB miss handling.  */

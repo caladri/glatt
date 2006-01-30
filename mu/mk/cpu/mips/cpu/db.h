@@ -1,7 +1,7 @@
 #ifndef	_CPU_DB_H_
 #define	_CPU_DB_H_
 
-static inline void __attribute__ ((__noreturn__))
+static inline void __noreturn
 cpu_break(void)
 {
 	__asm __volatile ("break 7" : : : "memory");

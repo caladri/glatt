@@ -3,6 +3,6 @@
 
 #include <cpu/db.h>
 
-void panic(const char *, ...) __attribute__ ((__noreturn__));
+void panic(const char *, ...) __noreturn;
 
 #endif /* !_DB_DB_H_ */

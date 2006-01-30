@@ -1,5 +1,4 @@
 #include <core/types.h>
-#include <core/macro.h>
 #include <core/mp.h>
 #include <core/spinlock.h>
 #include <core/startup.h>

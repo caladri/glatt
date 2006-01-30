@@ -1,6 +1,5 @@
 #include <core/types.h>
 #include <core/error.h>
-#include <core/macro.h>
 #include <db/db.h>
 #include <io/device/console/console.h>
 #include <vm/page.h>

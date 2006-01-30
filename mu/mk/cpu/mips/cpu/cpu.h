@@ -5,7 +5,6 @@
 #error "Cannot use <cpu/cpu.h> from asm."
 #endif
 
-#include <core/macro.h>
 #include <cpu/register.h>
 
 static inline void

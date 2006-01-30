@@ -14,7 +14,7 @@ struct bgr {
 	uint8_t b;
 	uint8_t g;
 	uint8_t r;
-} __attribute__ ((__packed__));
+} __packed;
 
 struct framebuffer {
 	struct console fb_console;	/* Associated console.  */

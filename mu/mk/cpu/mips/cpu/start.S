@@ -12,12 +12,12 @@ ENTRY(start)
 	/*
 	 * Preserve these bits if they're set.
 	 */
-	li	t0, CP0_STATUS_BEV | CP0_STATUS_SR
+	li	t0, CP0_STATUS_SR
 
 	/*
 	 * Set these bits. XXX enable FPU and start it up!
 	 */
-	li	t1, CP0_STATUS_KX
+	li	t1, CP0_STATUS_BEV | CP0_STATUS_KX
 
 	/*
 	 * Read status register and fixup what bits are set.

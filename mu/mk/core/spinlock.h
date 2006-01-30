@@ -10,6 +10,7 @@ struct spinlock {
 	const char *s_name;
 	uint64_t s_owner;
 	uint64_t s_nest;
+	critical_section_t s_crit;
 };
 
 static inline void
@@ -28,13 +29,14 @@ spinlock_lock(struct spinlock *lock)
 		critical_exit(crit);
 		crit = critical_enter();
 	}
-	critical_exit(crit);
+	lock->s_crit = crit;
 }
 
 static inline void
 spinlock_unlock(struct spinlock *lock)
 {
 	critical_section_t crit;
+	critical_section_t saved;
 
 	crit = critical_enter();
 	if (atomic_load_64(&lock->s_owner) == (uint64_t)(mp_whoami() + 1)) {
@@ -43,9 +45,11 @@ spinlock_unlock(struct spinlock *lock)
 			critical_exit(crit);
 			return;
 		} else {
+			saved = lock->s_crit;
 			if (atomic_compare_and_set_64(&lock->s_owner,
 						      mp_whoami() + 1, 0)) {
 				critical_exit(crit);
+				critical_exit(saved);
 				return;
 			}
 		}

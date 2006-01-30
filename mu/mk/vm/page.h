@@ -17,6 +17,7 @@ struct vm;
 int page_alloc(struct vm *, paddr_t *);
 int page_alloc_virtual(struct vm *, vaddr_t *);
 int page_insert(paddr_t);
+int page_insert_pages(paddr_t, size_t);
 int page_map(struct vm *, vaddr_t, paddr_t);
 int page_release(struct vm *, paddr_t);
 int page_unmap(struct vm *, vaddr_t);

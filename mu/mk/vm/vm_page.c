@@ -49,6 +49,12 @@ page_insert(paddr_t paddr)
 }
 
 int
+page_insert_pages(paddr_t base, size_t pages)
+{
+	return (ERROR_NOT_IMPLEMENTED);
+}
+
+int
 page_map(struct vm *vm, vaddr_t vaddr, paddr_t paddr)
 {
 	return (ERROR_NOT_IMPLEMENTED);

@@ -5,6 +5,7 @@
 #include <core/mp.h>
 #include <cpu/cpu.h>
 #include <cpu/memory.h>
+#include <db/db.h>
 #include <io/device/console/console.h>
 #include <io/device/console/framebuffer.h>
 #include <vm/page.h>
@@ -57,7 +58,6 @@ platform_start(void)
 	static const int use_framebuffer = 0;
 	/* XXX test::mp function memory() */
 	uint64_t membytes = *(volatile uint64_t *)XKPHYS_MAP(XKPHYS_UC, 0x11000000 | 0x0090);
-	paddr_t offset;
 	int error;
 
 	error = mp_block_but_one(mp_whoami());
@@ -79,16 +79,10 @@ platform_start(void)
 	 * Add all global memory.  Processor-local memory will be added by
 	 * the processor that owns it.
 	 */
-	offset = 0;
-	while (membytes >= PAGE_SIZE) {
-		error = page_insert(offset);
-//		if (error != 0)
-//			kcprintf("page_insert %#lx: %d\n", offset, error);
-
-		offset += PAGE_SIZE;
-		membytes -= PAGE_SIZE;
-	}
-	kcprintf("%u global page(s).\n", PA_TO_PAGE(offset));
+	error = page_insert_pages(0, PA_TO_PAGE(membytes));
+	if (error != 0)
+		panic("page_insert_pages 0..%lu failed: %d\n",
+		      PA_TO_PAGE(membytes), error);
 
 	platform_mp_start_all();	/* XXX doesn't return.  */
 }

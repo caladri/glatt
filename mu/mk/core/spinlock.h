@@ -4,6 +4,7 @@
 #include <core/atomic.h>
 #include <core/critical.h>
 #include <core/mp.h>
+#include <db/db.h>
 
 struct spinlock {
 	const char *s_name;
@@ -50,7 +51,7 @@ spinlock_unlock(struct spinlock *lock)
 		}
 	}
 	critical_exit(crit);
-	/* XXX panic.  */
+	panic("%s: not my lock to unlock (%s)", __func__, lock->s_name);
 }
 
 void spinlock_init(struct spinlock *, const char *);

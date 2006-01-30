@@ -1,8 +1,33 @@
 #include <core/types.h>
 #include <core/error.h>
+#include <core/macro.h>
 #include <db/db.h>
 #include <vm/page.h>
 #include <vm/vm.h>
+
+struct page_index;
+
+struct page_header {
+	struct page_index *ph_next;
+	paddr_t ph_base;
+	size_t ph_pages;
+};
+
+struct page_entry {
+	uint64_t pe_bitmask;
+};
+
+#define	PAGE_ENTRY_PAGES	(sizeof (struct page_entry) * 8)
+#define	PAGE_INDEX_ENTRIES	((PAGE_SIZE -				\
+				  sizeof (struct page_header)) /	\
+				 sizeof (struct page_entry))
+#define	PAGE_INDEX_COUNT	(PAGE_INDEX_ENTRIES * PAGE_ENTRY_PAGES)
+static struct page_index {
+	struct page_header pi_header;
+	struct page_entry pi_entries[PAGE_INDEX_ENTRIES];
+} *page_index;
+
+COMPILE_TIME_ASSERT(sizeof (struct page_index) == PAGE_SIZE);
 
 int
 page_alloc(struct vm *vm, paddr_t *paddrp)
@@ -51,11 +76,47 @@ page_insert(paddr_t paddr)
 int
 page_insert_pages(paddr_t base, size_t pages)
 {
-	return (ERROR_NOT_IMPLEMENTED);
+	struct page_index *pi;
+	vaddr_t va;
+	size_t cnt;
+	int error;
+
+	while (pages != 0) {
+		error = page_map_direct(NULL, base, &va);
+		if (error != 0)
+			panic("%s: couldn't map page index directly: %d\n",
+			      __func__, error);
+		pi = (struct page_index *)va;
+
+		base += PAGE_SIZE;
+		pages--;
+
+		pi->pi_header.ph_next = page_index;
+		page_index = pi;
+		pi->pi_header.ph_base = base;
+		pi->pi_header.ph_pages = MIN(pages, PAGE_INDEX_COUNT);
+
+		base += (pi->pi_header.ph_pages) * PAGE_SIZE;
+		pages -= pi->pi_header.ph_pages;
+
+		for (cnt = 0; cnt < pi->pi_header.ph_pages; cnt++) {
+			struct page_entry *pe;
+			
+			pe = &pi->pi_entries[cnt / PAGE_ENTRY_PAGES];
+			pe->pe_bitmask |= 1 << (cnt % PAGE_ENTRY_PAGES);
+		}
+	}
+	return (0);
 }
 
 int
 page_map(struct vm *vm, vaddr_t vaddr, paddr_t paddr)
+{
+	return (ERROR_NOT_IMPLEMENTED);
+}
+
+int
+page_map_direct(struct vm *vm, paddr_t paddr, vaddr_t *vaddrp)
 {
 	return (ERROR_NOT_IMPLEMENTED);
 }

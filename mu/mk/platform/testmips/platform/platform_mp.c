@@ -63,8 +63,10 @@ platform_mp_start_all(void)
 		(uintptr_t)&platform_mp_start_one;
 	spinlock_lock(&startup_lock);
 	for (cpu = 0; cpu < ncpus; cpu++) {
-		if (cpu == mp_whoami())
+		if (cpu == mp_whoami()) {
+			kcprintf("cpu%u: bootstrap.\n", cpu);
 			continue;
+		}
 		error = page_alloc_direct(&kernel_vm, &stack);
 		if (error != 0)
 			panic("%s: stack allocation failed: %u", __func__,
@@ -82,7 +84,8 @@ platform_mp_start_all(void)
 static void
 platform_mp_start_one(void)
 {
-	asm volatile ("dla $" STRING(gp) ", _gp");
+	asm volatile ("dla $" STRING(gp) ", _gp" : : : "memory");
+
 	spinlock_lock(&startup_lock);
 
 	cpu_identify();

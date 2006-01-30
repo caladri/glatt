@@ -44,6 +44,28 @@ page_alloc(struct vm *vm, paddr_t *paddrp)
 }
 
 int
+page_alloc_direct(struct vm *vm, vaddr_t *vaddrp)
+{
+	paddr_t paddr;
+	vaddr_t vaddr;
+	int error, error2;
+
+	error = page_alloc(vm, &paddr);
+	if (error != 0)
+		return (error);
+
+	error = page_map_direct(vm, paddr, &vaddr);
+	if (error != 0) {
+		error2 = page_release(vm, paddr);
+		if (error2 != 0)
+			panic("%s: can't release paddr: %u", __func__, error);
+		return (error);
+	}
+	*vaddrp = vaddr;
+	return (0);
+}
+
+int
 page_alloc_virtual(struct vm *vm, vaddr_t *vaddrp)
 {
 	paddr_t paddr;
@@ -57,18 +79,16 @@ page_alloc_virtual(struct vm *vm, vaddr_t *vaddrp)
 	error = vm_find_address(vm, &vaddr);
 	if (error != 0) {
 		error2 = page_release(vm, paddr);
-		if (error2 != 0) {
-			panic("%s: can't release paddr.", __func__);
-		}
+		if (error2 != 0)
+			panic("%s: can't release paddr: %u", __func__, error2);
 		return (error);
 	}
 
 	error = page_map(vm, paddr, vaddr);
 	if (error != 0) {
 		error2 = vm_free_address(vm, vaddr);
-		if (error2 != 0) {
-			panic("%s: can't release vaddr.", __func__);
-		}
+		if (error2 != 0)
+			panic("%s: can't release vaddr: %u", __func__, error);
 		return (error);
 	}
 	*vaddrp = vaddr;

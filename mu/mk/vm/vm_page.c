@@ -55,6 +55,7 @@ page_alloc(struct vm *vm, paddr_t *paddrp)
 			for (off = 0; off < PAGE_ENTRY_PAGES; off++) {
 				if ((pe->pe_bitmask & (1 << off)) == 0)
 					continue;
+				pe->pe_bitmask ^= 1 << off;
 				paddr = pi->pi_header.ph_base;
 				paddr += (entry * PAGE_ENTRY_PAGES) * PAGE_SIZE;
 				paddr += off * PAGE_SIZE;

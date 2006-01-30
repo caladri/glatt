@@ -40,7 +40,30 @@ page_init(void)
 int
 page_alloc(struct vm *vm, paddr_t *paddrp)
 {
-	return (ERROR_NOT_IMPLEMENTED);
+	struct page_entry *pe;
+	struct page_index *pi;
+	size_t entry, off;
+	paddr_t paddr;
+
+	for (pi = page_index; pi != NULL; pi = pi->pi_header.ph_next) {
+		if (pi->pi_header.ph_pages == 0)
+			continue;
+		for (entry = 0; entry < PAGE_INDEX_ENTRIES; entry++) {
+			pe = &pi->pi_entries[entry];
+			if (pe->pe_bitmask == 0)
+				continue;
+			for (off = 0; off < PAGE_ENTRY_PAGES; off++) {
+				if ((pe->pe_bitmask & (1 << off)) == 0)
+					continue;
+				paddr = pi->pi_header.ph_base;
+				paddr += (entry * PAGE_ENTRY_PAGES) * PAGE_SIZE;
+				paddr += off * PAGE_SIZE;
+				*paddrp = paddr;
+				return (0);
+			}
+		}
+	}
+	return (ERROR_EXHAUSTED);
 }
 
 int
@@ -172,11 +195,11 @@ page_release(struct vm *vm, paddr_t paddr)
 		if (paddr < pi->pi_header.ph_base)
 			continue;
 		/*
-		 * If this is not one first PAGE_ENTRY_PAGES pages after the
+		 * If this is not one first PAGE_INDEX_COUNT pages after the
 		 * base address, then we should keep scanning.
 		 */
 		off = PA_TO_PAGE(paddr - pi->pi_header.ph_base);
-		if (off >= PAGE_ENTRY_PAGES)
+		if (off >= PAGE_INDEX_COUNT)
 			continue;
 		pe = &pi->pi_entries[off / PAGE_ENTRY_PAGES];
 		pe->pe_bitmask |= 1 << (off % PAGE_ENTRY_PAGES);

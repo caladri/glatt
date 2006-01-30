@@ -120,6 +120,33 @@ page_alloc_virtual(struct vm *vm, vaddr_t *vaddrp)
 }
 
 int
+page_extract(struct vm *vm, vaddr_t vaddr, paddr_t *paddrp)
+{
+	return (pmap_extract(vm, vaddr, paddrp));
+}
+
+int
+page_free_direct(struct vm *vm, vaddr_t vaddr)
+{
+	paddr_t paddr;
+	int error;
+
+	error = page_extract(vm, vaddr, &paddr);
+	if (error != 0)
+		return (error);
+
+	error = page_unmap_direct(vm, vaddr);
+	if (error != 0)
+		return (error);
+
+	error = page_release(vm, paddr);
+	if (error != 0)
+		return (error);
+
+	return (0);
+}
+
+int
 page_insert_pages(paddr_t base, size_t pages)
 {
 	struct page_index *pi;
@@ -215,4 +242,10 @@ int
 page_unmap(struct vm *vm, vaddr_t vaddr)
 {
 	return (pmap_unmap(vm, vaddr));
+}
+
+int
+page_unmap_direct(struct vm *vm, vaddr_t vaddr)
+{
+	return (pmap_unmap_direct(vm, vaddr));
 }

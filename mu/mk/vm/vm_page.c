@@ -5,6 +5,15 @@
 #include <vm/page.h>
 #include <vm/vm.h>
 
+/*
+ * XXX have a few page_index in each page of memory so that we don't have to
+ * iterate through a large PAGE_INDEX_ENTRIES entries.  We can quickly check
+ * whether each page_index has *any* pages, but if it only has 1 page in the
+ * last place we're going to check, then that's very inefficient.  Keeping a
+ * hint of the last place we set a bit (or took a bit but there were others
+ * still set) would be useful, too.
+ */
+
 struct page_index;
 
 struct page_header {
@@ -55,6 +64,7 @@ page_alloc(struct vm *vm, paddr_t *paddrp)
 				if ((pe->pe_bitmask & (1 << off)) == 0)
 					continue;
 				pe->pe_bitmask ^= 1 << off;
+				pi->pi_header.ph_pages--;
 				paddr = pi->pi_header.ph_base;
 				paddr += (entry * PAGE_ENTRY_PAGES) * PAGE_SIZE;
 				paddr += off * PAGE_SIZE;
@@ -62,6 +72,7 @@ page_alloc(struct vm *vm, paddr_t *paddrp)
 				return (0);
 			}
 		}
+		panic("%s: page index has pages but no bits set.", __func__);
 	}
 	return (ERROR_EXHAUSTED);
 }

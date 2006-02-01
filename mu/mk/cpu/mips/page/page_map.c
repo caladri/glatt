@@ -5,6 +5,17 @@
 #include <vm/page.h>
 #include <vm/vm.h>
 
+/*
+ * MIPS implements a simple 3-level page table.  The first level is just a
+ * page-sized array of pointers to the second level, the second level is more
+ * of the same, the third level is PTEs.  No reference counting or any such
+ * silliness for now, since we don't particularly care if deallocating address
+ * space is slow, we just want searching and implementation to be fast and
+ * painless.  We could be more memory-efficient by only storing the meaningful
+ * bits of pointers, and by using page numbers instead of real addresses, but
+ * who wants to bother?
+ */
+
 int
 pmap_extract(struct vm *vm, vaddr_t vaddr, paddr_t *paddrp)
 {

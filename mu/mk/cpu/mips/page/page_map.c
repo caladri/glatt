@@ -14,6 +14,8 @@
  * painless.  We could be more memory-efficient by only storing the meaningful
  * bits of pointers, and by using page numbers instead of real addresses, but
  * who wants to bother?
+ *
+ * Eventually one would like the first level to be at a fixed virtual address.
  */
 
 int

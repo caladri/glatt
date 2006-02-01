@@ -92,7 +92,7 @@ platform_mp_start_one(void)
 	int error;
 
 	/* XXX */
-	asm volatile ("dla $" STRING(gp) ", _gp" : : : "memory");
+	__asm __volatile ("dla $" STRING(gp) ", _gp" : : : "memory");
 
 	spinlock_lock(&startup_lock);
 

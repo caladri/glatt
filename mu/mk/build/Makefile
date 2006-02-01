@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.7 2006-02-01 10:05:02 juli Exp $
+# $Id: Makefile,v 1.8 2006-02-01 10:05:42 juli Exp $
 
 KERNEL?=	mu-mk
 
@@ -26,6 +26,7 @@ KERNEL_CFLAGS+=	-O2 -fstrict-aliasing
 # Ask GCC to not use the GP, we may well end up with too much GP-relative
 # data to address.  In reality, though, we shouldn't have enough global data
 # for this to make sense, and we should be able to turn it back on.
+# XXX MIPS only.
 KERNEL_CFLAGS+=	-G0
 KERNEL_LDFLAGS=	-e ${KERNEL_ENTRY} -Ttext ${KERNEL_TEXT}
 

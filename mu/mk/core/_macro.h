@@ -28,7 +28,7 @@
 
 #ifndef	ASSEMBLER
 #define	COMPILE_TIME_ASSERT(p)						\
-	typedef	uint8_t CONCAT(ctassert_, __LINE__) [!(p) * -1]
+	typedef	uint8_t CONCAT(ctassert_, __LINE__) [(!(p) * -1) + (p)]
 
 COMPILE_TIME_ASSERT(true);
 COMPILE_TIME_ASSERT(!false);

@@ -4,6 +4,7 @@
 #include <vm/types.h>
 
 struct vm {
+	int dummy;
 };
 
 extern struct vm kernel_vm;

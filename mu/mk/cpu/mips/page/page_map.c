@@ -13,7 +13,7 @@ pmap_extract(struct vm *vm, vaddr_t vaddr, paddr_t *paddrp)
 			return (ERROR_NOT_PERMITTED);
 		return (ERROR_NOT_IMPLEMENTED);
 	}
-	if (vaddr >= XUSEG_BASE && vaddr <= XUSEG_END) {
+	if (/*vaddr >= XUSEG_BASE && */vaddr <= XUSEG_END) {
 		return (ERROR_NOT_IMPLEMENTED);
 	}
 	/*

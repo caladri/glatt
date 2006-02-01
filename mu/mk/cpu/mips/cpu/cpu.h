@@ -45,11 +45,10 @@ cpu_write_ ## name(uint64_t value)					\
 }									\
 struct __hack
 
-CP0_RW64(entrylo0, CP0_ENTRYLO0);
-CP0_RW64(entrylo1, CP0_ENTRYLO1);
-CP0_RW64(entryhi, CP0_ENTRYHI);
-CP0_RW64(pagemask, CP0_PAGEMASK);
-CP0_RW64(xcontext, CP0_XCONTEXT);
+CP0_RW64(tlb_entryhi, CP0_TLBENTRYHI);
+CP0_RW64(tlb_entrylo0, CP0_TLBENTRYLO0);
+CP0_RW64(tlb_entrylo1, CP0_TLBENTRYLO1);
+CP0_RW64(tlb_pagemask, CP0_TLBPAGEMASK);
 
 #undef CP0_RW64
 
@@ -78,6 +77,8 @@ struct __hack
 CP0_RW32(config, CP0_CONFIG);
 CP0_RW32(cause, CP0_CAUSE);
 CP0_RW32(status, CP0_STATUS);
+CP0_RW32(tlb_index, CP0_TLBINDEX);
+CP0_RW32(tlb_wired, CP0_TLBWIRED);
 CP0_RW32(prid, CP0_PRID);
 
 #undef CP0_RW32

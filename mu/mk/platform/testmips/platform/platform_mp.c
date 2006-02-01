@@ -1,10 +1,12 @@
 #include <core/types.h>
 #include <core/mp.h>
 #include <core/spinlock.h>
-#include <core/startup.h>
+#include <cpu/cpuinfo.h>
 #include <cpu/exception.h>
 #include <cpu/interrupt.h>
 #include <cpu/memory.h>
+#include <cpu/pcpu.h>
+#include <cpu/tlb.h>
 #include <db/db.h>
 #include <io/device/console/console.h>
 #include <vm/page.h>
@@ -85,12 +87,35 @@ platform_mp_start_all(void)
 static void
 platform_mp_start_one(void)
 {
+	struct pcpu *pcpu;
+	paddr_t pcpu_addr;
+	int error;
+
+	/* XXX */
 	asm volatile ("dla $" STRING(gp) ", _gp" : : : "memory");
 
 	spinlock_lock(&startup_lock);
 
-	cpu_identify();
+	/* Allocate a page for persistent per-CPU data.  */
+	error = page_alloc(&kernel_vm, &pcpu_addr);
+	if (error != 0)
+		panic("cpu%u: page allocate failed: %u", mp_whoami(), error);
+	pcpu = (struct pcpu *)XKPHYS_MAP(XKPHYS_CNC, pcpu_addr);
+
+	/* Identify the CPU.  */
+	pcpu->pc_cpuinfo = cpu_identify();
+
+	/* XXX are exception handlers in global memory?  if so, move.  */
+	/* Install exception handlers.  */
 	cpu_exception_init();
+
+	/* Clear the TLB and add a wired mapping for my per-CPU data.  */
+	tlb_init(pcpu_addr);
+
+	/* XXX check that PCPU works.  */
+	kcprintf("%u TLBs.\n", (unsigned)pcpu_get()->pc_cpuinfo.cpu_ntlbs);
+
+	/* Kick off interrupts.  */
 	cpu_interrupt_enable();
 
 	/*

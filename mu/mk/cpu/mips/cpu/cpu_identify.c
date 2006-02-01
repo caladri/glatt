@@ -2,6 +2,7 @@
 #include <core/string.h>
 #include <core/mp.h>
 #include <cpu/cpu.h>
+#include <cpu/cpuinfo.h>
 #include <io/device/console/console.h>
 
 	/* Coprocessor 0 product ID fields.  */
@@ -32,11 +33,14 @@
 #define	CP0_PRID_REVISION_R4400B	(0x50)
 #define	CP0_PRID_REVISION_R4400C	(0x60)
 
-void
+struct cpuinfo
 cpu_identify(void)
 {
+	struct cpuinfo cpu;
 	uint32_t prid;
 	const char *company, *type;
+
+	cpu.cpu_ntlbs = 0;
 
 	prid = cpu_read_prid();
 
@@ -45,6 +49,7 @@ cpu_identify(void)
 		company = "MIPS";
 		switch (CP0_PRID_TYPE(prid)) {
 		case CP0_PRID_TYPE_R4000:
+			cpu.cpu_ntlbs = 48;
 			switch (CP0_PRID_REVISION(prid)) {
 			case CP0_PRID_REVISION_R4000A:
 				type = "R4000A";
@@ -96,4 +101,6 @@ cpu_identify(void)
 			 (unsigned)CP0_PRID_REVISION_MINOR(prid));
 	}
 	kcprintf("\n");
+
+	return (cpu);
 }

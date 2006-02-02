@@ -2,6 +2,7 @@
 #include <core/error.h>
 #include <cpu/memory.h>
 #include <db/db.h>
+#include <page/page_table.h>
 #include <vm/page.h>
 #include <vm/vm.h>
 
@@ -18,23 +19,38 @@
  * Eventually one would like the first level to be at a fixed virtual address.
  */
 
+struct pmap_lev2 {
+	pt_entry_t pml2_entries[PAGE_SIZE / sizeof (pt_entry_t)];
+};
+
+struct pmap_lev1 {
+	struct pmap_lev2 *pml1_level2[PAGE_SIZE / sizeof (struct pmap_lev2 *)];
+};
+
+struct pmap_lev0 {
+	struct pmap_lev1 *pml0_level1[PAGE_SIZE / sizeof (struct pmap_lev1 *)];
+};
+
+static bool pmap_is_direct(vaddr_t);
+
 int
 pmap_extract(struct vm *vm, vaddr_t vaddr, paddr_t *paddrp)
 {
+	paddr_t paddr;
+
+	paddr = vaddr & PAGE_MASK;
+
+	 if (pmap_is_direct(paddr)) {
+		 *paddrp = XKPHYS_EXTRACT(vaddr);
+		 return (0);
+	 }
+
 	if (vaddr >= XKSEG_BASE && vaddr <= XKSEG_END) {
 		if (vm != &kernel_vm)
 			return (ERROR_NOT_PERMITTED);
-		return (ERROR_NOT_IMPLEMENTED);
+		vaddr -= XKSEG_BASE;
 	}
-	if (/*vaddr >= XUSEG_BASE && */vaddr <= XUSEG_END) {
-		return (ERROR_NOT_IMPLEMENTED);
-	}
-	/*
-	 * XXX Check that it's actually an XKPHYS address, or at least be
-	 * super-sure that it has to be.
-	 */
-	*paddrp = XKPHYS_EXTRACT(vaddr);
-	return (0);
+	return (ERROR_NOT_IMPLEMENTED);
 }
 
 int
@@ -69,4 +85,12 @@ pmap_unmap_direct(struct vm *vm, vaddr_t vaddr)
 		panic("%s: not implemented.", __func__);
 	/* Don't have to do anything to get rid of direct-mapped memory.  */
 	return (0);
+}
+
+static bool
+pmap_is_direct(vaddr_t vaddr)
+{
+	if (vaddr >= XKPHYS_BASE && vaddr <= XKPHYS_END)
+		return (true);
+	return (false);
 }

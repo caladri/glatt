@@ -13,6 +13,8 @@
 
 	/* 64-bit kernel physical address space mapping.  */
 
+#define	XKPHYS_BASE	(0x8000000000000000)
+#define	XKPHYS_END	(0xbfffffffffffffff)
 #define	XKPHYS_MAP(cca,a)						\
 	((void *)((0x2ULL << 62) | ((uintptr_t)(cca) << 59) | (uintptr_t)(a)))
 #define	XKPHYS_EXTRACT(a)						\

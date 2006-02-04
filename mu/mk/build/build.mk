@@ -1,4 +1,4 @@
-# $Id: build.mk,v 1.8 2006-01-30 00:20:37 juli Exp $
+# $Id: build.mk,v 1.9 2006-02-04 06:59:56 juli Exp $
 
 .PATH: ${KERNEL_ROOT}/core
 .PATH: ${KERNEL_ROOT}/db
@@ -18,5 +18,5 @@ KERNEL_SOURCES+=framebuffer.c
 KERNEL_SOURCES+=framebuffer_font.c
 
 # vm
-KERNEL_SOURCES+=vm_page.c
 KERNEL_SOURCES+=vm.c
+KERNEL_SOURCES+=vm_page.c

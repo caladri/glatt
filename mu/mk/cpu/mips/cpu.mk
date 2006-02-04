@@ -1,4 +1,4 @@
-# $Id: cpu.mk,v 1.11 2006-02-01 07:37:06 juli Exp $
+# $Id: cpu.mk,v 1.12 2006-02-04 07:05:12 juli Exp $
 
 .PATH: ${CPU_ROOT}/cpu
 .PATH: ${CPU_ROOT}/page
@@ -31,3 +31,7 @@ KERNEL_SIMFLAGS+=-X
 simulate-${KERNEL}: ${KERNEL}
 	${KERNEL_SIM} ${KERNEL_SIMFLAGS} ${KERNEL}
 
+.if make(simulate-${KERNEL}) || make(simulate)
+.INTERRUPT: 
+	killall ${KERNEL_SIM}
+.endif

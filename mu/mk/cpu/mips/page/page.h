@@ -4,6 +4,7 @@
 #ifndef	ASSEMBLER
 #include <page/types.h>
 
+struct pmap; /* Internal to page_map.c.  */
 struct vm;
 #endif
 

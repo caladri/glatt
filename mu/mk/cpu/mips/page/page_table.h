@@ -26,8 +26,8 @@ typedef	uint64_t	pt_entry_t;
  * Given this, we just shift the PA right a little.
  */
 #define	TLBLO_SWBITS_SHIFT	30
-#define	TLBLO_PFN_SHIFT		6
-#define	TLBLO_PFN_MASK		0x3FFFFFC0
+#define	TLBLO_PFN_SHIFT		(PAGE_SHIFT - 6)
+#define	TLBLO_PFN_MASK		0x03FFFFFC0
 #define	TLBLO_PA_TO_PFN(pa)	(((pa) >> TLBLO_PFN_SHIFT) & TLBLO_PFN_MASK)
 #define	TLBLO_PFN_TO_PA(pfn)	((pfn) << TLBLO_PFN_SHIFT)
 #define	TLBLO_PTE_TO_PFN(pte)	((pte) & TLBLO_PFN_MASK)
@@ -109,9 +109,5 @@ typedef	uint64_t	pt_entry_t;
 #define	pte_clear(pte, bit)	((*(pte)) &= ~(bit))
 #define	pte_set(pte, bit)	((*(pte)) |= (bit))
 #define	pte_test(pte, bit)	(((*(pte)) & (bit)) == (bit))
-
-/*
- * XXX Add definitions for a 3-level page table.
- */
 
 #endif /* !_PAGE_TABLE_H_ */

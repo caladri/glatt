@@ -3,8 +3,10 @@
 
 #include <vm/types.h>
 
+struct pmap;
+
 struct vm {
-	int dummy;
+	struct pmap *vm_pmap;
 };
 
 extern struct vm kernel_vm;

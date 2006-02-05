@@ -99,6 +99,7 @@ static void pmap_update(pt_entry_t *, paddr_t, pt_entry_t);
 void
 pmap_bootstrap(void)
 {
+	pt_entry_t *pte;
 	vaddr_t vaddr;
 	int error;
 	
@@ -108,6 +109,18 @@ pmap_bootstrap(void)
 	/* XXX map this at a fixed virtual address.  */
 	kernel_vm.vm_pmap = (struct pmap *)vaddr;
 	pmap_pinit(kernel_vm.vm_pmap, XKSEG_BASE, XKSEG_END);
+	error = pmap_map(&kernel_vm, XKSEG_BASE + PAGE_SIZE, 0);
+	if (error != 0)
+		panic("%s: pmap_map failed: %u", error);
+	pte = pmap_find(kernel_vm.vm_pmap, XKSEG_BASE + PAGE_SIZE);
+	if (pte == NULL)
+		panic("%s: can't find PTE we just mapped!");
+	pmap_update(pte, XKPHYS_EXTRACT(vaddr), PG_V);
+	kernel_vm.vm_pmap = (struct pmap *)(XKSEG_BASE + PAGE_SIZE);
+	pte = pmap_find(kernel_vm.vm_pmap, XKSEG_BASE + PAGE_SIZE);
+	if (pte == NULL)
+		panic("%s: can't find PTE we just mapped!");
+	panic("%s: found PTE we shouldn't have found!");
 }
 
 int

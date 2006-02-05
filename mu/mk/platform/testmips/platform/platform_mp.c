@@ -104,21 +104,17 @@ platform_mp_start_one(void)
 	/* Identify the CPU.  */
 	pcpu->pc_cpuinfo = cpu_identify();
 
+	spinlock_unlock(&startup_lock);
+
+	/* WARNING: Everything below here is not serialized.  */
+
 	/* Clear the TLB and add a wired mapping for my per-CPU data.  */
 	tlb_init(pcpu_addr);
 
-	/* XXX check that PCPU works.  */
-	kcprintf("%u TLBs.\n", (unsigned)pcpu_get()->pc_cpuinfo.cpu_ntlbs);
+	/* Now we can take VM-related exceptions appropriately.  */
 
 	/* Kick off interrupts.  */
 	cpu_interrupt_enable();
-
-	/*
-	 * XXX
-	 * install a wired TLB entry for per-CPU data, point it at our stack.
-	 */
-
-	spinlock_unlock(&startup_lock);
 
 	/*
 	 * XXX Create a task+thread for us and switch to it.

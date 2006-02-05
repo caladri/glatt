@@ -17,6 +17,14 @@
  * who wants to bother?
  *
  * Eventually one would like the first level to be at a fixed virtual address.
+ * Even better if we weren't using the direct-map, and the pages self-mapped.
+ * That said, it makes sense (perhaps) to keep using the direct map, and to
+ * keep a shadow data structure which says which page table entries are paged
+ * out, and then we can page them back in and fixup the page table as needed
+ * (and just keep the entries NULL for anything not in main memory).  This
+ * adds some complexity and overhead, but maybe it's on par with the overhead
+ * and complexity of dealing with the page table levels themselves being in
+ * kernel virtual address space.
  *
  * Note that for MIPS3+, we get a two-page TLBLO, but it's better for us to use,
  * for example, 8K virtual pages and 4K physical pages and just do a little math

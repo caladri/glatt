@@ -48,6 +48,8 @@
 	 * NL1PL0 pages.  Using back-of-the-napkin math, one Level 0 page is
 	 * enough to map 16G of address space, which should be enough for
 	 * anyone.  
+	 *
+	 * XXX should just give in and make it enough to map 1TB (64?)
 	 */
 #define	NL0PMAP		(1) 
 
@@ -55,19 +57,27 @@ struct pmap_lev2 {
 	pt_entry_t pml2_entries[NPTEL2];
 };
 
+COMPILE_TIME_ASSERT(sizeof (struct pmap_lev2) == PAGE_SIZE);
+
 struct pmap_lev1 {
 	struct pmap_lev2 *pml1_level2[NL2PL1];
 };
 
+COMPILE_TIME_ASSERT(sizeof (struct pmap_lev1) == PAGE_SIZE);
+
 struct pmap_lev0 {
 	struct pmap_lev1 *pml0_level1[NL1PL0];
 };
+
+COMPILE_TIME_ASSERT(sizeof (struct pmap_lev0) == PAGE_SIZE);
 
 struct pmap {
 	struct pmap_lev0 *pm_level0[NL0PMAP];
 	vaddr_t pm_base;
 	vaddr_t pm_end;
 };
+
+COMPILE_TIME_ASSERT(sizeof (struct pmap) <= PAGE_SIZE);
 
 static __inline vaddr_t
 pmap_index_pte(vaddr_t vaddr)
@@ -117,6 +127,10 @@ pmap_bootstrap(void)
 	/* XXX map this at a fixed virtual address.  */
 	kernel_vm.vm_pmap = (struct pmap *)vaddr;
 	pmap_pinit(kernel_vm.vm_pmap, XKSEG_BASE, XKSEG_END);
+
+	/*
+	 * XXX Right now just testing if we can really handle the TLB here.
+	 */
 	error = pmap_map(&kernel_vm, XKSEG_BASE + PAGE_SIZE, 0);
 	if (error != 0)
 		panic("%s: pmap_map failed: %u", error);

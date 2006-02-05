@@ -48,6 +48,8 @@ tlb_write_random(void)
 }
 
 static void tlb_insert_wired(vaddr_t, paddr_t);
+static void tlb_invalidate_all(void);
+static void tlb_invalidate_one(unsigned);
 
 void
 tlb_init(paddr_t pcpu_addr)
@@ -63,7 +65,7 @@ tlb_init(paddr_t pcpu_addr)
 	cpu_write_tlb_wired(0);
 
 	/* Invalidate all entries.  */
-	//tlb_invalidate_all();
+	tlb_invalidate_all();
 
 	/* Set the pagemask.  */
 	cpu_write_tlb_pagemask(0);	/* XXX depends on TLB_PAGE_SIZE.  */
@@ -95,4 +97,30 @@ tlb_insert_wired(vaddr_t vaddr, paddr_t paddr)
 	tlb_write_indexed();
 	cpu_write_tlb_wired(cpu_read_tlb_wired() + 1);
 	critical_exit(crit);
+}
+
+static void
+tlb_invalidate_all(void)
+{
+	critical_section_t crit;
+	register_t asid;
+	unsigned i;
+
+	crit = critical_enter();
+	asid = cpu_read_tlb_entryhi();
+	for (i = 0; i < pcpu_me()->pc_cpuinfo.cpu_ntlbs; i++) {
+		tlb_invalidate_one(i);
+	}
+	cpu_write_tlb_entryhi(asid);
+	critical_exit(crit);
+}
+
+static void
+tlb_invalidate_one(unsigned i)
+{
+	cpu_write_tlb_entryhi(TLBHI_ENTRY(XKPHYS_BASE + (i * PAGE_SIZE), 0));
+	cpu_write_tlb_entrylo0(0);
+	cpu_write_tlb_entrylo1(0);
+	cpu_write_tlb_index(i);
+	tlb_write_indexed();
 }

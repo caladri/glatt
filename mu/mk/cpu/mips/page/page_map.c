@@ -163,7 +163,7 @@ int
 pmap_map_direct(struct vm *vm, paddr_t paddr, vaddr_t *vaddrp)
 {
 	if (vm != &kernel_vm)
-		panic("%s: not implemented for userland.", __func__);
+		return (ERROR_NOT_IMPLEMENTED);
 	*vaddrp = (vaddr_t)XKPHYS_MAP(XKPHYS_UC, paddr);
 	return (0);
 }
@@ -188,7 +188,7 @@ int
 pmap_unmap_direct(struct vm *vm, vaddr_t vaddr)
 {
 	if (vm != &kernel_vm)
-		panic("%s: not implemented for userland.", __func__);
+		return (ERROR_NOT_IMPLEMENTED);
 	/* Don't have to do anything to get rid of direct-mapped memory.  */
 	return (0);
 }
@@ -196,7 +196,50 @@ pmap_unmap_direct(struct vm *vm, vaddr_t vaddr)
 static int
 pmap_alloc_pte(struct pmap *pm, vaddr_t vaddr, pt_entry_t **ptep)
 {
-	return (ERROR_NOT_IMPLEMENTED);
+	struct pmap_lev0 *pml0;
+	struct pmap_lev1 *pml1;
+	struct pmap_lev2 *pml2;
+	uint32_t pml0i, pml1i, pml2i;
+	vaddr_t tmpaddr;
+	int error;
+
+	vaddr -= pm->pm_base;
+
+	/* We have to have a pmap before getting here.  */
+	if (pm == NULL)
+		panic("%s: allocating into NULL pmap.", __func__);
+
+	pml0i = pmap_index0(vaddr);
+	if (pm->pm_level0[pml0i] == NULL) {
+		error = page_alloc_direct(&kernel_vm, &tmpaddr);
+		if (error != 0)
+			return (error);
+		pm->pm_level0[pml0i] = (struct pmap_lev0 *)tmpaddr;
+	}
+	pml0 = pmap_find0(pm, vaddr);
+	pml1i = pmap_index1(vaddr);
+	if (pml0->pml0_level1[pml1i] == NULL) {
+		error = page_alloc_direct(&kernel_vm, &tmpaddr);
+		if (error != 0) {
+			/* XXX deallocate.  */
+			return (error);
+		}
+		pml0->pml0_level1[pml1i] = (struct pmap_lev1 *)tmpaddr;
+	}
+	pml1 = pmap_find1(pml0, vaddr);
+	pml2i = pmap_index2(vaddr);
+	if (pml1->pml1_level2[pml2i] == NULL) {
+		error = page_alloc_direct(&kernel_vm, &tmpaddr);
+		if (error != 0) {
+			/* XXX deallocate.  */
+			return (error);
+		}
+		pml1->pml1_level2[pml2i] = (struct pmap_lev2 *)tmpaddr;
+	}
+	pml2 = pmap_find2(pml1, vaddr);
+	if (ptep != NULL)
+		*ptep = pmap_find_pte(pml2, vaddr);
+	return (0);
 }
 
 static void

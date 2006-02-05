@@ -8,6 +8,17 @@
 #include <page/page_table.h>
 #include <vm/page.h>
 
+/*
+ * XXX since we are using 4K TLB pages and 8K VM pages (2 for the price of 1!),
+ * we must always make sure to mask off the PAGE_MASK bits on pages that come
+ * from VM, as we have to manage the highest bit set in PAGE_MASK, and if it
+ * has it set with random garbage, we're screwed.
+ *
+ * So when a TLB refill routine is written, we should double-check that, or the
+ * code which manages the PTEs must be really careful (which it should be in
+ * any event.)
+ */
+
 #define	TLB_PAGE_SIZE	(PAGE_SIZE / 2)
 
 /*
@@ -64,19 +75,38 @@ tlb_init(paddr_t pcpu_addr)
 	/* Don't keep any old wired entries.  */
 	cpu_write_tlb_wired(0);
 
-	/* Invalidate all entries.  */
-	tlb_invalidate_all();
-
 	/* Set the pagemask.  */
 	cpu_write_tlb_pagemask(0);	/* XXX depends on TLB_PAGE_SIZE.  */
 
-	critical_exit(crit);
-
 	/*
 	 * Insert a wired mapping for the per-CPU data at the start of the
-	 * address space.
+	 * address space.  Can't invalidate until we do this, as we need the
+	 * PCPU data to get the number of TLB entries, which needs to be
+	 * mapped to work.
 	 */
 	tlb_insert_wired(PCPU_VIRTUAL, pcpu_addr);
+
+	/* Invalidate all entries (except wired ones.)  */
+	tlb_invalidate_all();
+
+	critical_exit(crit);
+}
+
+void
+tlb_invalidate(vaddr_t vaddr, unsigned asid)
+{
+	critical_section_t crit;
+	int i;
+
+	vaddr &= ~PAGE_MASK;
+
+	crit = critical_enter();
+	cpu_write_tlb_entryhi(TLBHI_ENTRY(vaddr, asid));
+	tlb_probe();
+	i = cpu_read_tlb_index();
+	if (i >= 0)
+		tlb_invalidate_one(i);
+	critical_exit(crit);
 }
 
 static void
@@ -99,6 +129,9 @@ tlb_insert_wired(vaddr_t vaddr, paddr_t paddr)
 	critical_exit(crit);
 }
 
+/*
+ * Note that this skips wired entries.
+ */
 static void
 tlb_invalidate_all(void)
 {
@@ -108,9 +141,8 @@ tlb_invalidate_all(void)
 
 	crit = critical_enter();
 	asid = cpu_read_tlb_entryhi();
-	for (i = 0; i < pcpu_me()->pc_cpuinfo.cpu_ntlbs; i++) {
+	for (i = cpu_read_tlb_wired(); i < pcpu_me()->pc_cpuinfo.cpu_ntlbs; i++)
 		tlb_invalidate_one(i);
-	}
 	cpu_write_tlb_entryhi(asid);
 	critical_exit(crit);
 }

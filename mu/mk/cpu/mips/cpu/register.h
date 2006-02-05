@@ -74,7 +74,11 @@ typedef	uint64_t	register_t;
 #define	CP0_TAGHI	_REGNUM(29)
 #define	CP0_ERRORPC	_REGNUM(30)
 
-	/* Coprocessor 0 status register bits. */
+	/* Coprocessor 0 cause register bits & shifts.  */
+#define	CP0_CAUSE_EXCEPTION		(0x7c)
+#define	CP0_CAUSE_EXCEPTION_SHIFT	(2)
+
+	/* Coprocessor 0 status register bits.  */
 
 #define	CP0_STATUS_IE	0x00000001	/* Interrupts enabled.  */
 #define	CP0_STATUS_UX	0x00000020	/* User extended mode.  */

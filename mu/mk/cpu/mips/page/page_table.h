@@ -12,6 +12,10 @@ typedef	uint64_t	pt_entry_t;
  * TLB and PTE management.  Most things operate within the context of
  * EntryLo0,1, and begin with TLBLO_.  Things which work with EntryHi
  * start with TLBHI_.  PTE bits begin with PG_.
+ *
+ * Note that while the TLB uses 4K pages, our PTEs correspond to VM pages,
+ * which in turn are 8K.  This corresponds well to the fact that each TLB
+ * entry maps 2 TLB pages (one even, one odd.)
  */
 
 /*
@@ -22,22 +26,22 @@ typedef	uint64_t	pt_entry_t;
  * god knows what else.) are unacknowledged by hardware.  They may be
  * written as anything, but otherwise they have as much meaning as
  * other 0 fields.
- *
- * Given this, we just shift the PA right a little.
  */
-#define	TLBLO_SWBITS_SHIFT	30
-#define	TLBLO_PFN_SHIFT		(PAGE_SHIFT - 6)
-#define	TLBLO_PFN_MASK		0x03FFFFFC0
-#define	TLBLO_PA_TO_PFN(pa)	(((pa) >> TLBLO_PFN_SHIFT) & TLBLO_PFN_MASK)
-#define	TLBLO_PFN_TO_PA(pfn)	((pfn) << TLBLO_PFN_SHIFT)
+#define	TLBLO_SWBITS_SHIFT	(30)
+#define	TLBLO_PFN_SHIFT		(6)
+#define	TLBLO_PFN_MASK		(0x03FFFFFC0)
+#define	TLBLO_PA_TO_PFN(pa)	((((pa) >> (PAGE_SHIFT - 1)) << TLBLO_PFN_SHIFT) & TLBLO_PFN_MASK)
+#define	TLBLO_PFN_TO_PA(pfn)	(((pfn) >> TLBLO_PFN_SHIFT) << (PAGE_SHIFT - 1))
 #define	TLBLO_PTE_TO_PFN(pte)	((pte) & TLBLO_PFN_MASK)
 #define	TLBLO_PTE_TO_PA(pte)	(TLBLO_PFN_TO_PA(TLBLO_PTE_TO_PFN((pte))))
 
 /*
  * VPN for EntryHi register.  Upper two bits select user, supervisor,
  * or kernel.  Bits 61 to 40 copy bit 63.  VPN2 is bits 39 and down to
- * as low as 13, down to PAGE_SHIFT + 1, to index 2 pages.  From bit 12
+ * as low as 13, down to PAGE_SHIFT, to index 2 TLB pages*.  From bit 12
  * to bit 8 there is a 5-bit 0 field.  Low byte is ASID.
+ *
+ * Note that in Glatt, we map 2 TLB pages is equal to 1 VM page.
  */
 #define	TLBHI_R_SHIFT		62
 #ifdef ASSEMBLER
@@ -55,7 +59,7 @@ typedef	uint64_t	pt_entry_t;
 #define	TLBHI_FILL_SHIFT	40
 #define	TLBHI_FILL_MASK		((0x7FFFFFUL) << TLBHI_FILL_SHIFT)
 #define	TLBHI_VA_FILL(va)	((((va) & (1UL << 63)) != 0 ? TLBHI_FILL_MASK : 0))
-#define	TLBHI_VPN2_SHIFT	(PAGE_SHIFT + 1)
+#define	TLBHI_VPN2_SHIFT	(PAGE_SHIFT)
 #ifdef ASSEMBLER
 #define	TLBHI_VPN2_MASK		(((~((1 << TLBHI_VPN2_SHIFT) - 1)) << (63 - TLBHI_FILL_SHIFT)) >> (63 - TLBHI_FILL_SHIFT))
 #else

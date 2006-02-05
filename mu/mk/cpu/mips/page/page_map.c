@@ -22,11 +22,6 @@
  * for example, 8K virtual pages and 4K physical pages and just do a little math
  * to get the second page, than to have the virtual page size and the physical
  * page size match and have to use a smaller (or too large) page size.
- *
- * XXX this whole thing needs to take into account userland allocating KVA.
- * maybe one sets of page tables for each address space?  yuck, though!
- * that's probably, best, though, then the bottom half of syscalls, etc.,
- * can used fixed-addresses without lots of indirect pointers.
  */
 
 	/* Number of PTEs in Level 2.  */
@@ -99,7 +94,7 @@ static struct pmap_lev2 *pmap_find2(struct pmap_lev1 *, vaddr_t);
 static pt_entry_t *pmap_find_pte(struct pmap_lev2 *, vaddr_t);
 static bool pmap_is_direct(vaddr_t);
 static void pmap_pinit(struct pmap *, vaddr_t, vaddr_t);
-static void pmap_update(pt_entry_t *, paddr_t); /* XXX protection.  */
+static void pmap_update(pt_entry_t *, paddr_t, pt_entry_t);
 
 void
 pmap_bootstrap(void)
@@ -145,7 +140,7 @@ int
 pmap_map(struct vm *vm, vaddr_t vaddr, paddr_t paddr)
 {
 	struct pmap *pm;
-	pt_entry_t *pte;
+	pt_entry_t *pte, flags;
 	int error;
 
 	pm = vm->vm_pmap;
@@ -155,7 +150,12 @@ pmap_map(struct vm *vm, vaddr_t vaddr, paddr_t paddr)
 		/* XXX mark that the pmap needs pmap_collect run.  */
 		return (error);
 	}
-	pmap_update(pte, paddr);
+	flags = PG_V;
+	if (vm == &kernel_vm)
+		flags |= PG_G;
+	/* Cache? */
+	flags |= PG_C_UNCACHED;
+	pmap_update(pte, paddr, flags);
 	return (0);
 }
 
@@ -179,8 +179,8 @@ pmap_unmap(struct vm *vm, vaddr_t vaddr)
 	pte = pmap_find(pm, vaddr);
 	if (pte == NULL)
 		return (ERROR_NOT_FOUND);
-	*pte = 0;
-	/* tlb invalidate, cache flush.  */
+	/* Invalidate by updating to not have PG_V set.  */
+	pmap_update(pte, 0, 0);
 	return (0);
 }
 
@@ -280,10 +280,17 @@ pmap_pinit(struct pmap *pm, vaddr_t base, vaddr_t end)
 }
 
 static void
-pmap_update(pt_entry_t *pte, paddr_t paddr)
+pmap_update(pt_entry_t *pte, paddr_t paddr, pt_entry_t flags)
 {
-	/*
-	 * XXX invalidate old entry, flush TLB, let TLB layer destroy cache.
-	 */
-	panic("%s: not implemented.");
+	paddr_t opaddr;
+
+	opaddr = TLBLO_PTE_TO_PA(*pte);
+	if (pte_test(pte, PG_V)) {
+		if (opaddr == paddr) {
+			/* Mapping stayed the same.  */
+			return;
+		}
+		/* XXX flush TLB, clear cache.  */
+	}
+	*pte = TLBLO_PA_TO_PFN(paddr) | flags;
 }

@@ -99,4 +99,6 @@ platform_start(void)
 		panic("page_insert_pages %lu..%lu failed: %d",
 		      PA_TO_PAGE(KERNEL_PHYSICAL_HOLE),
 		      PA_TO_PAGE(membytes), error);
+
+	pmap_bootstrap();
 }

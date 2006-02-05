@@ -4,6 +4,7 @@
 #include <core/string.h>
 #include <core/mp.h>
 #include <cpu/cpu.h>
+#include <cpu/exception.h>
 #include <cpu/memory.h>
 #include <db/db.h>
 #include <io/device/console/console.h>
@@ -99,6 +100,15 @@ platform_start(void)
 		panic("page_insert_pages %lu..%lu failed: %d",
 		      PA_TO_PAGE(KERNEL_PHYSICAL_HOLE),
 		      PA_TO_PAGE(membytes), error);
+
+	/*
+	 * Turn on exception handlers.  XXX we assume that only the boot CPU
+	 * needs this done.  If that's not the case, then move this to
+	 * the relevant place in platform_mp.c.  In any event, we need *this*
+	 * CPU to have exception handlers right now, before we start up
+	 * pmap.
+	 */
+	cpu_exception_init();
 
 	pmap_bootstrap();
 }

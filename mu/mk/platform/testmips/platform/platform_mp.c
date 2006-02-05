@@ -2,7 +2,6 @@
 #include <core/mp.h>
 #include <core/spinlock.h>
 #include <cpu/cpuinfo.h>
-#include <cpu/exception.h>
 #include <cpu/interrupt.h>
 #include <cpu/memory.h>
 #include <cpu/pcpu.h>
@@ -104,10 +103,6 @@ platform_mp_start_one(void)
 
 	/* Identify the CPU.  */
 	pcpu->pc_cpuinfo = cpu_identify();
-
-	/* XXX are exception handlers in global memory?  if so, move.  */
-	/* Install exception handlers.  */
-	cpu_exception_init();
 
 	/* Clear the TLB and add a wired mapping for my per-CPU data.  */
 	tlb_init(pcpu_addr);

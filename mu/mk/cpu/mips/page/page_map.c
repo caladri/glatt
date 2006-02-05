@@ -346,6 +346,8 @@ pmap_update(pt_entry_t *pte, paddr_t paddr, pt_entry_t flags)
 {
 	paddr_t opaddr;
 
+	paddr &= ~PAGE_MASK;
+
 	opaddr = TLBLO_PTE_TO_PA(*pte);
 	if (pte_test(pte, PG_V)) {
 		if (opaddr == paddr) {

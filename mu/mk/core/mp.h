@@ -9,7 +9,4 @@ mp_whoami(void)
 	return (cpu_mp_whoami());
 }
 
-int mp_block_but_one(cpu_id_t);
-int mp_unblock_but_one(cpu_id_t);
-
 #endif /* !_CORE_MP_H_ */

@@ -51,10 +51,10 @@ platform_start(void)
 	uint64_t membytes = *(volatile uint64_t *)XKPHYS_MAP(XKPHYS_UC, 0x11000000 | 0x0090);
 	int error;
 
-	error = mp_block_but_one(mp_whoami());
-	if (error != 0) {
-		/* XXX panic.  */
-	}
+	/*
+	 * XXX if other CPUs could be running, we should stop them here.  Sort
+	 * out the mess later.
+	 */
 
 	if (use_framebuffer)
 		framebuffer_init(&testmips_framebuffer, 640, 480);

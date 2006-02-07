@@ -17,8 +17,6 @@
 #define	TEST_MP_DEV_NCPUS	0x0010
 #define	TEST_MP_DEV_START	0x0020
 #define	TEST_MP_DEV_STARTADDR	0x0030
-#define	TEST_MP_DEV_PAUSE	0x0050
-#define	TEST_MP_DEV_UNPAUSE	0x0060
 #define	TEST_MP_DEV_STACK	0x0070
 
 #define	TEST_MP_DEV_FUNCTION(f)						\
@@ -32,20 +30,6 @@ cpu_id_t
 platform_mp_whoami(void)
 {
 	return (*TEST_MP_DEV_FUNCTION(TEST_MP_DEV_WHOAMI));
-}
-
-int
-platform_mp_block_but_one(cpu_id_t one)
-{
-	*TEST_MP_DEV_FUNCTION(TEST_MP_DEV_PAUSE) = one;
-	return (0);
-}
-
-int
-platform_mp_unblock_but_one(cpu_id_t one)
-{
-	*TEST_MP_DEV_FUNCTION(TEST_MP_DEV_UNPAUSE) = one;
-	return (0);
 }
 
 void

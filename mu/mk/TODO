@@ -1,7 +1,42 @@
-o) exception handlers
-o) interrupts
-o) tasks
-o) clocks
-o) real locks and locking primitives
-o) threads
-o) VM
+Ad infinitum: Keep going over code and restructuring to make less ugly and
+hokey and hard to maintain.
+
+o) VM.
+	o) Cleanup pmap and friends.
+	o) Better physical page data structures.
+	o) Virtual page data structures.
+	o) Virtual address space data structure, so we can find free spaces to
+	   use.
+	o) Allocate multiple contiguous physical pages.
+	o) Malloc.
+	o) Locking.
+	o) IPC.
+	o) Userland.
+o) Exceptions.
+	o) Prevent nesting/corruption of the frame.
+	o) TLB handling.
+	o) Interrupt handling.
+		o) Interrupt registration.
+			o) Clocks.
+o) Tasks.
+	o) Task switching.
+		o) Userland.
+		o) Scheduling.
+	o) Threads.
+		o) Userland.
+		o) Scheduling.
+	o) Userland.
+o) Clocks.
+	o) Scheduling.
+o) Locking.
+o) IPC.
+	o) Userland.
+o) Device drivers.
+	o) Ethernet.
+		o) IP.
+			o) Arp.
+			o) Multicast.
+				o) IPC.
+			o) IPC.
+			o) Userland.
+		o) IPC.

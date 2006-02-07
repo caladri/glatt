@@ -34,7 +34,7 @@ exception(void)
 {
 	unsigned i;
 
-	kcprintf("EXCEPTION\n");
+	kcprintf("EXCEPTION BadVaddr=%p\n", (void *)cpu_read_badvaddr());
 	kcprintf("Register dump:\n");
 	for (i = 0; i < FRAME_COUNT; i++) {
 		kcprintf("\t%#lx\n", pcpu_me()->pc_frame.f_regs[i]);

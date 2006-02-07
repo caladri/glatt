@@ -45,6 +45,7 @@ cpu_write_ ## name(uint64_t value)					\
 }									\
 struct __hack
 
+CP0_RW64(badvaddr, CP0_BADVADDR);
 CP0_RW64(tlb_entryhi, CP0_TLBENTRYHI);
 CP0_RW64(tlb_entrylo0, CP0_TLBENTRYLO0);
 CP0_RW64(tlb_entrylo1, CP0_TLBENTRYLO1);

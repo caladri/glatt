@@ -11,16 +11,6 @@
 #include <io/device/console/framebuffer.h>
 #include <vm/page.h>
 
-void
-memcpy(void *dst, const void *src, size_t len)
-{
-	uint8_t *d = dst;
-	const uint8_t *s = src;
-
-	while (len--)
-		*d++ = *s++;
-}
-
 static void
 testmips_framebuffer_load(struct framebuffer *fb, struct bgr *bitmap)
 {

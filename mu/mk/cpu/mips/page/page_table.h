@@ -1,6 +1,10 @@
 #ifndef	_PAGE_TABLE_H_
 #define	_PAGE_TABLE_H_
 
+#ifndef	ASSEMBLER
+#include <vm/types.h>
+#endif
+
 /*
  * 64-bit PTE.
  */
@@ -113,5 +117,9 @@ typedef	uint64_t	pt_entry_t;
 #define	pte_clear(pte, bit)	((*(pte)) &= ~(bit))
 #define	pte_set(pte, bit)	((*(pte)) |= (bit))
 #define	pte_test(pte, bit)	(((*(pte)) & (bit)) == (bit))
+
+#ifndef	ASSEMBLER
+pt_entry_t *pmap_find(struct vm *, vaddr_t);
+#endif
 
 #endif /* !_PAGE_TABLE_H_ */

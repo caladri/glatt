@@ -105,7 +105,6 @@ pmap_index0(vaddr_t vaddr)
 
 static int pmap_alloc_pte(struct pmap *, vaddr_t, pt_entry_t **);
 static void pmap_collect(struct pmap *);
-static pt_entry_t *pmap_find(struct pmap *, vaddr_t);
 static struct pmap_lev0 *pmap_find0(struct pmap *, vaddr_t);
 static struct pmap_lev1 *pmap_find1(struct pmap_lev0 *, vaddr_t);
 static struct pmap_lev2 *pmap_find2(struct pmap_lev1 *, vaddr_t);
@@ -148,11 +147,34 @@ pmap_extract(struct vm *vm, vaddr_t vaddr, paddr_t *paddrp)
 
 	if (vaddr >= pm->pm_end || vaddr <= pm->pm_base)
 		return (ERROR_NOT_PERMITTED);
-	pte = pmap_find(pm, vaddr);
+	pte = pmap_find(vm, vaddr);
 	if (pte == NULL)
 		return (ERROR_NOT_FOUND);
 	*paddrp = TLBLO_PTE_TO_PA(*pte);
 	return (0);
+}
+
+pt_entry_t *
+pmap_find(struct vm *vm, vaddr_t vaddr)
+{
+	struct pmap *pm;
+	struct pmap_lev0 *pml0;
+	struct pmap_lev1 *pml1;
+	struct pmap_lev2 *pml2;
+
+	pm = vm->vm_pmap;
+	vaddr -= pm->pm_base;
+
+	pml0 = pmap_find0(pm, vaddr);
+	if (pml0 == NULL)
+		return (NULL);
+	pml1 = pmap_find1(pml0, vaddr);
+	if (pml1 == NULL)
+		return (NULL);
+	pml2 = pmap_find2(pml1, vaddr);
+	if (pml2 == NULL)
+		return (NULL);
+	return (pmap_find_pte(pml2, vaddr));
 }
 
 int
@@ -190,12 +212,9 @@ pmap_map_direct(struct vm *vm, paddr_t paddr, vaddr_t *vaddrp)
 int
 pmap_unmap(struct vm *vm, vaddr_t vaddr)
 {
-	struct pmap *pm;
 	pt_entry_t *pte;
 
-	pm = vm->vm_pmap;
-
-	pte = pmap_find(pm, vaddr);
+	pte = pmap_find(vm, vaddr);
 	if (pte == NULL)
 		return (ERROR_NOT_FOUND);
 	/* Invalidate by updating to not have PG_V set.  */
@@ -265,27 +284,6 @@ static void
 pmap_collect(struct pmap *pm)
 {
 	panic("%s: can't garbage collect yet.");
-}
-
-static pt_entry_t *
-pmap_find(struct pmap *pm, vaddr_t vaddr)
-{
-	struct pmap_lev0 *pml0;
-	struct pmap_lev1 *pml1;
-	struct pmap_lev2 *pml2;
-
-	vaddr -= pm->pm_base;
-
-	pml0 = pmap_find0(pm, vaddr);
-	if (pml0 == NULL)
-		return (NULL);
-	pml1 = pmap_find1(pml0, vaddr);
-	if (pml1 == NULL)
-		return (NULL);
-	pml2 = pmap_find2(pml1, vaddr);
-	if (pml2 == NULL)
-		return (NULL);
-	return (pmap_find_pte(pml2, vaddr));
 }
 
 static struct pmap_lev0 *

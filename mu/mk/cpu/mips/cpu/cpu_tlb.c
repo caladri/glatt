@@ -5,6 +5,7 @@
 #include <cpu/memory.h>
 #include <cpu/pcpu.h>
 #include <cpu/tlb.h>
+#include <db/db.h>
 #include <page/page_table.h>
 #include <vm/page.h>
 
@@ -106,6 +107,26 @@ tlb_invalidate(vaddr_t vaddr, unsigned asid)
 	i = cpu_read_tlb_index();
 	if (i >= 0)
 		tlb_invalidate_one(i);
+	critical_exit(crit);
+}
+
+void
+tlb_fill(struct vm *vm, vaddr_t vaddr)
+{
+	critical_section_t crit;
+	register_t asid;
+	pt_entry_t *pte;
+
+	crit = critical_enter();
+	pte = pmap_find(vm, vaddr); /* XXX lock.  */
+	if (pte == NULL)
+		panic("%s: pmap_find returned NULL.", __func__);
+	asid = cpu_read_tlb_entryhi();
+	cpu_write_tlb_entryhi(TLBHI_ENTRY(vaddr, 0));
+	cpu_write_tlb_entrylo0(*pte);
+	cpu_write_tlb_entrylo1(*pte + TLBLO_PA_TO_PFN(TLB_PAGE_SIZE));
+	tlb_write_random();
+	cpu_write_tlb_entryhi(asid);
 	critical_exit(crit);
 }
 

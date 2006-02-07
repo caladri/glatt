@@ -1,8 +1,16 @@
 #include <core/_macro.h>
 #include <cpu/asm.h>
+#include <cpu/frame.h>
 #include <cpu/memory.h>
+#include <cpu/pcpu.h>
 
 	/* Vectors for exception, interrupt and TLB miss handling.  */
+
+	/*
+	 * XXX we have to disable interrupts and properly detect a nested
+	 * exception to prevent letting processes get restored with
+	 * corrupt frames.
+	 */
 
 	.data
 exception_table:
@@ -77,36 +85,149 @@ VECTOR_ENTRY(exception)
 	dsll	k0, 3	/* We're indexing an array of 64-bit values.  */
 	daddu	k0, k1
 	ld	k0, 0(k0)
-	dla	k1, 1f
 	jr	k0
 	nop
-1:	KREGS_RESTORE;
-	eret
 	.set at
 VECTOR_END(exception)
 
 VECTOR_ENTRY(xtlb)
 	.set noat
 	KREGS_SAVE;
-	dla	k1, 1f
 	j	tlb_exception
 	nop
-1:	KREGS_RESTORE;
-	eret
 	.set at
 VECTOR_END(xtlb)
 
 ENTRY(generic_exception)
-1:	b	1b
+	.set noat
+	dla	k0, 1f
+	j	exception_frame_save
 	nop
+1:	jal	exception
+	nop
+	dla	k0, 1f
+	j	exception_frame_restore
+	nop
+1:	KREGS_RESTORE;
+	eret
+	.set at
 END(generic_exception)
 
 ENTRY(tlb_exception)
-1:	b	1b
+	.set noat
+	j	generic_exception
 	nop
+//	KREGS_RESTORE;
+//	eret
+	.set at
 END(tlb_exception)
 
 ENTRY(cache_exception)
-1:	b	1b
+	.set noat
+	j	generic_exception
 	nop
+//	KREGS_RESTORE;
+//	eret
+	.set at
 END(cache_exception)
+
+ENTRY(exception_frame_save)		/* Return address is k0.  */
+	.set noat
+	dla	k1, PCPU_VIRTUAL	/* We assume the frame is first.  */
+	sd	AT, (FRAME_AT * 8)(k1)
+	sd	v0, (FRAME_V0 * 8)(k1)
+	sd	v1, (FRAME_V1 * 8)(k1)
+	sd	a0, (FRAME_A0 * 8)(k1)
+	sd	a1, (FRAME_A1 * 8)(k1)
+	sd	a2, (FRAME_A2 * 8)(k1)
+	sd	a3, (FRAME_A3 * 8)(k1)
+	sd	a4, (FRAME_A4 * 8)(k1)
+	sd	a5, (FRAME_A5 * 8)(k1)
+	sd	a6, (FRAME_A6 * 8)(k1)
+	sd	a7, (FRAME_A7 * 8)(k1)
+	sd	t0, (FRAME_T0 * 8)(k1)
+	sd	t1, (FRAME_T1 * 8)(k1)
+	sd	t2, (FRAME_T2 * 8)(k1)
+	sd	t3, (FRAME_T3 * 8)(k1)
+
+	/* Use freshly-available temporaries to start loading externals.  */
+	mfc0	t0, CP0_STATUS
+	dmfc0	t1, CP0_EXCPC
+	mfhi	t2
+	mflo	t3
+
+	sd	s0, (FRAME_S0 * 8)(k1)
+	sd	s1, (FRAME_S1 * 8)(k1)
+	sd	s2, (FRAME_S2 * 8)(k1)
+	sd	s3, (FRAME_S3 * 8)(k1)
+	sd	s4, (FRAME_S4 * 8)(k1)
+	sd	s5, (FRAME_S5 * 8)(k1)
+	sd	s6, (FRAME_S6 * 8)(k1)
+	sd	s7, (FRAME_S7 * 8)(k1)
+	sd	t8, (FRAME_T8 * 8)(k1)
+	sd	t9, (FRAME_T9 * 8)(k1)
+	sd	gp, (FRAME_GP * 8)(k1)
+	sd	sp, (FRAME_SP * 8)(k1)
+	sd	s8, (FRAME_S8 * 8)(k1)
+	sd	ra, (FRAME_RA * 8)(k1)
+
+	sd	t0, (FRAME_STATUS * 8)(k1)
+	sd	t1, (FRAME_EPC * 8)(k1)
+	sd	t2, (FRAME_HI * 8)(k1)
+	sd	t3, (FRAME_LO * 8)(k1)
+
+	jr	k0
+	nop
+	.set at
+END(exception_frame_save)
+
+ENTRY(exception_frame_restore)		/* Return address is k0.  */
+	.set noat
+	dla	k1, PCPU_VIRTUAL	/* We assume the frame is first.  */
+
+	ld      t3, (FRAME_LO * 8)(k1)
+	ld      t2, (FRAME_HI * 8)(k1)
+	ld      t1, (FRAME_EPC * 8)(k1)
+	ld      t0, (FRAME_STATUS * 8)(k1)
+
+	ld      ra, (FRAME_RA * 8)(k1)
+	ld      s8, (FRAME_S8 * 8)(k1)
+	ld      sp, (FRAME_SP * 8)(k1)
+	ld      gp, (FRAME_GP * 8)(k1)
+	ld      t9, (FRAME_T9 * 8)(k1)
+	ld      t8, (FRAME_T8 * 8)(k1)
+	ld      s7, (FRAME_S7 * 8)(k1)
+	ld      s6, (FRAME_S6 * 8)(k1)
+	ld      s5, (FRAME_S5 * 8)(k1)
+	ld      s4, (FRAME_S4 * 8)(k1)
+	ld      s3, (FRAME_S3 * 8)(k1)
+	ld      s2, (FRAME_S2 * 8)(k1)
+	ld      s1, (FRAME_S1 * 8)(k1)
+	ld      s0, (FRAME_S0 * 8)(k1)
+
+	/* Before we nuke temporaries, restore externals.  */
+	mtlo	t3
+	mthi	t2
+	dmtc0	t1, CP0_EXCPC
+	mtc0	t0, CP0_STATUS
+
+	ld      t3, (FRAME_T3 * 8)(k1)
+	ld      t2, (FRAME_T2 * 8)(k1)
+	ld      t1, (FRAME_T1 * 8)(k1)
+	ld      t0, (FRAME_T0 * 8)(k1)
+	ld      a7, (FRAME_A7 * 8)(k1)
+	ld      a6, (FRAME_A6 * 8)(k1)
+	ld      a5, (FRAME_A5 * 8)(k1)
+	ld      a4, (FRAME_A4 * 8)(k1)
+	ld      a3, (FRAME_A3 * 8)(k1)
+	ld      a2, (FRAME_A2 * 8)(k1)
+	ld      a1, (FRAME_A1 * 8)(k1)
+	ld      a0, (FRAME_A0 * 8)(k1)
+	ld      v1, (FRAME_V1 * 8)(k1)
+	ld      v0, (FRAME_V0 * 8)(k1)
+	ld      AT, (FRAME_AT * 8)(k1)
+
+	jr	k0
+	nop
+	.set at
+END(exception_frame_restore)

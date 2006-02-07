@@ -2,7 +2,9 @@
 #include <core/string.h>
 #include <cpu/cpu.h>
 #include <cpu/exception.h>
+#include <cpu/frame.h>
 #include <cpu/memory.h>
+#include <cpu/pcpu.h>
 #include <cpu/register.h>
 #include <db/db.h>
 #include <io/device/console/console.h>
@@ -25,6 +27,20 @@ cpu_exception_init(void)
 	cpu_exception_vector_install(EXCEPTION_BASE_XTLBMISS, xtlb_vector,
 				     xtlb_vector_end);
 	cpu_write_status(cpu_read_status() & ~CP0_STATUS_BEV);
+}
+
+void
+exception(void)
+{
+	unsigned i;
+
+	kcprintf("EXCEPTION\n");
+	kcprintf("Register dump:\n");
+	for (i = 0; i < FRAME_COUNT; i++) {
+		kcprintf("\t%#lx\n", pcpu_me()->pc_frame.f_regs[i]);
+	}
+	kcprintf("End of register dump.\n");
+	for (;;)	continue;
 }
 
 static void

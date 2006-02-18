@@ -99,13 +99,13 @@ static void
 framebuffer_putxy(struct framebuffer *fb, char ch, unsigned x, unsigned y)
 {
 	struct bgr *bit;
-	uint8_t *character;
+	uint8_t *glyph;
 	unsigned r, c, s;
 
-	character = &fb->fb_font->f_charset[ch * fb->fb_font->f_height];
+	glyph = &fb->fb_font->f_charset[ch * fb->fb_font->f_height];
 	for (r = 0; r < fb->fb_font->f_height; r++) {
 		for (c = 0; c < fb->fb_font->f_width; c++) {
-			s = character[r] & (1 << (fb->fb_font->f_width - c));
+			s = glyph[r] & (1 << (fb->fb_font->f_width - c));
 			bit = &fb->fb_buffer[((x * fb->fb_font->f_width) + c) +
 				(((y * fb->fb_font->f_height) + r) *
 				 fb->fb_width)];

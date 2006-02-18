@@ -109,6 +109,7 @@ static struct pmap_lev0 *pmap_find0(struct pmap *, vaddr_t);
 static struct pmap_lev1 *pmap_find1(struct pmap_lev0 *, vaddr_t);
 static struct pmap_lev2 *pmap_find2(struct pmap_lev1 *, vaddr_t);
 static pt_entry_t *pmap_find_pte(struct pmap_lev2 *, vaddr_t);
+static int pmap_init(struct vm *, vaddr_t, vaddr_t);
 static bool pmap_is_direct(vaddr_t);
 static void pmap_pinit(struct pmap *, vaddr_t, vaddr_t);
 static void pmap_update(pt_entry_t *, paddr_t, pt_entry_t);
@@ -125,7 +126,9 @@ pmap_bootstrap(void)
 		panic("%s: page_alloc_direct failed: %u", __func__, error);
 	/* XXX map this at a fixed virtual address.  */
 	kernel_vm.vm_pmap = (struct pmap *)vaddr;
-	pmap_pinit(kernel_vm.vm_pmap, XKSEG_BASE, XKSEG_END);
+	error = pmap_init(&kernel_vm, XKSEG_BASE, XKSEG_END);
+	if (error != 0)
+		panic("%s: pmap_init failed: %u", __func__, error);
 }
 
 int
@@ -317,6 +320,22 @@ pmap_find_pte(struct pmap_lev2 *pml2, vaddr_t vaddr)
 	if (pml2 == NULL)
 		return (NULL);
 	return (&pml2->pml2_entries[pmap_index_pte(vaddr)]);
+}
+
+/*
+ * XXX push down allocation of the pmap.
+ */
+static int
+pmap_init(struct vm *vm, vaddr_t base, vaddr_t end)
+{
+	int error;
+
+	pmap_pinit(vm->vm_pmap, base, end);
+
+	error = vm_insert_range(vm, base, end);
+	if (error != 0)
+		return (error);
+	return (0);
 }
 
 static bool

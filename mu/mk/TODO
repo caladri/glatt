@@ -2,6 +2,7 @@ Ad infinitum: Keep going over code and restructuring to make less ugly and
 hokey and hard to maintain.
 
 o) VM.
+	o) Pool allocator with physical and virtual backings.
 	o) Cleanup pmap and friends.
 	o) Better physical page data structures.
 	o) Virtual page data structures.

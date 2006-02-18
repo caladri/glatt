@@ -2,6 +2,13 @@
 #include <core/error.h>
 #include <vm/vm.h>
 
+struct vm_index {
+	vaddr_t vmi_base;
+	size_t vmi_size;
+	struct vm_index *vmi_left;
+	struct vm_index *vmi_right;
+};
+
 struct vm kernel_vm;
 
 int

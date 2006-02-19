@@ -13,6 +13,8 @@ struct vm {
 
 extern struct vm kernel_vm;
 
+void vm_init(void);
+
 int vm_alloc_address(struct vm *, vaddr_t *, size_t);
 int vm_free_address(struct vm *, vaddr_t);
 int vm_insert_range(struct vm *, vaddr_t, vaddr_t);

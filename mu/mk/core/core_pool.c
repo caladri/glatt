@@ -21,8 +21,9 @@ struct pool_page {
 	size_t pp_items;
 };
 
-static struct pool_page *pool_page(struct pool_item *);
 static struct pool_item *pool_get(struct pool *);
+static void pool_initialize_page(struct pool_page *);
+static struct pool_page *pool_page(struct pool_item *);
 
 void *
 pool_allocate(struct pool *pool)
@@ -64,7 +65,8 @@ pool_allocate(struct pool *pool)
 	page->pp_pool = pool;
 	page->pp_next = pool->pool_pages;
 	page->pp_items = 0;
-	/* XXX initialize the pool_items.  */
+	pool->pool_pages = page;
+	pool_initialize_page(page);
 
 	item = pool_get(pool);
 	if (item++ == NULL)
@@ -105,16 +107,6 @@ pool_destroy(struct pool *pool)
 	return (ERROR_NOT_IMPLEMENTED);
 }
 
-static struct pool_page *
-pool_page(struct pool_item *item)
-{
-	uintptr_t page;
-
-	page = (uintptr_t)item;
-	page = PAGE_FLOOR(page);
-	return ((struct pool_page *)page);
-}
-
 static struct pool_item *
 pool_get(struct pool *pool)
 {
@@ -150,4 +142,34 @@ pool_get(struct pool *pool)
 		}
 	}
 	return (NULL);
+}
+
+static void
+pool_initialize_page(struct pool_page *page)
+{
+	struct pool_item *item;
+	uintptr_t addr;
+
+	addr = (uintptr_t)(page + 1);
+	for (;;) {
+		if (PAGE_FLOOR(addr) != (uintptr_t)page)
+			break;
+		item = (struct pool_item *)addr;
+		ASSERT(pool_page(item) == page,
+		       "item is within its page");
+		item->pi_flags = POOL_ITEM_DEFAULT;
+		item->pi_flags |= POOL_ITEM_FREE;
+		addr += sizeof *item;
+		addr += page->pp_pool->pool_size;
+	}
+}
+
+static struct pool_page *
+pool_page(struct pool_item *item)
+{
+	uintptr_t page;
+
+	page = (uintptr_t)item;
+	page = PAGE_FLOOR(page);
+	return ((struct pool_page *)page);
 }

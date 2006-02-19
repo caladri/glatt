@@ -18,6 +18,7 @@ static struct pool vm_index_pool;
 struct vm kernel_vm;
 
 static void vm_insert_index(struct vm_index *, struct vm_index *);
+static int vm_use_index(struct vm_index *, size_t);
 
 void
 vm_init(void)
@@ -33,7 +34,39 @@ vm_init(void)
 int
 vm_alloc_address(struct vm *vm, vaddr_t *vaddrp, size_t pages)
 {
-	return (ERROR_NOT_IMPLEMENTED);
+	struct vm_index *vmi;
+	struct vm_index *t;
+	int error;
+
+	vmi = NULL;
+
+	/* Look for a best match.  */
+	for (t = vm->vm_index_free; t != NULL; t = t->vmi_free_next) {
+		if (t->vmi_size == pages) {
+			error = vm_use_index(t, pages);
+			if (error != 0)
+				return (error);
+			*vaddrp = t->vmi_base;
+			return (0);
+		}
+		if (t->vmi_size > pages) {
+			if (vmi == NULL) {
+				vmi = t;
+			} else {
+				if (vmi->vmi_size > t->vmi_size)
+					vmi = t;
+			}
+		}
+	}
+	if (vmi == NULL) {
+		/* XXX Collapse tree and rebalance if possible.  */
+		return (ERROR_NOT_IMPLEMENTED);
+	}
+	error = vm_use_index(vmi, pages);
+	if (error != 0)
+		return (error);
+	*vaddrp = vmi->vmi_base;
+	return (0);
 }
 
 int
@@ -71,4 +104,22 @@ static void
 vm_insert_index(struct vm_index *t, struct vm_index *vmi)
 {
 	panic("%s: too lazy to implement a tree right now!", __func__);
+}
+
+static int
+vm_use_index(struct vm_index *vmi, size_t pages)
+{
+	if (vmi->vmi_size == pages) {
+		if (vmi->vmi_free_prev != NULL) {
+			vmi->vmi_free_prev->vmi_free_next = vmi->vmi_free_next;
+		}
+		if (vmi->vmi_free_next != NULL) {
+			vmi->vmi_free_next->vmi_free_prev = vmi->vmi_free_prev;
+		}
+		return (0);
+	}
+	/*
+	 * XXX Can't split an allocation yet.
+	 */
+	return (ERROR_NOT_IMPLEMENTED);
 }

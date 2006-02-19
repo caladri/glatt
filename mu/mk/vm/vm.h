@@ -9,6 +9,7 @@ struct vm_index;
 struct vm {
 	struct pmap *vm_pmap;
 	struct vm_index *vm_index;
+	struct vm_index *vm_index_free;
 };
 
 extern struct vm kernel_vm;

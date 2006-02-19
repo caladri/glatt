@@ -18,7 +18,7 @@ vm_alloc_address(struct vm *vm, vaddr_t *vaddrp, size_t pages)
 }
 
 int
-vm_free_address(struct vm *vm, vaddr_t vaddr, size_t pages)
+vm_free_address(struct vm *vm, vaddr_t vaddr)
 {
 	return (ERROR_NOT_IMPLEMENTED);
 }

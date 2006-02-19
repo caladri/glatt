@@ -42,7 +42,7 @@ pool_allocate(struct pool *pool)
 		/* XXX check whether we could block, try to GC some shit.  */
 		return (NULL);
 	}
-	if ((pool->pool_flags & POOL_VIRTUAL) == 0) {
+	if ((pool->pool_flags & POOL_VIRTUAL) != 0) {
 		error = vm_alloc_address(&kernel_vm, &page_mapped, PAGE_SIZE);
 		if (error == 0) {
 			error = page_map(&kernel_vm, page_addr, page_mapped);

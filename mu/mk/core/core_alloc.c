@@ -118,9 +118,36 @@ pool_page(struct pool_item *item)
 static struct pool_item *
 pool_get(struct pool *pool)
 {
+	struct pool_item *item;
+	struct pool_page *page;
 	size_t page_items;
+	uintptr_t addr;
 
 	page_items = (PAGE_SIZE - sizeof (struct pool_page)) /
 		(pool->pool_size + sizeof (struct pool_item));
+	for (page = pool->pool_pages; page != NULL; page = page->pp_next) {
+		if (page->pp_items == page_items)
+			continue;
+		addr = (uintptr_t)(page + 1);
+		for (;;) {
+			/*
+			 * If we walk past the end of the page without finding
+			 * something to give up then our item count must be
+			 * inconsistent, or we forgot to mark the items free.
+			 */
+			if (PAGE_FLOOR(addr) != (uintptr_t)page)
+				panic("%s: inconsistent item count.", __func__);
+			item = (struct pool_item *)addr;
+			ASSERT(pool_page(item) == page,
+			       "item is within its page");
+			if ((item->pi_flags & POOL_ITEM_FREE) != 0) {
+				item->pi_flags ^= POOL_ITEM_FREE;
+				page->pp_items++;
+				return (item);
+			}
+			addr += sizeof *item;
+			addr += pool->pool_size;
+		}
+	}
 	return (NULL);
 }

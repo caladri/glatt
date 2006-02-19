@@ -13,6 +13,7 @@ struct pool_item {
 	uint16_t pi_unused16;
 	uint32_t pi_unused32;
 };
+COMPILE_TIME_ASSERT(sizeof (struct pool_item) == 8);
 
 struct pool_page {
 	struct pool *pp_pool;
@@ -117,5 +118,9 @@ pool_page(struct pool_item *item)
 static struct pool_item *
 pool_get(struct pool *pool)
 {
+	size_t page_items;
+
+	page_items = (PAGE_SIZE - sizeof (struct pool_page)) /
+		(pool->pool_size + sizeof (struct pool_item));
 	return (NULL);
 }

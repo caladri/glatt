@@ -9,8 +9,9 @@
 #define	POOL_ITEM_FREE		(0x0001)
 
 struct pool_item {
-	struct pool_page *pi_page;
 	uint16_t pi_flags;
+	uint16_t pi_unused16;
+	uint32_t pi_unused32;
 };
 
 struct pool_page {
@@ -19,20 +20,22 @@ struct pool_page {
 	size_t pp_items;
 };
 
-static void *pool_get(struct pool *);
+static struct pool_page *pool_page(struct pool_item *);
+static struct pool_item *pool_get(struct pool *);
 
 void *
 pool_allocate(struct pool *pool)
 {
+	struct pool_item *item;
 	struct pool_page *page;
 	paddr_t page_addr;
 	vaddr_t page_mapped;
 	int error;
-	void *m;
 
-	m = pool_get(pool);
-	if (m != NULL)
-		return (m);
+	item = pool_get(pool);
+	if (item++ != NULL) {
+		return ((void *)item);
+	}
 	error = page_alloc(&kernel_vm, &page_addr);
 	if (error != 0) {
 		/* XXX check whether we could block, try to GC some shit.  */
@@ -60,16 +63,28 @@ pool_allocate(struct pool *pool)
 	page->pp_pool = pool;
 	page->pp_next = pool->pool_pages;
 	page->pp_items = 0;
+	/* XXX initialize the pool_items.  */
 
-	m = pool_get(pool);
-	if (m != NULL)
+	item = pool_get(pool);
+	if (item++ == NULL)
 		panic("%s: can't get memory but we just allocated!", __func__);
-	return (m);
+	return ((void *)item);
 }
 
 void
 pool_free(struct pool *pool, void *m)
 {
+	struct pool_item *item;
+	struct pool_page *page;
+
+	item = m;
+	item--;
+	item->pi_flags |= POOL_ITEM_FREE;
+	page = pool_page(item);
+	if (page->pp_items-- == 1) {
+		/* XXX free up page? */
+		panic("%s: releasing last item.", __func__);
+	}
 }
 
 int
@@ -85,10 +100,21 @@ pool_create(struct pool *pool, const char *name, size_t size, unsigned flags)
 int
 pool_destroy(struct pool *pool)
 {
+	panic("%s: can't destroy pools yet.", __func__);
 	return (ERROR_NOT_IMPLEMENTED);
 }
 
-static void *
+static struct pool_page *
+pool_page(struct pool_item *item)
+{
+	uintptr_t page;
+
+	page = (uintptr_t)item;
+	page = PAGE_FLOOR(page);
+	return ((struct pool_page *)page);
+}
+
+static struct pool_item *
 pool_get(struct pool *pool)
 {
 	return (NULL);

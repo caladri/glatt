@@ -368,7 +368,7 @@ pmap_update(pt_entry_t *pte, paddr_t paddr, pt_entry_t flags)
 	opaddr = TLBLO_PTE_TO_PA(*pte);
 	if (pte_test(pte, PG_V)) {
 		if (opaddr == paddr) {
-			/* Mapping stayed the same.  */
+			/* Mapping stayed the same, just check flags.  */
 			return;
 		}
 		/* XXX flush TLB, clear cache.  */

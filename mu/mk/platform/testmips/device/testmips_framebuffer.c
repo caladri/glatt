@@ -10,6 +10,7 @@
 #include <io/device/console/console.h>
 #include <io/device/console/framebuffer.h>
 #include <vm/page.h>
+#include <vm/vm.h>
 
 static void
 testmips_framebuffer_load(struct framebuffer *fb, struct bgr *bitmap)
@@ -99,6 +100,11 @@ platform_start(void)
 	 * pmap.
 	 */
 	cpu_exception_init();
+
+	/*
+	 * Turn on the virtual memory subsystem.
+	 */
+	vm_init();
 
 	pmap_bootstrap();
 }

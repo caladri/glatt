@@ -111,6 +111,12 @@ tlb_invalidate(struct vm *vm, vaddr_t vaddr)
 }
 
 void
+tlb_modify(vaddr_t vaddr)
+{
+	panic("%s: TLBMod %p.", __func__, vaddr);
+}
+
+void
 tlb_refill(vaddr_t vaddr)
 {
 	/* XXX     task_me()->t_vm */

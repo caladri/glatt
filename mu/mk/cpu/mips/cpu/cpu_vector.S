@@ -15,7 +15,7 @@
 	.data
 exception_table:
 	.dword	generic_exception	/* Int */
-	.dword	generic_exception	/* TLBMod */
+	.dword	tlbmod_exception	/* TLBMod */
 	.dword	tlb_exception		/* TLBL */
 	.dword	tlb_exception		/* TLBS */
 	.dword	generic_exception	/* AdEL */
@@ -128,6 +128,22 @@ ENTRY(tlb_exception)
 	eret
 	.set at
 END(tlb_exception)
+
+ENTRY(tlbmod_exception)
+	.set noat
+	dla	k0, 1f
+	j	exception_frame_save
+	nop
+1:	dmfc0	a0, CP0_BADVADDR
+	jal	tlb_modify
+	nop
+	dla	k0, 1f
+	j	exception_frame_restore
+	nop
+1:	KREGS_RESTORE;
+	eret
+	.set at
+END(tlbmod_exception)
 
 ENTRY(cache_exception)
 	.set noat

@@ -157,6 +157,8 @@ END(cache_exception)
 ENTRY(exception_frame_save)		/* Return address is k0.  */
 	.set noat
 	dla	k1, PCPU_VIRTUAL	/* We assume the frame is first.  */
+	dla	k1, PC_FRAME(k1)
+
 	sd	AT, (FRAME_AT * 8)(k1)
 	sd	v0, (FRAME_V0 * 8)(k1)
 	sd	v1, (FRAME_V1 * 8)(k1)
@@ -207,6 +209,7 @@ END(exception_frame_save)
 ENTRY(exception_frame_restore)		/* Return address is k0.  */
 	.set noat
 	dla	k1, PCPU_VIRTUAL	/* We assume the frame is first.  */
+	dla	k1, PC_FRAME(k1)
 
 	ld      t3, (FRAME_LO * 8)(k1)
 	ld      t2, (FRAME_HI * 8)(k1)

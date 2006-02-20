@@ -18,7 +18,7 @@ static struct pool vm_index_pool;
 struct vm kernel_vm;
 
 static void vm_insert_index(struct vm_index *, struct vm_index *);
-static int vm_use_index(struct vm_index *, size_t);
+static int vm_use_index(struct vm *, struct vm_index *, size_t);
 
 void
 vm_init(void)
@@ -43,7 +43,7 @@ vm_alloc_address(struct vm *vm, vaddr_t *vaddrp, size_t pages)
 	/* Look for a best match.  */
 	for (t = vm->vm_index_free; t != NULL; t = t->vmi_free_next) {
 		if (t->vmi_size == pages) {
-			error = vm_use_index(t, pages);
+			error = vm_use_index(vm, t, pages);
 			if (error != 0)
 				return (error);
 			*vaddrp = t->vmi_base;
@@ -62,7 +62,7 @@ vm_alloc_address(struct vm *vm, vaddr_t *vaddrp, size_t pages)
 		/* XXX Collapse tree and rebalance if possible.  */
 		return (ERROR_NOT_IMPLEMENTED);
 	}
-	error = vm_use_index(vmi, pages);
+	error = vm_use_index(vm, vmi, pages);
 	if (error != 0)
 		return (error);
 	*vaddrp = vmi->vmi_base;
@@ -107,19 +107,32 @@ vm_insert_index(struct vm_index *t, struct vm_index *vmi)
 }
 
 static int
-vm_use_index(struct vm_index *vmi, size_t pages)
+vm_use_index(struct vm *vm, struct vm_index *vmi, size_t pages)
 {
-	if (vmi->vmi_size == pages) {
-		if (vmi->vmi_free_prev != NULL) {
-			vmi->vmi_free_prev->vmi_free_next = vmi->vmi_free_next;
-		}
-		if (vmi->vmi_free_next != NULL) {
-			vmi->vmi_free_next->vmi_free_prev = vmi->vmi_free_prev;
-		}
-		return (0);
+	size_t count;
+	int error;
+
+	if (vmi->vmi_free_prev != NULL) {
+		vmi->vmi_free_prev->vmi_free_next = vmi->vmi_free_next;
 	}
-	/*
-	 * XXX Can't split an allocation yet.
-	 */
-	return (ERROR_NOT_IMPLEMENTED);
+	if (vmi->vmi_free_next != NULL) {
+		vmi->vmi_free_next->vmi_free_prev = vmi->vmi_free_prev;
+	}
+	if (vmi->vmi_size != pages) {
+		count = vmi->vmi_size - pages;
+		vmi->vmi_size = pages;
+		error = vm_insert_range(vm, vmi->vmi_base + pages,
+					vmi->vmi_base + pages + count);
+		if (error != 0) {
+			vmi->vmi_size += count;
+			if (vmi->vmi_free_prev != NULL) {
+				vmi->vmi_free_prev->vmi_free_next = vmi;
+			}
+			if (vmi->vmi_free_next != NULL) {
+				vmi->vmi_free_next->vmi_free_prev = vmi;
+			}
+			return (error);
+		}
+	}
+	return (0);
 }

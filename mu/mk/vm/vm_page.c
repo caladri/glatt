@@ -26,8 +26,9 @@ struct page_entry {
 	uint64_t pe_bitmask;
 };
 
+#define	PAGE_INDEX_SPLIT	(8)
 #define	PAGE_ENTRY_PAGES	(sizeof (struct page_entry) * 8)
-#define	PAGE_INDEX_ENTRIES	((PAGE_SIZE -				\
+#define	PAGE_INDEX_ENTRIES	(((PAGE_SIZE / PAGE_INDEX_SPLIT) -	\
 				  sizeof (struct page_header)) /	\
 				 sizeof (struct page_entry))
 #define	PAGE_INDEX_COUNT	(PAGE_INDEX_ENTRIES * PAGE_ENTRY_PAGES)
@@ -36,7 +37,7 @@ static struct page_index {
 	struct page_entry pi_entries[PAGE_INDEX_ENTRIES];
 } *page_index;
 
-COMPILE_TIME_ASSERT(sizeof (struct page_index) == PAGE_SIZE);
+COMPILE_TIME_ASSERT(sizeof (struct page_index) * PAGE_INDEX_SPLIT == PAGE_SIZE);
 
 void
 page_init(void)
@@ -131,7 +132,7 @@ page_insert_pages(paddr_t base, size_t pages)
 {
 	struct page_index *pi;
 	vaddr_t va;
-	size_t cnt;
+	size_t cnt, pix;
 	size_t inserted, indexcnt;
 	int error;
 
@@ -145,35 +146,36 @@ page_insert_pages(paddr_t base, size_t pages)
 		if (error != 0)
 			panic("%s: couldn't map page index directly: %d\n",
 			      __func__, error);
-		pi = (struct page_index *)va;
-
 		base += PAGE_SIZE;
 		pages--;
-		indexcnt++;
+		indexcnt += PAGE_INDEX_SPLIT;
 
-		pi->pi_header.ph_next = page_index;
-		page_index = pi;
-		pi->pi_header.ph_base = base;
-		pi->pi_header.ph_pages = MIN(pages, PAGE_INDEX_COUNT);
+		for (pix = 0; pix < PAGE_INDEX_SPLIT; pix++) {
+			pi = &((struct page_index *)va)[pix];
+			pi->pi_header.ph_next = page_index;
+			page_index = pi;
+			pi->pi_header.ph_base = base;
+			pi->pi_header.ph_pages = MIN(pages, PAGE_INDEX_COUNT);
 
-		base += (pi->pi_header.ph_pages) * PAGE_SIZE;
-		pages -= pi->pi_header.ph_pages;
-		inserted += pi->pi_header.ph_pages;
+			base += (pi->pi_header.ph_pages) * PAGE_SIZE;
+			pages -= pi->pi_header.ph_pages;
+			inserted += pi->pi_header.ph_pages;
 
-		for (cnt = 0; cnt < PAGE_INDEX_ENTRIES; cnt++) {
-			struct page_entry *pe;
-			
-			pe = &pi->pi_entries[cnt];
-			pe->pe_bitmask = 0;
-		}
-		for (cnt = 0; cnt < pi->pi_header.ph_pages; cnt++) {
-			struct page_entry *pe;
+			for (cnt = 0; cnt < PAGE_INDEX_ENTRIES; cnt++) {
+				struct page_entry *pe;
+				
+				pe = &pi->pi_entries[cnt];
+				pe->pe_bitmask = 0;
+			}
+			for (cnt = 0; cnt < pi->pi_header.ph_pages; cnt++) {
+				struct page_entry *pe;
 
-			pe = &pi->pi_entries[cnt / PAGE_ENTRY_PAGES];
-			pe->pe_bitmask |= 1 << (cnt % PAGE_ENTRY_PAGES);
+				pe = &pi->pi_entries[cnt / PAGE_ENTRY_PAGES];
+				pe->pe_bitmask |= 1 << (cnt % PAGE_ENTRY_PAGES);
+			}
 		}
 	}
-	kcprintf("PAGE: inserted %lu pages (%lu index pages)\n",
+	kcprintf("PAGE: inserted %lu pages (%lu indexes)\n",
 		 inserted, indexcnt);
 	return (0);
 }

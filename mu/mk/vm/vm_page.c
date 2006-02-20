@@ -5,15 +5,6 @@
 #include <vm/page.h>
 #include <vm/vm.h>
 
-/*
- * XXX have a few page_index in each page of memory so that we don't have to
- * iterate through a large PAGE_INDEX_ENTRIES entries.  We can quickly check
- * whether each page_index has *any* pages, but if it only has 1 page in the
- * last place we're going to check, then that's very inefficient.  Keeping a
- * hint of the last place we set a bit (or took a bit but there were others
- * still set) would be useful, too.
- */
-
 struct page_index;
 
 struct page_header {

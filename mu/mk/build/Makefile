@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.10 2006-02-20 23:12:20 juli Exp $
+# $Id: Makefile,v 1.11 2006-02-20 23:22:20 juli Exp $
 
 KERNEL?=	mu-mk
 
@@ -45,7 +45,7 @@ clean:
 
 _as.h: ${PLATFORM_ROOT}/platform/_as.sym
 	${KERNEL_CC} -x c ${KERNEL_CPPFLAGS} ${KERNEL_CFLAGS} -c -o $@.o $>
-	NM='${KERNEL_NM}' sh ${BUILD_ROOT}/mkassym.sh $@.o > $@
+	env NM='${KERNEL_NM}' sh ${BUILD_ROOT}/mkassym.sh $@.o > $@
 
 .c.o:
 	${KERNEL_CC} ${KERNEL_CPPFLAGS} ${KERNEL_CFLAGS} -c -o $@ $<

@@ -113,7 +113,17 @@ tlb_invalidate(struct vm *vm, vaddr_t vaddr)
 void
 tlb_modify(vaddr_t vaddr)
 {
-	panic("%s: TLBMod %p.", __func__, vaddr);
+	pt_entry_t *pte;
+	struct vm *vm;
+
+	vm = pcpu_me()->pc_vm;
+	pte = pmap_find(vm, vaddr); /* XXX lock.  */
+	if (pte == NULL)
+		panic("%s: pmap_find returned NULL.", __func__);
+	if (pte_test(pte, PG_RO))
+		panic("%s: write to read-only page.", __func__);
+	pte_set(pte, PG_D);	/* Mark page dirty.  */
+	tlb_update(vm, vaddr);
 }
 
 void

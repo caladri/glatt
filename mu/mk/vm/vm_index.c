@@ -103,7 +103,15 @@ vm_insert_range(struct vm *vm, vaddr_t begin, vaddr_t end)
 static void
 vm_insert_index(struct vm_index *t, struct vm_index *vmi)
 {
-	panic("%s: too lazy to implement a tree right now!", __func__);
+	struct vm_index **n;
+	if (vmi->vmi_base < t->vmi_base)
+		n = &t->vmi_left;
+	else
+		n = &t->vmi_right;
+	if (*n != NULL)
+		vm_insert_index(*n, vmi);
+	else
+		*n = vmi;
 }
 
 static int

@@ -14,6 +14,40 @@
 #define	EXCEPTION_BASE_GENERAL		(XKPHYS_MAP(XKPHYS_UC, 0x00000180))
 #define	EXCEPTION_BASE_XTLBMISS		(XKPHYS_MAP(XKPHYS_UC, 0x00000080))
 
+#define	EXCEPTION_INT			(0x00)
+#define	EXCEPTION_TLB_MOD		(0x01)
+#define	EXCEPTION_TLB_LOAD		(0x02)
+#define	EXCEPTION_TLB_STORE		(0x03)
+#define	EXCEPTION_ADDRESS_LOAD		(0x04)
+#define	EXCEPTION_ADDRESS_STORE		(0x05)
+#define	EXCEPTION_INSTRUCTION_BUS_ERROR	(0x06)
+#define	EXCEPTION_DATA_BUS_ERROR	(0x07)
+#define	EXCEPTION_SYSCALL		(0x08)
+#define	EXCEPTION_BREAKPOINT		(0x09)
+#define	EXCEPTION_RESERVED		(0x0a)
+#define	EXCEPTION_CP_UNAVAILABLE	(0x0b)
+#define	EXCEPTION_OVERFLOW		(0x0c)
+#define	EXCEPTION_TRAP			(0x0d)
+#define	EXCEPTION_VCEI			(0x0e)
+#define	EXCEPTION_FLOATING_POINT	(0x0f)
+	//.dword	generic_exception	/* Res (16) */
+	//.dword	generic_exception	/* Res (17) */
+	//.dword	generic_exception	/* Res (18) */
+	//.dword	generic_exception	/* Res (19) */
+	//.dword	generic_exception	/* Res (20) */
+	//.dword	generic_exception	/* Res (21) */
+	//.dword	generic_exception	/* Res (22) */
+#define	EXCEPTION_WATCHPOINT		(0x17)
+	//.dword	generic_exception	/* Res (24) */
+	//.dword	generic_exception	/* Res (25) */
+	//.dword	generic_exception	/* Res (26) */
+	//.dword	generic_exception	/* Res (27) */
+	//.dword	generic_exception	/* Res (28) */
+	//.dword	generic_exception	/* Res (29) */
+	//.dword	generic_exception	/* Res (30) */
+#define	EXCEPTION_VCED			(0x1f)
+
+
 extern char exception_vector[], exception_vector_end[];
 extern char xtlb_vector[], xtlb_vector_end[];
 
@@ -32,14 +66,13 @@ cpu_exception_init(void)
 void
 exception(void)
 {
-	unsigned i;
+	unsigned cause;
+	unsigned code;
 
-	kcprintf("EXCEPTION BadVaddr=%p\n", (void *)cpu_read_badvaddr());
-	kcprintf("Register dump:\n");
-	for (i = 0; i < FRAME_COUNT; i++) {
-		kcprintf("\t%#lx\n", pcpu_me()->pc_frame.f_regs[i]);
-	}
-	kcprintf("End of register dump.\n");
+	cause = cpu_read_cause();
+	code = (cause & CP0_CAUSE_EXCEPTION) >> CP0_CAUSE_EXCEPTION_SHIFT;
+
+	kcprintf("\n\nFatal trap type %u:\n", code);
 	for (;;)	continue;
 }
 

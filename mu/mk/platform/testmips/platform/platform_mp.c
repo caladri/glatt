@@ -18,6 +18,7 @@
 #define	TEST_MP_DEV_START	0x0020
 #define	TEST_MP_DEV_STARTADDR	0x0030
 #define	TEST_MP_DEV_STACK	0x0070
+#define	TEST_MP_DEV_MEMORY	0x0090
 
 #define	TEST_MP_DEV_FUNCTION(f)						\
 	(volatile uint64_t *)XKPHYS_MAP(XKPHYS_UC, TEST_MP_DEV_BASE + (f))
@@ -25,6 +26,12 @@
 static void platform_mp_start_one(void);
 
 static struct spinlock startup_lock;
+
+size_t
+platform_mp_memory(void)
+{
+	return ((size_t)*TEST_MP_DEV_FUNCTION(TEST_MP_DEV_MEMORY));
+}
 
 cpu_id_t
 platform_mp_whoami(void)
@@ -127,10 +134,10 @@ platform_mp_start_one(void)
 	kcprintf("Mapped virtual address: %p\n", p);
 	*p = (uint64_t)XKPHYS_MAP(XKPHYS_UC, page_addr) + 3;
 	ASSERT(*p == (uint64_t)XKPHYS_MAP(XKPHYS_UC, page_addr) + 3, "page content valid");
-	kcprintf("cpu%u: VM appears to work.\n", mp_whoami());
 	error = vm_free_address(&kernel_vm, vaddr);
 	if (error != 0)
 		panic("%s: vm_free_address failed: %u", __func__, error);
+	kcprintf("cpu%u: VM appears to work.\n", mp_whoami());
 	/* XXX end testcode.  */
 
 	/*

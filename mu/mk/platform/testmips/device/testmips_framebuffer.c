@@ -48,8 +48,7 @@ void
 platform_start(void)
 {
 	static const int use_framebuffer = 0;
-	/* XXX test::mp function memory() */
-	uint64_t membytes = *(volatile uint64_t *)XKPHYS_MAP(XKPHYS_UC, 0x11000000 | 0x0090);
+	size_t membytes;
 	int error;
 
 	/*
@@ -83,6 +82,7 @@ platform_start(void)
 #define	KERNEL_MAX_SIZE		(4 * 1024 * 1024)
 #define	KERNEL_OFFSET		(1 * 1024 * 1024)
 #define	KERNEL_PHYSICAL_HOLE	(KERNEL_MAX_SIZE + KERNEL_OFFSET)
+	membytes = platform_mp_memory();
 	if (membytes <= KERNEL_PHYSICAL_HOLE)
 		panic("%s: not enough attached memory.");
 	membytes -= KERNEL_PHYSICAL_HOLE;
@@ -105,6 +105,8 @@ platform_start(void)
 	 * Turn on the virtual memory subsystem.
 	 */
 	vm_init();
+
+	vm_setup(&kernel_vm);
 
 	pmap_bootstrap();
 }

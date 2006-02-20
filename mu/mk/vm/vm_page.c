@@ -148,12 +148,12 @@ page_insert_pages(paddr_t base, size_t pages)
 			pi->pi_header.ph_base = base;
 			pi->pi_header.ph_pages = MIN(pages, PAGE_INDEX_COUNT);
 
+			if (pages != 0)
+				usedindex++;
 			base += (pi->pi_header.ph_pages) * PAGE_SIZE;
 			pages -= pi->pi_header.ph_pages;
 			inserted += pi->pi_header.ph_pages;
 
-			if (pages != 0)
-				usedindex++;
 			indexcnt++;
 
 			for (cnt = 0; cnt < PAGE_INDEX_ENTRIES; cnt++) {
@@ -170,8 +170,10 @@ page_insert_pages(paddr_t base, size_t pages)
 			}
 		}
 	}
-	kcprintf("PAGE: inserted %lu pages (%lu/%lu indexes in use in %u pages)\n",
-		 inserted, usedindex, indexcnt, indexpages);
+	kcprintf("PAGE: inserted %lu pages (%luM)\n", inserted,
+		 (inserted * PAGE_SIZE) / (1024 * 1024));
+	kcprintf("PAGE: %lu/%lu indexes in use in %lu pages\n",
+		 usedindex, indexcnt, indexpages);
 	return (0);
 }
 

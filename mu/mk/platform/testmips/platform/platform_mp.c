@@ -101,6 +101,29 @@ platform_mp_start_one(void)
 	cpu_interrupt_enable();
 
 	/*
+	 * Get a physical page, get a virtual address, map it, write to it,
+	 * read from it.
+	 */
+	paddr_t page_addr;
+	vaddr_t vaddr;
+	volatile uint64_t *p;
+
+	error = page_alloc(&kernel_vm, &page_addr);
+	if (error != 0)
+		panic("%s: page_alloc failed: %u", __func__, error);
+	error = vm_alloc_address(&kernel_vm, &vaddr, 1);
+	if (error != 0)
+		panic("%s: vm_alloc_address failed: %u", __func__, error);
+	error = page_map(&kernel_vm, vaddr, page_addr);
+	if (error != 0)
+		panic("%s: page_map failed: %u", __func__, error);
+	p = (volatile uint64_t *)vaddr;
+	*p = (uint64_t)XKPHYS_MAP(XKPHYS_UC, page_addr);
+	ASSERT(*p == (uint64_t)XKPHYS_MAP(XKPHYS_UC, page_addr), "page content valid");
+	kcprintf("cpu%u: VM appears to work.\n", mp_whoami());
+	/* XXX end testcode.  */
+
+	/*
 	 * XXX Create a task+thread for us and switch to it.
 	 */
 	for (;;)	continue;

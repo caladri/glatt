@@ -1,6 +1,7 @@
 #include <core/types.h>
 #include <core/mp.h>
 #include <core/spinlock.h>
+#include <core/string.h>
 #include <cpu/cpuinfo.h>
 #include <cpu/interrupt.h>
 #include <cpu/memory.h>
@@ -139,13 +140,27 @@ platform_mp_start_one(void)
 	if (error != 0)
 		panic("%s: vm_free_address failed: %u", __func__, error);
 	kcprintf("cpu%u: VM appears to work.\n", mp_whoami());
+
+	error = vm_alloc(&kernel_vm, 10 * 1024 * 1024, &vaddr);
+	if (error != 0)
+		panic("%s: vm_alloc failed: %u", __func__, error);
+	kcprintf("Allocated 10MB at %p\n", (void *)vaddr);
+	memset((void *)vaddr, 0, 10 * 1024 * 1024);
+	kcprintf("And we zeroed it, too!\n");
+	error = vm_free(&kernel_vm, 10 * 1024 * 1024, vaddr);
+	if (error != 0)
+		panic("%s: vm_free failed: %u", __func__, error);
+
 	error = vm_alloc(&kernel_vm, 4 * 1024 * 1024, &vaddr);
 	if (error != 0)
 		panic("%s: vm_alloc failed: %u", __func__, error);
 	kcprintf("Allocated 4MB at %p\n", (void *)vaddr);
+	memset((void *)vaddr, 0, 4 * 1024 * 1024);
+	kcprintf("And we zeroed it, too!\n");
 	error = vm_free(&kernel_vm, 4 * 1024 * 1024, vaddr);
 	if (error != 0)
 		panic("%s: vm_free failed: %u", __func__, error);
+
 	/* XXX end testcode.  */
 
 	/*

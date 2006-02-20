@@ -85,6 +85,7 @@ platform_mp_start_one(void)
 		panic("cpu%u: page allocate failed: %u", mp_whoami(), error);
 	pcpu = (struct pcpu *)XKPHYS_MAP(XKPHYS_CNC, pcpu_addr);
 
+	pcpu->pc_vm = &kernel_vm;
 	/* Identify the CPU.  */
 	pcpu->pc_cpuinfo = cpu_identify();
 

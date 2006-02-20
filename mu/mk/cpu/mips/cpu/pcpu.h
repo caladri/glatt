@@ -9,11 +9,13 @@
 
 #ifndef	ASSEMBLER
 struct task;
+struct vm;
 
 	/* Per-CPU data.  */
 struct pcpu {
 	struct frame pc_frame;
 	struct task *pc_task;
+	struct vm *pc_vm;
 	struct cpuinfo pc_cpuinfo;
 };
 #endif

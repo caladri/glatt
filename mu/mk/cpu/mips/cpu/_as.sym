@@ -1,0 +1,6 @@
+#include <cpu/register.h>
+#include <cpu/pcpu.h>
+
+	/* PCPU fields we might want.  */
+ASSYM(PC_FRAME,		offsetof(struct pcpu, pc_frame));
+ASSYM(PC_TASK,		offsetof(struct pcpu, pc_task));

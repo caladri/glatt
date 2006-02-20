@@ -2,8 +2,6 @@ Ad infinitum: Keep going over code and restructuring to make less ugly and
 hokey and hard to maintain.
 
 o) VM.
-	o) Virtual address space data structure, so we can find free spaces to
-	   use.
 	o) Better physical page data structures.
 	o) Allocate multiple contiguous physical pages.
 	o) Virtual page data structures.

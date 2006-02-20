@@ -124,10 +124,10 @@ page_insert_pages(paddr_t base, size_t pages)
 	struct page_index *pi;
 	vaddr_t va;
 	size_t cnt, pix;
-	size_t inserted, indexcnt;
+	size_t inserted, indexcnt, usedindex, indexpages;
 	int error;
 
-	inserted = indexcnt = 0;
+	inserted = indexcnt = usedindex = indexpages = 0;
 
 	/*
 	 * XXX check if these pages belong in an existing pool.
@@ -139,7 +139,7 @@ page_insert_pages(paddr_t base, size_t pages)
 			      __func__, error);
 		base += PAGE_SIZE;
 		pages--;
-		indexcnt += PAGE_INDEX_SPLIT;
+		indexpages++;
 
 		for (pix = 0; pix < PAGE_INDEX_SPLIT; pix++) {
 			pi = &((struct page_index *)va)[pix];
@@ -151,6 +151,10 @@ page_insert_pages(paddr_t base, size_t pages)
 			base += (pi->pi_header.ph_pages) * PAGE_SIZE;
 			pages -= pi->pi_header.ph_pages;
 			inserted += pi->pi_header.ph_pages;
+
+			if (pages != 0)
+				usedindex++;
+			indexcnt++;
 
 			for (cnt = 0; cnt < PAGE_INDEX_ENTRIES; cnt++) {
 				struct page_entry *pe;
@@ -166,8 +170,8 @@ page_insert_pages(paddr_t base, size_t pages)
 			}
 		}
 	}
-	kcprintf("PAGE: inserted %lu pages (%lu indexes)\n",
-		 inserted, indexcnt);
+	kcprintf("PAGE: inserted %lu pages (%lu/%lu indexes in use in %u pages)\n",
+		 inserted, usedindex, indexcnt, indexpages);
 	return (0);
 }
 

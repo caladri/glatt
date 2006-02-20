@@ -114,6 +114,15 @@ static bool pmap_is_direct(vaddr_t);
 static void pmap_pinit(struct pmap *, vaddr_t, vaddr_t);
 static void pmap_update(pt_entry_t *, paddr_t, pt_entry_t);
 
+unsigned
+pmap_asid(struct vm *vm)
+{
+	if (vm == NULL)
+		return (0); /* XXX invalid ASID? */
+	ASSERT(vm == &kernel_vm, "only support kernel address space");
+	return (0);
+}
+
 void
 pmap_bootstrap(void)
 {

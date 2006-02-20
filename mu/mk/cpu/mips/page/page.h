@@ -11,6 +11,7 @@ struct vm;
 #define	PAGE_SHIFT	(13)
 
 #ifndef	ASSEMBLER
+unsigned pmap_asid(struct vm *);
 void pmap_bootstrap(void);
 int pmap_extract(struct vm *, vaddr_t, paddr_t *);
 int pmap_map(struct vm *, vaddr_t, paddr_t);

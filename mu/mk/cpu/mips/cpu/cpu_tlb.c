@@ -94,7 +94,7 @@ tlb_init(paddr_t pcpu_addr)
 }
 
 void
-tlb_invalidate(vaddr_t vaddr, unsigned asid)
+tlb_invalidate(struct vm *vm, vaddr_t vaddr)
 {
 	critical_section_t crit;
 	int i;
@@ -102,7 +102,7 @@ tlb_invalidate(vaddr_t vaddr, unsigned asid)
 	vaddr &= ~PAGE_MASK;
 
 	crit = critical_enter();
-	cpu_write_tlb_entryhi(TLBHI_ENTRY(vaddr, asid));
+	cpu_write_tlb_entryhi(TLBHI_ENTRY(vaddr, pmap_asid(vm)));
 	tlb_probe();
 	i = cpu_read_tlb_index();
 	if (i >= 0)
@@ -122,10 +122,35 @@ tlb_fill(struct vm *vm, vaddr_t vaddr)
 	if (pte == NULL)
 		panic("%s: pmap_find returned NULL.", __func__);
 	asid = cpu_read_tlb_entryhi();
-	cpu_write_tlb_entryhi(TLBHI_ENTRY(vaddr, 0));
+	cpu_write_tlb_entryhi(TLBHI_ENTRY(vaddr, pmap_asid(vm)));
 	cpu_write_tlb_entrylo0(*pte);
 	cpu_write_tlb_entrylo1(*pte + TLBLO_PA_TO_PFN(TLB_PAGE_SIZE));
 	tlb_write_random();
+	cpu_write_tlb_entryhi(asid);
+	critical_exit(crit);
+}
+
+void
+tlb_update(struct vm *vm, vaddr_t vaddr)
+{
+	critical_section_t crit;
+	register_t asid;
+	pt_entry_t *pte;
+	int i;
+
+	crit = critical_enter();
+	pte = pmap_find(vm, vaddr); /* XXX lock.  */
+	if (pte == NULL)
+		panic("%s: pmap_find returned NULL.", __func__);
+	asid = cpu_read_tlb_entryhi();
+	cpu_write_tlb_entryhi(TLBHI_ENTRY(vaddr, pmap_asid(vm)));
+	tlb_probe();
+	i = cpu_read_tlb_index();
+	if (i >= 0)
+		panic("%s: can't update TLB: probe failed.", __func__);
+	cpu_write_tlb_entrylo0(*pte);
+	cpu_write_tlb_entrylo1(*pte + TLBLO_PA_TO_PFN(TLB_PAGE_SIZE));
+	tlb_write_indexed();
 	cpu_write_tlb_entryhi(asid);
 	critical_exit(crit);
 }
@@ -139,7 +164,7 @@ tlb_insert_wired(vaddr_t vaddr, paddr_t paddr)
 	paddr &= ~PAGE_MASK;
 
 	crit = critical_enter();
-	cpu_write_tlb_entryhi(TLBHI_ENTRY(vaddr, 0));
+	cpu_write_tlb_entryhi(TLBHI_ENTRY(vaddr, pmap_asid(NULL)));
 	cpu_write_tlb_entrylo0(TLBLO_PA_TO_PFN(paddr) |
 			       PG_V | PG_D | PG_G | PG_C_CNC);
 	cpu_write_tlb_entrylo1(TLBLO_PA_TO_PFN(paddr + TLB_PAGE_SIZE) |
@@ -171,6 +196,7 @@ tlb_invalidate_all(void)
 static void
 tlb_invalidate_one(unsigned i)
 {
+	/* XXX an invalid ASID? */
 	cpu_write_tlb_entryhi(TLBHI_ENTRY(XKPHYS_BASE + (i * PAGE_SIZE), 0));
 	cpu_write_tlb_entrylo0(0);
 	cpu_write_tlb_entrylo1(0);

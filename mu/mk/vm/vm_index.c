@@ -5,6 +5,9 @@
 #include <vm/page.h>
 #include <vm/vm.h>
 
+#define	VM_LOCK(vm)	spinlock_lock(&(vm)->vm_lock)
+#define	VM_UNLOCK(vm)	spinlock_unlock(&(vm)->vm_lock)
+
 struct vm_index {
 	vaddr_t vmi_base;
 	size_t vmi_size;
@@ -41,13 +44,17 @@ vm_alloc_address(struct vm *vm, vaddr_t *vaddrp, size_t pages)
 
 	vmi = NULL;
 
+	VM_LOCK(vm);
 	/* Look for a best match.  */
 	for (t = vm->vm_index_free; t != NULL; t = t->vmi_free_next) {
 		if (t->vmi_size == pages) {
 			error = vm_use_index(vm, t, pages);
-			if (error != 0)
+			if (error != 0) {
+				VM_UNLOCK(vm);
 				return (error);
+			}
 			*vaddrp = t->vmi_base;
+			VM_UNLOCK(vm);
 			return (0);
 		}
 		if (t->vmi_size > pages) {
@@ -61,12 +68,16 @@ vm_alloc_address(struct vm *vm, vaddr_t *vaddrp, size_t pages)
 	}
 	if (vmi == NULL) {
 		/* XXX Collapse tree and rebalance if possible.  */
+		VM_UNLOCK(vm);
 		return (ERROR_NOT_IMPLEMENTED);
 	}
 	error = vm_use_index(vm, vmi, pages);
-	if (error != 0)
+	if (error != 0) {
+		VM_UNLOCK(vm);
 		return (error);
+	}
 	*vaddrp = vmi->vmi_base;
+	VM_UNLOCK(vm);
 	return (0);
 }
 
@@ -75,9 +86,11 @@ vm_free_address(struct vm *vm, vaddr_t vaddr)
 {
 	struct vm_index *vmi;
 
+	VM_LOCK(vm);
 	for (vmi = vm->vm_index; vmi != NULL; ) {
 		if (vmi->vmi_base == vaddr) {
 			vm_free_index(vm, vmi);
+			VM_UNLOCK(vm);
 			return (0);
 		}
 		if (vaddr < vmi->vmi_base)
@@ -85,6 +98,7 @@ vm_free_address(struct vm *vm, vaddr_t vaddr)
 		else
 			vmi = vmi->vmi_right;
 	}
+	VM_UNLOCK(vm);
 	return (ERROR_NOT_FOUND);
 }
 
@@ -96,6 +110,7 @@ vm_insert_range(struct vm *vm, vaddr_t begin, vaddr_t end)
 	vmi = pool_allocate(&vm_index_pool);
 	if (vmi == NULL)
 		return (ERROR_EXHAUSTED);
+	VM_LOCK(vm);
 	vmi->vmi_base = begin;
 	vmi->vmi_size = PA_TO_PAGE(end - begin);
 	vmi->vmi_left = NULL;
@@ -103,6 +118,7 @@ vm_insert_range(struct vm *vm, vaddr_t begin, vaddr_t end)
 	vm_free_index(vm, vmi);
 	if (vm->vm_index == NULL) {
 		vm->vm_index = vmi;
+		VM_UNLOCK(vm);
 		return (0);
 	}
 	/*
@@ -110,6 +126,19 @@ vm_insert_range(struct vm *vm, vaddr_t begin, vaddr_t end)
 	 * the time and put the existing tree to our left or right appropriately
 	 */
 	vm_insert_index(vm->vm_index, vmi);
+	VM_UNLOCK(vm);
+	return (0);
+}
+
+int
+vm_setup(struct vm *vm)
+{
+	spinlock_init(&vm->vm_lock, "VM lock");
+	VM_LOCK(vm);
+	vm->vm_pmap = NULL;
+	vm->vm_index = NULL;
+	vm->vm_index_free = NULL;
+	VM_UNLOCK(vm);
 	return (0);
 }
 
@@ -143,6 +172,9 @@ vm_use_index(struct vm *vm, struct vm_index *vmi, size_t pages)
 	size_t count;
 	int error;
 
+	if (vm->vm_index_free == vmi) {
+		vm->vm_index_free = vmi->vmi_free_next;
+	}
 	if (vmi->vmi_free_prev != NULL) {
 		vmi->vmi_free_prev->vmi_free_next = vmi->vmi_free_next;
 	}
@@ -152,16 +184,12 @@ vm_use_index(struct vm *vm, struct vm_index *vmi, size_t pages)
 	if (vmi->vmi_size != pages) {
 		count = vmi->vmi_size - pages;
 		vmi->vmi_size = pages;
-		error = vm_insert_range(vm, vmi->vmi_base + pages,
-					vmi->vmi_base + pages + count);
+		error = vm_insert_range(vm, vmi->vmi_base + (pages * PAGE_SIZE),
+					vmi->vmi_base + ((pages + count) *
+							 PAGE_SIZE));
 		if (error != 0) {
 			vmi->vmi_size += count;
-			if (vmi->vmi_free_prev != NULL) {
-				vmi->vmi_free_prev->vmi_free_next = vmi;
-			}
-			if (vmi->vmi_free_next != NULL) {
-				vmi->vmi_free_next->vmi_free_prev = vmi;
-			}
+			vm_free_index(vm, vmi);
 			return (error);
 		}
 	}

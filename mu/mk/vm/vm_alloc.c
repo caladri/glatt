@@ -21,13 +21,17 @@ vm_alloc(struct vm *vm, size_t size, vaddr_t *vaddrp)
 	for (o = 0; o < pages; o++) {
 		error = page_alloc(vm, &paddr);
 		if (error != 0) {
-			if (o != 0) {
-				panic("%s: must free mappings for failed allocation.", __func__);
+			while (o--) {
+				error2 = page_extract(vm, vaddr + o * PAGE_SIZE,
+						     &paddr);
+				if (error2 != 0)
+					panic("%s: failed to extract from mapping: %u",
+					      __func__, error2);
 			}
 			error2 = vm_free_address(vm, vaddr);
 			if (error2 != 0) {
 				panic("%s: vm_free_address failed: %u",
-				      __func__, error);
+				      __func__, error2);
 			}
 			return (error);
 		}

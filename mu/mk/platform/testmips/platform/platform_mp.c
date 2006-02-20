@@ -8,6 +8,7 @@
 #include <cpu/tlb.h>
 #include <db/db.h>
 #include <io/device/console/console.h>
+#include <vm/alloc.h>
 #include <vm/page.h>
 #include <vm/vm.h>
 
@@ -138,6 +139,13 @@ platform_mp_start_one(void)
 	if (error != 0)
 		panic("%s: vm_free_address failed: %u", __func__, error);
 	kcprintf("cpu%u: VM appears to work.\n", mp_whoami());
+	error = vm_alloc(&kernel_vm, 4 * 1024 * 1024, &vaddr);
+	if (error != 0)
+		panic("%s: vm_alloc failed: %u", __func__, error);
+	kcprintf("Allocated 4MB at %p\n", (void *)vaddr);
+	error = vm_free(&kernel_vm, 4 * 1024 * 1024, vaddr);
+	if (error != 0)
+		panic("%s: vm_free failed: %u", __func__, error);
 	/* XXX end testcode.  */
 
 	/*

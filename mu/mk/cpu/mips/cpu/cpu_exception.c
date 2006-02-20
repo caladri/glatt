@@ -1,4 +1,5 @@
 #include <core/types.h>
+#include <core/mp.h>
 #include <core/string.h>
 #include <cpu/cpu.h>
 #include <cpu/exception.h>
@@ -72,7 +73,13 @@ exception(void)
 	cause = cpu_read_cause();
 	code = (cause & CP0_CAUSE_EXCEPTION) >> CP0_CAUSE_EXCEPTION_SHIFT;
 
-	kcprintf("\n\nFatal trap type %u:\n", code);
+	kcprintf("\n\nFatal trap type %u on CPU %u:\n", code, mp_whoami());
+	kcprintf("current task        = %p\n", (void *)task_me());
+	kcprintf("cause               = %x\n", cause);
+	kcprintf("status              = %x\n",
+		 (unsigned)pcpu_me()->pc_frame.f_regs[FRAME_STATUS]);
+	kcprintf("pc                  = %p\n",
+		 (void *)pcpu_me()->pc_frame.f_regs[FRAME_EPC]);
 	for (;;)	continue;
 }
 

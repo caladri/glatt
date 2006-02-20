@@ -115,10 +115,16 @@ END(generic_exception)
 
 ENTRY(tlb_exception)
 	.set noat
-	j	generic_exception
+	dla	k0, 1f
+	j	exception_frame_save
 	nop
-//	KREGS_RESTORE;
-//	eret
+1:	jal	exception
+	nop
+	dla	k0, 1f
+	j	exception_frame_restore
+	nop
+1:	KREGS_RESTORE;
+	eret
 	.set at
 END(tlb_exception)
 

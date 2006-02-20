@@ -148,7 +148,7 @@ pmap_extract(struct vm *vm, vaddr_t vaddr, paddr_t *paddrp)
 
 	pm = vm->vm_pmap;
 
-	vaddr &= PAGE_MASK;
+	vaddr &= ~PAGE_MASK;
 
 	if (pmap_is_direct(vaddr)) {
 		if (vm != &kernel_vm)
@@ -157,7 +157,7 @@ pmap_extract(struct vm *vm, vaddr_t vaddr, paddr_t *paddrp)
 		return (0);
 	}
 
-	if (vaddr >= pm->pm_end || vaddr <= pm->pm_base)
+	if (vaddr >= pm->pm_end || vaddr < pm->pm_base)
 		return (ERROR_NOT_PERMITTED);
 	pte = pmap_find(vm, vaddr);
 	if (pte == NULL)

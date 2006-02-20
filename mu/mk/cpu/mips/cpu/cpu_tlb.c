@@ -111,6 +111,13 @@ tlb_invalidate(struct vm *vm, vaddr_t vaddr)
 }
 
 void
+tlb_refill(vaddr_t vaddr)
+{
+	/* XXX     task_me()->t_vm */
+	tlb_update(pcpu_me()->pc_vm, vaddr);
+}
+
+void
 tlb_update(struct vm *vm, vaddr_t vaddr)
 {
 	critical_section_t crit;
@@ -126,11 +133,12 @@ tlb_update(struct vm *vm, vaddr_t vaddr)
 	cpu_write_tlb_entryhi(TLBHI_ENTRY(vaddr, pmap_asid(vm)));
 	tlb_probe();
 	i = cpu_read_tlb_index();
-	if (i >= 0)
-		panic("%s: can't update TLB: probe failed.", __func__);
 	cpu_write_tlb_entrylo0(*pte);
 	cpu_write_tlb_entrylo1(*pte + TLBLO_PA_TO_PFN(TLB_PAGE_SIZE));
-	tlb_write_indexed();
+	if (i >= 0)
+		tlb_write_indexed();
+	else
+		tlb_write_random();
 	cpu_write_tlb_entryhi(asid);
 	critical_exit(crit);
 }

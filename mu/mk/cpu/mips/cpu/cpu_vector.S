@@ -118,7 +118,8 @@ ENTRY(tlb_exception)
 	dla	k0, 1f
 	j	exception_frame_save
 	nop
-1:	jal	exception
+1:	dmfc0	a0, CP0_BADVADDR
+	jal	tlb_refill
 	nop
 	dla	k0, 1f
 	j	exception_frame_restore

@@ -17,6 +17,7 @@ struct vm_index {
 static struct pool vm_index_pool;
 struct vm kernel_vm;
 
+static void vm_free_index(struct vm *, struct vm_index *);
 static void vm_insert_index(struct vm_index *, struct vm_index *);
 static int vm_use_index(struct vm *, struct vm_index *, size_t);
 
@@ -72,7 +73,19 @@ vm_alloc_address(struct vm *vm, vaddr_t *vaddrp, size_t pages)
 int
 vm_free_address(struct vm *vm, vaddr_t vaddr)
 {
-	return (ERROR_NOT_IMPLEMENTED);
+	struct vm_index *vmi;
+
+	for (vmi = vm->vm_index; vmi != NULL; ) {
+		if (vmi->vmi_base == vaddr) {
+			vm_free_index(vm, vmi);
+			return (0);
+		}
+		if (vaddr < vmi->vmi_base)
+			vmi = vmi->vmi_left;
+		else
+			vmi = vmi->vmi_right;
+	}
+	return (ERROR_NOT_FOUND);
 }
 
 int
@@ -87,17 +100,27 @@ vm_insert_range(struct vm *vm, vaddr_t begin, vaddr_t end)
 	vmi->vmi_size = PA_TO_PAGE(end - begin);
 	vmi->vmi_left = NULL;
 	vmi->vmi_right = NULL;
+	vm_free_index(vm, vmi);
+	if (vm->vm_index == NULL) {
+		vm->vm_index = vmi;
+		return (0);
+	}
+	/*
+	 * XXX It would be easier to just make this the new vm->vm_index all
+	 * the time and put the existing tree to our left or right appropriately
+	 */
+	vm_insert_index(vm->vm_index, vmi);
+	return (0);
+}
+
+static void
+vm_free_index(struct vm *vm, struct vm_index *vmi)
+{
 	vmi->vmi_free_prev = NULL;
 	vmi->vmi_free_next = vm->vm_index_free;
 	if (vm->vm_index_free != NULL)
 		vm->vm_index_free->vmi_free_prev = vmi;
 	vm->vm_index_free = vmi;
-	if (vm->vm_index == NULL) {
-		vm->vm_index = vmi;
-		return (0);
-	}
-	vm_insert_index(vm->vm_index, vmi);
-	return (0);
 }
 
 static void

@@ -128,6 +128,9 @@ platform_mp_start_one(void)
 	*p = (uint64_t)XKPHYS_MAP(XKPHYS_UC, page_addr) + 3;
 	ASSERT(*p == (uint64_t)XKPHYS_MAP(XKPHYS_UC, page_addr) + 3, "page content valid");
 	kcprintf("cpu%u: VM appears to work.\n", mp_whoami());
+	error = vm_free_address(&kernel_vm, vaddr);
+	if (error != 0)
+		panic("%s: vm_free_address failed: %u", __func__, error);
 	/* XXX end testcode.  */
 
 	/*

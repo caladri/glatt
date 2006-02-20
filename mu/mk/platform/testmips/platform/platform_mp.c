@@ -111,13 +111,16 @@ platform_mp_start_one(void)
 	error = page_alloc(&kernel_vm, &page_addr);
 	if (error != 0)
 		panic("%s: page_alloc failed: %u", __func__, error);
+	kcprintf("Allocated page: %p\n", (void *)page_addr);
 	error = vm_alloc_address(&kernel_vm, &vaddr, 1);
 	if (error != 0)
 		panic("%s: vm_alloc_address failed: %u", __func__, error);
+	kcprintf("Allocated virtual address: %p\n", (void *)vaddr);
 	error = page_map(&kernel_vm, vaddr, page_addr);
 	if (error != 0)
 		panic("%s: page_map failed: %u", __func__, error);
 	p = (volatile uint64_t *)vaddr;
+	kcprintf("Mapped virtual address: %p\n", p);
 	*p = (uint64_t)XKPHYS_MAP(XKPHYS_UC, page_addr);
 	ASSERT(*p == (uint64_t)XKPHYS_MAP(XKPHYS_UC, page_addr), "page content valid");
 	kcprintf("cpu%u: VM appears to work.\n", mp_whoami());

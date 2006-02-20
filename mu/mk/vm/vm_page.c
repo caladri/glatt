@@ -53,9 +53,9 @@ page_alloc(struct vm *vm, paddr_t *paddrp)
 			if (pe->pe_bitmask == 0)
 				continue;
 			for (off = 0; off < PAGE_ENTRY_PAGES; off++) {
-				if ((pe->pe_bitmask & (1 << off)) == 0)
+				if ((pe->pe_bitmask & (1ul << off)) == 0)
 					continue;
-				pe->pe_bitmask ^= 1 << off;
+				pe->pe_bitmask ^= 1ul << off;
 				pi->pi_header.ph_pages--;
 				paddr = pi->pi_header.ph_base;
 				paddr += (entry * PAGE_ENTRY_PAGES) * PAGE_SIZE;
@@ -64,7 +64,8 @@ page_alloc(struct vm *vm, paddr_t *paddrp)
 				return (0);
 			}
 		}
-		panic("%s: page index has pages but no bits set.", __func__);
+		panic("%s: page index has %lu pages but no bits set.",
+		      __func__, pi->pi_header.ph_pages);
 	}
 	return (ERROR_EXHAUSTED);
 }
@@ -166,7 +167,7 @@ page_insert_pages(paddr_t base, size_t pages)
 				struct page_entry *pe;
 
 				pe = &pi->pi_entries[cnt / PAGE_ENTRY_PAGES];
-				pe->pe_bitmask |= 1 << (cnt % PAGE_ENTRY_PAGES);
+				pe->pe_bitmask |= 1ul << (cnt % PAGE_ENTRY_PAGES);
 			}
 		}
 	}
@@ -210,7 +211,7 @@ page_release(struct vm *vm, paddr_t paddr)
 		if (off >= PAGE_INDEX_COUNT)
 			continue;
 		pe = &pi->pi_entries[off / PAGE_ENTRY_PAGES];
-		pe->pe_bitmask |= 1 << (off % PAGE_ENTRY_PAGES);
+		pe->pe_bitmask |= 1ul << (off % PAGE_ENTRY_PAGES);
 		pi->pi_header.ph_pages++;
 		return (0);
 	}

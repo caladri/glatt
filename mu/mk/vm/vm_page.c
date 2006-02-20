@@ -33,7 +33,7 @@ COMPILE_TIME_ASSERT(sizeof (struct page_index) * PAGE_INDEX_SPLIT == PAGE_SIZE);
 void
 page_init(void)
 {
-	kcprintf("PAGE: page size is %uK, %u pages per index entry.\n",
+	kcprintf("PAGE: page size is %uK, %lu pages per index entry.\n",
 		 PAGE_SIZE / 1024, PAGE_INDEX_COUNT);
 }
 

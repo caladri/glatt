@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.8 2006-02-01 10:05:42 juli Exp $
+# $Id: Makefile,v 1.9 2006-02-20 06:02:30 juli Exp $
 
 KERNEL?=	mu-mk
 
@@ -21,8 +21,9 @@ CPU_ROOT=	${KERNEL_ROOT}/cpu/${CPU}
 
 KERNEL_CPPFLAGS=-I${KERNEL_ROOT} -I${PLATFORM_ROOT} -I${CPU_ROOT}
 KERNEL_CFLAGS=	${KERNEL_ABI} ${KERNEL_CPU} -nostdinc
-KERNEL_CFLAGS+=	-std=c99 -pedantic -fno-builtin -W -Wall -Werror -Wno-unused
-KERNEL_CFLAGS+=	-O2 -fstrict-aliasing
+KERNEL_CFLAGS+=	-std=c99 -pedantic
+KERNEL_CFLAGS+=	-Werror -W -Wall -Wno-unused -Wformat
+KERNEL_CFLAGS+=	-O2 -fstrict-aliasing -fno-builtin
 # Ask GCC to not use the GP, we may well end up with too much GP-relative
 # data to address.  In reality, though, we shouldn't have enough global data
 # for this to make sense, and we should be able to turn it back on.

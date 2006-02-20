@@ -23,6 +23,7 @@
 #define	__noreturn		__attribute__ ((__noreturn__))
 #define	__packed		__attribute__ ((__packed__))
 #define	__unused		__attribute__ ((__unused__))
+#define	__printf(f, va)		__attribute__ ((__format__ (__printf__, f, va)))
 
 	/* Compile-time assertions.  */
 

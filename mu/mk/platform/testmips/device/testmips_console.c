@@ -79,16 +79,16 @@ platform_start(void)
 	 * the kernel at 1MB to leave room for exception vectors and such
 	 * at the start of physically-addressable memory.
 	 */
-#define	KERNEL_MAX_SIZE		(4 * 1024 * 1024)
-#define	KERNEL_OFFSET		(1 * 1024 * 1024)
+#define	KERNEL_MAX_SIZE		(4ul * 1024 * 1024)
+#define	KERNEL_OFFSET		(1ul * 1024 * 1024)
 #define	KERNEL_PHYSICAL_HOLE	(KERNEL_MAX_SIZE + KERNEL_OFFSET)
 	membytes = platform_mp_memory();
 	if (membytes <= KERNEL_PHYSICAL_HOLE)
-		panic("%s: not enough attached memory.");
+		panic("%s: not enough attached memory.", __func__);
 	membytes -= KERNEL_PHYSICAL_HOLE;
 	error = page_insert_pages(KERNEL_PHYSICAL_HOLE, PA_TO_PAGE(membytes));
 	if (error != 0)
-		panic("page_insert_pages %lu..%lu failed: %d",
+		panic("page_insert_pages %lu..%lu failed: %u",
 		      PA_TO_PAGE(KERNEL_PHYSICAL_HOLE),
 		      PA_TO_PAGE(membytes), error);
 

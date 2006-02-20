@@ -131,7 +131,7 @@ platform_mp_start_one(void)
 	*q = (uint64_t)XKPHYS_MAP(XKPHYS_UC, page_addr);
 	ASSERT(*q == (uint64_t)XKPHYS_MAP(XKPHYS_UC, page_addr), "page content valid");
 	p = (volatile uint64_t *)vaddr;
-	kcprintf("Mapped virtual address: %p\n", p);
+	kcprintf("Mapped virtual address: %p\n", (void *)p);
 	*p = (uint64_t)XKPHYS_MAP(XKPHYS_UC, page_addr) + 3;
 	ASSERT(*p == (uint64_t)XKPHYS_MAP(XKPHYS_UC, page_addr) + 3, "page content valid");
 	error = vm_free_address(&kernel_vm, vaddr);

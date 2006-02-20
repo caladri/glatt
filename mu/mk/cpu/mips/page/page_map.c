@@ -295,7 +295,7 @@ pmap_alloc_pte(struct pmap *pm, vaddr_t vaddr, pt_entry_t **ptep)
 static void
 pmap_collect(struct pmap *pm)
 {
-	panic("%s: can't garbage collect yet.");
+	panic("%s: can't garbage collect yet.", __func__);
 }
 
 static struct pmap_lev0 *

@@ -63,5 +63,5 @@ vm_free(struct vm *vm, size_t size, vaddr_t vaddr)
 	error = vm_free_address(vm, vaddr);
 	if (error != 0)
 		panic("%s: failed to free address: %u", __func__, error);
-	return (ERROR_NOT_IMPLEMENTED);
+	return (0);
 }

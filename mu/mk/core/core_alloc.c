@@ -94,7 +94,7 @@ int
 pool_create(struct pool *pool, const char *name, size_t size, unsigned flags)
 {
 	pool->pool_name = name;
-	pool->pool_size = 0;
+	pool->pool_size = size;
 	pool->pool_pages = NULL;
 	pool->pool_flags = flags;
 	return (0);

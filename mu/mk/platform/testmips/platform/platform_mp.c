@@ -107,7 +107,7 @@ platform_mp_start_one(void)
 	 */
 	paddr_t page_addr;
 	vaddr_t vaddr;
-	volatile uint64_t *p;
+	volatile uint64_t *p, *q;
 
 	error = page_alloc(&kernel_vm, &page_addr);
 	if (error != 0)
@@ -120,10 +120,13 @@ platform_mp_start_one(void)
 	error = page_map(&kernel_vm, vaddr, page_addr);
 	if (error != 0)
 		panic("%s: page_map failed: %u", __func__, error);
+	q = (volatile uint64_t *)XKPHYS_MAP(XKPHYS_UC, page_addr);
+	*q = (uint64_t)XKPHYS_MAP(XKPHYS_UC, page_addr);
+	ASSERT(*q == (uint64_t)XKPHYS_MAP(XKPHYS_UC, page_addr), "page content valid");
 	p = (volatile uint64_t *)vaddr;
 	kcprintf("Mapped virtual address: %p\n", p);
-	*p = (uint64_t)XKPHYS_MAP(XKPHYS_UC, page_addr);
-	ASSERT(*p == (uint64_t)XKPHYS_MAP(XKPHYS_UC, page_addr), "page content valid");
+	*p = (uint64_t)XKPHYS_MAP(XKPHYS_UC, page_addr) + 3;
+	ASSERT(*p == (uint64_t)XKPHYS_MAP(XKPHYS_UC, page_addr) + 3, "page content valid");
 	kcprintf("cpu%u: VM appears to work.\n", mp_whoami());
 	/* XXX end testcode.  */
 

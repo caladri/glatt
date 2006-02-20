@@ -21,6 +21,9 @@ struct pool_page {
 	size_t pp_items;
 };
 
+#define	MAX_ALLOC_SIZE	(PAGE_SIZE - (sizeof (struct pool_item) + \
+				      sizeof (struct pool_page)))
+
 static struct pool_item *pool_get(struct pool *);
 static void pool_initialize_page(struct pool_page *);
 static struct pool_page *pool_page(struct pool_item *);
@@ -93,6 +96,9 @@ pool_free(struct pool *pool, void *m)
 int
 pool_create(struct pool *pool, const char *name, size_t size, unsigned flags)
 {
+	if (size > MAX_ALLOC_SIZE)
+		panic("%s: don't use pools for large allocations, use the VM"
+		      " allocation interfaces instead.", __func__);
 	pool->pool_name = name;
 	pool->pool_size = size;
 	pool->pool_pages = NULL;

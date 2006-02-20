@@ -10,6 +10,9 @@
 
 #define	XKSEG_BASE	(0xc000000000000000)
 #define	XKSEG_END	(0xc00000ff7fffffff)
+	/* We skip one page for PCPU data.  */
+#define	KERNEL_BASE	(XKSEG_BASE + PAGE_SIZE)
+#define	KERNEL_END	(XKSEG_END)
 
 	/* 64-bit kernel physical address space mapping.  */
 

@@ -135,7 +135,7 @@ pmap_bootstrap(void)
 		panic("%s: page_alloc_direct failed: %u", __func__, error);
 	/* XXX map this at a fixed virtual address.  */
 	kernel_vm.vm_pmap = (struct pmap *)vaddr;
-	error = pmap_init(&kernel_vm, XKSEG_BASE, XKSEG_END);
+	error = pmap_init(&kernel_vm, KERNEL_BASE, KERNEL_END);
 	if (error != 0)
 		panic("%s: pmap_init failed: %u", __func__, error);
 }

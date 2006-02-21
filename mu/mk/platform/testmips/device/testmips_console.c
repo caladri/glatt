@@ -34,7 +34,14 @@ testmips_console_getc(void *sc, char *chp)
 	ch = *getcp;
 	if (ch == '\0')
 		return (ERROR_AGAIN);
-	*chp = ch;
+	switch (ch) {
+	case '\r':
+		*chp = '\n';
+		break;
+	default:
+		*chp = ch;
+		break;
+	}
 	return (0);
 }
 

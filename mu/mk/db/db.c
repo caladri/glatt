@@ -94,12 +94,11 @@ db_gets(void)
 			break;
 		}
 		buf[o + 1] = '\0';
-		if (buf[o] == '\r') {
+		kcputc(buf[o]); /* XXX too testmips */
+		if (buf[o] == '\n') {
 			buf[o] = '\0';
-			kcputc('\n'); /* XXX too testmips */
 			return (buf);
 		}
-		kcputc(buf[o]); /* XXX too testmips */
 	}
 	kcputs("\ndebugger buffer overflowed\n");
 	return (buf);

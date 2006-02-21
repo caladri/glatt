@@ -41,4 +41,11 @@ char name ## w1[((ASSYM_ABS(value) & 0xFFFF0000UL) >> 16) + ASSYM_BIAS];      \
 char name ## w2[((ASSYM_ABS(value) & 0xFFFF00000000ULL) >> 32) + ASSYM_BIAS]; \
 char name ## w3[((ASSYM_ABS(value) & 0xFFFF000000000000ULL) >> 48) + ASSYM_BIAS]
 
+#define	ASSYM_CONSTANT(name)						      \
+char name ## sign[((name) < 0 ? 1 : 0) + ASSYM_BIAS];			      \
+char name ## w0[(ASSYM_ABS(name) & 0xFFFFU) + ASSYM_BIAS];		      \
+char name ## w1[((ASSYM_ABS(name) & 0xFFFF0000UL) >> 16) + ASSYM_BIAS];      \
+char name ## w2[((ASSYM_ABS(name) & 0xFFFF00000000ULL) >> 32) + ASSYM_BIAS]; \
+char name ## w3[((ASSYM_ABS(name) & 0xFFFF000000000000ULL) >> 48) + ASSYM_BIAS]
+
 #endif /* !_SYS_ASSYM_H_ */

@@ -80,7 +80,7 @@ exception(void)
 		 (unsigned)pcpu_me()->pc_frame.f_regs[FRAME_STATUS]);
 	kcprintf("pc                  = %p\n",
 		 (void *)pcpu_me()->pc_frame.f_regs[FRAME_EPC]);
-	for (;;)	continue;
+	db_enter();
 }
 
 static void

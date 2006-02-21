@@ -1,6 +1,13 @@
 #include <cpu/register.h>
 #include <cpu/pcpu.h>
+#include <page/page_map.h>
 
 	/* PCPU fields we might want.  */
-ASSYM(PC_FRAME,		offsetof(struct pcpu, pc_frame));
-ASSYM(PC_TASK,		offsetof(struct pcpu, pc_task));
+DEFINE(PC_FRAME,	offsetof(struct pcpu, pc_frame));
+DEFINE(PC_TASK,		offsetof(struct pcpu, pc_task));
+
+	/* PMAP-related constants.  */
+DEFINE_CONSTANT(PTEL2DIV);
+DEFINE_CONSTANT(L2L1DIV);
+DEFINE_CONSTANT(L1L0DIV);
+DEFINE_CONSTANT(PMAPL0DIV);

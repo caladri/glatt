@@ -1,4 +1,4 @@
 #include <core/task.h>
 
 	/* TASK fields we might want.  */
-ASSYM(T_VM,	offsetof(struct task, t_vm));
+DEFINE(T_VM,	offsetof(struct task, t_vm));

@@ -1,5 +1,6 @@
-#include <core/copyright.h>
 #include <core/types.h>
+#include <core/copyright.h>
+#include <core/error.h>
 #include <core/startup.h>
 #include <core/string.h>
 #include <core/mp.h>
@@ -24,6 +25,19 @@ static struct framebuffer testmips_framebuffer = {
 	.fb_load = testmips_framebuffer_load,
 };
 
+static int
+testmips_console_getc(void *sc, char *chp)
+{
+	volatile char *getcp = sc;
+	char ch;
+
+	ch = *getcp;
+	if (ch == '\0')
+		return (ERROR_AGAIN);
+	*chp = ch;
+	return (0);
+}
+
 static void
 testmips_console_putc(void *sc, char ch)
 {
@@ -40,6 +54,7 @@ testmips_console_flush(void *sc)
 static struct console testmips_console = {
 	.c_name = "testmips",
 	.c_softc = XKPHYS_MAP(XKPHYS_UC, 0x10000000),
+	.c_getc = testmips_console_getc,
 	.c_putc = testmips_console_putc,
 	.c_flush = testmips_console_flush,
 };

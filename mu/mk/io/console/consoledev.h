@@ -7,6 +7,7 @@ struct console {
 	const char *c_name;
 	struct spinlock c_lock;
 	void *c_softc;
+	int (*c_getc)(void *, char *);
 	void (*c_putc)(void *, char);
 	void (*c_flush)(void *);
 };

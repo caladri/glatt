@@ -3,6 +3,7 @@
 
 	/* Kernel Console functions.  */
 
+int kcgetc(char *);
 void kcputc(char);
 void kcputs(const char *);
 void kcprintf(const char *, ...) __printf(1, 2);

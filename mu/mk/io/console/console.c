@@ -17,6 +17,21 @@ console_init(struct console *console)
 	kcprintf("Switched to console: %s\n", console->c_name);
 }
 
+int
+kcgetc(char *chp)
+{
+	char ch;
+	int error;
+
+	spinlock_lock(&kernel_console->c_lock);
+	error = kernel_console->c_getc(kernel_console->c_softc, &ch);
+	spinlock_unlock(&kernel_console->c_lock);
+	if (error != 0)
+		return (error);
+	*chp = ch;
+	return (0);
+}
+
 void
 kcputc(char ch)
 {
@@ -49,6 +64,7 @@ void
 kcvprintf(const char *s, va_list ap) 
 {
 	const char *p, *q;
+	char ch;
 	bool lmod, alt;
 	long val;
 
@@ -82,6 +98,10 @@ again:
 			val = va_arg(ap, uintptr_t);
 			kcputs_noflush("0x");
 			kcformat(val, 0x10, 0);
+			break;
+		case 'c':
+			ch = (char)va_arg(ap, int);
+			kcputc_noflush(ch);
 			break;
 		case 's':
 			q = va_arg(ap, const char *);

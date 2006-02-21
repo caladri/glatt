@@ -10,6 +10,17 @@
 	 * XXX we have to disable interrupts and properly detect a nested
 	 * exception to prevent letting processes get restored with
 	 * corrupt frames.
+	 *
+	 * When an exception handler starts, an interrupt could still happen.
+	 * We must disable interrupts for as long as the exception is being
+	 * handled.  The easiest way to do this is to save a copy to a register,
+	 * clear the interrupt enabled bit, write back the register, and then
+	 * save the original status.  Then, when done, restore the status last.
+	 * That should allow interrupts to work properly.  For nested exceptions
+	 * we will have to copy the frame to the thread structure's frame on
+	 * entry and then on exit.  This means that a thread cannot fault twice.
+	 * That is probably a reasonable limitation.  Or we could allocate and
+	 * link chains of frames.
 	 */
 
 	.data

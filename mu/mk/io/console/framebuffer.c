@@ -1,4 +1,5 @@
 #include <core/types.h>
+#include <core/error.h>
 #include <core/string.h>
 #include <io/device/console/framebuffer.h>
 
@@ -12,6 +13,7 @@ static struct bgr buffer[640 * 480]; /* XXX I assume an ass out of u and me.  */
 
 static void framebuffer_clear(struct framebuffer *);
 static void framebuffer_flush(void *);
+static int framebuffer_getc(void *, char *);
 static void framebuffer_putc(void *, char);
 static void framebuffer_putxy(struct framebuffer *, char, unsigned, unsigned);
 static void framebuffer_scroll(struct framebuffer *);
@@ -21,6 +23,7 @@ framebuffer_init(struct framebuffer *fb, unsigned width, unsigned height)
 {
 	fb->fb_console.c_name = "framebuffer";
 	fb->fb_console.c_softc = fb;
+	fb->fb_console.c_getc = framebuffer_getc;
 	fb->fb_console.c_putc = framebuffer_putc;
 	fb->fb_console.c_flush = framebuffer_flush;
 
@@ -63,6 +66,12 @@ framebuffer_flush(void *sc)
 	spinlock_lock(&fb->fb_lock);
 	fb->fb_load(fb, fb->fb_buffer);
 	spinlock_unlock(&fb->fb_lock);
+}
+
+static int
+framebuffer_getc(void *sc, char *chp)
+{
+	return (ERROR_NOT_IMPLEMENTED);
 }
 
 static void

@@ -52,10 +52,10 @@ pool_allocate(struct pool *pool)
 			error = page_map(&kernel_vm, page_mapped, page_addr);
 			if (error != 0) {
 				int error2;
-				error2 = vm_free_address(&kernel_vm, page_addr);
+				error2 = vm_free_address(&kernel_vm, page_mapped);
 				if (error2 != 0)
 					panic("%s: vm_free_address failed: %u",
-					      __func__, error);
+					      __func__, error2);
 			}
 		}
 	} else {

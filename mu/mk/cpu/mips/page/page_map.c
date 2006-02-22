@@ -101,6 +101,9 @@ pmap_map(struct vm *vm, vaddr_t vaddr, paddr_t paddr)
 
 	pm = vm->vm_pmap;
 
+	if (vaddr >= pm->pm_end || vaddr < pm->pm_base)
+		return (ERROR_NOT_PERMITTED);
+
 	error = pmap_alloc_pte(pm, vaddr, &pte);
 	if (error != 0) {
 		/* XXX mark that the pmap needs pmap_collect run.  */

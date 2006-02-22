@@ -3,12 +3,12 @@ hokey and hard to maintain.
 
 o) VM.
 	o) Better physical page data structures.
-	o) Allocate multiple contiguous physical pages.
 	o) Virtual page data structures.
 	o) Cleanup pmap and friends.
 	o) Locking.
 	o) IPC.
 	o) Userland.
+	o) Allocate multiple contiguous physical pages.
 o) Exceptions.
 	o) Prevent nesting/corruption of the frame.
 	o) TLB handling.

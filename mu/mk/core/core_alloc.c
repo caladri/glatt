@@ -47,7 +47,7 @@ pool_allocate(struct pool *pool)
 		return (NULL);
 	}
 	if ((pool->pool_flags & POOL_VIRTUAL) != 0) {
-		error = vm_alloc_address(&kernel_vm, &page_mapped, PAGE_SIZE);
+		error = vm_alloc_address(&kernel_vm, &page_mapped, 1);
 		if (error == 0) {
 			error = page_map(&kernel_vm, page_mapped, page_addr);
 			if (error != 0) {

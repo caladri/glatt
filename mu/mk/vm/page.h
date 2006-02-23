@@ -5,12 +5,12 @@
 
 struct vm;
 
-#define	PAGE_SIZE	(1 << PAGE_SHIFT)
-#define	PAGE_MASK	(PAGE_SIZE - 1)
-#define	PA_TO_PAGE(pa)	((pa) >> PAGE_SHIFT)
-#define	PAGE_TO_PA(pa)	((pa) << PAGE_SHIFT)
-#define	PAGE_FLOOR(a)	((a) & ~PAGE_MASK)
-#define	PAGE_OFFSET(a)	((a) & PAGE_MASK)
+#define	PAGE_SIZE		(1 << PAGE_SHIFT)
+#define	PAGE_MASK		(PAGE_SIZE - 1)
+#define	ADDR_TO_PAGE(a)		((a) >> PAGE_SHIFT)
+#define	PAGE_TO_ADDR(a)		((a) << PAGE_SHIFT)
+#define	PAGE_FLOOR(a)		((a) & ~PAGE_MASK)
+#define	PAGE_OFFSET(a)		((a) & PAGE_MASK)
 
 	/* It's grim up north.  */
 

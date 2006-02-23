@@ -112,7 +112,7 @@ vm_insert_range(struct vm *vm, vaddr_t begin, vaddr_t end)
 		return (ERROR_EXHAUSTED);
 	VM_LOCK(vm);
 	vmi->vmi_base = begin;
-	vmi->vmi_size = PA_TO_PAGE(end - begin);
+	vmi->vmi_size = ADDR_TO_PAGE(end - begin);
 	vmi->vmi_left = NULL;
 	vmi->vmi_right = NULL;
 	vm_free_index(vm, vmi);

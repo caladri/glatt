@@ -1,4 +1,5 @@
 #include <core/types.h>
+#include <core/alloc.h>
 #include <core/error.h>
 #include <vm/alloc.h>
 #include <vm/page.h>
@@ -12,11 +13,9 @@ vm_alloc(struct vm *vm, size_t size, vaddr_t *vaddrp)
 	vaddr_t vaddr;
 	int error, error2;
 
-	if (size < PAGE_SIZE)
+	if (size < pool_max_alloc)
 		panic("%s: allocation too small, use pool instead.", __func__);
-	pages = size / PAGE_SIZE;
-	if ((size % PAGE_SIZE) != 0)
-		pages++;
+	pages = ADDR_TO_PAGE(size + (PAGE_SIZE - 1));
 	error = vm_alloc_address(vm, &vaddr, pages);
 	if (error != 0)
 		return (error);

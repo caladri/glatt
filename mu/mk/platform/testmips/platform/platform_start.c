@@ -108,11 +108,11 @@ platform_start(void)
 	if (membytes <= KERNEL_PHYSICAL_HOLE)
 		panic("%s: not enough attached memory.", __func__);
 	membytes -= KERNEL_PHYSICAL_HOLE;
-	error = page_insert_pages(KERNEL_PHYSICAL_HOLE, PA_TO_PAGE(membytes));
+	error = page_insert_pages(KERNEL_PHYSICAL_HOLE, ADDR_TO_PAGE(membytes));
 	if (error != 0)
 		panic("page_insert_pages %lu..%lu failed: %u",
-		      PA_TO_PAGE(KERNEL_PHYSICAL_HOLE),
-		      PA_TO_PAGE(membytes), error);
+		      ADDR_TO_PAGE(KERNEL_PHYSICAL_HOLE),
+		      ADDR_TO_PAGE(membytes), error);
 
 	/*
 	 * Turn on exception handlers.  XXX we assume that only the boot CPU

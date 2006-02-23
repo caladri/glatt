@@ -207,7 +207,7 @@ page_release(struct vm *vm, paddr_t paddr)
 		 * If this is not one first PAGE_INDEX_COUNT pages after the
 		 * base address, then we should keep scanning.
 		 */
-		off = PA_TO_PAGE(paddr - pi->pi_header.ph_base);
+		off = ADDR_TO_PAGE(paddr - pi->pi_header.ph_base);
 		if (off >= PAGE_INDEX_COUNT)
 			continue;
 		pe = &pi->pi_entries[off / PAGE_ENTRY_PAGES];

@@ -90,7 +90,7 @@ pmap_index_pte(vaddr_t vaddr)
 static __inline vaddr_t
 pmap_index2(vaddr_t vaddr)
 {
-	return ((vaddr / PTEL2DIV) % NL2PL1);
+	return ((vaddr / L2L1DIV) % NL2PL1);
 }
 
 static __inline vaddr_t

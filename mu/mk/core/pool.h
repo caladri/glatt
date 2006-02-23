@@ -14,6 +14,8 @@ struct pool {
 	uint32_t pool_flags;
 };
 
+extern size_t pool_max_alloc;
+
 void *pool_allocate(struct pool *);
 int pool_create(struct pool *, const char *, size_t, unsigned);
 void pool_free(struct pool *, void *);

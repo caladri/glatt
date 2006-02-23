@@ -28,6 +28,8 @@ static struct pool_item *pool_get(struct pool *);
 static void pool_initialize_page(struct pool_page *);
 static struct pool_page *pool_page(struct pool_item *);
 
+size_t pool_max_alloc = MAX_ALLOC_SIZE;
+
 void *
 pool_allocate(struct pool *pool)
 {

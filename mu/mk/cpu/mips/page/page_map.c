@@ -78,6 +78,8 @@ pmap_find(struct vm *vm, vaddr_t vaddr)
 	struct pmap_lev2 *pml2;
 
 	pm = vm->vm_pmap;
+	if (vaddr < pm->pm_base || vaddr >= pm->pm_end)
+		return (NULL);
 	vaddr -= pm->pm_base;
 
 	pml0 = pmap_find0(pm, vaddr);

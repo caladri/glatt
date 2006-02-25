@@ -105,6 +105,8 @@ again:
 			break;
 		case 's':
 			q = va_arg(ap, const char *);
+			if (q == NULL)
+				q = "(null)";
 			kcputs_noflush(q);
 			break;
 		case 'u':

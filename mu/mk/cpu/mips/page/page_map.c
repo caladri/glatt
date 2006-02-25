@@ -1,6 +1,7 @@
 #include <core/types.h>
 #include <core/error.h>
 #include <cpu/memory.h>
+#include <cpu/tlb.h>
 #include <db/db.h>
 #include <page/page_map.h>
 #include <vm/page.h>
@@ -15,7 +16,7 @@ static pt_entry_t *pmap_find_pte(struct pmap_lev2 *, vaddr_t);
 static int pmap_init(struct vm *, vaddr_t, vaddr_t);
 static bool pmap_is_direct(vaddr_t);
 static void pmap_pinit(struct pmap *, vaddr_t, vaddr_t);
-static void pmap_update(pt_entry_t *, paddr_t, pt_entry_t);
+static void pmap_update(struct vm *, vaddr_t, paddr_t, pt_entry_t);
 
 unsigned
 pmap_asid(struct vm *vm)
@@ -116,7 +117,7 @@ pmap_map(struct vm *vm, vaddr_t vaddr, paddr_t paddr)
 		flags |= PG_G;
 	/* Cache? */
 	flags |= PG_C_UNCACHED;
-	pmap_update(pte, paddr, flags);
+	pmap_update(vm, vaddr, paddr, flags);
 	return (0);
 }
 
@@ -138,7 +139,7 @@ pmap_unmap(struct vm *vm, vaddr_t vaddr)
 	if (pte == NULL)
 		return (ERROR_NOT_FOUND);
 	/* Invalidate by updating to not have PG_V set.  */
-	pmap_update(pte, 0, 0);
+	pmap_update(vm, vaddr, 0, 0);
 	return (0);
 }
 
@@ -276,19 +277,27 @@ pmap_pinit(struct pmap *pm, vaddr_t base, vaddr_t end)
 }
 
 static void
-pmap_update(pt_entry_t *pte, paddr_t paddr, pt_entry_t flags)
+pmap_update(struct vm *vm, vaddr_t vaddr, paddr_t paddr, pt_entry_t flags)
 {
+	pt_entry_t *pte;
 	paddr_t opaddr;
 
 	paddr &= ~PAGE_MASK;
+	vaddr &= ~PAGE_MASK;
+
+	pte = pmap_find(vm, vaddr);
+	if (pte == NULL)
+		panic("%s: update of PTE that isn't there.", __func__);
 
 	opaddr = TLBLO_PTE_TO_PA(*pte);
 	if (pte_test(pte, PG_V)) {
 		if (opaddr == paddr) {
 			/* Mapping stayed the same, just check flags.  */
+			panic("%s: mapping stayed the same.", __func__);
 			return;
 		}
 		/* XXX flush TLB, clear cache.  */
+		tlb_invalidate(vm, vaddr);
 	}
 	*pte = TLBLO_PA_TO_PFN(paddr) | flags;
 }

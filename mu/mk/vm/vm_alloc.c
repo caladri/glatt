@@ -60,6 +60,10 @@ vm_free(struct vm *vm, size_t size, vaddr_t vaddr)
 		if (error != 0)
 			panic("%s: failed to extract from mapping: %u",
 			      __func__, error);
+		error = page_unmap(vm, vaddr + o * PAGE_SIZE);
+		if (error != 0)
+			panic("%s: failed to release mapping: %u",
+			      __func__, error);
 		error = page_release(vm, paddr);
 		if (error != 0)
 			panic("%s: failed to release page: %u", __func__,

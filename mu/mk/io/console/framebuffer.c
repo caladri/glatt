@@ -2,14 +2,15 @@
 #include <core/error.h>
 #include <core/string.h>
 #include <io/device/console/framebuffer.h>
+#include <vm/alloc.h>
+#include <vm/page.h>
+#include <vm/vm.h>
 
 #define	FB_COLUMNS(fb)	((fb)->fb_width / (fb)->fb_font->f_width)
 #define	FB_ROWS(fb)	((fb)->fb_height / (fb)->fb_font->f_height)
 
 static struct bgr foreground = { 0x80, 0x00, 0x00 };
 static struct bgr background = { 0xff, 0xff, 0xff };
-
-static struct bgr buffer[640 * 480]; /* XXX I assume an ass out of u and me.  */
 
 static void framebuffer_clear(struct framebuffer *);
 static void framebuffer_flush(void *);
@@ -21,6 +22,20 @@ static void framebuffer_scroll(struct framebuffer *);
 void
 framebuffer_init(struct framebuffer *fb, unsigned width, unsigned height)
 {
+	vaddr_t vaddr;
+	size_t pages;
+	int error;
+
+	/*
+	 * XXX some more intuitive interface.
+	 */
+	pages = width * height * sizeof *fb->fb_buffer;
+	pages += PAGE_SIZE - 1;
+	pages = ADDR_TO_PAGE(pages);
+	error = vm_alloc(&kernel_vm, pages, &vaddr);
+	if (error != 0)
+		panic("%s: vm_alloc failed: %u", __func__, error);
+
 	fb->fb_console.c_name = "framebuffer";
 	fb->fb_console.c_softc = fb;
 	fb->fb_console.c_getc = framebuffer_getc;
@@ -31,7 +46,7 @@ framebuffer_init(struct framebuffer *fb, unsigned width, unsigned height)
 
 	spinlock_lock(&fb->fb_lock);
 	fb->fb_font = &framebuffer_font_miklic_bold8x16;
-	fb->fb_buffer = buffer;
+	fb->fb_buffer = (struct bgr *)vaddr;
 
 	fb->fb_width = width;
 	fb->fb_height = height;

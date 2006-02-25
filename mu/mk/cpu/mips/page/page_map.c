@@ -116,7 +116,7 @@ pmap_map(struct vm *vm, vaddr_t vaddr, paddr_t paddr)
 	if (vm == &kernel_vm)
 		flags |= PG_G;
 	/* Cache? */
-	flags |= PG_C_UNCACHED;
+	flags |= PG_C_CCEOW;
 	pmap_update(vm, vaddr, paddr, flags);
 	return (0);
 }
@@ -126,7 +126,7 @@ pmap_map_direct(struct vm *vm, paddr_t paddr, vaddr_t *vaddrp)
 {
 	if (vm != &kernel_vm)
 		return (ERROR_NOT_IMPLEMENTED);
-	*vaddrp = (vaddr_t)XKPHYS_MAP(XKPHYS_UC, paddr);
+	*vaddrp = (vaddr_t)XKPHYS_MAP(XKPHYS_CCEW, paddr);
 	return (0);
 }
 

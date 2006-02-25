@@ -80,6 +80,10 @@ exception(void)
 		 (unsigned)pcpu_me()->pc_frame.f_regs[FRAME_STATUS]);
 	kcprintf("pc                  = %p\n",
 		 (void *)pcpu_me()->pc_frame.f_regs[FRAME_EPC]);
+	kcprintf("ra                  = %p\n",
+		 (void *)pcpu_me()->pc_frame.f_regs[FRAME_RA]);
+	kcprintf("badvaddr            = %p\n",
+		 (void *)cpu_read_badvaddr());
 	db_enter();
 }
 

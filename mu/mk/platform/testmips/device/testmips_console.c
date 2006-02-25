@@ -69,7 +69,6 @@ static struct console testmips_console = {
 void
 platform_start(void)
 {
-	static const int use_framebuffer = 0;
 	size_t membytes;
 	int error;
 
@@ -78,10 +77,11 @@ platform_start(void)
 	 * out the mess later.
 	 */
 
-	if (use_framebuffer)
-		framebuffer_init(&testmips_framebuffer, 640, 480);
-	else
-		console_init(&testmips_console);
+	console_init(&testmips_console);
+	/*
+	 * XXX start framebuffer after VM is up and running:
+	 * framebuffer_init(&testmips_framebuffer, 640, 480);
+	 */
 
 	kcputs("\n");
 	kcputs(MK_NAME "\n");

@@ -1,5 +1,4 @@
 #include <cpu/asm.h>
-#include <page/page.h>
 
 	NOREORDER
 
@@ -47,7 +46,9 @@ ENTRY(start)
 	move	a1, sp
 	bnez	v0, 1b
 	nop
-	ld	sp, 0(sp)		/* Bam!  */
+	ld	t0, 0(sp)		/* Wait for it...  */
+	daddu	t0, PAGE_SIZE		/* Wait for it...  */
+	move	sp, t0			/* Bam!  */
 
 	/* Start all processors.  */
 	jal	platform_mp_start_all

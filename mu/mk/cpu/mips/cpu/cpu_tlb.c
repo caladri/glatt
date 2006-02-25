@@ -116,6 +116,8 @@ tlb_modify(vaddr_t vaddr)
 	pt_entry_t *pte;
 	struct vm *vm;
 
+	if (PAGE_FLOOR(vaddr) == 0)
+		panic("%s: accessing NULL.", __func__);
 	vm = pcpu_me()->pc_vm;
 	pte = pmap_find(vm, vaddr); /* XXX lock.  */
 	if (pte == NULL)
@@ -129,6 +131,8 @@ tlb_modify(vaddr_t vaddr)
 void
 tlb_refill(vaddr_t vaddr)
 {
+	if (PAGE_FLOOR(vaddr) == 0)
+		panic("%s: accessing NULL.", __func__);
 	/* XXX     task_me()->t_vm */
 	tlb_update(pcpu_me()->pc_vm, vaddr);
 }

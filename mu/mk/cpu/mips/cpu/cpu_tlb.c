@@ -6,8 +6,10 @@
 #include <cpu/pcpu.h>
 #include <cpu/tlb.h>
 #include <db/db.h>
+#include <page/page_map.h>
 #include <page/page_table.h>
 #include <vm/page.h>
+#include <vm/vm.h>
 
 /*
  * XXX since we are using 4K TLB pages and 8K VM pages (2 for the price of 1!),
@@ -94,7 +96,7 @@ tlb_init(paddr_t pcpu_addr)
 }
 
 void
-tlb_invalidate(struct vm *vm, vaddr_t vaddr)
+tlb_invalidate(struct pmap *pm, vaddr_t vaddr)
 {
 	critical_section_t crit;
 	int i;
@@ -102,7 +104,7 @@ tlb_invalidate(struct vm *vm, vaddr_t vaddr)
 	vaddr &= ~PAGE_MASK;
 
 	crit = critical_enter();
-	cpu_write_tlb_entryhi(TLBHI_ENTRY(vaddr, pmap_asid(vm)));
+	cpu_write_tlb_entryhi(TLBHI_ENTRY(vaddr, pmap_asid(pm)));
 	tlb_probe();
 	i = cpu_read_tlb_index();
 	if (i >= 0)
@@ -119,13 +121,13 @@ tlb_modify(vaddr_t vaddr)
 	if (PAGE_FLOOR(vaddr) == 0)
 		panic("%s: accessing NULL.", __func__);
 	vm = pcpu_me()->pc_vm;
-	pte = pmap_find(vm, vaddr); /* XXX lock.  */
+	pte = pmap_find(vm->vm_pmap, vaddr); /* XXX lock.  */
 	if (pte == NULL)
 		panic("%s: pmap_find returned NULL.", __func__);
 	if (pte_test(pte, PG_RO))
 		panic("%s: write to read-only page.", __func__);
 	pte_set(pte, PG_D);	/* Mark page dirty.  */
-	tlb_update(vm, vaddr);
+	tlb_update(vm->vm_pmap, vaddr);
 }
 
 void
@@ -134,11 +136,11 @@ tlb_refill(vaddr_t vaddr)
 	if (PAGE_FLOOR(vaddr) == 0)
 		panic("%s: accessing NULL.", __func__);
 	/* XXX     task_me()->t_vm */
-	tlb_update(pcpu_me()->pc_vm, vaddr);
+	tlb_update(pcpu_me()->pc_vm->vm_pmap, vaddr);
 }
 
 void
-tlb_update(struct vm *vm, vaddr_t vaddr)
+tlb_update(struct pmap *pm, vaddr_t vaddr)
 {
 	critical_section_t crit;
 	register_t asid;
@@ -146,11 +148,11 @@ tlb_update(struct vm *vm, vaddr_t vaddr)
 	int i;
 
 	crit = critical_enter();
-	pte = pmap_find(vm, vaddr); /* XXX lock.  */
+	pte = pmap_find(pm, vaddr); /* XXX lock.  */
 	if (pte == NULL)
 		panic("%s: pmap_find returned NULL.", __func__);
 	asid = cpu_read_tlb_entryhi();
-	cpu_write_tlb_entryhi(TLBHI_ENTRY(vaddr, pmap_asid(vm)));
+	cpu_write_tlb_entryhi(TLBHI_ENTRY(vaddr, pmap_asid(pm)));
 	tlb_probe();
 	i = cpu_read_tlb_index();
 	cpu_write_tlb_entrylo0(*pte);

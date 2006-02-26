@@ -110,4 +110,8 @@ pmap_index0(vaddr_t vaddr)
 	return ((vaddr / PMAPL0DIV) % NL0PMAP);
 }
 
+	/* Specifics of the MIPS PMAP.  */
+
+unsigned pmap_asid(struct pmap *);
+
 #endif /* !_PAGE_PAGE_MAP_H_ */

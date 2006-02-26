@@ -17,16 +17,16 @@ static pt_entry_t *pmap_find_pte(struct pmap_lev2 *, vaddr_t);
 static int pmap_init(struct vm *, vaddr_t, vaddr_t);
 static bool pmap_is_direct(vaddr_t);
 static void pmap_pinit(struct pmap *, vaddr_t, vaddr_t);
-static void pmap_update(struct vm *, vaddr_t, paddr_t, pt_entry_t);
+static void pmap_update(struct pmap *, vaddr_t, paddr_t, pt_entry_t);
 
 static struct pool pmap_pool;
 
 unsigned
-pmap_asid(struct vm *vm)
+pmap_asid(struct pmap *pm)
 {
-	if (vm == NULL)
+	if (pm == NULL)
 		return (0); /* XXX invalid ASID? */
-	ASSERT(vm == &kernel_vm, "only support kernel address space");
+	ASSERT(pm == kernel_vm.vm_pmap, "only support kernel address space");
 	return (0);
 }
 
@@ -63,7 +63,7 @@ pmap_extract(struct vm *vm, vaddr_t vaddr, paddr_t *paddrp)
 
 	if (vaddr >= pm->pm_end || vaddr < pm->pm_base)
 		return (ERROR_NOT_PERMITTED);
-	pte = pmap_find(vm, vaddr);
+	pte = pmap_find(pm, vaddr);
 	if (pte == NULL)
 		return (ERROR_NOT_FOUND);
 	*paddrp = TLBLO_PTE_TO_PA(*pte);
@@ -71,14 +71,12 @@ pmap_extract(struct vm *vm, vaddr_t vaddr, paddr_t *paddrp)
 }
 
 pt_entry_t *
-pmap_find(struct vm *vm, vaddr_t vaddr)
+pmap_find(struct pmap *pm, vaddr_t vaddr)
 {
-	struct pmap *pm;
 	struct pmap_lev0 *pml0;
 	struct pmap_lev1 *pml1;
 	struct pmap_lev2 *pml2;
 
-	pm = vm->vm_pmap;
 	if (vaddr < pm->pm_base || vaddr >= pm->pm_end)
 		return (NULL);
 	vaddr -= pm->pm_base;
@@ -117,7 +115,7 @@ pmap_map(struct vm *vm, vaddr_t vaddr, paddr_t paddr)
 		flags |= PG_G;
 	/* Cache? */
 	flags |= PG_C_CCEOW;
-	pmap_update(vm, vaddr, paddr, flags);
+	pmap_update(pm, vaddr, paddr, flags);
 	return (0);
 }
 
@@ -133,13 +131,16 @@ pmap_map_direct(struct vm *vm, paddr_t paddr, vaddr_t *vaddrp)
 int
 pmap_unmap(struct vm *vm, vaddr_t vaddr)
 {
+	struct pmap *pm;
 	pt_entry_t *pte;
 
-	pte = pmap_find(vm, vaddr);
+	pm = vm->vm_pmap;
+
+	pte = pmap_find(pm, vaddr);
 	if (pte == NULL)
 		return (ERROR_NOT_FOUND);
 	/* Invalidate by updating to not have PG_V set.  */
-	pmap_update(vm, vaddr, 0, 0);
+	pmap_update(pm, vaddr, 0, 0);
 	return (0);
 }
 
@@ -240,9 +241,6 @@ pmap_find_pte(struct pmap_lev2 *pml2, vaddr_t vaddr)
 	return (&pml2->pml2_entries[pmap_index_pte(vaddr)]);
 }
 
-/*
- * XXX push down allocation of the pmap.
- */
 static int
 pmap_init(struct vm *vm, vaddr_t base, vaddr_t end)
 {
@@ -284,7 +282,7 @@ pmap_pinit(struct pmap *pm, vaddr_t base, vaddr_t end)
 }
 
 static void
-pmap_update(struct vm *vm, vaddr_t vaddr, paddr_t paddr, pt_entry_t flags)
+pmap_update(struct pmap *pm, vaddr_t vaddr, paddr_t paddr, pt_entry_t flags)
 {
 	pt_entry_t *pte;
 	paddr_t opaddr;
@@ -292,7 +290,7 @@ pmap_update(struct vm *vm, vaddr_t vaddr, paddr_t paddr, pt_entry_t flags)
 	paddr &= ~PAGE_MASK;
 	vaddr &= ~PAGE_MASK;
 
-	pte = pmap_find(vm, vaddr);
+	pte = pmap_find(pm, vaddr);
 	if (pte == NULL)
 		panic("%s: update of PTE that isn't there.", __func__);
 
@@ -304,7 +302,7 @@ pmap_update(struct vm *vm, vaddr_t vaddr, paddr_t paddr, pt_entry_t flags)
 			return;
 		}
 		/* XXX flush TLB, clear cache.  */
-		tlb_invalidate(vm, vaddr);
+		tlb_invalidate(pm, vaddr);
 	}
 	*pte = TLBLO_PA_TO_PFN(paddr) | flags;
 }

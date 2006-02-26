@@ -9,6 +9,8 @@
  * 64-bit PTE.
  */
 #ifndef	ASSEMBLER
+struct pmap;
+
 typedef	uint64_t	pt_entry_t;
 #endif
 
@@ -119,7 +121,7 @@ typedef	uint64_t	pt_entry_t;
 #define	pte_test(pte, bit)	(((*(pte)) & (bit)) == (bit))
 
 #ifndef	ASSEMBLER
-pt_entry_t *pmap_find(struct vm *, vaddr_t);
+pt_entry_t *pmap_find(struct pmap *, vaddr_t);
 #endif
 
 #endif /* !_PAGE_TABLE_H_ */

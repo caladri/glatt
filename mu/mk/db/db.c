@@ -37,6 +37,10 @@ db_enter(void)
 	struct db_command *command;
 	const char *line;
 
+	/*
+	 * XXX acquire a spinlock or halt all other CPUs to prevent lots of
+	 * them entering the debugger at the same time.
+	 */
 	for (;;) {
 again:		if (!db_drunk_debugging)
 			kcputs("db> ");

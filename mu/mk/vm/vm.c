@@ -1,5 +1,4 @@
 #include <core/types.h>
-#include <core/alloc.h>
 #include <core/error.h>
 #include <db/db.h>
 #include <vm/page.h>

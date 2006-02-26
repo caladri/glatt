@@ -111,59 +111,6 @@ platform_mp_start_one(void)
 	cpu_interrupt_enable();
 
 	/*
-	 * Get a physical page, get a virtual address, map it, write to it,
-	 * read from it.
-	 */
-	paddr_t page_addr;
-	vaddr_t vaddr;
-	volatile uint64_t *p, *q;
-
-	error = page_alloc(&kernel_vm, &page_addr);
-	if (error != 0)
-		panic("%s: page_alloc failed: %u", __func__, error);
-	kcprintf("Allocated page: %p\n", (void *)page_addr);
-	error = vm_alloc_address(&kernel_vm, &vaddr, 1);
-	if (error != 0)
-		panic("%s: vm_alloc_address failed: %u", __func__, error);
-	kcprintf("Allocated virtual address: %p\n", (void *)vaddr);
-	error = page_map(&kernel_vm, vaddr, page_addr);
-	if (error != 0)
-		panic("%s: page_map failed: %u", __func__, error);
-	q = (volatile uint64_t *)XKPHYS_MAP(XKPHYS_UC, page_addr);
-	*q = (uint64_t)XKPHYS_MAP(XKPHYS_UC, page_addr);
-	ASSERT(*q == (uint64_t)XKPHYS_MAP(XKPHYS_UC, page_addr), "page content valid");
-	p = (volatile uint64_t *)vaddr;
-	kcprintf("Mapped virtual address: %p\n", (void *)p);
-	*p = (uint64_t)XKPHYS_MAP(XKPHYS_UC, page_addr) + 3;
-	ASSERT(*p == (uint64_t)XKPHYS_MAP(XKPHYS_UC, page_addr) + 3, "page content valid");
-	error = vm_free_address(&kernel_vm, vaddr);
-	if (error != 0)
-		panic("%s: vm_free_address failed: %u", __func__, error);
-	kcprintf("cpu%u: VM appears to work.\n", mp_whoami());
-
-	error = vm_alloc(&kernel_vm, 10 * 1024 * 1024, &vaddr);
-	if (error != 0)
-		panic("%s: vm_alloc failed: %u", __func__, error);
-	kcprintf("Allocated 10MB at %p\n", (void *)vaddr);
-	memset((void *)vaddr, 0, 10 * 1024 * 1024);
-	kcprintf("And we zeroed it, too!\n");
-	error = vm_free(&kernel_vm, 10 * 1024 * 1024, vaddr);
-	if (error != 0)
-		panic("%s: vm_free failed: %u", __func__, error);
-
-	error = vm_alloc(&kernel_vm, 4 * 1024 * 1024, &vaddr);
-	if (error != 0)
-		panic("%s: vm_alloc failed: %u", __func__, error);
-	kcprintf("Allocated 4MB at %p\n", (void *)vaddr);
-	memset((void *)vaddr, 0, 4 * 1024 * 1024);
-	kcprintf("And we zeroed it, too!\n");
-	error = vm_free(&kernel_vm, 4 * 1024 * 1024, vaddr);
-	if (error != 0)
-		panic("%s: vm_free failed: %u", __func__, error);
-
-	/* XXX end testcode.  */
-
-	/*
 	 * XXX Create a task+thread for us and switch to it.
 	 */
 	db_enter();

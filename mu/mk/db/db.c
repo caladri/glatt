@@ -1,6 +1,7 @@
 #include <core/types.h>
 #include <core/error.h>
 #include <core/string.h>
+#include <cpu/boot.h>
 #include <db/db.h>
 #include <io/device/console/console.h>
 
@@ -12,12 +13,15 @@ struct db_command {
 	const char *dbc_help;
 };
 
+static void db_command_halt(void);
 static void db_command_help(void);
 static void db_command_love(void);
 
 static const char *db_gets(void);
 
 static struct db_command db_commands[] = {
+	{ "halt",	db_command_halt,
+		"Halt the system." },
 	{ "help",	db_command_help,
 		"List available commands." },
 	{ "love",	db_command_love,
@@ -51,6 +55,13 @@ again:		if (!db_drunk_debugging)
 		else
 			kcprintf("You, of all people, should know better.\n");
 	}
+}
+
+static void
+db_command_halt(void)
+{
+	kcprintf("Halting system from debugger...\n");
+	cpu_halt();
 }
 
 static void

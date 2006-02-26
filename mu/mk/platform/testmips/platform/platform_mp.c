@@ -166,5 +166,5 @@ platform_mp_start_one(void)
 	/*
 	 * XXX Create a task+thread for us and switch to it.
 	 */
-	for (;;)	continue;
+	db_enter();
 }

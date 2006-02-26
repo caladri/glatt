@@ -10,6 +10,7 @@
 #include <db/db.h>
 #include <io/device/console/console.h>
 #include <io/device/console/framebuffer.h>
+#include <platform/platform.h>
 #include <vm/page.h>
 #include <vm/vm.h>
 
@@ -65,6 +66,12 @@ static struct console testmips_console = {
 	.c_putc = testmips_console_putc,
 	.c_flush = testmips_console_flush,
 };
+
+void
+platform_halt(void)
+{
+	*(volatile int *)XKPHYS_MAP(XKPHYS_UC, 0x10000000 | 0x10) = 1;
+}
 
 void
 platform_start(void)

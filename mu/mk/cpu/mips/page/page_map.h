@@ -79,6 +79,11 @@ struct pmap {
 	vaddr_t pm_end;
 };
 
+/*
+ * If it goes over PAGE_SIZE, we would need a way to allocate a contiguous
+ * direct-mapped region, or we would have to have the page tables self-map the
+ * pmap entry.
+ */
 COMPILE_TIME_ASSERT(sizeof (struct pmap) <= PAGE_SIZE);
 
 static __inline vaddr_t

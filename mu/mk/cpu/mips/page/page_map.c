@@ -1,4 +1,5 @@
 #include <core/types.h>
+#include <core/alloc.h>
 #include <core/error.h>
 #include <cpu/memory.h>
 #include <cpu/tlb.h>
@@ -18,6 +19,8 @@ static bool pmap_is_direct(vaddr_t);
 static void pmap_pinit(struct pmap *, vaddr_t, vaddr_t);
 static void pmap_update(struct vm *, vaddr_t, paddr_t, pt_entry_t);
 
+static struct pool pmap_pool;
+
 unsigned
 pmap_asid(struct vm *vm)
 {
@@ -32,6 +35,10 @@ pmap_bootstrap(void)
 {
 	int error;
 
+	error = pool_create(&pmap_pool, "PMAP", sizeof (struct pmap),
+			    POOL_DEFAULT);
+	if (error != 0)
+		panic("%s: pool_create failed: %u", __func__, error);
 	error = pmap_init(&kernel_vm, KERNEL_BASE, KERNEL_END);
 	if (error != 0)
 		panic("%s: pmap_init failed: %u", __func__, error);
@@ -239,24 +246,18 @@ pmap_find_pte(struct pmap_lev2 *pml2, vaddr_t vaddr)
 static int
 pmap_init(struct vm *vm, vaddr_t base, vaddr_t end)
 {
-	vaddr_t vaddr;
+	struct pmap *pm;
 	int error;
 
-	error = page_alloc_direct(vm, &vaddr);
-	if (error != 0)
-		return (error);
-	/* XXX map this at a fixed virtual address?  */
-	vm->vm_pmap = (struct pmap *)vaddr;
+	pm = pool_allocate(&pmap_pool);
+	if (pm == NULL)
+		return (ERROR_EXHAUSTED);
+	vm->vm_pmap = pm;
 	pmap_pinit(vm->vm_pmap, base, end);
 
 	error = vm_insert_range(vm, base, end);
 	if (error != 0) {
-		int error2;
-
-		error2 = page_free_direct(vm, vaddr);
-		if (error2 != 0)
-			panic("%s: page_free_direct failed: %u",
-			      __func__, error2);
+		pool_free(&pmap_pool, pm);
 		return (error);
 	}
 	return (0);

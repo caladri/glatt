@@ -30,15 +30,8 @@ pmap_asid(struct vm *vm)
 void
 pmap_bootstrap(void)
 {
-	pt_entry_t *pte;
-	vaddr_t vaddr;
 	int error;
-	
-	error = page_alloc_direct(&kernel_vm, &vaddr);
-	if (error != 0)
-		panic("%s: page_alloc_direct failed: %u", __func__, error);
-	/* XXX map this at a fixed virtual address.  */
-	kernel_vm.vm_pmap = (struct pmap *)vaddr;
+
 	error = pmap_init(&kernel_vm, KERNEL_BASE, KERNEL_END);
 	if (error != 0)
 		panic("%s: pmap_init failed: %u", __func__, error);
@@ -246,13 +239,26 @@ pmap_find_pte(struct pmap_lev2 *pml2, vaddr_t vaddr)
 static int
 pmap_init(struct vm *vm, vaddr_t base, vaddr_t end)
 {
+	vaddr_t vaddr;
 	int error;
 
+	error = page_alloc_direct(vm, &vaddr);
+	if (error != 0)
+		return (error);
+	/* XXX map this at a fixed virtual address?  */
+	vm->vm_pmap = (struct pmap *)vaddr;
 	pmap_pinit(vm->vm_pmap, base, end);
 
 	error = vm_insert_range(vm, base, end);
-	if (error != 0)
+	if (error != 0) {
+		int error2;
+
+		error2 = page_free_direct(vm, vaddr);
+		if (error2 != 0)
+			panic("%s: page_free_direct failed: %u",
+			      __func__, error2);
 		return (error);
+	}
 	return (0);
 }
 

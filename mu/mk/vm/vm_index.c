@@ -18,21 +18,21 @@ struct vm_index {
 };
 
 static struct pool vm_index_pool;
-struct vm kernel_vm;
 
 static void vm_free_index(struct vm *, struct vm_index *);
 static void vm_insert_index(struct vm_index *, struct vm_index *);
 static int vm_use_index(struct vm *, struct vm_index *, size_t);
 
-void
-vm_init(void)
+int
+vm_init_index(void)
 {
 	int error;
 
 	error = pool_create(&vm_index_pool, "VM Index",
 			    sizeof (struct vm_index), POOL_DEFAULT);
 	if (error != 0)
-		panic("%s: failed to create pool: %u", __func__, error);
+		return (error);
+	return (0);
 }
 
 int
@@ -126,18 +126,6 @@ vm_insert_range(struct vm *vm, vaddr_t begin, vaddr_t end)
 	 * the time and put the existing tree to our left or right appropriately
 	 */
 	vm_insert_index(vm->vm_index, vmi);
-	VM_UNLOCK(vm);
-	return (0);
-}
-
-int
-vm_setup(struct vm *vm)
-{
-	spinlock_init(&vm->vm_lock, "VM lock");
-	VM_LOCK(vm);
-	vm->vm_pmap = NULL;
-	vm->vm_index = NULL;
-	vm->vm_index_free = NULL;
 	VM_UNLOCK(vm);
 	return (0);
 }

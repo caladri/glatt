@@ -1,4 +1,4 @@
-# $Id: build.mk,v 1.12 2006-02-21 10:17:30 juli Exp $
+# $Id: build.mk,v 1.13 2006-02-26 22:16:52 juli Exp $
 
 .PATH: ${KERNEL_ROOT}/core
 .PATH: ${KERNEL_ROOT}/db
@@ -22,4 +22,5 @@ KERNEL_SOURCES+=framebuffer_font.c
 # vm
 KERNEL_SOURCES+=vm.c
 KERNEL_SOURCES+=vm_alloc.c
+KERNEL_SOURCES+=vm_index.c
 KERNEL_SOURCES+=vm_page.c

@@ -23,16 +23,10 @@ void
 framebuffer_init(struct framebuffer *fb, unsigned width, unsigned height)
 {
 	vaddr_t vaddr;
-	size_t pages;
 	int error;
 
-	/*
-	 * XXX some more intuitive interface.
-	 */
-	pages = width * height * sizeof *fb->fb_buffer;
-	pages += PAGE_SIZE - 1;
-	pages = ADDR_TO_PAGE(pages);
-	error = vm_alloc(&kernel_vm, pages, &vaddr);
+	error = vm_alloc(&kernel_vm, width * height * sizeof *fb->fb_buffer,
+			 &vaddr);
 	if (error != 0)
 		panic("%s: vm_alloc failed: %u", __func__, error);
 

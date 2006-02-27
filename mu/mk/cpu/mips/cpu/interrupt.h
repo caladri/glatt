@@ -1,8 +1,8 @@
 #ifndef	_CPU_INTERRUPT_H_
 #define	_CPU_INTERRUPT_H_
 
-#define	CPU_HARD_INTERRUPT_MAX	(6)
-#define	CPU_SOFT_INTERRUPT_MAX	(2)
+#define	CPU_HARD_INTERRUPT_COUNT	(6)
+#define	CPU_SOFT_INTERRUPT_COUNT	(2)
 
 typedef	void (interrupt_t)(void *, int);
 

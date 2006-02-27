@@ -25,9 +25,8 @@
 #define	TEST_MP_DEV_FUNCTION(f)						\
 	(volatile uint64_t *)XKPHYS_MAP(XKPHYS_UC, TEST_MP_DEV_BASE + (f))
 
-static void platform_mp_start_one(void);
-
-static struct spinlock startup_lock;
+static void platform_mp_start_one(cpu_id_t, void (*)(void));
+static void platform_mp_startup(void);
 
 size_t
 platform_mp_memory(void)
@@ -46,38 +45,41 @@ platform_mp_start_all(void)
 {
 	cpu_id_t cpu;
 	uint64_t ncpus;
-	vaddr_t stack;
-	int error;
-
-	spinlock_init(&startup_lock, "startup");
 
 	ncpus = *TEST_MP_DEV_FUNCTION(TEST_MP_DEV_NCPUS);
-
-	kcprintf("cpu%u: Starting %lu processors.\n", mp_whoami(), ncpus);
-	*TEST_MP_DEV_FUNCTION(TEST_MP_DEV_STARTADDR) =
-		(uintptr_t)&platform_mp_start_one;
-	spinlock_lock(&startup_lock);
-	for (cpu = 0; cpu < ncpus; cpu++) {
-		if (cpu == mp_whoami()) {
-			kcprintf("cpu%u: bootstrap.\n", cpu);
-			continue;
+	if (ncpus != 1) {
+		kcprintf("cpu%u: multiprocessor system detected,"
+			 " starting %lu processors.\n", mp_whoami(), ncpus);
+		for (cpu = 0; cpu < ncpus; cpu++) {
+			if (cpu == mp_whoami()) {
+				kcprintf("cpu%u: bootstrap, skipping\n", cpu);
+				continue;
+			}
+			platform_mp_start_one(cpu, platform_mp_startup);
 		}
-		error = page_alloc_direct(&kernel_vm, &stack);
-		if (error != 0)
-			panic("%s: stack allocation failed: %u", __func__,
-			      error);
-		spinlock_unlock(&startup_lock);
-		*TEST_MP_DEV_FUNCTION(TEST_MP_DEV_STACK) = stack + PAGE_SIZE;
-		*TEST_MP_DEV_FUNCTION(TEST_MP_DEV_START) = cpu;
-		spinlock_lock(&startup_lock);
+		kcprintf("cpu%u: started processors.\n", mp_whoami());
+	} else {
+		kcprintf("cpu%u: uniprocessor system detected.\n", mp_whoami());
 	}
-	spinlock_unlock(&startup_lock);
-	kcprintf("cpu%u: Started processors, continuing.\n", mp_whoami());
-	platform_mp_start_one();
+	platform_mp_start_one(mp_whoami(), platform_mp_startup);
 }
 
 static void
-platform_mp_start_one(void)
+platform_mp_start_one(cpu_id_t cpu, void (*startup)(void))
+{
+	vaddr_t stack;
+	int error;
+
+	error = page_alloc_direct(&kernel_vm, &stack);
+	if (error != 0)
+		panic("%s: page_alloc_direct failed: %u", __func__, error);
+	*TEST_MP_DEV_FUNCTION(TEST_MP_DEV_STARTADDR) = (uintptr_t)startup;
+	*TEST_MP_DEV_FUNCTION(TEST_MP_DEV_STACK) = stack + PAGE_SIZE;
+	*TEST_MP_DEV_FUNCTION(TEST_MP_DEV_START) = cpu;
+}
+
+static void
+platform_mp_startup(void)
 {
 	struct pcpu *pcpu;
 	paddr_t pcpu_addr;
@@ -85,8 +87,6 @@ platform_mp_start_one(void)
 
 	/* XXX */
 	__asm __volatile ("dla $" STRING(gp) ", _gp" : : : "memory");
-
-	spinlock_lock(&startup_lock);
 
 	/* Allocate a page for persistent per-CPU data.  */
 	error = page_alloc(&kernel_vm, &pcpu_addr);
@@ -97,10 +97,6 @@ platform_mp_start_one(void)
 	pcpu->pc_vm = &kernel_vm;
 	/* Identify the CPU.  */
 	pcpu->pc_cpuinfo = cpu_identify();
-
-	spinlock_unlock(&startup_lock);
-
-	/* WARNING: Everything below here is not serialized.  */
 
 	/* Clear the TLB and add a wired mapping for my per-CPU data.  */
 	tlb_init(pcpu_addr);

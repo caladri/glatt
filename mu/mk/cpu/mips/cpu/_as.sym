@@ -1,10 +1,65 @@
+#include <cpu/context.h>
+#include <cpu/frame.h>
 #include <cpu/register.h>
 #include <cpu/pcpu.h>
 #include <page/page_map.h>
 
-	/* PCPU fields we might want.  */
-DEFINE(PC_FRAME,	offsetof(struct pcpu, pc_frame));
-DEFINE(PC_TASK,		offsetof(struct pcpu, pc_task));
+	/* CONTEXT offsets.  */
+DEFINE(CONTEXT_S0,	offsetof(struct context,	c_regs[CONTEXT_S0]));
+DEFINE(CONTEXT_S1,	offsetof(struct context,	c_regs[CONTEXT_S1]));
+DEFINE(CONTEXT_S2,	offsetof(struct context,	c_regs[CONTEXT_S2]));
+DEFINE(CONTEXT_S3,	offsetof(struct context,	c_regs[CONTEXT_S3]));
+DEFINE(CONTEXT_S4,	offsetof(struct context,	c_regs[CONTEXT_S4]));
+DEFINE(CONTEXT_S5,	offsetof(struct context,	c_regs[CONTEXT_S5]));
+DEFINE(CONTEXT_S6,	offsetof(struct context,	c_regs[CONTEXT_S6]));
+DEFINE(CONTEXT_S7,	offsetof(struct context,	c_regs[CONTEXT_S7]));
+DEFINE(CONTEXT_S8,	offsetof(struct context,	c_regs[CONTEXT_S8]));
+DEFINE(CONTEXT_SP,	offsetof(struct context,	c_regs[CONTEXT_SP]));
+DEFINE(CONTEXT_STATUS,	offsetof(struct context,	c_regs[CONTEXT_STATUS]));
+DEFINE(CONTEXT_RA,	offsetof(struct context,	c_regs[CONTEXT_RA]));
+
+	/* FRAME offsets.  */
+//DEFINE(FRAME_ZERO,	offsetof(struct frame,	f_regs[FRAME_ZERO]));
+DEFINE(FRAME_AT,	offsetof(struct frame,	f_regs[FRAME_AT]));
+DEFINE(FRAME_V0,	offsetof(struct frame,	f_regs[FRAME_V0]));
+DEFINE(FRAME_V1,	offsetof(struct frame,	f_regs[FRAME_V1]));
+DEFINE(FRAME_A0,	offsetof(struct frame,	f_regs[FRAME_A0]));
+DEFINE(FRAME_A1,	offsetof(struct frame,	f_regs[FRAME_A1]));
+DEFINE(FRAME_A2,	offsetof(struct frame,	f_regs[FRAME_A2]));
+DEFINE(FRAME_A3,	offsetof(struct frame,	f_regs[FRAME_A3]));
+DEFINE(FRAME_A4,	offsetof(struct frame,	f_regs[FRAME_A4]));
+DEFINE(FRAME_A5,	offsetof(struct frame,	f_regs[FRAME_A5]));
+DEFINE(FRAME_A6,	offsetof(struct frame,	f_regs[FRAME_A6]));
+DEFINE(FRAME_A7,	offsetof(struct frame,	f_regs[FRAME_A7]));
+DEFINE(FRAME_T0,	offsetof(struct frame,	f_regs[FRAME_T0]));
+DEFINE(FRAME_T1,	offsetof(struct frame,	f_regs[FRAME_T1]));
+DEFINE(FRAME_T2,	offsetof(struct frame,	f_regs[FRAME_T2]));
+DEFINE(FRAME_T3,	offsetof(struct frame,	f_regs[FRAME_T3]));
+DEFINE(FRAME_S0,	offsetof(struct frame,	f_regs[FRAME_S0]));
+DEFINE(FRAME_S1,	offsetof(struct frame,	f_regs[FRAME_S1]));
+DEFINE(FRAME_S2,	offsetof(struct frame,	f_regs[FRAME_S2]));
+DEFINE(FRAME_S3,	offsetof(struct frame,	f_regs[FRAME_S3]));
+DEFINE(FRAME_S4,	offsetof(struct frame,	f_regs[FRAME_S4]));
+DEFINE(FRAME_S5,	offsetof(struct frame,	f_regs[FRAME_S5]));
+DEFINE(FRAME_S6,	offsetof(struct frame,	f_regs[FRAME_S6]));
+DEFINE(FRAME_S7,	offsetof(struct frame,	f_regs[FRAME_S7]));
+DEFINE(FRAME_T8,	offsetof(struct frame,	f_regs[FRAME_T8]));
+DEFINE(FRAME_T9,	offsetof(struct frame,	f_regs[FRAME_T9]));
+//DEFINE(FRAME_K0,	offsetof(struct frame,	f_regs[FRAME_K0]));
+//DEFINE(FRAME_K1,	offsetof(struct frame,	f_regs[FRAME_K1]));
+DEFINE(FRAME_GP,	offsetof(struct frame,	f_regs[FRAME_GP]));
+DEFINE(FRAME_SP,	offsetof(struct frame,	f_regs[FRAME_SP]));
+DEFINE(FRAME_S8,	offsetof(struct frame,	f_regs[FRAME_S8]));
+DEFINE(FRAME_RA,	offsetof(struct frame,	f_regs[FRAME_RA]));
+DEFINE(FRAME_STATUS,	offsetof(struct frame,	f_regs[FRAME_STATUS]));
+DEFINE(FRAME_EPC,	offsetof(struct frame,	f_regs[FRAME_EPC]));
+DEFINE(FRAME_HI,	offsetof(struct frame,	f_regs[FRAME_HI]));
+DEFINE(FRAME_LO,	offsetof(struct frame,	f_regs[FRAME_LO]));
+
+	/* PCPU-related constants we might want.  */
+DEFINE_CONSTANT(PCPU_VIRTUAL);
+DEFINE(PC_FRAME,	offsetof(struct pcpu,	pc_frame));
+DEFINE(PC_TASK,		offsetof(struct pcpu,	pc_task));
 
 	/* PMAP-related constants.  */
 DEFINE_CONSTANT(PTEL2DIV);

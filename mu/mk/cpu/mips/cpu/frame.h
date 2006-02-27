@@ -5,13 +5,11 @@
 
 	/* A frame for everything for system call handling and debugging.  */
 
-#ifndef	ASSEMBLER
 #define	FRAME_COUNT	(36)
 
 struct frame {
 	register_t f_regs[FRAME_COUNT];
 };
-#endif
 
 //#define	FRAME_ZERO	(0x00)
 #define	FRAME_AT	(0x01)

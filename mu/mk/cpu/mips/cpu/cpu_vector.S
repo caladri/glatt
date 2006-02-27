@@ -1,8 +1,6 @@
 #include <core/_macro.h>
 #include <cpu/asm.h>
-#include <cpu/frame.h>
 #include <cpu/memory.h>
-#include <cpu/pcpu.h>
 
 	/* Vectors for exception, interrupt and TLB miss handling.  */
 

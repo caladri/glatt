@@ -82,7 +82,6 @@ exception(void)
 	}
 
 	kcprintf("\n\nFatal trap type %u on CPU %u:\n", code, mp_whoami());
-	kcprintf("current task        = %p\n", (void *)task_me());
 	kcprintf("cause               = %x\n", cause);
 	kcprintf("status              = %x\n",
 		 (unsigned)pcpu_me()->pc_frame.f_regs[FRAME_STATUS]);

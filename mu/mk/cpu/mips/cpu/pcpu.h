@@ -31,10 +31,4 @@ pcpu_me(void)
 	return ((struct pcpu *)PCPU_VIRTUAL);
 }
 
-static __inline volatile struct task *
-task_me(void)
-{
-	return (pcpu_me()->pc_task);
-}
-
 #endif /* !_CPU_PCPU_H_ */

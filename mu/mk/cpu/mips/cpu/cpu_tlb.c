@@ -135,7 +135,6 @@ tlb_refill(vaddr_t vaddr)
 {
 	if (PAGE_FLOOR(vaddr) == 0)
 		panic("%s: accessing NULL.", __func__);
-	/* XXX     task_me()->t_vm */
 	tlb_update(pcpu_me()->pc_vm->vm_pmap, vaddr);
 }
 

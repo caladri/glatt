@@ -19,6 +19,10 @@
 	 * entry and then on exit.  This means that a thread cannot fault twice.
 	 * That is probably a reasonable limitation.  Or we could allocate and
 	 * link chains of frames.
+	 *
+	 * We should use LL/SC to get the thread kstack loaded and subtracted
+	 * from to get a reliable chunk of space for this.  What a headache!
+	 * Need a coherent plan of attack for this that is totally proven.
 	 */
 
 	.data

@@ -23,6 +23,14 @@
 	 * We should use LL/SC to get the thread kstack loaded and subtracted
 	 * from to get a reliable chunk of space for this.  What a headache!
 	 * Need a coherent plan of attack for this that is totally proven.
+	 *
+	 * If we just allow one-level of nesting (which makes sense, userland
+	 * traps to kernel mode, kernel mode needs TLB refills and interrupts
+	 * to work, and I guess we can come up with a reliable interrupt disable
+	 * mechanism) then we can differentiate between user and kernel
+	 * exceptions and use the kernel stack for kernel exceptions.  My
+	 * paranoia about k0 and k1 becoming corrupted by interrupts coming in
+	 * in the middle of the start of an exception handler must be unfounded.
 	 */
 
 	.data

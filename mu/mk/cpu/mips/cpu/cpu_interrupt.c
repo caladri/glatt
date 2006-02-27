@@ -39,6 +39,8 @@ cpu_soft_interrupt_establish(int interrupt, interrupt_t *func, void *arg)
 void
 cpu_interrupt(void)
 {
+	kcprintf("Interrupt!\n");
+	for (;;) continue;
 }
 
 void

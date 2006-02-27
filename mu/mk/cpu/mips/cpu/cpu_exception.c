@@ -73,6 +73,14 @@ exception(void)
 	cause = cpu_read_cause();
 	code = (cause & CP0_CAUSE_EXCEPTION) >> CP0_CAUSE_EXCEPTION_SHIFT;
 
+	switch (code) {
+	case EXCEPTION_INT:
+		cpu_interrupt();
+		return;
+	default:
+		break;
+	}
+
 	kcprintf("\n\nFatal trap type %u on CPU %u:\n", code, mp_whoami());
 	kcprintf("current task        = %p\n", (void *)task_me());
 	kcprintf("cause               = %x\n", cause);

@@ -29,6 +29,9 @@ COMPILE_TIME_ASSERT(sizeof (struct pcpu) <= PAGE_SIZE);
 #define	TEST_MP_DEV_FUNCTION(f)						\
 	(volatile uint64_t *)XKPHYS_MAP(XKPHYS_UC, TEST_MP_DEV_BASE + (f))
 
+#define	TEST_MP_DEV_IPI_INTERRUPT	(4)
+
+static void platform_mp_ipi_interrupt(void *, int);
 static void platform_mp_start_one(cpu_id_t, void (*)(void));
 static void platform_mp_startup(void);
 
@@ -81,6 +84,11 @@ platform_mp_start_all(void)
 }
 
 static void
+platform_mp_ipi_interrupt(void *arg, int interrupt)
+{
+}
+
+static void
 platform_mp_start_one(cpu_id_t cpu, void (*startup)(void))
 {
 	vaddr_t stack;
@@ -121,6 +129,10 @@ platform_mp_startup(void)
 
 	/* Kick off interrupts.  */
 	cpu_interrupt_initialize();
+
+	/* Install an IPI interrupt handler.  */
+	cpu_hard_interrupt_establish(TEST_MP_DEV_IPI_INTERRUPT,
+				     platform_mp_ipi_interrupt, NULL);
 
 	/*
 	 * XXX Create a task+thread for us and switch to it.

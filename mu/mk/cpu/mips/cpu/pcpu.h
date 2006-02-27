@@ -21,14 +21,13 @@ struct pcpu {
 	struct interrupt_handler pc_soft_interrupt[CPU_SOFT_INTERRUPT_COUNT];
 };
 
-static __inline struct pcpu *
-pcpu_me(void)
-{
-	/*
-	 * XXX
-	 * Should be volatile in time.  Or use a PCPU_GET/SET like FreeBSD.
-	 */
-	return ((struct pcpu *)PCPU_VIRTUAL);
-}
+#define	PCPU_PTR()							\
+	((struct pcpu *)PCPU_VIRTUAL)
+
+#define	PCPU_GET(field)							\
+	(PCPU_PTR()->pc_ ## field)
+
+#define	PCPU_SET(field, value)						\
+	(PCPU_PTR()->pc_ ## field = (value))
 
 #endif /* !_CPU_PCPU_H_ */

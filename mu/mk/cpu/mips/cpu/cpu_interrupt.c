@@ -13,7 +13,7 @@ cpu_hard_interrupt_establish(int interrupt, interrupt_t *func, void *arg)
 
 	ASSERT(interrupt >= 0 && interrupt < CPU_HARD_INTERRUPT_COUNT,
 	       "invalid interrupt number");
-	ih = &pcpu_me()->pc_hard_interrupt[interrupt];
+	ih = &PCPU_GET(hard_interrupt)[interrupt];
 	ASSERT(ih->ih_func == NULL, "cannot share interrupts");
 	ih->ih_func = func;
 	ih->ih_arg = arg;
@@ -28,7 +28,7 @@ cpu_soft_interrupt_establish(int interrupt, interrupt_t *func, void *arg)
 
 	ASSERT(interrupt >= 0 && interrupt < CPU_SOFT_INTERRUPT_COUNT,
 	       "invalid interrupt number");
-	ih = &pcpu_me()->pc_soft_interrupt[interrupt];
+	ih = &PCPU_GET(soft_interrupt)[interrupt];
 	ASSERT(ih->ih_func == NULL, "cannot share interrupts");
 	ih->ih_func = func;
 	ih->ih_arg = arg;

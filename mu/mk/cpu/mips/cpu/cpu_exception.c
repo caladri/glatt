@@ -84,11 +84,11 @@ exception(void)
 	kcprintf("\n\nFatal trap type %u on CPU %u:\n", code, mp_whoami());
 	kcprintf("cause               = %x\n", cause);
 	kcprintf("status              = %x\n",
-		 (unsigned)pcpu_me()->pc_frame.f_regs[FRAME_STATUS]);
+		 (unsigned)PCPU_GET(frame).f_regs[FRAME_STATUS]);
 	kcprintf("pc                  = %p\n",
-		 (void *)pcpu_me()->pc_frame.f_regs[FRAME_EPC]);
+		 (void *)PCPU_GET(frame).f_regs[FRAME_EPC]);
 	kcprintf("ra                  = %p\n",
-		 (void *)pcpu_me()->pc_frame.f_regs[FRAME_RA]);
+		 (void *)PCPU_GET(frame).f_regs[FRAME_RA]);
 	kcprintf("badvaddr            = %p\n",
 		 (void *)cpu_read_badvaddr());
 	db_enter();

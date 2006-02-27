@@ -120,7 +120,7 @@ tlb_modify(vaddr_t vaddr)
 
 	if (PAGE_FLOOR(vaddr) == 0)
 		panic("%s: accessing NULL.", __func__);
-	vm = pcpu_me()->pc_vm;
+	vm = PCPU_GET(vm);
 	pte = pmap_find(vm->vm_pmap, vaddr); /* XXX lock.  */
 	if (pte == NULL)
 		panic("%s: pmap_find returned NULL.", __func__);
@@ -135,7 +135,7 @@ tlb_refill(vaddr_t vaddr)
 {
 	if (PAGE_FLOOR(vaddr) == 0)
 		panic("%s: accessing NULL.", __func__);
-	tlb_update(pcpu_me()->pc_vm->vm_pmap, vaddr);
+	tlb_update(PCPU_GET(vm)->vm_pmap, vaddr);
 }
 
 void
@@ -196,7 +196,7 @@ tlb_invalidate_all(void)
 
 	crit = critical_enter();
 	asid = cpu_read_tlb_entryhi();
-	for (i = cpu_read_tlb_wired(); i < pcpu_me()->pc_cpuinfo.cpu_ntlbs; i++)
+	for (i = cpu_read_tlb_wired(); i < PCPU_GET(cpuinfo).cpu_ntlbs; i++)
 		tlb_invalidate_one(i);
 	cpu_write_tlb_entryhi(asid);
 	critical_exit(crit);

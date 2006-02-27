@@ -17,4 +17,6 @@ typedef	unsigned long		uint64_t;
 typedef	int64_t			intptr_t;
 typedef	uint64_t		uintptr_t;
 
+#include <platform/types.h>
+
 #endif /* !_CPU_TYPES_H_ */

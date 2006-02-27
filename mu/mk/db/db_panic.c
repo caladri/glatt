@@ -9,6 +9,11 @@ panic(const char *s, ...)
 	va_list ap;
 	int error;
 
+	/*
+	 * Ask other CPUs to stop.  XXX check if there are other CPUs at all?
+	 */
+	mp_ipi_send_but(mp_whoami(), IPI_STOP);
+
 	kcputs("panic: ");
 	va_start(ap, s);
 	kcvprintf(s, ap);

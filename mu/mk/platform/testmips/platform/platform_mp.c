@@ -21,12 +21,26 @@
 #define	TEST_MP_DEV_STARTADDR	0x0030
 #define	TEST_MP_DEV_STACK	0x0070
 #define	TEST_MP_DEV_MEMORY	0x0090
+#define	TEST_MP_DEV_IPI_ONE	0x00a0
+#define	TEST_MP_DEV_IPI_MANY	0x00b0
 
 #define	TEST_MP_DEV_FUNCTION(f)						\
 	(volatile uint64_t *)XKPHYS_MAP(XKPHYS_UC, TEST_MP_DEV_BASE + (f))
 
 static void platform_mp_start_one(cpu_id_t, void (*)(void));
 static void platform_mp_startup(void);
+
+void
+platform_mp_ipi_send(cpu_id_t cpu, enum ipi_type ipi)
+{
+	*TEST_MP_DEV_FUNCTION(TEST_MP_DEV_IPI_ONE) = (ipi << 16) | cpu;
+}
+
+void
+platform_mp_ipi_send_but(cpu_id_t cpu, enum ipi_type ipi)
+{
+	*TEST_MP_DEV_FUNCTION(TEST_MP_DEV_IPI_MANY) = (ipi << 16) | cpu;
+}
 
 size_t
 platform_mp_memory(void)
@@ -109,5 +123,5 @@ platform_mp_startup(void)
 	/*
 	 * XXX Create a task+thread for us and switch to it.
 	 */
-	db_enter();
+	panic("%s: nothing to do, entering debugger.", __func__);
 }

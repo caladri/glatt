@@ -13,6 +13,8 @@
 #include <vm/page.h>
 #include <vm/vm.h>
 
+COMPILE_TIME_ASSERT(sizeof (struct pcpu) <= PAGE_SIZE);
+
 #define	TEST_MP_DEV_BASE	0x11000000
 
 #define	TEST_MP_DEV_WHOAMI	0x0000
@@ -118,7 +120,7 @@ platform_mp_startup(void)
 	/* Now we can take VM-related exceptions appropriately.  */
 
 	/* Kick off interrupts.  */
-	cpu_interrupt_enable();
+	cpu_interrupt_initialize();
 
 	/*
 	 * XXX Create a task+thread for us and switch to it.

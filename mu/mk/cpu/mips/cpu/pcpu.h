@@ -3,6 +3,7 @@
 
 #include <cpu/cpuinfo.h>
 #include <cpu/frame.h>
+#include <cpu/interrupt.h>
 #include <cpu/memory.h>
 
 struct task;
@@ -16,12 +17,18 @@ struct pcpu {
 	struct task *pc_task;
 	struct vm *pc_vm;
 	struct cpuinfo pc_cpuinfo;
+	struct interrupt_handler pc_hard_interrupt[CPU_HARD_INTERRUPT_MAX];
+	struct interrupt_handler pc_soft_interrupt[CPU_SOFT_INTERRUPT_MAX];
 };
 
-static __inline volatile struct pcpu *
+static __inline struct pcpu *
 pcpu_me(void)
 {
-	return ((volatile struct pcpu *)PCPU_VIRTUAL);
+	/*
+	 * XXX
+	 * Should be volatile in time.  Or use a PCPU_GET/SET like FreeBSD.
+	 */
+	return ((struct pcpu *)PCPU_VIRTUAL);
 }
 
 static __inline volatile struct task *

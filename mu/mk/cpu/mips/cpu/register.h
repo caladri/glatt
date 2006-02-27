@@ -87,4 +87,8 @@ typedef	uint64_t	register_t;
 #define	CP0_STATUS_SR	0x00100000	/* Soft reset.  */
 #define	CP0_STATUS_BEV	0x00400000	/* Using boot exception vectors.  */
 
+#define	CP0_STATUS_INT_SOFT_SHIFT	(8)
+#define	CP0_STATUS_INT_HARD_SHIFT	(CP0_STATUS_INT_SOFT_SHIFT + 2)
+#define	CP0_STATUS_INT_MASK		(0xff00)
+
 #endif /* !_CPU_REGISTER_H_ */

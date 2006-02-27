@@ -75,9 +75,6 @@ exception_table:
 	ld	k0, 0(sp) ;						\
 	daddu	sp, 8
 
-#define	SAVE(r, d)							\
-	sd	$r, (r * 8)(d)
-
 	.text
 
 	NOREORDER
@@ -168,21 +165,21 @@ ENTRY(exception_frame_save)		/* Return address is k0.  */
 	dla	k1, PCPU_VIRTUAL	/* We assume the frame is first.  */
 	dla	k1, PC_FRAME(k1)
 
-	sd	AT, (FRAME_AT * 8)(k1)
-	sd	v0, (FRAME_V0 * 8)(k1)
-	sd	v1, (FRAME_V1 * 8)(k1)
-	sd	a0, (FRAME_A0 * 8)(k1)
-	sd	a1, (FRAME_A1 * 8)(k1)
-	sd	a2, (FRAME_A2 * 8)(k1)
-	sd	a3, (FRAME_A3 * 8)(k1)
-	sd	a4, (FRAME_A4 * 8)(k1)
-	sd	a5, (FRAME_A5 * 8)(k1)
-	sd	a6, (FRAME_A6 * 8)(k1)
-	sd	a7, (FRAME_A7 * 8)(k1)
-	sd	t0, (FRAME_T0 * 8)(k1)
-	sd	t1, (FRAME_T1 * 8)(k1)
-	sd	t2, (FRAME_T2 * 8)(k1)
-	sd	t3, (FRAME_T3 * 8)(k1)
+	sd	AT, FRAME_AT(k1)
+	sd	v0, FRAME_V0(k1)
+	sd	v1, FRAME_V1(k1)
+	sd	a0, FRAME_A0(k1)
+	sd	a1, FRAME_A1(k1)
+	sd	a2, FRAME_A2(k1)
+	sd	a3, FRAME_A3(k1)
+	sd	a4, FRAME_A4(k1)
+	sd	a5, FRAME_A5(k1)
+	sd	a6, FRAME_A6(k1)
+	sd	a7, FRAME_A7(k1)
+	sd	t0, FRAME_T0(k1)
+	sd	t1, FRAME_T1(k1)
+	sd	t2, FRAME_T2(k1)
+	sd	t3, FRAME_T3(k1)
 
 	/* Use freshly-available temporaries to start loading externals.  */
 	mfc0	t0, CP0_STATUS
@@ -190,25 +187,25 @@ ENTRY(exception_frame_save)		/* Return address is k0.  */
 	mfhi	t2
 	mflo	t3
 
-	sd	s0, (FRAME_S0 * 8)(k1)
-	sd	s1, (FRAME_S1 * 8)(k1)
-	sd	s2, (FRAME_S2 * 8)(k1)
-	sd	s3, (FRAME_S3 * 8)(k1)
-	sd	s4, (FRAME_S4 * 8)(k1)
-	sd	s5, (FRAME_S5 * 8)(k1)
-	sd	s6, (FRAME_S6 * 8)(k1)
-	sd	s7, (FRAME_S7 * 8)(k1)
-	sd	t8, (FRAME_T8 * 8)(k1)
-	sd	t9, (FRAME_T9 * 8)(k1)
-	sd	gp, (FRAME_GP * 8)(k1)
-	sd	sp, (FRAME_SP * 8)(k1)
-	sd	s8, (FRAME_S8 * 8)(k1)
-	sd	ra, (FRAME_RA * 8)(k1)
+	sd	s0, FRAME_S0(k1)
+	sd	s1, FRAME_S1(k1)
+	sd	s2, FRAME_S2(k1)
+	sd	s3, FRAME_S3(k1)
+	sd	s4, FRAME_S4(k1)
+	sd	s5, FRAME_S5(k1)
+	sd	s6, FRAME_S6(k1)
+	sd	s7, FRAME_S7(k1)
+	sd	t8, FRAME_T8(k1)
+	sd	t9, FRAME_T9(k1)
+	sd	gp, FRAME_GP(k1)
+	sd	sp, FRAME_SP(k1)
+	sd	s8, FRAME_S8(k1)
+	sd	ra, FRAME_RA(k1)
 
-	sd	t0, (FRAME_STATUS * 8)(k1)
-	sd	t1, (FRAME_EPC * 8)(k1)
-	sd	t2, (FRAME_HI * 8)(k1)
-	sd	t3, (FRAME_LO * 8)(k1)
+	sd	t0, FRAME_STATUS(k1)
+	sd	t1, FRAME_EPC(k1)
+	sd	t2, FRAME_HI(k1)
+	sd	t3, FRAME_LO(k1)
 
 	jr	k0
 	nop
@@ -220,25 +217,25 @@ ENTRY(exception_frame_restore)		/* Return address is k0.  */
 	dla	k1, PCPU_VIRTUAL	/* We assume the frame is first.  */
 	dla	k1, PC_FRAME(k1)
 
-	ld      t3, (FRAME_LO * 8)(k1)
-	ld      t2, (FRAME_HI * 8)(k1)
-	ld      t1, (FRAME_EPC * 8)(k1)
-	ld      t0, (FRAME_STATUS * 8)(k1)
+	ld      t3, FRAME_LO(k1)
+	ld      t2, FRAME_HI(k1)
+	ld      t1, FRAME_EPC(k1)
+	ld      t0, FRAME_STATUS(k1)
 
-	ld      ra, (FRAME_RA * 8)(k1)
-	ld      s8, (FRAME_S8 * 8)(k1)
-	ld      sp, (FRAME_SP * 8)(k1)
-	ld      gp, (FRAME_GP * 8)(k1)
-	ld      t9, (FRAME_T9 * 8)(k1)
-	ld      t8, (FRAME_T8 * 8)(k1)
-	ld      s7, (FRAME_S7 * 8)(k1)
-	ld      s6, (FRAME_S6 * 8)(k1)
-	ld      s5, (FRAME_S5 * 8)(k1)
-	ld      s4, (FRAME_S4 * 8)(k1)
-	ld      s3, (FRAME_S3 * 8)(k1)
-	ld      s2, (FRAME_S2 * 8)(k1)
-	ld      s1, (FRAME_S1 * 8)(k1)
-	ld      s0, (FRAME_S0 * 8)(k1)
+	ld      ra, FRAME_RA(k1)
+	ld      s8, FRAME_S8(k1)
+	ld      sp, FRAME_SP(k1)
+	ld      gp, FRAME_GP(k1)
+	ld      t9, FRAME_T9(k1)
+	ld      t8, FRAME_T8(k1)
+	ld      s7, FRAME_S7(k1)
+	ld      s6, FRAME_S6(k1)
+	ld      s5, FRAME_S5(k1)
+	ld      s4, FRAME_S4(k1)
+	ld      s3, FRAME_S3(k1)
+	ld      s2, FRAME_S2(k1)
+	ld      s1, FRAME_S1(k1)
+	ld      s0, FRAME_S0(k1)
 
 	/* Before we nuke temporaries, restore externals.  */
 	mtlo	t3
@@ -246,21 +243,21 @@ ENTRY(exception_frame_restore)		/* Return address is k0.  */
 	dmtc0	t1, CP0_EXCPC
 	mtc0	t0, CP0_STATUS
 
-	ld      t3, (FRAME_T3 * 8)(k1)
-	ld      t2, (FRAME_T2 * 8)(k1)
-	ld      t1, (FRAME_T1 * 8)(k1)
-	ld      t0, (FRAME_T0 * 8)(k1)
-	ld      a7, (FRAME_A7 * 8)(k1)
-	ld      a6, (FRAME_A6 * 8)(k1)
-	ld      a5, (FRAME_A5 * 8)(k1)
-	ld      a4, (FRAME_A4 * 8)(k1)
-	ld      a3, (FRAME_A3 * 8)(k1)
-	ld      a2, (FRAME_A2 * 8)(k1)
-	ld      a1, (FRAME_A1 * 8)(k1)
-	ld      a0, (FRAME_A0 * 8)(k1)
-	ld      v1, (FRAME_V1 * 8)(k1)
-	ld      v0, (FRAME_V0 * 8)(k1)
-	ld      AT, (FRAME_AT * 8)(k1)
+	ld      t3, FRAME_T3(k1)
+	ld      t2, FRAME_T2(k1)
+	ld      t1, FRAME_T1(k1)
+	ld      t0, FRAME_T0(k1)
+	ld      a7, FRAME_A7(k1)
+	ld      a6, FRAME_A6(k1)
+	ld      a5, FRAME_A5(k1)
+	ld      a4, FRAME_A4(k1)
+	ld      a3, FRAME_A3(k1)
+	ld      a2, FRAME_A2(k1)
+	ld      a1, FRAME_A1(k1)
+	ld      a0, FRAME_A0(k1)
+	ld      v1, FRAME_V1(k1)
+	ld      v0, FRAME_V0(k1)
+	ld      AT, FRAME_AT(k1)
 
 	jr	k0
 	nop

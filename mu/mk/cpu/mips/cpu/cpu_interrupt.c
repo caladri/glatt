@@ -4,7 +4,6 @@
 #include <cpu/interrupt.h>
 #include <cpu/pcpu.h>
 #include <db/db.h>
-#include <io/device/console/console.h>
 
 void
 cpu_hard_interrupt_establish(int interrupt, interrupt_t *func, void *arg)
@@ -39,7 +38,7 @@ cpu_soft_interrupt_establish(int interrupt, interrupt_t *func, void *arg)
 void
 cpu_interrupt(void)
 {
-	kcprintf("Interrupt!\n");
+	panic("interrupt!");
 	for (;;) continue;
 }
 
@@ -58,7 +57,6 @@ cpu_interrupt_disable(void)
 void
 cpu_interrupt_enable(void)
 {
-	kcprintf("cpu%u: interrupts enabled.\n", mp_whoami());
 	cpu_write_status(cpu_read_status() | CP0_STATUS_IE);
 }
 

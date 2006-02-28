@@ -4,25 +4,42 @@
 #include <db/db.h>
 #include <io/device/console/console.h>
 
-static bool startup_booted = false;
+SET(startup_items, struct startup_item);
+
+static bool startup_booting = false;
 static struct spinlock startup_spinlock = SPINLOCK_INIT("startup");
 
 void
 startup_boot(void)
 {
+	struct startup_item **itemp, *item;
 	kcprintf("The system is coming up.\n");
-	startup_booted = true;
+	for (itemp = SET_BEGIN(startup_items); itemp < SET_END(startup_items);
+	     itemp++) {
+		item = *itemp;
+		/*
+		 * XXX
+		 * Sort items.
+		 */
+		item->si_function(item->si_arg);
+	}
 }
 
 void
 startup_main(void)
 {
+	/*
+	 * XXX
+	 * Create thread for this CPU and switch to it if we aren't the
+	 */
 	spinlock_lock(&startup_spinlock);
-	if (!startup_booted) {
+	if (!startup_booting) {
+		startup_booting = true;
+		spinlock_unlock(&startup_spinlock);
 		startup_boot();
-		panic("%s: nothing to do.", __func__);
+	} else {
+		spinlock_unlock(&startup_spinlock);
 	}
-	spinlock_unlock(&startup_spinlock);
 	for (;;) {
 	}
 }

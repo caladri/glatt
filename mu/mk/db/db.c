@@ -13,28 +13,24 @@ struct db_command {
 	const char *dbc_help;
 };
 
-static void db_command_halt(void);
-static void db_command_help(void);
-static void db_command_love(void);
+#define	DB_COMMAND(name, func, help)					\
+	static struct db_command db_command_struct_ ## name = {		\
+		.dbc_command  = #name,					\
+		.dbc_function = func,					\
+		.dbc_help     = help,					\
+	};								\
+	SET_ADD(db_commands, db_command_struct_ ## name)
+
+SET(db_commands, struct db_command);
 
 static const char *db_gets(void);
-
-static struct db_command db_commands[] = {
-	{ "halt",	db_command_halt,
-		"Halt the system." },
-	{ "help",	db_command_help,
-		"List available commands." },
-	{ "love",	db_command_love,
-		".Is it over when you're sober, is it junk?" },
-	{ NULL,		NULL,		NULL }
-};
 
 static bool db_drunk_debugging;
 
 void
 db_enter(void)
 {
-	struct db_command *command;
+	struct db_command **commandp, *command;
 	const char *line;
 
 	/*
@@ -47,8 +43,9 @@ again:		if (!db_drunk_debugging)
 		else
 			kcputs("YAAAAAARGH!!!!! ");
 		line = db_gets();
-		for (command = db_commands; command->dbc_command != NULL;
-		     command++) {
+		for (commandp = SET_BEGIN(db_commands);
+		     commandp < SET_END(db_commands); commandp++) {
+			command = *commandp;
 			if (strcmp(line, command->dbc_command) == 0) {
 				command->dbc_function();
 				goto again;
@@ -67,20 +64,24 @@ db_command_halt(void)
 	kcprintf("Halting system from debugger...\n");
 	cpu_halt();
 }
+DB_COMMAND(halt, db_command_halt, "Halt the system.");
 
 static void
 db_command_help(void)
 {
-	struct db_command *command;
+	struct db_command **commandp, *command;
 
 	kcprintf("Available commands...\n");
-	for (command = db_commands; command->dbc_command != NULL; command++) {
+	for (commandp = SET_BEGIN(db_commands);
+	     commandp < SET_END(db_commands); commandp++) {
+		command = *commandp;
 		if (!db_drunk_debugging &&
 		    (command->dbc_help == NULL || command->dbc_help[0] == '.'))
 			continue;
 		kcprintf("\t%s\t%s\n", command->dbc_command, command->dbc_help);
 	}
 }
+DB_COMMAND(help, db_command_help, "List available commands.");
 
 static void
 db_command_love(void)
@@ -91,6 +92,7 @@ db_command_love(void)
 		kcprintf("You only tell me you love me when you're drunk...\n");
 	db_drunk_debugging = !db_drunk_debugging;
 }
+DB_COMMAND(love, db_command_love, ".Is it over when you're sober, is it junk?");
 
 static const char *
 db_gets(void)

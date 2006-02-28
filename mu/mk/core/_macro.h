@@ -24,8 +24,10 @@
 
 #define	__noreturn		__attribute__ ((__noreturn__))
 #define	__packed		__attribute__ ((__packed__))
-#define	__unused		__attribute__ ((__unused__))
 #define	__printf(f, va)		__attribute__ ((__format__ (__printf__, f, va)))
+#define	__section(s)		__attribute__ ((__section__ (s)))
+#define	__unused		__attribute__ ((__unused__))
+#define	__used			__attribute__ ((__used__))
 
 	/* Compile-time assertions.  */
 
@@ -36,5 +38,23 @@
 COMPILE_TIME_ASSERT(true);
 COMPILE_TIME_ASSERT(!false);
 #endif
+
+	/* Using separate sections to implement dynamic lists.  */
+#define	SECTION_START(s)	_CONCAT(__start_, s)
+#define	SECTION_STOP(s)		_CONCAT(__stop_, s)
+
+#define	SET(set, type)							\
+	extern type *SECTION_START(_CONCAT(set_, set));			\
+	extern type *SECTION_STOP(_CONCAT(set_, set))
+
+#define	SET_ADD(set, v)							\
+	static void const *const _set_ ## set ## _ ## v			\
+		__section("set_" #set) __used = &(v)
+
+#define	SET_BEGIN(set)							\
+	(&SECTION_START(_CONCAT(set_, set)))
+
+#define	SET_END(set)							\
+	(&SECTION_STOP(_CONCAT(set_, set)))
 
 #endif /* !_CORE__MACRO_H_ */

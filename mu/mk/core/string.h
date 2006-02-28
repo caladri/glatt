@@ -33,6 +33,22 @@ strcmp(const char *a, const char *b)
 }
 
 static __inline size_t
+strlcpy(char *dst, const char *src, size_t len)
+{
+	const char *s = src++;
+
+	if (len == 0)
+		goto count;
+	while (--len)
+		if ((*dst++ = *s++) == '\0')
+			return (s - src);
+	*dst = '\0';
+count:	while (*s++ != '\0')
+		continue;
+	return (s - src);
+}
+
+static __inline size_t
 strlen(const char *s)
 {
 	const char *p;

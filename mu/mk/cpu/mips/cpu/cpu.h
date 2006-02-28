@@ -1,10 +1,6 @@
 #ifndef	_CPU_CPU_H_
 #define	_CPU_CPU_H_
 
-#ifdef ASSEMBLER
-#error "Cannot use <cpu/cpu.h> from asm."
-#endif
-
 #include <cpu/register.h>
 
 static inline void

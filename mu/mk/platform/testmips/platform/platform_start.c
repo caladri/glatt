@@ -10,7 +10,6 @@
 #include <db/db.h>
 #include <io/device/console/console.h>
 #include <io/device/console/framebuffer.h>
-#include <platform/platform.h>
 #include <vm/page.h>
 #include <vm/vm.h>
 

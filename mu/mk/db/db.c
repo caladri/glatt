@@ -1,7 +1,7 @@
 #include <core/types.h>
 #include <core/error.h>
+#include <core/startup.h>
 #include <core/string.h>
-#include <cpu/boot.h>
 #include <db/db.h>
 #include <db/db_command.h>
 #include <io/device/console/console.h>

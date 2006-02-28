@@ -7,6 +7,12 @@
 #include <vm/vm.h>
 
 void
+cpu_halt(void)
+{
+	platform_halt();
+}
+
+void
 cpu_startup(void)
 {
 	struct pcpu *pcpu;

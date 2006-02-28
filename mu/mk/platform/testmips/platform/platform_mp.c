@@ -70,10 +70,8 @@ platform_mp_start_all(void)
 		kcprintf("cpu%u: multiprocessor system detected,"
 			 " starting %lu processors.\n", mp_whoami(), ncpus);
 		for (cpu = 0; cpu < ncpus; cpu++) {
-			if (cpu == mp_whoami()) {
-				kcprintf("cpu%u: bootstrap, skipping\n", cpu);
+			if (cpu == mp_whoami())
 				continue;
-			}
 			platform_mp_start_one(cpu, platform_mp_startup);
 		}
 		kcprintf("cpu%u: started processors.\n", mp_whoami());

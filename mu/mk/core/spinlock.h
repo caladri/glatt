@@ -13,6 +13,11 @@ struct spinlock {
 	critical_section_t s_crit;
 };
 
+#define	SPINLOCK_INIT(name)						\
+	{								\
+		.s_name = name,						\
+	}
+
 static inline void
 spinlock_lock(struct spinlock *lock)
 {

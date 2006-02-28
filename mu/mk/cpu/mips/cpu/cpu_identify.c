@@ -46,61 +46,43 @@ cpu_identify(void)
 
 	switch (CP0_PRID_COMPANY(prid)) {
 	case CP0_PRID_COMPANY_ANCIENT:
-		company = "MIPS";
+		cpu.cpu_company = "MIPS";
 		switch (CP0_PRID_TYPE(prid)) {
 		case CP0_PRID_TYPE_R4000:
 			cpu.cpu_ntlbs = 48;
 			switch (CP0_PRID_REVISION(prid)) {
 			case CP0_PRID_REVISION_R4000A:
-				type = "R4000A";
+				cpu.cpu_type = "R4000A";
 				break;
 			case CP0_PRID_REVISION_R4000B:
-				type = "R4000B";
+				cpu.cpu_type = "R4000B";
 				break;
 			case CP0_PRID_REVISION_R4400A:
-				type = "R4400A";
+				cpu.cpu_type = "R4400A";
 				break;
 			case CP0_PRID_REVISION_R4400B:
-				type = "R4400B";
+				cpu.cpu_type = "R4400B";
 				break;
 			case CP0_PRID_REVISION_R4400C:
-				type = "R4400C";
+				cpu.cpu_type = "R4400C";
 				break;
 			default:
-				type = "R4??";
+				cpu.cpu_type = "R4??";
 				break;
 			}
 			break;
 		default:
-			type = NULL;
+			cpu.cpu_type = NULL;
 			break;
 		}
 		break;
 	default:
-		company = NULL;
-		type = NULL;
+		cpu.cpu_company = NULL;
+		cpu.cpu_type = NULL;
 		break;
 	}
-
-	kcprintf("cpu%u: ", mp_whoami());
-
-	if (company == NULL)
-		kcprintf("MIPS %x ", (unsigned)CP0_PRID_COMPANY(prid));
-	else
-		kcprintf("%s ", company);
-
-	if (type == NULL)
-		kcprintf("%x", (unsigned)CP0_PRID_TYPE(prid));
-	else
-		kcprintf("%s", type);
-
-	if (CP0_PRID_REVISION_MAJOR(prid) != 0 ||
-	    CP0_PRID_REVISION_MINOR(prid) != 0) {
-		kcprintf(" revision %x.%x",
-			 (unsigned)CP0_PRID_REVISION_MAJOR(prid),
-			 (unsigned)CP0_PRID_REVISION_MINOR(prid));
-	}
-	kcprintf("\n");
+	cpu.cpu_revision_major = CP0_PRID_REVISION_MAJOR(prid);
+	cpu.cpu_revision_minor = CP0_PRID_REVISION_MINOR(prid);
 
 	return (cpu);
 }

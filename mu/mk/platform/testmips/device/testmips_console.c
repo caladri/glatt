@@ -25,6 +25,10 @@ static struct framebuffer testmips_framebuffer = {
 	.fb_softc = XKPHYS_MAP(XKPHYS_UC, 0x12000000),
 	.fb_load = testmips_framebuffer_load,
 };
+/*
+ * XXX something needs to call this once VM is set up:
+ *	framebuffer_init(&testmips_framebuffer, 640, 480);
+ */
 
 static int
 testmips_console_getc(void *sc, char *chp)
@@ -85,10 +89,6 @@ platform_start(void)
 	 */
 
 	console_init(&testmips_console);
-	/*
-	 * XXX start framebuffer after VM is up and running:
-	 * framebuffer_init(&testmips_framebuffer, 640, 480);
-	 */
 
 	kcputs("\n");
 	kcputs(MK_NAME "\n");

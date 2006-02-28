@@ -11,6 +11,8 @@
 struct task {
 	char t_name[TASK_NAME_SIZE];
 	struct task *t_parent;
+	struct task *t_children;
+	struct task *t_next;
 	uint32_t t_flags;
 	struct vm t_vm;
 };

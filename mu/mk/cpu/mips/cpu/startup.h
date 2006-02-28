@@ -3,4 +3,6 @@
 
 #include <platform/startup.h>
 
+void cpu_startup(void);
+
 #endif /* !_CPU_STARTUP_H_ */

@@ -1,6 +1,7 @@
 #include <core/types.h>
 #include <core/mp.h>
 #include <core/spinlock.h>
+#include <core/startup.h>
 #include <core/string.h>
 #include <cpu/cpuinfo.h>
 #include <cpu/interrupt.h>
@@ -9,7 +10,6 @@
 #include <cpu/tlb.h>
 #include <db/db.h>
 #include <io/device/console/console.h>
-#include <vm/alloc.h>
 #include <vm/page.h>
 #include <vm/vm.h>
 
@@ -105,37 +105,11 @@ platform_mp_start_one(cpu_id_t cpu, void (*startup)(void))
 static void
 platform_mp_startup(void)
 {
-	struct pcpu *pcpu;
-	paddr_t pcpu_addr;
-	int error;
-
-	/* XXX */
-	__asm __volatile ("dla $" STRING(gp) ", _gp" : : : "memory");
-
-	/* Allocate a page for persistent per-CPU data.  */
-	error = page_alloc(&kernel_vm, &pcpu_addr);
-	if (error != 0)
-		panic("cpu%u: page allocate failed: %u", mp_whoami(), error);
-	pcpu = (struct pcpu *)XKPHYS_MAP(XKPHYS_CNC, pcpu_addr);
-
-	pcpu->pc_vm = &kernel_vm;
-	/* Identify the CPU.  */
-	pcpu->pc_cpuinfo = cpu_identify();
-
-	/* Clear the TLB and add a wired mapping for my per-CPU data.  */
-	tlb_init(pcpu_addr);
-
-	/* Now we can take VM-related exceptions appropriately.  */
-
-	/* Kick off interrupts.  */
-	cpu_interrupt_initialize();
+	cpu_startup();
 
 	/* Install an IPI interrupt handler.  */
 	cpu_hard_interrupt_establish(TEST_MP_DEV_IPI_INTERRUPT,
 				     platform_mp_ipi_interrupt, NULL);
 
-	/*
-	 * XXX Create a task+thread for us and switch to it.
-	 */
-	panic("%s: nothing to do, entering debugger.", __func__);
+	startup_main();
 }

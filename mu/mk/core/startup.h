@@ -3,7 +3,7 @@
 
 #include <cpu/startup.h>
 
-void main(void);
-void startup(void);
+void startup_boot(void);
+void startup_main(void);
 
 #endif /* !_CORE_STARTUP_H_ */

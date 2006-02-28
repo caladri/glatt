@@ -37,7 +37,6 @@ cpu_identify(void)
 {
 	struct cpuinfo cpu;
 	uint32_t prid;
-	const char *company, *type;
 
 	cpu.cpu_ntlbs = 0;
 

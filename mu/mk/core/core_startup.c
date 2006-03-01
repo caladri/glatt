@@ -1,10 +1,17 @@
 #include <core/types.h>
+#include <core/alloc.h>
 #include <core/spinlock.h>
 #include <core/startup.h>
 #include <core/task.h>
 #include <core/thread.h>
 #include <db/db.h>
 #include <io/device/console/console.h>
+
+struct startup_item_sorted {
+	struct startup_item *sis_item;
+	struct startup_item_sorted *sis_prev;
+	struct startup_item_sorted *sis_next;
+};
 
 SET(startup_items, struct startup_item);
 
@@ -16,16 +23,58 @@ void
 startup_boot(void)
 {
 	struct startup_item **itemp, *item;
+	struct startup_item_sorted *first, *sorted, *ip;
+	struct pool startup_item_pool;
+	int error;
 
 	startup_booting = true;
 	kcprintf("The system is coming up.\n");
+
+	error = pool_create(&startup_item_pool, "startup item", sizeof *sorted,
+			    POOL_VIRTUAL);
+	first = NULL;
 	for (itemp = SET_BEGIN(startup_items); itemp < SET_END(startup_items);
 	     itemp++) {
 		item = *itemp;
-		/*
-		 * XXX
-		 * Sort items.
-		 */
+		sorted = pool_allocate(&startup_item_pool);
+		ASSERT(sorted != NULL, "allocation failed");
+		sorted->sis_item = item;
+#define	LESS_THAN(a, b)							\
+		(((a)->sis_item->si_component <				\
+		  (b)->sis_item->si_component) ||			\
+		 ((a)->sis_item->si_order <				\
+		  (b)->sis_item->si_order))
+
+		if (first == NULL || LESS_THAN(sorted, first)) {
+			if (first != NULL)
+				first->sis_prev = sorted;
+			sorted->sis_prev = NULL;
+			sorted->sis_next = first;
+			first = sorted;
+		} else {
+			for (ip = first; ip != NULL; ip = ip->sis_next) {
+				if (LESS_THAN(sorted, ip)) {
+					sorted->sis_next = ip;
+					if (ip->sis_prev != NULL)
+						ip->sis_prev->sis_next = sorted;
+					sorted->sis_prev = ip->sis_prev;
+					ip->sis_prev = sorted;
+					goto next;
+				}
+			}
+			for (ip = first; ip->sis_next != NULL;
+			     ip = ip->sis_next) {
+				continue;
+			}
+			ip->sis_next = sorted;
+			sorted->sis_prev = ip;
+			sorted->sis_next = NULL;
+		}
+#undef LESS_THAN
+next:		continue;
+	}
+	for (ip = first; ip != NULL; ip = ip->sis_next) {
+		item = ip->sis_item;
 		item->si_function(item->si_arg);
 	}
 }

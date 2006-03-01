@@ -134,7 +134,5 @@ platform_start(void)
 	 */
 	vm_init();
 
-	vm_setup(&kernel_vm);
-
 	pmap_bootstrap();
 }

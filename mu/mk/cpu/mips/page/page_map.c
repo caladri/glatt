@@ -14,7 +14,6 @@ static struct pmap_lev0 *pmap_find0(struct pmap *, vaddr_t);
 static struct pmap_lev1 *pmap_find1(struct pmap_lev0 *, vaddr_t);
 static struct pmap_lev2 *pmap_find2(struct pmap_lev1 *, vaddr_t);
 static pt_entry_t *pmap_find_pte(struct pmap_lev2 *, vaddr_t);
-static int pmap_init(struct vm *, vaddr_t, vaddr_t);
 static bool pmap_is_direct(vaddr_t);
 static void pmap_pinit(struct pmap *, vaddr_t, vaddr_t);
 static void pmap_update(struct pmap *, vaddr_t, paddr_t, pt_entry_t);
@@ -39,7 +38,7 @@ pmap_bootstrap(void)
 			    POOL_DEFAULT);
 	if (error != 0)
 		panic("%s: pool_create failed: %u", __func__, error);
-	error = pmap_init(&kernel_vm, KERNEL_BASE, KERNEL_END);
+	error = pmap_init(&kernel_vm, true);
 	if (error != 0)
 		panic("%s: pmap_init failed: %u", __func__, error);
 }
@@ -91,6 +90,35 @@ pmap_find(struct pmap *pm, vaddr_t vaddr)
 	if (pml2 == NULL)
 		return (NULL);
 	return (pmap_find_pte(pml2, vaddr));
+}
+
+int
+pmap_init(struct vm *vm, bool kernel)
+{
+	vaddr_t base, end;
+	struct pmap *pm;
+	int error;
+
+	if (kernel) {
+		base = KERNEL_BASE;
+		end = KERNEL_END;
+	} else {
+		base = USER_BASE;
+		end = USER_END;
+	}
+
+	pm = pool_allocate(&pmap_pool);
+	if (pm == NULL)
+		return (ERROR_EXHAUSTED);
+	vm->vm_pmap = pm;
+	pmap_pinit(vm->vm_pmap, base, end);
+
+	error = vm_insert_range(vm, base, end);
+	if (error != 0) {
+		pool_free(&pmap_pool, pm);
+		return (error);
+	}
+	return (0);
 }
 
 int
@@ -239,26 +267,6 @@ pmap_find_pte(struct pmap_lev2 *pml2, vaddr_t vaddr)
 	if (pml2 == NULL)
 		return (NULL);
 	return (&pml2->pml2_entries[pmap_index_pte(vaddr)]);
-}
-
-static int
-pmap_init(struct vm *vm, vaddr_t base, vaddr_t end)
-{
-	struct pmap *pm;
-	int error;
-
-	pm = pool_allocate(&pmap_pool);
-	if (pm == NULL)
-		return (ERROR_EXHAUSTED);
-	vm->vm_pmap = pm;
-	pmap_pinit(vm->vm_pmap, base, end);
-
-	error = vm_insert_range(vm, base, end);
-	if (error != 0) {
-		pool_free(&pmap_pool, pm);
-		return (error);
-	}
-	return (0);
 }
 
 static bool

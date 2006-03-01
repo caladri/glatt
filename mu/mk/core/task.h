@@ -7,6 +7,7 @@
 #define	TASK_NAME_SIZE	(128)
 
 #define	TASK_DEFAULT	(0x00000000)	/* Default task flags.  */
+#define	TASK_KERNEL	(0x00000001)	/* Run in kernel address space.  */
 
 struct task {
 	char t_name[TASK_NAME_SIZE];
@@ -14,7 +15,7 @@ struct task {
 	struct task *t_children;
 	struct task *t_next;
 	uint32_t t_flags;
-	struct vm t_vm;
+	struct vm *t_vm;
 };
 
 int task_create(struct task **, struct task *, const char *, uint32_t);

@@ -5,6 +5,9 @@
 
 #define	XUSEG_BASE	(0x0000000000000000)
 #define	XUSEG_END	(0x000000ffffffffff)
+	/* Skip one page for NULL.  */
+#define	USER_BASE	(XUSEG_BASE + PAGE_SIZE)
+#define	USER_END	(XUSEG_END)
 
 	/* 64-bit kernel virtual address space.  */
 

@@ -18,6 +18,7 @@ task_create(struct task **taskp, struct task *parent, const char *name,
 	    uint32_t flags)
 {
 	struct task *task;
+	int error;
 
 	task = pool_allocate(&task_pool);
 	if (task == NULL)
@@ -31,6 +32,11 @@ task_create(struct task **taskp, struct task *parent, const char *name,
 		parent->t_children = task;
 	}
 	task->t_flags = flags;
-	vm_setup(&task->t_vm);
+	error = vm_setup(&task->t_vm, (flags & TASK_KERNEL) == TASK_KERNEL);
+	if (error != 0) {
+		panic("%s: need to destroy task, vm_setup failed: %u",
+		      __func__, error);
+		return (error);
+	}
 	return (0);
 }

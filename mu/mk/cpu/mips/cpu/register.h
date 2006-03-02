@@ -78,6 +78,10 @@ typedef	uint64_t	register_t;
 #define	CP0_CAUSE_EXCEPTION		(0x7c)
 #define	CP0_CAUSE_EXCEPTION_SHIFT	(2)
 
+#define	CP0_CAUSE_INT_SOFT_SHIFT	(8)
+#define	CP0_CAUSE_INT_HARD_SHIFT	(CP0_CAUSE_INT_SOFT_SHIFT + 2)
+#define	CP0_CAUSE_INT_MASK		(0xff00)
+
 	/* Coprocessor 0 status register bits.  */
 
 #define	CP0_STATUS_IE	0x00000001	/* Interrupts enabled.  */

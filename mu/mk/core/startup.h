@@ -4,6 +4,7 @@
 #include <cpu/startup.h>
 
 enum startup_component {
+	STARTUP_DRIVERS,		/* Register device drivers.  */
 	STARTUP_DEBUGGER,		/* Enter debugger.  */
 };
 

@@ -30,6 +30,8 @@ testmips_framebuffer_startup(void *arg)
 {
 	struct framebuffer *fb;
 
+	if (1)
+		return;		/* Testing with framebuffer is pain.  */
 	fb = arg;
 	framebuffer_init(fb, 640, 480);
 }

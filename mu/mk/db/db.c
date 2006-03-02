@@ -10,7 +10,7 @@
 
 SET(db_commands, struct db_command);
 
-static const char *db_gets(void);
+static int db_gets(const char **);
 
 static bool db_drunk_debugging;
 
@@ -19,17 +19,21 @@ db_enter(void)
 {
 	struct db_command **commandp, *command;
 	const char *line;
+	int error;
 
 	/*
 	 * XXX acquire a spinlock or halt all other CPUs to prevent lots of
 	 * them entering the debugger at the same time.
 	 */
+	line = NULL;
 	for (;;) {
 again:		if (!db_drunk_debugging)
 			kcputs("db> ");
 		else
 			kcputs("YAAAAAARGH!!!!! ");
-		line = db_gets();
+		error = db_gets(&line);
+		if (error != 0)
+			break;
 		for (commandp = SET_BEGIN(db_commands);
 		     commandp < SET_END(db_commands); commandp++) {
 			command = *commandp;
@@ -43,6 +47,9 @@ again:		if (!db_drunk_debugging)
 		else
 			kcprintf("You, of all people, should know better.\n");
 	}
+	kcprintf("Read error, can't enter interactive debugger.\n");
+	kcprintf("Halting the system, instead.\n");
+	cpu_halt();
 }
 
 static void
@@ -88,8 +95,8 @@ db_command_love(void)
 }
 DB_COMMAND(love, db_command_love, ".Is it over when you're sober, is it junk?");
 
-static const char *
-db_gets(void)
+static int
+db_gets(const char **bufp)
 {
 	static char buf[DB_LINE_MAX + 1];
 	unsigned o;
@@ -101,16 +108,17 @@ db_gets(void)
 			error = kcgetc(&buf[o]);
 			if (error == ERROR_AGAIN)
 				continue;
-			ASSERT(error == 0, "unexpected console error");
-			break;
+			return (error);
 		}
 		buf[o + 1] = '\0';
 		kcputc(buf[o]); /* XXX too testmips */
 		if (buf[o] == '\n') {
 			buf[o] = '\0';
-			return (buf);
+			*bufp = buf;
+			return (0);
 		}
 	}
 	kcputs("\ndebugger buffer overflowed\n");
-	return (buf);
+	*bufp = buf;
+	return (0);
 }

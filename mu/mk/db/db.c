@@ -108,6 +108,8 @@ db_gets(const char **bufp)
 			error = kcgetc(&buf[o]);
 			if (error == ERROR_AGAIN)
 				continue;
+			if (error == 0)
+				break;
 			return (error);
 		}
 		buf[o + 1] = '\0';

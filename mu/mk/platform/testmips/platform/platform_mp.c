@@ -33,7 +33,6 @@ COMPILE_TIME_ASSERT(sizeof (struct pcpu) <= PAGE_SIZE);
 
 static void platform_mp_ipi_interrupt(void *, int);
 static void platform_mp_start_one(cpu_id_t, void (*)(void));
-static void platform_mp_startup(void);
 
 void
 platform_mp_ipi_send(cpu_id_t cpu, enum ipi_type ipi)
@@ -53,14 +52,28 @@ platform_mp_memory(void)
 	return ((size_t)*TEST_MP_DEV_FUNCTION(TEST_MP_DEV_MEMORY));
 }
 
+void
+platform_mp_startup(void)
+{
+	/* Install an IPI interrupt handler.  */
+	cpu_hard_interrupt_establish(TEST_MP_DEV_IPI_INTERRUPT,
+				     platform_mp_ipi_interrupt, NULL);
+}
+
 cpu_id_t
 platform_mp_whoami(void)
 {
 	return (*TEST_MP_DEV_FUNCTION(TEST_MP_DEV_WHOAMI));
 }
 
-void
-platform_mp_start_all(void)
+static void
+platform_mp_ipi_interrupt(void *arg, int interrupt)
+{
+	panic("%s: not implemented.", __func__);
+}
+
+static void
+platform_mp_start_all(void *arg)
 {
 	cpu_id_t cpu;
 	uint64_t ncpus;
@@ -72,19 +85,15 @@ platform_mp_start_all(void)
 		for (cpu = 0; cpu < ncpus; cpu++) {
 			if (cpu == mp_whoami())
 				continue;
-			platform_mp_start_one(cpu, platform_mp_startup);
+			platform_mp_start_one(cpu, platform_startup);
 		}
 		kcprintf("cpu%u: started processors.\n", mp_whoami());
 	} else {
 		kcprintf("cpu%u: uniprocessor system detected.\n", mp_whoami());
 	}
-	platform_mp_start_one(mp_whoami(), platform_mp_startup);
 }
-
-static void
-platform_mp_ipi_interrupt(void *arg, int interrupt)
-{
-}
+STARTUP_ITEM(platform_mp, STARTUP_MP, STARTUP_FIRST,
+	     platform_mp_start_all, NULL);
 
 static void
 platform_mp_start_one(cpu_id_t cpu, void (*startup)(void))
@@ -100,14 +109,3 @@ platform_mp_start_one(cpu_id_t cpu, void (*startup)(void))
 	*TEST_MP_DEV_FUNCTION(TEST_MP_DEV_START) = cpu;
 }
 
-static void
-platform_mp_startup(void)
-{
-	cpu_startup();
-
-	/* Install an IPI interrupt handler.  */
-	cpu_hard_interrupt_establish(TEST_MP_DEV_IPI_INTERRUPT,
-				     platform_mp_ipi_interrupt, NULL);
-
-	startup_main();
-}

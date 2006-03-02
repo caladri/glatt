@@ -50,8 +50,7 @@ ENTRY(start)
 	daddu	t0, PAGE_SIZE		/* Wait for it...  */
 	move	sp, t0			/* Bam!  */
 
-	/* Start all processors.  */
-	jal	platform_mp_start_all
+	jal	platform_startup
 	nop
 
 	/* NOTREACHED */

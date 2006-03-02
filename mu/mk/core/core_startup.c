@@ -27,7 +27,6 @@ startup_boot(void)
 	struct pool startup_item_pool;
 	int error;
 
-	startup_booting = true;
 	kcprintf("The system is coming up.\n");
 
 	error = pool_create(&startup_item_pool, "startup item", sizeof *sorted,
@@ -88,6 +87,7 @@ startup_main(void)
 
 	spinlock_lock(&startup_spinlock);
 	bootstrap = !startup_booting;
+	startup_booting = true;
 
 	if (bootstrap) {
 		error = task_create(&main_task, NULL, "main", TASK_DEFAULT);

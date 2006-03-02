@@ -4,6 +4,7 @@
 #include <cpu/memory.h>
 #include <cpu/tlb.h>
 #include <db/db.h>
+#include <io/device/console/console.h>
 #include <page/page_map.h>
 #include <vm/page.h>
 #include <vm/vm.h>
@@ -34,6 +35,23 @@ pmap_bootstrap(void)
 {
 	int error;
 
+	kcprintf("PMAP: %u level 0 pointers in each pmap.\n", NL0PMAP);
+	kcprintf("PMAP: %lu level 1 pointers in each level 0 page.\n", NL1PL0);
+	kcprintf("PMAP: %lu level 2 pointers in each level 1 page.\n", NL2PL1);
+	kcprintf("PMAP: %lu PTEs in each level 2 page.\n", NPTEL2);
+	kcprintf("PMAP: Level 2 maps %lu pages of virtual address space.\n",
+		 NPTEL2);
+	kcprintf("PMAP: Level 1 maps %lu pages of virtual address space.\n",
+		 NPTEL2 * NL2PL1);
+	kcprintf("PMAP: Level 0 maps %lu pages of virtual address space.\n",
+		 NPTEL2 * NL2PL1 * NL1PL0);
+	kcprintf("PMAP: Each pmap maps %lu pages of virtual address space.\n",
+		 NPTEL2 * NL2PL1 * NL1PL0 * NL0PMAP);
+	kcprintf("PMAP: Each pmap maps %luM (%luG) of virtual address space.\n",
+		 ((NPTEL2 * NL2PL1 * NL1PL0 * NL0PMAP * PAGE_SIZE) /
+		  (1024 * 1024)),
+		 ((NPTEL2 * NL2PL1 * NL1PL0 * NL0PMAP * PAGE_SIZE) /
+		  (1024 * 1024 * 1024)));
 	error = pool_create(&pmap_pool, "PMAP", sizeof (struct pmap),
 			    POOL_DEFAULT);
 	if (error != 0)

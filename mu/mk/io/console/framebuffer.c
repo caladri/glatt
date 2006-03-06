@@ -28,7 +28,7 @@ framebuffer_init(struct framebuffer *fb, unsigned width, unsigned height)
 	error = vm_alloc(&kernel_vm, width * height * sizeof *fb->fb_buffer,
 			 &vaddr);
 	if (error != 0)
-		panic("%s: vm_alloc failed: %u", __func__, error);
+		panic("%s: vm_alloc failed: %m", __func__, error);
 
 	fb->fb_console.c_name = "framebuffer";
 	fb->fb_console.c_softc = fb;

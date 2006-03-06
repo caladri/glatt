@@ -1,4 +1,5 @@
 #include <core/types.h>
+#include <core/error.h>
 #include <io/device/console/console.h>
 #include <io/device/console/consoledev.h>
 
@@ -102,6 +103,13 @@ again:
 		case 'c':
 			ch = (char)va_arg(ap, int);
 			kcputc_noflush(ch);
+			break;
+		case 'm':
+			val = va_arg(ap, int);
+			if (val < 0 || val >= ERROR_COUNT)
+				val = ERROR_IT_S_ALRIGHT;
+			q = error_strings[val];
+			kcputs_noflush(q);
 			break;
 		case 's':
 			q = va_arg(ap, const char *);

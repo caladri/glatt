@@ -56,7 +56,7 @@ pool_allocate(struct pool *pool)
 				int error2;
 				error2 = vm_free_address(&kernel_vm, page_mapped);
 				if (error2 != 0)
-					panic("%s: vm_free_address failed: %u",
+					panic("%s: vm_free_address failed: %m",
 					      __func__, error2);
 			}
 		}
@@ -64,7 +64,7 @@ pool_allocate(struct pool *pool)
 		error = page_map_direct(&kernel_vm, page_addr, &page_mapped);
 	}
 	if (error != 0)
-		panic("%s: can't map page for allocation: %u", __func__, error);
+		panic("%s: can't map page for allocation: %m", __func__, error);
 
 	page = (struct pool_page *)page_mapped;
 	page->pp_pool = pool;

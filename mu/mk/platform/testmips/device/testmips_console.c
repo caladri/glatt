@@ -83,6 +83,9 @@ void
 platform_halt(void)
 {
 	*(volatile int *)XKPHYS_MAP(XKPHYS_UC, 0x10000000 | 0x10) = 1;
+	for (;;) {
+		/* NOTREACHED */
+	}
 }
 
 void
@@ -125,7 +128,7 @@ platform_start(void)
 	membytes -= KERNEL_PHYSICAL_HOLE;
 	error = page_insert_pages(KERNEL_PHYSICAL_HOLE, ADDR_TO_PAGE(membytes));
 	if (error != 0)
-		panic("page_insert_pages %lu..%lu failed: %u",
+		panic("page_insert_pages %lu..%lu failed: %m",
 		      ADDR_TO_PAGE(KERNEL_PHYSICAL_HOLE),
 		      ADDR_TO_PAGE(membytes), error);
 

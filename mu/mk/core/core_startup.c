@@ -90,20 +90,27 @@ startup_main(void)
 	startup_booting = true;
 
 	if (bootstrap) {
-		error = task_create(&main_task, NULL, "main", TASK_DEFAULT);
+		error = task_create(&main_task, NULL, "main", TASK_KERNEL);
 		if (error != 0)
-			panic("%s: task_create failed: %u", __func__, error);
+			panic("%s: task_create failed: %m", __func__, error);
 	}
 
-	error = thread_create(&thread, main_task, "", THREAD_DEFAULT);
+	error = thread_create(&thread, main_task, "thread", THREAD_DEFAULT);
 	if (error != 0)
-		panic("%s: thread_create failed: %u", __func__, error);
+		panic("%s: thread_create failed: %m", __func__, error);
 
 	spinlock_unlock(&startup_spinlock);
 
 	/*
 	 * XXX
 	 * Switch to running our thread.
+	 *
+	 * I don't want to hear
+	 * I don't want to know
+	 * Please don't say, "forgive me"
+	 * I've seen it all before
+	 * And I
+	 * Can't take it anymore
 	 */
 
 	if (bootstrap)

@@ -26,15 +26,20 @@ task_create(struct task **taskp, struct task *parent, const char *name,
 	strlcpy(task->t_name, name, sizeof task->t_name);
 	task->t_parent = parent;
 	task->t_children = NULL;
+	task->t_threads = NULL;
 	task->t_next = NULL;
 	if (parent != NULL) {
 		task->t_next = parent->t_children;
 		parent->t_children = task;
 	}
 	task->t_flags = flags;
-	error = vm_setup(&task->t_vm, (flags & TASK_KERNEL) == TASK_KERNEL);
+	/*
+	 * CPU task setup takes care of:
+	 * 	vm
+	 */
+	error = cpu_task_setup(task);
 	if (error != 0) {
-		panic("%s: need to destroy task, vm_setup failed: %u",
+		panic("%s: need to destroy task, cpu_task_setup failed: %m",
 		      __func__, error);
 		return (error);
 	}

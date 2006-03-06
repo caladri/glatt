@@ -108,6 +108,10 @@ VECTOR_ENTRY(exception)
 	.set at
 VECTOR_END(exception)
 
+	/*
+	 * XXX we could get an xtlb miss for the kernel stack.  We should try
+	 * to handle TLB refills here without touching the stack.  Yow!
+	 */
 VECTOR_ENTRY(xtlb)
 	.set noat
 	KREGS_SAVE;

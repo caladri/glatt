@@ -22,6 +22,6 @@ int vm_init_index(void);
 int vm_alloc_address(struct vm *, vaddr_t *, size_t);
 int vm_free_address(struct vm *, vaddr_t);
 int vm_insert_range(struct vm *, vaddr_t, vaddr_t);
-int vm_setup(struct vm **, bool);
+int vm_setup(struct vm **, vaddr_t, vaddr_t);
 
 #endif /* !_VM_VM_H_ */

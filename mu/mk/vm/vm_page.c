@@ -85,7 +85,7 @@ page_alloc_direct(struct vm *vm, vaddr_t *vaddrp)
 	if (error != 0) {
 		error2 = page_release(vm, paddr);
 		if (error2 != 0)
-			panic("%s: can't release paddr: %u", __func__, error);
+			panic("%s: can't release paddr: %m", __func__, error);
 		return (error);
 	}
 	*vaddrp = vaddr;

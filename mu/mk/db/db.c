@@ -1,5 +1,6 @@
 #include <core/types.h>
 #include <core/error.h>
+#include <core/mp.h>
 #include <core/startup.h>
 #include <core/string.h>
 #include <db/db.h>
@@ -20,6 +21,11 @@ db_enter(void)
 	struct db_command **commandp, *command;
 	const char *line;
 	int error;
+
+	/*
+	 * Ask other CPUs to stop.  XXX check if there are other CPUs at all?
+	 */
+	mp_ipi_send_but(mp_whoami(), IPI_STOP);
 
 	/*
 	 * XXX acquire a spinlock or halt all other CPUs to prevent lots of

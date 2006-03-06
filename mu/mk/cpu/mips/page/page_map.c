@@ -55,10 +55,10 @@ pmap_bootstrap(void)
 	error = pool_create(&pmap_pool, "PMAP", sizeof (struct pmap),
 			    POOL_DEFAULT);
 	if (error != 0)
-		panic("%s: pool_create failed: %u", __func__, error);
-	error = pmap_init(&kernel_vm, true);
+		panic("%s: pool_create failed: %m", __func__, error);
+	error = pmap_init(&kernel_vm, KERNEL_BASE, KERNEL_END);
 	if (error != 0)
-		panic("%s: pmap_init failed: %u", __func__, error);
+		panic("%s: pmap_init failed: %m", __func__, error);
 }
 
 int
@@ -111,19 +111,10 @@ pmap_find(struct pmap *pm, vaddr_t vaddr)
 }
 
 int
-pmap_init(struct vm *vm, bool kernel)
+pmap_init(struct vm *vm, vaddr_t base, vaddr_t end)
 {
-	vaddr_t base, end;
 	struct pmap *pm;
 	int error;
-
-	if (kernel) {
-		base = KERNEL_BASE;
-		end = KERNEL_END;
-	} else {
-		base = USER_BASE;
-		end = USER_END;
-	}
 
 	pm = pool_allocate(&pmap_pool);
 	if (pm == NULL)

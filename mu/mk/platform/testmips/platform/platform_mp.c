@@ -103,7 +103,7 @@ platform_mp_start_one(cpu_id_t cpu, void (*startup)(void))
 
 	error = page_alloc_direct(&kernel_vm, &stack);
 	if (error != 0)
-		panic("%s: page_alloc_direct failed: %u", __func__, error);
+		panic("%s: page_alloc_direct failed: %m", __func__, error);
 	*TEST_MP_DEV_FUNCTION(TEST_MP_DEV_STARTADDR) = (uintptr_t)startup;
 	*TEST_MP_DEV_FUNCTION(TEST_MP_DEV_STACK) = stack + PAGE_SIZE;
 	*TEST_MP_DEV_FUNCTION(TEST_MP_DEV_START) = cpu;

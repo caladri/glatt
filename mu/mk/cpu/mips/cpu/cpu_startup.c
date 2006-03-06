@@ -24,7 +24,7 @@ cpu_startup(void)
 	/* Allocate a page for persistent per-CPU data.  */
 	error = page_alloc(&kernel_vm, &pcpu_addr);
 	if (error != 0)
-		panic("cpu%u: page allocate failed: %u", mp_whoami(), error);
+		panic("cpu%u: page allocate failed: %m", mp_whoami(), error);
 	pcpu = (struct pcpu *)XKPHYS_MAP(XKPHYS_CNC, pcpu_addr);
 
 	pcpu->pc_vm = &kernel_vm;

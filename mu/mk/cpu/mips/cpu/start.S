@@ -40,6 +40,11 @@ ENTRY(start)
 	nop
 
 	/* Allocate a proper stack page and switch to it.  */
+	/*
+	 * We must be able to get by with one page of stack until threads are
+	 * running.  At that point we'll have a stack of KSTACK_SIZE in a
+	 * virtual address space.
+	 */
 	dla	a0, kernel_vm
 	dsubu	sp, 8
 1:	jal	page_alloc_direct

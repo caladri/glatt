@@ -2,6 +2,7 @@
 #define	_CORE_TASK_H_
 
 #include <cpu/pcpu.h>
+#include <cpu/task.h>
 #include <vm/vm.h>
 
 #define	TASK_NAME_SIZE	(128)
@@ -13,6 +14,7 @@ struct task {
 	char t_name[TASK_NAME_SIZE];
 	struct task *t_parent;
 	struct task *t_children;
+	struct thread *t_threads;
 	struct task *t_next;
 	uint32_t t_flags;
 	struct vm *t_vm;

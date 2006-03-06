@@ -4,6 +4,7 @@
 #include <cpu/context.h>
 #include <cpu/frame.h>
 #include <cpu/pcpu.h>
+#include <cpu/thread.h>
 
 #define	THREAD_NAME_SIZE	(128)
 
@@ -11,6 +12,7 @@
 
 struct thread {
 	struct task *td_parent;
+	struct thread *td_next;
 	char td_name[THREAD_NAME_SIZE];
 	uint32_t td_flags;
 	struct frame td_frame;		/* Frame for interrupts and such.  */

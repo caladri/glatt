@@ -26,12 +26,12 @@ vm_alloc(struct vm *vm, size_t size, vaddr_t *vaddrp)
 				error2 = page_extract(vm, vaddr + o * PAGE_SIZE,
 						     &paddr);
 				if (error2 != 0)
-					panic("%s: failed to extract from mapping: %u",
+					panic("%s: failed to extract from mapping: %m",
 					      __func__, error2);
 			}
 			error2 = vm_free_address(vm, vaddr);
 			if (error2 != 0) {
-				panic("%s: vm_free_address failed: %u",
+				panic("%s: vm_free_address failed: %m",
 				      __func__, error2);
 			}
 			return (error);
@@ -58,19 +58,19 @@ vm_free(struct vm *vm, size_t size, vaddr_t vaddr)
 	for (o = 0; o < pages; o++) {
 		error = page_extract(vm, vaddr + o * PAGE_SIZE, &paddr);
 		if (error != 0)
-			panic("%s: failed to extract from mapping: %u",
+			panic("%s: failed to extract from mapping: %m",
 			      __func__, error);
 		error = page_unmap(vm, vaddr + o * PAGE_SIZE);
 		if (error != 0)
-			panic("%s: failed to release mapping: %u",
+			panic("%s: failed to release mapping: %m",
 			      __func__, error);
 		error = page_release(vm, paddr);
 		if (error != 0)
-			panic("%s: failed to release page: %u", __func__,
+			panic("%s: failed to release page: %m", __func__,
 			      error);
 	}
 	error = vm_free_address(vm, vaddr);
 	if (error != 0)
-		panic("%s: failed to free address: %u", __func__, error);
+		panic("%s: failed to free address: %m", __func__, error);
 	return (0);
 }

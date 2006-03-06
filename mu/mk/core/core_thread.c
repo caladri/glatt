@@ -42,5 +42,6 @@ thread_create(struct thread **tdp, struct task *parent, const char *name,
 		      __func__, error);
 		return (error);
 	}
+	*tdp = td;
 	return (0);
 }

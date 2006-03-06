@@ -43,5 +43,6 @@ task_create(struct task **taskp, struct task *parent, const char *name,
 		      __func__, error);
 		return (error);
 	}
+	*taskp = task;
 	return (0);
 }

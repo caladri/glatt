@@ -43,15 +43,6 @@
 #define	L1L0DIV		(L2L1DIV * NL2PL1)
 
 	/* Number of Level 0 pages required to map an entire address space.  */
-	/*
-	 * Each Level 2 page maps NPTEL2 virtual pages.  Each Level 1 page maps
-	 * NPTEL2 * NL2PL1 pages.  Each Level 0 page maps NPTEL2 * NL2PL1 *
-	 * NL1PL0 pages.  Using back-of-the-napkin math, one Level 0 page is
-	 * enough to map 16G of address space, which should be enough for
-	 * anyone.  
-	 *
-	 * XXX should just give in and make it enough to map 1TB (64?)
-	 */
 #define	NL0PMAP		(1) 
 #define	PMAPL0DIV	(L1L0DIV * NL1PL0)
 

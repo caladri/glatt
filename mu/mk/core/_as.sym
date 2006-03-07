@@ -1,4 +1,12 @@
 #include <core/task.h>
+#include <core/thread.h>
+
+	/* BOOL values.  */
+DEFINE(TRUE,	true);
+DEFINE(FALSE,	false);
 
 	/* TASK fields we might want.  */
 DEFINE(T_VM,	offsetof(struct task, t_vm));
+
+	/* THREAD fields we might want.  */
+DEFINE(TD_CONTEXT,	offsetof(struct thread,	td_context));

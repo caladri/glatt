@@ -1,5 +1,7 @@
 #include <core/types.h>
 #include <core/critical.h>
+#include <core/task.h>
+#include <core/thread.h>
 #include <cpu/cpu.h>
 #include <cpu/cpuinfo.h>
 #include <cpu/memory.h>
@@ -120,7 +122,7 @@ tlb_modify(vaddr_t vaddr)
 
 	if (PAGE_FLOOR(vaddr) == 0)
 		panic("%s: accessing NULL.", __func__);
-	vm = PCPU_GET(vm);
+	vm = PCPU_GET(thread)->td_parent->t_vm;
 	pte = pmap_find(vm->vm_pmap, vaddr); /* XXX lock.  */
 	if (pte == NULL)
 		panic("%s: pmap_find returned NULL.", __func__);
@@ -135,7 +137,7 @@ tlb_refill(vaddr_t vaddr)
 {
 	if (PAGE_FLOOR(vaddr) == 0)
 		panic("%s: accessing NULL.", __func__);
-	tlb_update(PCPU_GET(vm)->vm_pmap, vaddr);
+	tlb_update(PCPU_GET(thread)->td_parent->t_vm->vm_pmap, vaddr);
 }
 
 void

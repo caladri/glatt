@@ -14,8 +14,7 @@ struct vm;
 	/* Per-CPU data.  */
 struct pcpu {
 	struct frame pc_frame;
-	struct task *pc_task;
-	struct vm *pc_vm;
+	struct thread *pc_thread;
 	struct cpuinfo pc_cpuinfo;
 	struct interrupt_handler pc_hard_interrupt[CPU_HARD_INTERRUPT_COUNT];
 	struct interrupt_handler pc_soft_interrupt[CPU_SOFT_INTERRUPT_COUNT];

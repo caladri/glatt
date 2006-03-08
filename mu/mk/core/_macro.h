@@ -18,7 +18,8 @@
 
 #define	_CONCAT(x, y)		x ## y
 #define	CONCAT(x, y)		_CONCAT(x, y)
-#define	STRING(t)		#t
+#define	_STRING(t)		#t
+#define	STRING(t)		_STRING(t)
 
 	/* Function, variable, etc., attributes.  */
 

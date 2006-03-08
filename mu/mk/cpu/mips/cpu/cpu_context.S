@@ -23,7 +23,6 @@ ENTRY(cpu_context_restore)
 	ld	sp, CONTEXT_SP(t1)
 	ld	t2, CONTEXT_STATUS(t1)
 	ld	ra, CONTEXT_RA(t1)
-	ld	gp, CONTEXT_GP(t1)
 	/*
 	 * Copy saved registers into argument registers for upcalls.
 	 */
@@ -36,7 +35,7 @@ ENTRY(cpu_context_restore)
 	move	a6, s6
 	move	a7, s7
 	/*
-	 * Set thread pointer in pcpu data.  XXX use gp?
+	 * Set thread pointer.
 	 */
 	dla	t3, PCPU_VIRTUAL
 	sd	t0, PC_THREAD(t3)
@@ -71,7 +70,6 @@ ENTRY(cpu_context_save)
 	sd	sp, CONTEXT_SP(t0)
 	sd	t1, CONTEXT_STATUS(t0)
 	sd	ra, CONTEXT_RA(t0)
-	sd	gp, CONTEXT_GP(t0)
 	/*
 	 * Return false to indicate this isn't a restore.
 	 */

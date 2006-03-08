@@ -5,7 +5,7 @@
 
 struct thread;
 
-#define	CONTEXT_COUNT	(13)
+#define	CONTEXT_COUNT	(12)
 
 struct context {
 	register_t c_regs[CONTEXT_COUNT];
@@ -23,7 +23,6 @@ struct context {
 #define	CONTEXT_SP	(0x09)
 #define	CONTEXT_STATUS	(0x0a)
 #define	CONTEXT_RA	(0x0b)
-#define	CONTEXT_GP	(0x0c)
 
 void cpu_context_restore(struct thread *);
 bool cpu_context_save(struct thread *);

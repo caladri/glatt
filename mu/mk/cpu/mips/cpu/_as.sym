@@ -18,7 +18,6 @@ DEFINE(CONTEXT_S8,	offsetof(struct context,	c_regs[CONTEXT_S8]));
 DEFINE(CONTEXT_SP,	offsetof(struct context,	c_regs[CONTEXT_SP]));
 DEFINE(CONTEXT_STATUS,	offsetof(struct context,	c_regs[CONTEXT_STATUS]));
 DEFINE(CONTEXT_RA,	offsetof(struct context,	c_regs[CONTEXT_RA]));
-DEFINE(CONTEXT_GP,	offsetof(struct context,	c_regs[CONTEXT_GP]));
 
 	/* FRAME offsets.  */
 //DEFINE(FRAME_ZERO,	offsetof(struct frame,	f_regs[FRAME_ZERO]));
@@ -60,8 +59,8 @@ DEFINE(FRAME_LO,	offsetof(struct frame,	f_regs[FRAME_LO]));
 
 	/* PCPU-related constants we might want.  */
 DEFINE_CONSTANT(PCPU_VIRTUAL);
-DEFINE(PC_FRAME,	offsetof(struct pcpu,	pc_frame));
 DEFINE(PC_THREAD,	offsetof(struct pcpu,	pc_thread));
+DEFINE(PC_FRAME,	offsetof(struct pcpu,	pc_frame));
 
 	/* PMAP-related constants.  */
 DEFINE_CONSTANT(NPTEL2);

@@ -19,7 +19,10 @@ cpu_startup(void)
 	paddr_t pcpu_addr;
 	int error;
 
-	__asm __volatile ("dla $" STRING(gp) ", _gp" : : : "memory");
+	/*
+	 * We don't use the gp, set it to NULL.
+	 */
+	__asm __volatile ("move $" STRING(gp) ", $" STRING(zero) : : : "memory");
 
 	/* Allocate a page for persistent per-CPU data.  */
 	error = page_alloc(&kernel_vm, &pcpu_addr);

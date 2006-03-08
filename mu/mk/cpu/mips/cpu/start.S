@@ -32,8 +32,10 @@ ENTRY(start)
 	/* Switch to a temporary stack.  */
 	dla	sp, tempstack
 
-	/* Set up the GP.  */
-	dla	gp, _gp
+	/*
+	 * We don't use the gp, set it to NULL.
+	 */
+	move	gp, zero
 
 	/* Start platform rolling.  */
 	jal	platform_start

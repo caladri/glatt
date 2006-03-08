@@ -122,7 +122,10 @@ tlb_modify(vaddr_t vaddr)
 
 	if (PAGE_FLOOR(vaddr) == 0)
 		panic("%s: accessing NULL.", __func__);
-	vm = PCPU_GET(thread)->td_parent->t_vm;
+	if (vaddr >= KERNEL_BASE && vaddr < KERNEL_END)
+		vm = &kernel_vm;
+	else
+		vm = current_thread()->td_parent->t_vm;
 	pte = pmap_find(vm->vm_pmap, vaddr); /* XXX lock.  */
 	if (pte == NULL)
 		panic("%s: pmap_find returned NULL.", __func__);
@@ -135,9 +138,15 @@ tlb_modify(vaddr_t vaddr)
 void
 tlb_refill(vaddr_t vaddr)
 {
+	struct vm *vm;
+
 	if (PAGE_FLOOR(vaddr) == 0)
 		panic("%s: accessing NULL.", __func__);
-	tlb_update(PCPU_GET(thread)->td_parent->t_vm->vm_pmap, vaddr);
+	if (vaddr >= KERNEL_BASE && vaddr < KERNEL_END)
+		vm = &kernel_vm;
+	else
+		vm = current_thread()->td_parent->t_vm;
+	tlb_update(vm->vm_pmap, vaddr);
 }
 
 void

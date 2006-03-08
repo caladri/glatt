@@ -1,6 +1,8 @@
 #include <core/types.h>
 #include <core/mp.h>
 #include <core/string.h>
+#include <core/task.h>
+#include <core/thread.h>
 #include <cpu/cpu.h>
 #include <cpu/exception.h>
 #include <cpu/frame.h>
@@ -67,6 +69,7 @@ cpu_exception_init(void)
 void
 exception(void)
 {
+	struct thread *td = current_thread();
 	unsigned cause;
 	unsigned code;
 
@@ -82,6 +85,13 @@ exception(void)
 	}
 
 	kcprintf("\n\nFatal trap type %u on CPU %u:\n", code, mp_whoami());
+	kcprintf("thread              = %p (%s)\n",
+		 (void *)td, td == NULL ? "nil" : td->td_name);
+	if (current_thread() != NULL) {
+		kcprintf("task                = %p (%s)\n",
+			 (void *)td->td_parent, td->td_parent == NULL ? "nil" :
+			 td->td_parent->t_name);
+	}
 	kcprintf("cause               = %x\n", cause);
 	kcprintf("status              = %x\n",
 		 (unsigned)PCPU_GET(frame).f_regs[FRAME_STATUS]);

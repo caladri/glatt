@@ -15,17 +15,55 @@ struct startup_item_sorted {
 
 SET(startup_items, struct startup_item);
 
+static void startup_boot_thread(void *);
+static void startup_main_thread(void *);
+STARTUP_ITEM(main, STARTUP_MAIN, STARTUP_FIRST, startup_main_thread, NULL);
+
 static bool startup_booting = false;
 static struct spinlock startup_spinlock = SPINLOCK_INIT("startup");
 static struct task *main_task;
 
 void
-startup_boot(void)
+startup_main(void)
 {
+	struct thread *td;
+	bool bootstrap;
+	int error;
+
+	spinlock_lock(&startup_spinlock);
+	bootstrap = !startup_booting;
+	startup_booting = true;
+
+	if (bootstrap) {
+		error = task_create(&main_task, NULL, "main", TASK_KERNEL);
+		if (error != 0)
+			panic("%s: task_create failed: %m", __func__, error);
+	}
+
+	error = thread_create(&td, main_task, "thread", THREAD_DEFAULT);
+	if (error != 0)
+		panic("%s: thread_create failed: %m", __func__, error);
+
+	spinlock_unlock(&startup_spinlock);
+
+	if (bootstrap)
+		thread_set_upcall(td, startup_boot_thread, td);
+	else
+		thread_set_upcall(td, startup_main_thread, td);
+	thread_switch(NULL, td);	/* Bam! */
+}
+
+static void
+startup_boot_thread(void *arg)
+{
+	struct thread *td;
 	struct startup_item **itemp, *item;
 	struct startup_item_sorted *first, *sorted, *ip;
 	struct pool startup_item_pool;
 	int error;
+
+	td = arg;
+	ASSERT(td == current_thread(), "booting with wrong thread");
 
 	kcprintf("The system is coming up.\n");
 
@@ -74,48 +112,24 @@ next:		continue;
 	}
 	for (ip = first; ip != NULL; ip = ip->sis_next) {
 		item = ip->sis_item;
-		item->si_function(item->si_arg);
+		/* XXX lord of dirty hacks.  */
+		if (item->si_component == STARTUP_MAIN) {
+			ASSERT(td != NULL, "must have a thread.");
+			item->si_function(td);
+		} else {
+			item->si_function(item->si_arg);
+		}
 	}
 }
 
-void
-startup_main(void)
+static void
+startup_main_thread(void *arg)
 {
-	struct thread *thread;
-	bool bootstrap;
-	int error;
+	struct thread *td;
 
-	spinlock_lock(&startup_spinlock);
-	bootstrap = !startup_booting;
-	startup_booting = true;
-
-	if (bootstrap) {
-		error = task_create(&main_task, NULL, "main", TASK_KERNEL);
-		if (error != 0)
-			panic("%s: task_create failed: %m", __func__, error);
-	}
-
-	error = thread_create(&thread, main_task, "thread", THREAD_DEFAULT);
-	if (error != 0)
-		panic("%s: thread_create failed: %m", __func__, error);
-
-	spinlock_unlock(&startup_spinlock);
-
-	/*
-	 * XXX
-	 * Switch to running our thread.
-	 *
-	 * I don't want to hear
-	 * I don't want to know
-	 * Please don't say, "forgive me"
-	 * I've seen it all before
-	 * And I
-	 * Can't take it anymore
-	 */
-
-	if (bootstrap)
-		startup_boot();
-
+	td = arg;
+	ASSERT(td == current_thread(), "consistency is all I ask");
 	for (;;) {
+		kcprintf("%d!\n", mp_whoami());
 	}
 }

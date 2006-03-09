@@ -6,7 +6,7 @@
 enum startup_component {
 	STARTUP_MP,			/* Start up multiprocessor.  */
 	STARTUP_DRIVERS,		/* Register device drivers.  */
-	STARTUP_DEBUGGER,		/* Enter debugger.  */
+	STARTUP_MAIN,			/* Enter main loop.  */
 };
 
 enum startup_order {
@@ -25,16 +25,15 @@ struct startup_item {
 };
 
 #define	STARTUP_ITEM(name, component, order, func, arg)			\
-	struct startup_item startup_ ## name = {			\
+	struct startup_item startup_item_ ## name = {			\
 		.si_name = #name,					\
 		.si_function = func,					\
 		.si_arg = arg,						\
 		.si_component = component,				\
 		.si_order = order,					\
 	};								\
-	SET_ADD(startup_items, startup_ ## name)
+	SET_ADD(startup_items, startup_item_ ## name)
 
-void startup_boot(void);
 void startup_main(void);
 
 #endif /* !_CORE_STARTUP_H_ */

@@ -45,3 +45,32 @@ thread_create(struct thread **tdp, struct task *parent, const char *name,
 	*tdp = td;
 	return (0);
 }
+
+void
+thread_set_upcall(struct thread *td, void (*function)(void *), void *arg)
+{
+	cpu_thread_set_upcall(td, function, arg);
+}
+
+void
+thread_switch(struct thread *otd, struct thread *td)
+{
+	if (otd == NULL)
+		otd = current_thread();
+	if (otd != NULL) {
+		if (cpu_context_save(otd)) {
+			/*
+			 * We've been restored by something, return.
+			 */
+			return;
+		}
+	}
+	cpu_context_restore(td);
+}
+
+void
+thread_trampoline(struct thread *td, void (*function)(void *), void *arg)
+{
+	function(arg);
+	panic("%s: function returned!", __func__);
+}

@@ -21,5 +21,8 @@ struct thread {
 };
 
 int thread_create(struct thread **, struct task *, const char *, uint32_t);
+void thread_set_upcall(struct thread *, void (*)(void *), void *);
+void thread_switch(struct thread *, struct thread *);
+void thread_trampoline(struct thread *, void (*)(void *), void *);
 
 #endif /* !_CORE_THREAD_H_ */

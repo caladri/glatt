@@ -5,32 +5,36 @@
 	/* Vectors for exception, interrupt and TLB miss handling.  */
 
 	/*
-	 * XXX we have to disable interrupts and properly detect a nested
-	 * exception to prevent letting processes get restored with
-	 * corrupt frames.
+	 * XXX TODO
+	 * We have to allow for:
 	 *
-	 * When an exception handler starts, an interrupt could still happen.
-	 * We must disable interrupts for as long as the exception is being
-	 * handled.  The easiest way to do this is to save a copy to a register,
-	 * clear the interrupt enabled bit, write back the register, and then
-	 * save the original status.  Then, when done, restore the status last.
-	 * That should allow interrupts to work properly.  For nested exceptions
-	 * we will have to copy the frame to the thread structure's frame on
-	 * entry and then on exit.  This means that a thread cannot fault twice.
-	 * That is probably a reasonable limitation.  Or we could allocate and
-	 * link chains of frames.
+	 * 	(1) Exception nesting.
+	 *	(2) TLB refills for the kernel stack.
+	 *	(3) TLB refills for kernel address space in exception handlers.
 	 *
-	 * We should use LL/SC to get the thread kstack loaded and subtracted
-	 * from to get a reliable chunk of space for this.  What a headache!
-	 * Need a coherent plan of attack for this that is totally proven.
+	 * (2) and (3) mean that we must avoid touching virtual addresses in
+	 * the TLB refill (XTLB) handler.  This is pretty easy to do here.
+	 * Access violations will be handled elsewhere.  We can do a simple
+	 * range check and panic if the address isn't in the kernel range for
+	 * XTLB refill.
 	 *
-	 * If we just allow one-level of nesting (which makes sense, userland
-	 * traps to kernel mode, kernel mode needs TLB refills and interrupts
-	 * to work, and I guess we can come up with a reliable interrupt disable
-	 * mechanism) then we can differentiate between user and kernel
-	 * exceptions and use the kernel stack for kernel exceptions.  My
-	 * paranoia about k0 and k1 becoming corrupted by interrupts coming in
-	 * in the middle of the start of an exception handler must be unfounded.
+	 * (1) and (2) and (3) mean that we have to be able to handle nested
+	 * exceptions.  In practice, this just means that until we have
+	 * disabled exceptions and interrupts, we must not assume any state
+	 * will be consistent unless we know it is.  Traps from user code, for
+	 * example, will always require us to switch to a kstack, which is to
+	 * be expected.  Kernel exception handlers could rely on growing the
+	 * kernel stack downward, but that doesn't do us any favors if we start
+	 * having recursive exceptions (we can underrun the stack allocation,
+	 * which we want to be relatively small), and if sp gets invalidated,
+	 * we will get into a very nasty state.
+	 *
+	 * Eventually we should be careful with k0 and k1 and have exceptions
+	 * return with them in the same state as any previous exception handler
+	 * would have expected.  For now, it's probably best we just take the
+	 * easy route of growing the stack down.  In time, it would be a lot
+	 * better to have a per-CPU exception stack which we switch to, and to
+	 * catch recursion.
 	 */
 
 	.data

@@ -25,7 +25,6 @@ cpu_thread_setup(struct thread *td)
 	error = vm_alloc(&kernel_vm, KSTACK_SIZE, &kstack);
 	if (error != 0)
 		return (error);
-	panic("%s: vm_alloc gave us %p\n", __func__, (void *)kstack);
 	td->td_kstack = (void *)kstack;
 	td->td_context.c_regs[CONTEXT_SP] = kstack + KSTACK_SIZE;
 	cpu_thread_set_upcall(td, cpu_thread_exception, td);

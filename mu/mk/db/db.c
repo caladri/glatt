@@ -59,13 +59,6 @@ again:		if (!db_drunk_debugging)
 }
 
 static void
-db_startup_enter(void *arg)
-{
-	db_enter();
-}
-STARTUP_ITEM(db, STARTUP_DEBUGGER, STARTUP_FIRST, db_startup_enter, NULL);
-
-static void
 db_command_halt(void)
 {
 	kcprintf("Halting system from debugger...\n");

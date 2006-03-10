@@ -1,6 +1,5 @@
 #include <core/_macro.h>
 #include <cpu/asm.h>
-#include <cpu/memory.h>
 
 	/* Vectors for exception, interrupt and TLB miss handling.  */
 
@@ -79,25 +78,12 @@ exception_table:
 	END(CONCAT(v, _vector));					\
 	SYMBOL(CONCAT(v, _vector_end))
 
-#define	KREGS_SAVE							\
-	dsubu	sp, 8 ;							\
-	sd	k0, 0(sp) ;						\
-	dsubu	sp, 8 ;							\
-	sd	k1, 0(sp)
-
-#define	KREGS_RESTORE							\
-	ld	k1, 0(sp) ;						\
-	daddu	sp, 8 ;							\
-	ld	k0, 0(sp) ;						\
-	daddu	sp, 8
-
 	.text
 
 	NOREORDER
 
 VECTOR_ENTRY(exception)
 	.set noat
-	KREGS_SAVE;
 	mfc0	k0, CP0_CAUSE
 	dla	k1, exception_table
 
@@ -112,13 +98,8 @@ VECTOR_ENTRY(exception)
 	.set at
 VECTOR_END(exception)
 
-	/*
-	 * XXX we could get an xtlb miss for the kernel stack.  We should try
-	 * to handle TLB refills here without touching the stack.  Yow!
-	 */
 VECTOR_ENTRY(xtlb)
 	.set noat
-	KREGS_SAVE;
 	j	tlb_exception
 	nop
 	.set at
@@ -129,28 +110,90 @@ ENTRY(generic_exception)
 	dla	k0, 1f
 	j	exception_frame_save
 	nop
-1:	jal	exception
+1:	dla	a0, 0(sp)
+	jal	exception
 	nop
 	dla	k0, 1f
 	j	exception_frame_restore
 	nop
-1:	KREGS_RESTORE;
-	eret
+1:	eret
 	.set at
 END(generic_exception)
 
+/*
+ * XXX until we export SHIFT instead of DIV for each level, we are stuck
+ * with all these silly shifts and hard-coding to 10.
+ */
 ENTRY(tlb_exception)
 	.set noat
-	dla	k0, 1f
-	j	exception_frame_save
+	dmfc0	k0, CP0_BADVADDR
+	dli	k1, KERNEL_END
+	tgeu	k0, k1
+	dli	k1, KERNEL_BASE
+	tltu	k0, k1
+
+	/*
+	 * PMAP -> L0.
+	 */
+	dmfc0	k0, CP0_BADVADDR
+	dla	k1, kernel_vm
+	ld	k1, VM_PMAP(k1)
+	daddu	k1, PM_LEVEL0
+	/* For now we just have 1 Level0.  */
+	ld	k1, 0(k1)
+	teq	zero, k1		/* L0 pointer can't be NULL.  */
+
+	/*
+	 * L0 -> L1.
+	 */
+	dmfc0	k0, CP0_BADVADDR
+	dsrl	k0, PAGE_SHIFT		/* Get a page number.  */
+	dsrl	k0, 10			/* Skip L2 -> PTE index.  */
+	dsrl	k0, 10			/* Skip L1 -> L2  index.  */
+	andi	k0, 0x3ff		/* We just want the low 10 bits.  */
+	dsll	k0, 3			/* Get an 8-byte offset.  */
+	daddu	k1, k0
+	ld	k1, 0(k1)
+	teq	zero, k1		/* L1 pointer can't be NULL.  */
+
+	/*
+	 * L1 -> L2.
+	 */
+	dmfc0	k0, CP0_BADVADDR
+	dsrl	k0, PAGE_SHIFT		/* Get a page number.  */
+	dsrl	k0, 10			/* Skip L2 -> PTE index.  */
+	andi	k0, 0x3ff		/* We just want the low 10 bits.  */
+	dsll	k0, 3			/* Get an 8-byte offset.  */
+	daddu	k1, k0
+	ld	k1, 0(k1)
+	teq	zero, k1		/* L2 pointer can't be NULL.  */
+
+	/*
+	 * L2 -> PTE.
+	 */
+	dmfc0	k0, CP0_BADVADDR
+	dsrl	k0, PAGE_SHIFT		/* Get a page number.  */
+	andi	k0, 0x3ff		/* We just want the low 10 bits.  */
+	dsll	k0, 3			/* Get an 8-byte offset.  */
+	daddu	k1, k0
+	ld	k1, 0(k1)
+
+	/*
+	 * Load the PTE into lo0, add the lo1 offset and load into lo1.  Check
+	 * if the entryhi that the CPU set up is already in the TLB.  If so,
+	 * write at that index, otherwise write to a random one.
+	 */
+	dmtc0	k1, CP0_TLBENTRYLO0
+	daddu	k1, TLB_LO1_PAGE_OFFSET
+	dmtc0	k1, CP0_TLBENTRYLO1
+	tlbp
+	bltz	k1, 1f
 	nop
-1:	dmfc0	a0, CP0_BADVADDR
-	jal	tlb_refill
-	nop
-	dla	k0, 1f
-	j	exception_frame_restore
-	nop
-1:	KREGS_RESTORE;
+
+	tlbwi
+	eret
+
+1:	tlbwr
 	eret
 	.set at
 END(tlb_exception)
@@ -166,8 +209,7 @@ ENTRY(tlbmod_exception)
 	dla	k0, 1f
 	j	exception_frame_restore
 	nop
-1:	KREGS_RESTORE;
-	eret
+1:	eret
 	.set at
 END(tlbmod_exception)
 
@@ -175,31 +217,28 @@ ENTRY(cache_exception)
 	.set noat
 	j	generic_exception
 	nop
-//	KREGS_RESTORE;
-//	eret
 	.set at
 END(cache_exception)
 
 ENTRY(exception_frame_save)		/* Return address is k0.  */
 	.set noat
-	dla	k1, PCPU_VIRTUAL	/* We assume the frame is first.  */
-	dla	k1, PC_FRAME(k1)
+	dsubu	sp, FRAME_SIZE
 
-	sd	AT, FRAME_AT(k1)
-	sd	v0, FRAME_V0(k1)
-	sd	v1, FRAME_V1(k1)
-	sd	a0, FRAME_A0(k1)
-	sd	a1, FRAME_A1(k1)
-	sd	a2, FRAME_A2(k1)
-	sd	a3, FRAME_A3(k1)
-	sd	a4, FRAME_A4(k1)
-	sd	a5, FRAME_A5(k1)
-	sd	a6, FRAME_A6(k1)
-	sd	a7, FRAME_A7(k1)
-	sd	t0, FRAME_T0(k1)
-	sd	t1, FRAME_T1(k1)
-	sd	t2, FRAME_T2(k1)
-	sd	t3, FRAME_T3(k1)
+	sd	AT, FRAME_AT(sp)
+	sd	v0, FRAME_V0(sp)
+	sd	v1, FRAME_V1(sp)
+	sd	a0, FRAME_A0(sp)
+	sd	a1, FRAME_A1(sp)
+	sd	a2, FRAME_A2(sp)
+	sd	a3, FRAME_A3(sp)
+	sd	a4, FRAME_A4(sp)
+	sd	a5, FRAME_A5(sp)
+	sd	a6, FRAME_A6(sp)
+	sd	a7, FRAME_A7(sp)
+	sd	t0, FRAME_T0(sp)
+	sd	t1, FRAME_T1(sp)
+	sd	t2, FRAME_T2(sp)
+	sd	t3, FRAME_T3(sp)
 
 	/* Use freshly-available temporaries to start loading externals.  */
 	mfc0	t0, CP0_STATUS
@@ -207,25 +246,25 @@ ENTRY(exception_frame_save)		/* Return address is k0.  */
 	mfhi	t2
 	mflo	t3
 
-	sd	s0, FRAME_S0(k1)
-	sd	s1, FRAME_S1(k1)
-	sd	s2, FRAME_S2(k1)
-	sd	s3, FRAME_S3(k1)
-	sd	s4, FRAME_S4(k1)
-	sd	s5, FRAME_S5(k1)
-	sd	s6, FRAME_S6(k1)
-	sd	s7, FRAME_S7(k1)
-	sd	t8, FRAME_T8(k1)
-	sd	t9, FRAME_T9(k1)
-	sd	gp, FRAME_GP(k1)
-	sd	sp, FRAME_SP(k1)
-	sd	s8, FRAME_S8(k1)
-	sd	ra, FRAME_RA(k1)
+	sd	s0, FRAME_S0(sp)
+	sd	s1, FRAME_S1(sp)
+	sd	s2, FRAME_S2(sp)
+	sd	s3, FRAME_S3(sp)
+	sd	s4, FRAME_S4(sp)
+	sd	s5, FRAME_S5(sp)
+	sd	s6, FRAME_S6(sp)
+	sd	s7, FRAME_S7(sp)
+	sd	t8, FRAME_T8(sp)
+	sd	t9, FRAME_T9(sp)
+	sd	gp, FRAME_GP(sp)
+	sd	sp, FRAME_SP(sp)
+	sd	s8, FRAME_S8(sp)
+	sd	ra, FRAME_RA(sp)
 
-	sd	t0, FRAME_STATUS(k1)
-	sd	t1, FRAME_EPC(k1)
-	sd	t2, FRAME_HI(k1)
-	sd	t3, FRAME_LO(k1)
+	sd	t0, FRAME_STATUS(sp)
+	sd	t1, FRAME_EPC(sp)
+	sd	t2, FRAME_HI(sp)
+	sd	t3, FRAME_LO(sp)
 
 	jr	k0
 	nop
@@ -234,28 +273,25 @@ END(exception_frame_save)
 
 ENTRY(exception_frame_restore)		/* Return address is k0.  */
 	.set noat
-	dla	k1, PCPU_VIRTUAL	/* We assume the frame is first.  */
-	dla	k1, PC_FRAME(k1)
+	ld      t3, FRAME_LO(sp)
+	ld      t2, FRAME_HI(sp)
+	ld      t1, FRAME_EPC(sp)
+	ld      t0, FRAME_STATUS(sp)
 
-	ld      t3, FRAME_LO(k1)
-	ld      t2, FRAME_HI(k1)
-	ld      t1, FRAME_EPC(k1)
-	ld      t0, FRAME_STATUS(k1)
-
-	ld      ra, FRAME_RA(k1)
-	ld      s8, FRAME_S8(k1)
-	ld      sp, FRAME_SP(k1)
-	ld      gp, FRAME_GP(k1)
-	ld      t9, FRAME_T9(k1)
-	ld      t8, FRAME_T8(k1)
-	ld      s7, FRAME_S7(k1)
-	ld      s6, FRAME_S6(k1)
-	ld      s5, FRAME_S5(k1)
-	ld      s4, FRAME_S4(k1)
-	ld      s3, FRAME_S3(k1)
-	ld      s2, FRAME_S2(k1)
-	ld      s1, FRAME_S1(k1)
-	ld      s0, FRAME_S0(k1)
+	ld      ra, FRAME_RA(sp)
+	ld      s8, FRAME_S8(sp)
+	ld      sp, FRAME_SP(sp)
+	ld      gp, FRAME_GP(sp)
+	ld      t9, FRAME_T9(sp)
+	ld      t8, FRAME_T8(sp)
+	ld      s7, FRAME_S7(sp)
+	ld      s6, FRAME_S6(sp)
+	ld      s5, FRAME_S5(sp)
+	ld      s4, FRAME_S4(sp)
+	ld      s3, FRAME_S3(sp)
+	ld      s2, FRAME_S2(sp)
+	ld      s1, FRAME_S1(sp)
+	ld      s0, FRAME_S0(sp)
 
 	/* Before we nuke temporaries, restore externals.  */
 	mtlo	t3
@@ -263,21 +299,23 @@ ENTRY(exception_frame_restore)		/* Return address is k0.  */
 	dmtc0	t1, CP0_EXCPC
 	mtc0	t0, CP0_STATUS
 
-	ld      t3, FRAME_T3(k1)
-	ld      t2, FRAME_T2(k1)
-	ld      t1, FRAME_T1(k1)
-	ld      t0, FRAME_T0(k1)
-	ld      a7, FRAME_A7(k1)
-	ld      a6, FRAME_A6(k1)
-	ld      a5, FRAME_A5(k1)
-	ld      a4, FRAME_A4(k1)
-	ld      a3, FRAME_A3(k1)
-	ld      a2, FRAME_A2(k1)
-	ld      a1, FRAME_A1(k1)
-	ld      a0, FRAME_A0(k1)
-	ld      v1, FRAME_V1(k1)
-	ld      v0, FRAME_V0(k1)
-	ld      AT, FRAME_AT(k1)
+	ld      t3, FRAME_T3(sp)
+	ld      t2, FRAME_T2(sp)
+	ld      t1, FRAME_T1(sp)
+	ld      t0, FRAME_T0(sp)
+	ld      a7, FRAME_A7(sp)
+	ld      a6, FRAME_A6(sp)
+	ld      a5, FRAME_A5(sp)
+	ld      a4, FRAME_A4(sp)
+	ld      a3, FRAME_A3(sp)
+	ld      a2, FRAME_A2(sp)
+	ld      a1, FRAME_A1(sp)
+	ld      a0, FRAME_A0(sp)
+	ld      v1, FRAME_V1(sp)
+	ld      v0, FRAME_V0(sp)
+	ld      AT, FRAME_AT(sp)
+
+	daddu	sp, FRAME_SIZE
 
 	jr	k0
 	nop

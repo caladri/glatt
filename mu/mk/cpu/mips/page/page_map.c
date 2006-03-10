@@ -96,7 +96,6 @@ pmap_find(struct pmap *pm, vaddr_t vaddr)
 
 	if (vaddr < pm->pm_base || vaddr >= pm->pm_end)
 		return (NULL);
-	vaddr -= pm->pm_base;
 
 	pml0 = pmap_find0(pm, vaddr);
 	if (pml0 == NULL)
@@ -199,8 +198,6 @@ pmap_alloc_pte(struct pmap *pm, vaddr_t vaddr, pt_entry_t **ptep)
 	uint32_t pml0i, pml1i, pml2i;
 	vaddr_t tmpaddr;
 	int error;
-
-	vaddr -= pm->pm_base;
 
 	/* We have to have a pmap before getting here.  */
 	if (pm == NULL)

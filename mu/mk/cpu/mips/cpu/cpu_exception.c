@@ -67,23 +67,46 @@ cpu_exception_init(void)
 }
 
 void
-exception(void)
+exception(struct frame *frame)
 {
-	struct thread *td = current_thread();
+	struct thread *td;
+	struct frame *fp;
 	unsigned cause;
 	unsigned code;
+
+	td = current_thread();
 
 	cause = cpu_read_cause();
 	code = (cause & CP0_CAUSE_EXCEPTION) >> CP0_CAUSE_EXCEPTION_SHIFT;
 
+	/*
+	 * We will use fp to refer to the frame below, and may make changes
+	 * to it, or context switch away, so save the frame to the thread,
+	 * and then restore from it later, so that when we return to the
+	 * exception vector code, it will restore registers to what we want
+	 * them to be.
+	 */
+	if (td != NULL)
+		fp = &td->td_frame;
+	else
+		fp = frame;
+	if (fp != frame)
+		memcpy(fp, frame, sizeof *fp);
+
 	switch (code) {
 	case EXCEPTION_INT:
 		cpu_interrupt();
-		return;
-	default:
 		break;
+	default:
+		goto debugger;
 	}
 
+	/* Restore frame with any modifications we made.  */
+	if (fp != frame)
+		memcpy(frame, fp, sizeof *frame);
+	return;
+
+debugger:
 	kcprintf("\n\nFatal trap type %u on CPU %u:\n", code, mp_whoami());
 	kcprintf("thread              = %p (%s)\n",
 		 (void *)td, td == NULL ? "nil" : td->td_name);

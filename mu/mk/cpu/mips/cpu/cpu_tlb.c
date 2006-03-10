@@ -14,19 +14,6 @@
 #include <vm/vm.h>
 
 /*
- * XXX since we are using 4K TLB pages and 8K VM pages (2 for the price of 1!),
- * we must always make sure to mask off the PAGE_MASK bits on pages that come
- * from VM, as we have to manage the highest bit set in PAGE_MASK, and if it
- * has it set with random garbage, we're screwed.
- *
- * So when a TLB refill routine is written, we should double-check that, or the
- * code which manages the PTEs must be really careful (which it should be in
- * any event.)
- */
-
-#define	TLB_PAGE_SIZE	(PAGE_SIZE / 2)
-
-/*
  * Right now this code (and hopefully only this code) assumes that we are using
  * 8K pages in VM.  If we are, then we can use the default TLB pagesize (4K)
  * and just map the first and the second consecutive 4K pages.  If anything

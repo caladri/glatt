@@ -3,6 +3,7 @@
 #include <cpu/frame.h>
 #include <cpu/register.h>
 #include <cpu/pcpu.h>
+#include <cpu/tlb.h>
 #include <page/page_map.h>
 
 	/* CONTEXT offsets.  */
@@ -56,6 +57,7 @@ DEFINE(FRAME_STATUS,	offsetof(struct frame,	f_regs[FRAME_STATUS]));
 DEFINE(FRAME_EPC,	offsetof(struct frame,	f_regs[FRAME_EPC]));
 DEFINE(FRAME_HI,	offsetof(struct frame,	f_regs[FRAME_HI]));
 DEFINE(FRAME_LO,	offsetof(struct frame,	f_regs[FRAME_LO]));
+DEFINE(FRAME_SIZE,	sizeof (struct frame));
 
 	/* PCPU-related constants we might want.  */
 DEFINE_CONSTANT(PCPU_VIRTUAL);
@@ -63,6 +65,9 @@ DEFINE(PC_THREAD,	offsetof(struct pcpu,	pc_thread));
 DEFINE(PC_FRAME,	offsetof(struct pcpu,	pc_frame));
 
 	/* PMAP-related constants.  */
+DEFINE_CONSTANT(KERNEL_BASE);
+DEFINE_CONSTANT(KERNEL_END);
+
 DEFINE_CONSTANT(NPTEL2);
 DEFINE_CONSTANT(PTEL2DIV);
 DEFINE_CONSTANT(NL2PL1);
@@ -71,6 +76,12 @@ DEFINE_CONSTANT(NL1PL0);
 DEFINE_CONSTANT(L1L0DIV);
 DEFINE_CONSTANT(NL0PMAP);
 DEFINE_CONSTANT(PMAPL0DIV);
+
+DEFINE(TLB_LO1_PAGE_OFFSET,	TLBLO_PA_TO_PFN(TLB_PAGE_SIZE));
+
+DEFINE(PM_LEVEL0,	offsetof(struct pmap,	pm_level0));
+
+DEFINE(VM_PMAP,		offsetof(struct vm,	vm_pmap));
 
 	/* PAGE constants.  */
 DEFINE_CONSTANT(PAGE_SHIFT);

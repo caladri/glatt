@@ -318,5 +318,5 @@ pmap_update(struct pmap *pm, vaddr_t vaddr, paddr_t paddr, pt_entry_t flags)
 		/* XXX flush TLB, clear cache.  */
 		tlb_invalidate(pm, vaddr);
 	}
-	*pte = TLBLO_PA_TO_PFN(paddr) | flags;
+	atomic_store_64(pte, TLBLO_PA_TO_PFN(paddr) | flags);
 }

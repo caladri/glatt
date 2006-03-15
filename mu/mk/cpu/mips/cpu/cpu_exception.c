@@ -117,13 +117,11 @@ debugger:
 	}
 	kcprintf("cause               = %x\n", cause);
 	kcprintf("status              = %x\n",
-		 (unsigned)PCPU_GET(frame).f_regs[FRAME_STATUS]);
-	kcprintf("pc                  = %p\n",
-		 (void *)PCPU_GET(frame).f_regs[FRAME_EPC]);
-	kcprintf("ra                  = %p\n",
-		 (void *)PCPU_GET(frame).f_regs[FRAME_RA]);
-	kcprintf("badvaddr            = %p\n",
-		 (void *)cpu_read_badvaddr());
+		 (unsigned)fp->f_regs[FRAME_STATUS]);
+	kcprintf("pc                  = %p\n", (void *)fp->f_regs[FRAME_EPC]);
+	kcprintf("ra                  = %p\n", (void *)fp->f_regs[FRAME_RA]);
+	kcprintf("sp                  = %p\n", (void *)fp->f_regs[FRAME_SP]);
+	kcprintf("badvaddr            = %p\n", (void *)cpu_read_badvaddr());
 	db_enter();
 }
 

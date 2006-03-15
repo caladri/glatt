@@ -59,4 +59,24 @@ atomic_increment_64(volatile uint64_t *p)
 		o = atomic_load_64(p);
 }
 
+static inline void
+atomic_clear_64(volatile uint64_t *p, uint64_t mask)
+{
+	uint64_t o;
+
+	o = atomic_load_64(p);
+	while (!atomic_compare_and_set_64(p, o, o & ~mask))
+		o = atomic_load_64(p);
+}
+
+static inline void
+atomic_set_64(volatile uint64_t *p, uint64_t mask)
+{
+	uint64_t o;
+
+	o = atomic_load_64(p);
+	while (!atomic_compare_and_set_64(p, o, o | mask))
+		o = atomic_load_64(p);
+}
+
 #endif /* !_CPU_ATOMIC_H_ */

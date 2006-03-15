@@ -116,9 +116,9 @@ typedef	uint64_t	pt_entry_t;
 /*
  * PTE management functions for bits defined above.
  */
-#define	pte_clear(pte, bit)	((*(pte)) &= ~(bit))
-#define	pte_set(pte, bit)	((*(pte)) |= (bit))
-#define	pte_test(pte, bit)	(((*(pte)) & (bit)) == (bit))
+#define	pte_clear(pte, bit)	atomic_clear_64((pte), (bit))
+#define	pte_set(pte, bit)	atomic_set_64((pte), (bit))
+#define	pte_test(pte, bit)	(((atomic_load_64((pte))) & (bit)) == (bit))
 
 #ifndef	ASSEMBLER
 pt_entry_t *pmap_find(struct pmap *, vaddr_t);

@@ -34,6 +34,12 @@
 	 * easy route of growing the stack down.  In time, it would be a lot
 	 * better to have a per-CPU exception stack which we switch to, and to
 	 * catch recursion.
+	 *
+	 * There is a problem where we can be trying to service TLBMod for the
+	 * kernel stack, and then we will end up trying to write to the stack
+	 * to save the frame, which will recursively fault until we grow the
+	 * stack down below where it's good to.  We will zero the kstack to make
+	 * sure it's all dirty before we start running on it.
 	 */
 
 	.data

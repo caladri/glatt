@@ -30,6 +30,11 @@ static struct page_index {
 
 COMPILE_TIME_ASSERT(sizeof (struct page_index) * PAGE_INDEX_SPLIT == PAGE_SIZE);
 
+static struct spinlock page_lock = SPINLOCK_INIT("PAGE");
+
+#define	PAGE_LOCK()	spinlock_lock(&page_lock)
+#define	PAGE_UNLOCK()	spinlock_unlock(&page_lock)
+
 void
 page_init(void)
 {
@@ -45,6 +50,7 @@ page_alloc(struct vm *vm, paddr_t *paddrp)
 	size_t entry, off;
 	paddr_t paddr;
 
+	PAGE_LOCK();
 	for (pi = page_index; pi != NULL; pi = pi->pi_header.ph_next) {
 		if (pi->pi_header.ph_pages == 0)
 			continue;
@@ -58,6 +64,7 @@ page_alloc(struct vm *vm, paddr_t *paddrp)
 				pe->pe_bitmask ^= 1ul << off;
 				pi->pi_header.ph_pages--;
 				paddr = pi->pi_header.ph_base;
+				PAGE_UNLOCK();
 				paddr += (entry * PAGE_ENTRY_PAGES) * PAGE_SIZE;
 				paddr += off * PAGE_SIZE;
 				*paddrp = paddr;
@@ -67,6 +74,7 @@ page_alloc(struct vm *vm, paddr_t *paddrp)
 		panic("%s: page index has %lu pages but no bits set.",
 		      __func__, pi->pi_header.ph_pages);
 	}
+	PAGE_UNLOCK();
 	return (ERROR_EXHAUSTED);
 }
 
@@ -95,7 +103,12 @@ page_alloc_direct(struct vm *vm, vaddr_t *vaddrp)
 int
 page_extract(struct vm *vm, vaddr_t vaddr, paddr_t *paddrp)
 {
-	return (pmap_extract(vm, vaddr, paddrp));
+	int error;
+
+	PAGE_LOCK();
+	error = pmap_extract(vm, vaddr, paddrp);
+	PAGE_UNLOCK();
+	return (error);
 }
 
 int
@@ -134,6 +147,7 @@ page_insert_pages(paddr_t base, size_t pages)
 	 * XXX check if these pages belong in an existing pool.
 	 */
 	while (pages != 0) {
+		PAGE_LOCK();
 		error = page_map_direct(&kernel_vm, base, &va);
 		if (error != 0)
 			panic("%s: couldn't map page index directly: %d\n",
@@ -170,6 +184,7 @@ page_insert_pages(paddr_t base, size_t pages)
 				pe->pe_bitmask |= 1ul << (cnt % PAGE_ENTRY_PAGES);
 			}
 		}
+		PAGE_UNLOCK();
 	}
 	kcprintf("PAGE: inserted %lu pages (%luM)\n", inserted,
 		 (inserted * PAGE_SIZE) / (1024 * 1024));
@@ -181,16 +196,26 @@ page_insert_pages(paddr_t base, size_t pages)
 int
 page_map(struct vm *vm, vaddr_t vaddr, paddr_t paddr)
 {
-	return (pmap_map(vm, vaddr, paddr));
+	int error;
+
+	PAGE_LOCK();
+	error = pmap_map(vm, vaddr, paddr);
+	PAGE_UNLOCK();
+	return (error);
 }
 
 int
 page_map_direct(struct vm *vm, paddr_t paddr, vaddr_t *vaddrp)
 {
+	int error;
+
 	if (vm != &kernel_vm)
 		panic("%s: can't direct map for non-kernel address space.",
 		      __func__);
-	return (pmap_map_direct(vm, paddr, vaddrp));
+	PAGE_LOCK();
+	error = pmap_map_direct(vm, paddr, vaddrp);
+	PAGE_UNLOCK();
+	return (error);
 }
 
 int
@@ -200,6 +225,7 @@ page_release(struct vm *vm, paddr_t paddr)
 	struct page_index *pi;
 	size_t off;
 
+	PAGE_LOCK();
 	for (pi = page_index; pi != NULL; pi = pi->pi_header.ph_next) {
 		if (paddr < pi->pi_header.ph_base)
 			continue;
@@ -213,19 +239,31 @@ page_release(struct vm *vm, paddr_t paddr)
 		pe = &pi->pi_entries[off / PAGE_ENTRY_PAGES];
 		pe->pe_bitmask |= 1ul << (off % PAGE_ENTRY_PAGES);
 		pi->pi_header.ph_pages++;
+		PAGE_UNLOCK();
 		return (0);
 	}
+	PAGE_UNLOCK();
 	return (ERROR_NOT_FOUND);
 }
 
 int
 page_unmap(struct vm *vm, vaddr_t vaddr)
 {
-	return (pmap_unmap(vm, vaddr));
+	int error;
+
+	PAGE_LOCK();
+	error = pmap_unmap(vm, vaddr);
+	PAGE_UNLOCK();
+	return (error);
 }
 
 int
 page_unmap_direct(struct vm *vm, vaddr_t vaddr)
 {
-	return (pmap_unmap_direct(vm, vaddr));
+	int error;
+
+	PAGE_LOCK();
+	error = pmap_unmap_direct(vm, vaddr);
+	PAGE_UNLOCK();
+	return (error);
 }

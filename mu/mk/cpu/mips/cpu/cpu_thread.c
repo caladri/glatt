@@ -1,5 +1,6 @@
 #include <core/types.h>
 #include <core/error.h>
+#include <core/string.h>
 #include <core/thread.h>
 #include <vm/alloc.h>
 #include <vm/page.h>
@@ -26,7 +27,17 @@ cpu_thread_setup(struct thread *td)
 	if (error != 0)
 		return (error);
 	td->td_kstack = (void *)kstack;
+	/*
+	 * Zero all of the kstack so that it's all already dirty, otherwise
+	 * when we first try to write to it, we will end up triple faulting
+	 * ad absurdum.  Trying to not use the kstack when servicing TLBMod
+	 * for the kstack would be ideal.
+	 *
+	 * XXX Just touch each page.
+	 */
+	memset(td->td_kstack, 0x00, KSTACK_SIZE);
 	td->td_context.c_regs[CONTEXT_SP] = kstack + KSTACK_SIZE;
+	td->td_context.c_regs[CONTEXT_STATUS] = CP0_STATUS_KX | CP0_STATUS_IE;
 	cpu_thread_set_upcall(td, cpu_thread_exception, td);
 	return (0);
 }

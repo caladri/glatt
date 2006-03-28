@@ -40,7 +40,7 @@ startup_main(void)
 			panic("%s: task_create failed: %m", __func__, error);
 	}
 
-	error = thread_create(&td, main_task, "thread", THREAD_DEFAULT);
+	error = thread_create(&td, main_task, "scheduler", THREAD_DEFAULT);
 	if (error != 0)
 		panic("%s: thread_create failed: %m", __func__, error);
 
@@ -50,7 +50,8 @@ startup_main(void)
 		thread_set_upcall(td, startup_boot_thread, td);
 	else
 		thread_set_upcall(td, startup_main_thread, td);
-	thread_switch(NULL, td);	/* Bam! */
+	PCPU_SET(idletd, td);
+	thread_block();			/* Bam! */
 }
 
 static void

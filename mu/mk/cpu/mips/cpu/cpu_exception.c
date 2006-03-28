@@ -110,7 +110,7 @@ debugger:
 	kcprintf("\n\nFatal trap type %u on CPU %u:\n", code, mp_whoami());
 	kcprintf("thread              = %p (%s)\n",
 		 (void *)td, td == NULL ? "nil" : td->td_name);
-	if (current_thread() != NULL) {
+	if (td != NULL) {
 		kcprintf("task                = %p (%s)\n",
 			 (void *)td->td_parent, td->td_parent == NULL ? "nil" :
 			 td->td_parent->t_name);

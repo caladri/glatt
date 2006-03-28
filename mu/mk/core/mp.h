@@ -7,6 +7,9 @@ enum ipi_type {
 
 #include <cpu/mp.h>
 
+#include <core/thread.h>
+#include <io/device/console/console.h>
+
 static inline cpu_id_t
 mp_whoami(void)
 {

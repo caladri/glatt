@@ -11,11 +11,16 @@ struct vm;
 
 #define	PCPU_VIRTUAL	(XKSEG_BASE)
 
+#define	PCPU_FLAG_RUNNING	(0x00000001)
+#define	PCPU_FLAG_PANICKED	(0x00000002)
+
 	/* Per-CPU data.  */
 struct pcpu {
 	struct frame pc_frame;
 	struct thread *pc_thread;
+	struct thread *pc_idletd;
 	struct cpuinfo pc_cpuinfo;
+	unsigned pc_flags;
 	struct interrupt_handler pc_hard_interrupt[CPU_HARD_INTERRUPT_COUNT];
 	struct interrupt_handler pc_soft_interrupt[CPU_SOFT_INTERRUPT_COUNT];
 };

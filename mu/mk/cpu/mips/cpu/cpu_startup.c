@@ -32,6 +32,7 @@ cpu_startup(void)
 
 	/* Identify the CPU.  */
 	pcpu->pc_cpuinfo = cpu_identify();
+	pcpu->pc_flags = PCPU_FLAG_RUNNING;
 
 	/* Clear the TLB and add a wired mapping for my per-CPU data.  */
 	tlb_init(pcpu_addr);

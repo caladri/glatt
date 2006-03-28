@@ -17,7 +17,7 @@ vm_init(void)
 	int error;
 
 	/* XXX must initialize kernel_vm like vm_setup VMs.  */
-	spinlock_init(&kernel_vm.vm_lock, "VM lock");
+	spinlock_init(&kernel_vm.vm_lock, "Kernel VM lock");
 
 	error = pool_create(&vm_pool, "VM", sizeof (struct vm), POOL_VIRTUAL);
 	if (error != 0)

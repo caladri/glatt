@@ -72,6 +72,7 @@ thread_switch(struct thread *otd, struct thread *td)
 {
 	if (otd == NULL)
 		otd = current_thread();
+	ASSERT(otd != td, "cannot switch from a thread to itself.");
 	if (otd != NULL) {
 		if (cpu_context_save(otd)) {
 			/*

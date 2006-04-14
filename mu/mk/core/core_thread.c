@@ -24,6 +24,8 @@ thread_block(void)
 
 	td = current_thread();
 	if (td != NULL) {
+		ASSERT((td->td_flags & THREAD_BLOCKED) == 0,
+		       "can't block a blocked (but running!) thread.");
 		td->td_flags |= THREAD_BLOCKED;
 	}
 	thread_switch(td, PCPU_GET(idletd));
@@ -70,6 +72,8 @@ thread_set_upcall(struct thread *td, void (*function)(void *), void *arg)
 void
 thread_switch(struct thread *otd, struct thread *td)
 {
+	ASSERT((td->td_flags & THREAD_BLOCKED) == 0,
+	       "can't switch to a blocked thread, use wakeup.");
 	if (otd == NULL)
 		otd = current_thread();
 	ASSERT(otd != td, "cannot switch from a thread to itself.");

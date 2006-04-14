@@ -1,6 +1,10 @@
 #ifndef	_PLATFORM_MP_H_
 #define	_PLATFORM_MP_H_
 
+enum ipi_type {
+	IPI_STOP,
+};
+
 void platform_mp_ipi_send(cpu_id_t, enum ipi_type);
 void platform_mp_ipi_send_but(cpu_id_t, enum ipi_type);
 void platform_mp_startup(void);

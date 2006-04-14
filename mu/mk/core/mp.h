@@ -1,14 +1,7 @@
 #ifndef	_CORE_MP_H_
 #define	_CORE_MP_H_
 
-enum ipi_type {
-	IPI_STOP,
-};
-
 #include <cpu/mp.h>
-
-#include <core/thread.h>
-#include <io/device/console/console.h>
 
 static inline cpu_id_t
 mp_whoami(void)

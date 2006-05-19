@@ -90,7 +90,12 @@ cpu_interrupt_initialize(void)
 register_t
 cpu_interrupt_disable(void)
 {
-	return (cpu_read_status() & CP0_STATUS_IE);
+	register_t status;
+
+	status = cpu_read_status();
+	if ((status & CP0_STATUS_IE) != 0)
+		cpu_write_status(status & ~CP0_STATUS_IE);
+	return (status & CP0_STATUS_IE);
 }
 
 void
@@ -102,6 +107,7 @@ cpu_interrupt_enable(void)
 void
 cpu_interrupt_restore(register_t r)
 {
-	if ((cpu_read_status() & CP0_STATUS_IE) != r)
+	if (r == CP0_STATUS_IE &&
+	    (cpu_read_status() & CP0_STATUS_IE) == 0)
 		cpu_write_status(cpu_read_status() | r);
 }

@@ -40,6 +40,8 @@ again:		if (!db_drunk_debugging)
 		error = db_gets(&line);
 		if (error != 0)
 			break;
+		if (*line == '\0')
+			goto again;
 		for (commandp = SET_BEGIN(db_commands);
 		     commandp < SET_END(db_commands); commandp++) {
 			command = *commandp;

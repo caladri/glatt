@@ -17,6 +17,12 @@ o) Exceptions.
 			o) Clocks.
 o) Tasks.
 	o) Task switching.
+		o) Better status register management.  Use the kernel one with
+		   modifications to set the userland status.  Keep the kernel
+		   one in the PCPU data and switch to it whenever switching to
+		   a kernel task.  Status is not a thread state.  Cannot have a
+		   task with userland and kernel threads, or 32 and 64-bit
+		   threads.  That's just silly.
 		o) Userland.
 		o) Scheduling.
 	o) Threads.

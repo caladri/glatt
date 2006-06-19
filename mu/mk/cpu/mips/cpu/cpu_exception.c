@@ -10,6 +10,7 @@
 #include <cpu/pcpu.h>
 #include <cpu/register.h>
 #include <db/db.h>
+#include <db/db_command.h>
 #include <io/device/console/console.h>
 
 #define	EXCEPTION_SPACE			(0x80)
@@ -55,6 +56,7 @@ extern char exception_vector[], exception_vector_end[];
 extern char xtlb_vector[], xtlb_vector_end[];
 
 static void cpu_exception_vector_install(void *, const char *, const char *);
+static void cpu_exception_frame_dump(struct thread *, struct frame *);
 
 void
 cpu_exception_init(void)
@@ -107,21 +109,8 @@ exception(struct frame *frame)
 	return;
 
 debugger:
-	kcprintf("\n\nFatal trap type %u on CPU %u:\n", code, mp_whoami());
-	kcprintf("thread              = %p (%s)\n",
-		 (void *)td, td == NULL ? "nil" : td->td_name);
-	if (td != NULL) {
-		kcprintf("task                = %p (%s)\n",
-			 (void *)td->td_parent, td->td_parent == NULL ? "nil" :
-			 td->td_parent->t_name);
-	}
-	kcprintf("cause               = %x\n", cause);
-	kcprintf("status              = %x\n",
-		 (unsigned)fp->f_regs[FRAME_STATUS]);
-	kcprintf("pc                  = %p\n", (void *)fp->f_regs[FRAME_EPC]);
-	kcprintf("ra                  = %p\n", (void *)fp->f_regs[FRAME_RA]);
-	kcprintf("sp                  = %p\n", (void *)fp->f_regs[FRAME_SP]);
-	kcprintf("badvaddr            = %p\n", (void *)cpu_read_badvaddr());
+	kcputs("\n\n");
+	cpu_exception_frame_dump(td, fp);
 	db_enter();
 }
 
@@ -139,3 +128,51 @@ cpu_exception_vector_install(void *base, const char *start, const char *end)
 		kcprintf("exception vector almost out of space\n");
 	memcpy(base, start, len);
 }
+
+static void
+cpu_exception_frame_dump(struct thread *td, struct frame *fp)
+{
+	unsigned cause;
+	unsigned code;
+
+	/*
+	 * XXX Get cause from frame?
+	 */
+	cause = cpu_read_cause();
+	code = (cause & CP0_CAUSE_EXCEPTION) >> CP0_CAUSE_EXCEPTION_SHIFT;
+
+	kcprintf("Fatal trap type %u on CPU %u:\n", code, mp_whoami());
+	kcprintf("thread              = %p (%s)\n",
+		 (void *)td, td == NULL ? "nil" : td->td_name);
+	if (td != NULL) {
+		kcprintf("task                = %p (%s)\n",
+			 (void *)td->td_parent, td->td_parent == NULL ? "nil" :
+			 td->td_parent->t_name);
+	}
+	kcprintf("cause               = %x\n", cause);
+	if (fp != NULL) {
+		kcprintf("status              = %x\n",
+			 (unsigned)fp->f_regs[FRAME_STATUS]);
+		kcprintf("pc                  = %p\n",
+			 (void *)fp->f_regs[FRAME_EPC]);
+		kcprintf("ra                  = %p\n",
+			 (void *)fp->f_regs[FRAME_RA]);
+		kcprintf("sp                  = %p\n",
+			 (void *)fp->f_regs[FRAME_SP]);
+	} else
+		kcprintf("[Frame unavailable.]\n");
+	kcprintf("badvaddr            = %p\n", (void *)cpu_read_badvaddr());
+}
+
+static void
+cpu_exception_db_frame(void)
+{
+	struct thread *td;
+
+	td = current_thread();
+	if (td == NULL)
+		cpu_exception_frame_dump(NULL, NULL);
+	else
+		cpu_exception_frame_dump(td, &td->td_frame);
+}
+DB_COMMAND(frame, cpu_exception_db_frame, "Show the exception frame.");

@@ -25,6 +25,7 @@ COMPILE_TIME_ASSERT(sizeof (struct pcpu) <= PAGE_SIZE);
 #define	TEST_MP_DEV_MEMORY	0x0090
 #define	TEST_MP_DEV_IPI_ONE	0x00a0
 #define	TEST_MP_DEV_IPI_MANY	0x00b0
+#define	TEST_MP_DEV_IPI_READ	0x00c0
 
 #define	TEST_MP_DEV_FUNCTION(f)						\
 	(volatile uint64_t *)XKPHYS_MAP(XKPHYS_UC, TEST_MP_DEV_BASE + (f))
@@ -69,7 +70,16 @@ platform_mp_whoami(void)
 static void
 platform_mp_ipi_interrupt(void *arg, int interrupt)
 {
-	panic("%s: not implemented.", __func__);
+	uint64_t ipi;
+	
+	/*
+	 * XXX
+	 * Stab Anders.  The IPI source is lost.  We should encode the cpuid
+	 * twice in the future.  Pity, it'd've been easy to store the whole
+	 * idata in the pending queue, or something.
+	 */
+	while ((ipi = *TEST_MP_DEV_FUNCTION(TEST_MP_DEV_IPI_READ)) != IPI_NONE)
+		mp_ipi_receive(ipi);
 }
 
 static void

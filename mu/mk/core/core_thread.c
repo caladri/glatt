@@ -46,6 +46,7 @@ thread_create(struct thread **tdp, struct task *parent, const char *name,
 	td->td_next = parent->t_threads;
 	parent->t_threads = td;
 	td->td_flags = flags;
+	td->td_oncpu = CPU_ID_INVALID;
 	/*
 	 * CPU thread setup takes care of:
 	 * 	frame
@@ -65,7 +66,7 @@ thread_create(struct thread **tdp, struct task *parent, const char *name,
 void
 thread_set_upcall(struct thread *td, void (*function)(void *), void *arg)
 {
-	kcprintf("Set upcall on %p\n", (void *)td);
+	kcprintf("cpu%u: Set upcall on %p\n", mp_whoami(), (void *)td);
 	cpu_thread_set_upcall(td, function, arg);
 }
 
@@ -78,21 +79,32 @@ thread_switch(struct thread *otd, struct thread *td)
 		otd = current_thread();
 	ASSERT(otd != td, "cannot switch from a thread to itself.");
 	if (otd != NULL) {
+		otd->td_flags &= ~THREAD_RUNNING;
+		otd->td_oncpu = CPU_ID_INVALID;
 		if (cpu_context_save(otd)) {
+			ASSERT(otd->td_oncpu == mp_whoami(),
+			       "need valid oncpu field.");
+			ASSERT((otd->td_flags & THREAD_RUNNING) != 0,
+			       "thread must be marked running.");
 			/*
 			 * We've been restored by something, return.
 			 */
 			return;
 		}
 	}
-	kcprintf("Switching from %p to %p\n", (void *)otd, (void *)td);
+	kcprintf("cpu%u: Switching from %p to %p\n", mp_whoami(), (void *)otd, (void *)td);
+	td->td_flags |= THREAD_RUNNING;
+	td->td_oncpu = mp_whoami();
 	cpu_context_restore(td);
 }
 
 void
 thread_trampoline(struct thread *td, void (*function)(void *), void *arg)
 {
-	kcprintf("Trampolined into %p\n", (void *)td);
+	kcprintf("cpu%u: Trampolined into %p\n", mp_whoami(), (void *)td);
+	ASSERT(td->td_oncpu == mp_whoami(), "need valid oncpu field.");
+	ASSERT((td->td_flags & THREAD_RUNNING) != 0,
+	       "thread must be marked running.");
 	function(arg);
 	panic("%s: function returned!", __func__);
 }

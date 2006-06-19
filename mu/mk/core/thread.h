@@ -10,12 +10,14 @@
 
 #define	THREAD_DEFAULT	(0x00000000)	/* Default thread flags.  */
 #define	THREAD_BLOCKED	(0x00000001)	/* Waiting for a wakeup.  */
+#define	THREAD_RUNNING	(0x00000002)	/* Thread is currently running.  */
 
 struct thread {
 	struct task *td_parent;
 	struct thread *td_next;
 	char td_name[THREAD_NAME_SIZE];
 	uint32_t td_flags;
+	cpu_id_t td_oncpu;		/* Active CPU (if RUNNING).  */
 	struct frame td_frame;		/* Frame for interrupts and such.  */
 	struct context td_context;	/* State for context switching.  */
 	void *td_kstack;

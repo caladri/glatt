@@ -193,6 +193,7 @@ ENTRY(tlb_exception)
 	daddu	k1, TLB_LO1_PAGE_OFFSET
 	dmtc0	k1, CP0_TLBENTRYLO1
 	tlbp
+	dmfc0	k1, CP0_TLBINDEX
 	bltz	k1, 1f
 	nop
 

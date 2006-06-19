@@ -185,21 +185,30 @@ ENTRY(tlb_exception)
 	ld	k1, 0(k1)
 
 	/*
-	 * Load the PTE into lo0, add the lo1 offset and load into lo1.  Check
-	 * if the entryhi that the CPU set up is already in the TLB.  If so,
-	 * write at that index, otherwise write to a random one.
+	 * Load the PTE into lo0, add the lo1 offset and load into lo1.
 	 */
 	dmtc0	k1, CP0_TLBENTRYLO0
 	daddu	k1, TLB_LO1_PAGE_OFFSET
 	dmtc0	k1, CP0_TLBENTRYLO1
+
+	/*
+	 * The CPU has set up an entryhi, check if it is in the TLB.
+	 * XXX does the CPU also set index beforehand?
+	 */
 	tlbp
-	dmfc0	k1, CP0_TLBINDEX
-	bltz	k1, 1f
+	/*
+	 * If the entryhi _was_ already in the TLB, update it at its existing
+	 * location.  Otherwise, write into a random one.
+	 */
+	mfc0	k0, CP0_TLBINDEX
+	bltz	k0, 1f
 	nop
 
+	/* Found!  Indexed write.  */
 	tlbwi
 	eret
 
+	/* Not found.  Random write.  */
 1:	tlbwr
 	eret
 	.set at

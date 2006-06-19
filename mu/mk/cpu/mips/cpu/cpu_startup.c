@@ -1,5 +1,6 @@
 #include <core/types.h>
 #include <core/startup.h>
+#include <cpu/cpu.h>
 #include <cpu/memory.h>
 #include <cpu/pcpu.h>
 #include <cpu/tlb.h>
@@ -23,6 +24,9 @@ cpu_startup(void)
 	 * We don't use the gp, set it to NULL.
 	 */
 	__asm __volatile ("move $" STRING(gp) ", $" STRING(zero) : : : "memory");
+
+	/* Start off in 64-bit mode.  */
+	cpu_write_status(CP0_STATUS_KX);
 
 	/* Allocate a page for persistent per-CPU data.  */
 	error = page_alloc(&kernel_vm, &pcpu_addr);

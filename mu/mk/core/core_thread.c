@@ -38,6 +38,8 @@ thread_create(struct thread **tdp, struct task *parent, const char *name,
 	struct thread *td;
 	int error;
 
+	ASSERT(parent != NULL, "thread needs a task");
+
 	td = pool_allocate(&thread_pool);
 	if (td == NULL)
 		return (ERROR_EXHAUSTED);

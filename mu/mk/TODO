@@ -13,8 +13,8 @@ o) Exceptions.
 	o) Prevent nesting/corruption of the frame.
 	o) TLB handling.
 	o) Interrupt handling.
-		o) Interrupt registration.
-			o) Clocks.
+		o) Clocks.
+		o) IPI stuff seems a little broken.
 o) Tasks.
 	o) Task switching.
 		o) Better status register management.  Use the kernel one with

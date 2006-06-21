@@ -138,7 +138,7 @@ startup_main_thread(void *arg)
 		unsigned long now;
 
 		now = atomic_load_64(&threadcnt);
-		if (now != last) {
+		if (now - last > 1) {
 			kcprintf("cpu%u: threadcnt went from %lu to %lu\n",
 				 mp_whoami(), last, now);
 		}

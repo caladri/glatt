@@ -8,6 +8,8 @@
 #include <cpu/pcpu.h>
 #include <cpu/tlb.h>
 #include <db/db.h>
+#include <db/db_command.h>
+#include <io/device/console/console.h>
 #include <page/page_map.h>
 #include <page/page_table.h>
 #include <vm/page.h>
@@ -210,3 +212,26 @@ tlb_invalidate_one(unsigned i)
 	cpu_write_tlb_index(i);
 	tlb_write_indexed();
 }
+
+static void
+tlb_db_dump(void)
+{
+	unsigned i;
+
+	kcprintf("Beginning TLB dump...\n");
+	for (i = 0; i < PCPU_GET(cpuinfo).cpu_ntlbs; i++) {
+		if (i == cpu_read_tlb_wired()) {
+			if (i != 0)
+				kcprintf("^^^ WIRED ENTRIES ^^^\n");
+			else
+				kcprintf("(No wired entries.)\n");
+		}
+		cpu_write_tlb_index(i);
+		tlb_read();
+		kcprintf("#%u\t=> %lx\n", i, cpu_read_tlb_entryhi());
+		kcprintf(" Lo0\t%lx\n", cpu_read_tlb_entrylo0());
+		kcprintf(" Lo1\t%lx\n", cpu_read_tlb_entrylo1());
+	}
+	kcprintf("Finished.\n");
+}
+DB_COMMAND(tlb_dump, tlb_db_dump, "Dump contents of the TLB.");

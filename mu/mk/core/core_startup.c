@@ -126,11 +126,22 @@ next:		continue;
 static void
 startup_main_thread(void *arg)
 {
+	static unsigned long threadcnt;
+	unsigned long last;
 	struct thread *td;
 
+	last = 0;
 	td = arg;
 	ASSERT(td == current_thread(), "consistency is all I ask");
+	atomic_increment_64(&threadcnt);
 	for (;;) {
-		kcprintf("%d!\n", mp_whoami());
+		unsigned long now;
+
+		now = atomic_load_64(&threadcnt);
+		if (now != last) {
+			kcprintf("cpu%u: threadcnt went from %lu to %lu\n",
+				 mp_whoami(), last, now);
+		}
+		last = now;
 	}
 }

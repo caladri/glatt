@@ -13,7 +13,7 @@ struct ipi_handler {
 };
 #define	IPI_HANDLER_INUSE	(0x0001)
 
-static struct ipi_handler ipi_handlers[IPI_LAST];
+static struct ipi_handler ipi_handlers[IPI_LAST + 1];
 
 static void mp_ipi_handler(void *, enum ipi_type);
 

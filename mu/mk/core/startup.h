@@ -4,6 +4,7 @@
 #include <cpu/startup.h>
 
 enum startup_component {
+	STARTUP_ROOT,			/* Attach root device.  */
 	STARTUP_MP,			/* Start up multiprocessor.  */
 	STARTUP_DRIVERS,		/* Register device drivers.  */
 	STARTUP_MAIN,			/* Enter main loop.  */

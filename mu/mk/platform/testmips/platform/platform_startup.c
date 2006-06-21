@@ -20,8 +20,11 @@ platform_startup(void)
 	paddr_t paddr;
 	vaddr_t vaddr;
 	paddr_t *ep;
+	size_t size;
 
-	error = vm_alloc(&kernel_vm, PAGE_SIZE, &vaddr);
+	size = PAGE_SIZE + PAGE_SIZE / 2;
+
+	error = vm_alloc(&kernel_vm, size, &vaddr);
 	ASSERT(error == 0, "vm_alloc failed");
 	//kcprintf("vm_alloc gave us %p\n", (void *)vaddr);
 	error = page_extract(&kernel_vm, vaddr, &paddr);
@@ -34,7 +37,7 @@ platform_startup(void)
 	ep = (paddr_t *)XKPHYS_MAP(XKPHYS_UC, paddr);
 	//kcprintf("Checking %p\n", (void *)ep);
 	ASSERT(*ep == paddr, "mismatch!");
-	vm_free(&kernel_vm, PAGE_SIZE, vaddr);
+	vm_free(&kernel_vm, size, vaddr);
 #endif
 	startup_main();
 }

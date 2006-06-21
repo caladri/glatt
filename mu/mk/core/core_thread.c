@@ -7,8 +7,6 @@
 #include <db/db.h>
 #include <vm/page.h>
 
-#include <io/device/console/console.h>
-
 /*
  * Determines which allocator we use.  We can switch to vm_alloc if the task
  * structure gets bigger than a PAGE.
@@ -68,7 +66,6 @@ thread_create(struct thread **tdp, struct task *parent, const char *name,
 void
 thread_set_upcall(struct thread *td, void (*function)(void *), void *arg)
 {
-	kcprintf("cpu%u: Set upcall on %p\n", mp_whoami(), (void *)td);
 	cpu_thread_set_upcall(td, function, arg);
 }
 
@@ -94,7 +91,6 @@ thread_switch(struct thread *otd, struct thread *td)
 			return;
 		}
 	}
-	kcprintf("cpu%u: Switching from %p to %p\n", mp_whoami(), (void *)otd, (void *)td);
 	td->td_flags |= THREAD_RUNNING;
 	td->td_oncpu = mp_whoami();
 	cpu_context_restore(td);
@@ -103,7 +99,6 @@ thread_switch(struct thread *otd, struct thread *td)
 void
 thread_trampoline(struct thread *td, void (*function)(void *), void *arg)
 {
-	kcprintf("cpu%u: Trampolined into %p\n", mp_whoami(), (void *)td);
 	ASSERT(td->td_oncpu == mp_whoami(), "need valid oncpu field.");
 	ASSERT((td->td_flags & THREAD_RUNNING) != 0,
 	       "thread must be marked running.");

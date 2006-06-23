@@ -1,7 +1,8 @@
-# $Id: build.mk,v 1.16 2006-02-28 06:10:15 juli Exp $
+# $Id: build.mk,v 1.17 2006-06-23 18:20:15 juli Exp $
 
 .PATH: ${KERNEL_ROOT}/core
 .PATH: ${KERNEL_ROOT}/db
+.PATH: ${KERNEL_ROOT}/io/device
 .PATH: ${KERNEL_ROOT}/io/device/console
 .PATH: ${KERNEL_ROOT}/vm
 
@@ -17,7 +18,12 @@ KERNEL_SOURCES+=core_thread.c
 KERNEL_SOURCES+=db.c
 KERNEL_SOURCES+=db_panic.c
 
-# io/devices/console
+# io/device
+KERNEL_SOURCES+=device.c
+KERNEL_SOURCES+=device_root.c
+KERNEL_SOURCES+=driver.c
+
+# io/device/console
 KERNEL_SOURCES+=console.c
 KERNEL_SOURCES+=framebuffer.c
 KERNEL_SOURCES+=framebuffer_font.c

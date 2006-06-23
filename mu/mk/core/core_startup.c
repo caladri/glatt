@@ -40,7 +40,8 @@ startup_main(void)
 			panic("%s: task_create failed: %m", __func__, error);
 	}
 
-	error = thread_create(&td, main_task, "scheduler", THREAD_DEFAULT);
+	error = thread_create(&td, main_task, "scheduler",
+			      THREAD_DEFAULT | THREAD_PINNED);
 	if (error != 0)
 		panic("%s: thread_create failed: %m", __func__, error);
 

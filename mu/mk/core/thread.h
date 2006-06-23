@@ -11,6 +11,7 @@
 #define	THREAD_DEFAULT	(0x00000000)	/* Default thread flags.  */
 #define	THREAD_BLOCKED	(0x00000001)	/* Waiting for a wakeup.  */
 #define	THREAD_RUNNING	(0x00000002)	/* Thread is currently running.  */
+#define	THREAD_PINNED	(0x00000004)	/* Thread cannot migrate.  */
 
 struct thread {
 	struct task *td_parent;

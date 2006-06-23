@@ -72,3 +72,16 @@ panic(const char *s, ...)
 		cpu_halt();
 	}
 }
+
+#if 1
+static void
+db_startup_panic(void *arg)
+{
+	const char *string;
+
+	string = arg;
+	panic("%s: %s", __func__, string);
+}
+STARTUP_ITEM(panic, STARTUP_MAIN, STARTUP_BEFORE, db_startup_panic,
+	     "panicking at startup because you want me to");
+#endif

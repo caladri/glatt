@@ -26,7 +26,7 @@ struct startup_item {
 };
 
 #define	STARTUP_ITEM(name, component, order, func, arg)			\
-	struct startup_item startup_item_ ## name = {			\
+	static struct startup_item startup_item_ ## name = {		\
 		.si_name = #name,					\
 		.si_function = func,					\
 		.si_arg = arg,						\

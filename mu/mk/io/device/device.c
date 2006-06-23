@@ -58,7 +58,7 @@ device_init(struct device *device, struct device *parent, struct driver *driver)
 	device->d_driver = driver;
 	device->d_state = DEVICE_PROBING;
 
-	error = driver->d_probe(device);
+	error = driver_probe(device->d_driver, device);
 	if (error != 0) {
 		if (parent != NULL) {
 			parent->d_children = device->d_peer;

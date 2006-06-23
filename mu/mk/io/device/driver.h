@@ -29,6 +29,6 @@ struct driver {
 	SET_ADD(drivers, driver_struct_ ## type)
 
 struct driver *driver_lookup(const char *);
-int driver_probe(struct device *);
+int driver_probe(struct driver *, struct device *);
 
 #endif /* !_IO_DEVICE_DRIVER_H_ */

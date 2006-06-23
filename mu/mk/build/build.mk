@@ -1,4 +1,4 @@
-# $Id: build.mk,v 1.17 2006-06-23 18:20:15 juli Exp $
+# $Id: build.mk,v 1.18 2006-06-23 23:02:57 juli Exp $
 
 .PATH: ${KERNEL_ROOT}/core
 .PATH: ${KERNEL_ROOT}/db
@@ -22,6 +22,7 @@ KERNEL_SOURCES+=db_panic.c
 KERNEL_SOURCES+=device.c
 KERNEL_SOURCES+=device_root.c
 KERNEL_SOURCES+=driver.c
+KERNEL_SOURCES+=driver_generic.c
 
 # io/device/console
 KERNEL_SOURCES+=console.c

@@ -60,9 +60,6 @@ driver_compile(void *arg)
 		if (driver->d_base != NULL) {
 			driver_remove_child(generic, driver);
 			parent = driver_lookup(driver->d_base);
-			if (parent == NULL)
-				panic("%s: cannot find base %s for %s.",
-				      __func__, driver->d_base, driver->d_name);
 			driver_add_child(parent, driver);
 		}
 	}

@@ -12,7 +12,9 @@ cpu_probe(struct device *device)
 
 	pcpu = PCPU_GET(physaddr);
 	device->d_softc = pcpu;
-	kcprintf("cpu%u: attached to %s.%p\n", mp_whoami(), device->d_parent->d_driver->d_name, (void *)device->d_parent);
+	kcprintf("cpu%u (actually %u): attached to %s%u\n", device->d_unit,
+		 mp_whoami(),
+		 device->d_parent->d_driver->d_name, device->d_parent->d_unit);
 
 	return (0);
 }

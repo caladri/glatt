@@ -34,6 +34,9 @@ cpu_startup(void)
 		panic("cpu%u: page allocate failed: %m", mp_whoami(), error);
 	pcpu = (struct pcpu *)XKPHYS_MAP(XKPHYS_CNC, pcpu_addr);
 
+	/* Keep our original physical address in the PCPU data, too.  */
+	pcpu->pc_physaddr = pcpu;
+
 	/* Identify the CPU.  */
 	pcpu->pc_cpuinfo = cpu_identify();
 	pcpu->pc_flags = PCPU_FLAG_RUNNING;
@@ -43,6 +46,9 @@ cpu_startup(void)
 
 	/* Now we can take VM-related exceptions appropriately.  */
 
+	/*
+	 * XXX push to CPU device attachment.
+	 */
 	/* Kick off interrupts.  */
 	cpu_interrupt_initialize();
 

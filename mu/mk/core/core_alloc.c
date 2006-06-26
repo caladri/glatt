@@ -39,6 +39,8 @@ pool_allocate(struct pool *pool)
 	vaddr_t page_mapped;
 	int error;
 
+	ASSERT(pool->pool_size <= MAX_ALLOC_SIZE, "pool must not be so big.");
+
 	item = pool_get(pool);
 	if (item++ != NULL) {
 		return ((void *)item);

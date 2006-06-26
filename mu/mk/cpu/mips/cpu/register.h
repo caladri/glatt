@@ -78,9 +78,8 @@ typedef	uint64_t	register_t;
 #define	CP0_CAUSE_EXCEPTION		(0x7c)
 #define	CP0_CAUSE_EXCEPTION_SHIFT	(2)
 
-#define	CP0_CAUSE_INT_SOFT_SHIFT	(8)
-#define	CP0_CAUSE_INT_HARD_SHIFT	(CP0_CAUSE_INT_SOFT_SHIFT + 2)
-#define	CP0_CAUSE_INT_MASK		(0xff00)
+#define	CP0_CAUSE_INTERRUPT_SHIFT	(8)
+#define	CP0_CAUSE_INTERRUPT_MASK	(0xff00)
 
 	/* Coprocessor 0 status register bits.  */
 
@@ -91,8 +90,7 @@ typedef	uint64_t	register_t;
 #define	CP0_STATUS_SR	0x00100000	/* Soft reset.  */
 #define	CP0_STATUS_BEV	0x00400000	/* Using boot exception vectors.  */
 
-#define	CP0_STATUS_INT_SOFT_SHIFT	(8)
-#define	CP0_STATUS_INT_HARD_SHIFT	(CP0_STATUS_INT_SOFT_SHIFT + 2)
-#define	CP0_STATUS_INT_MASK		(0xff00)
+#define	CP0_STATUS_INTERRUPT_SHIFT	(8)
+#define	CP0_STATUS_INTERRUPT_MASK	(0xff00)
 
 #endif /* !_CPU_REGISTER_H_ */

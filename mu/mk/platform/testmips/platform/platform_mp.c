@@ -36,7 +36,7 @@ COMPILE_TIME_ASSERT(sizeof (struct pcpu) <= PAGE_SIZE);
 #define	TEST_MP_DEV_WRITE(f, v)						\
 	*TEST_MP_DEV_FUNCTION(f) = (v)
 
-#define	TEST_MP_DEV_IPI_INTERRUPT	(4)
+#define	TEST_MP_DEV_IPI_INTERRUPT	(6)
 
 static struct device *platform_mp_bus;
 
@@ -73,8 +73,8 @@ platform_mp_startup(void)
 		platform_mp_attach_cpu();
 
 	/* Install an IPI interrupt handler.  */
-	cpu_hard_interrupt_establish(TEST_MP_DEV_IPI_INTERRUPT,
-				     platform_mp_ipi_interrupt, NULL);
+	cpu_interrupt_establish(TEST_MP_DEV_IPI_INTERRUPT,
+				platform_mp_ipi_interrupt, NULL);
 }
 
 cpu_id_t

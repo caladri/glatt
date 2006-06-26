@@ -11,6 +11,7 @@ typedef	int (driver_probe_t)(struct device *);
  */
 struct driver {
 	const char *d_name;
+	unsigned d_nextunit;
 	const char *d_base;
 	driver_probe_t *d_probe;
 	struct driver *d_parent;
@@ -20,6 +21,7 @@ struct driver {
 #define	DRIVER(type, base, probe)					\
 	static struct driver driver_struct_ ## type = {			\
 		.d_name = #type,					\
+		.d_nextunit = 0,					\
 		.d_base = base,						\
 		.d_probe = probe,					\
 		.d_parent = NULL,					\

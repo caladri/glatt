@@ -44,7 +44,7 @@ device_db_dump_path(struct device *device)
 		return;
 	}
 	device_db_dump_path(device->d_parent);
-	kcprintf("/%s.%p", device->d_driver->d_name, (void *)device);
+	kcprintf("/%s%u", device->d_driver->d_name, device->d_unit);
 }
 
 static void

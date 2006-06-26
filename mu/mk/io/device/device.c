@@ -44,6 +44,7 @@ device_init(struct device *device, struct device *parent, struct driver *driver)
 	ASSERT(driver != NULL, "need a driver for a device");
 
 	spinlock_init(&device->d_lock, driver->d_name);
+	device->d_unit = driver->d_nextunit++;
 	if (parent != NULL) {
 		DEVICE_LOCK(parent);
 		DEVICE_LOCK(device);

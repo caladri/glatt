@@ -14,6 +14,7 @@ enum device_state {
 
 struct device {
 	struct spinlock d_lock;
+	unsigned d_unit;
 	struct device *d_parent;
 	struct device *d_peer;
 	struct device *d_children;

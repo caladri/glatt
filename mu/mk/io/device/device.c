@@ -27,6 +27,7 @@ device_create(struct device **devicep, struct device *parent,
 		pool_free(&device_pool, device);
 		return (error);
 	}
+	*devicep = device;
 	return (0);
 }
 

@@ -12,9 +12,9 @@ cpu_probe(struct device *device)
 
 	pcpu = PCPU_GET(physaddr);
 	device->d_softc = pcpu;
-	kcprintf("cpu%u (actually %u): attached to %s%u\n", device->d_unit,
-		 mp_whoami(),
+	kcprintf("cpu%u: attached to %s%u\n", device->d_unit,
 		 device->d_parent->d_driver->d_name, device->d_parent->d_unit);
+	ASSERT(device->d_unit == mp_whoami(), "unit must match cpu id");
 
 	return (0);
 }

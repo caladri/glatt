@@ -73,15 +73,11 @@ panic(const char *s, ...)
 	}
 }
 
-#if 1
+#if 0
 static void
 db_startup_panic(void *arg)
 {
-	const char *string;
-
-	string = arg;
-	panic("%s: %s", __func__, string);
+	panic("%s: panicking at startup because you want me to", __func__);
 }
-STARTUP_ITEM(panic, STARTUP_MAIN, STARTUP_BEFORE, db_startup_panic,
-	     "panicking at startup because you want me to");
+STARTUP_ITEM(panic, STARTUP_MAIN, STARTUP_BEFORE, db_startup_panic, NULL);
 #endif

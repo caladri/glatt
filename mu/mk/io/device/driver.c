@@ -2,13 +2,16 @@
 #include <core/error.h>
 #include <core/startup.h>
 #include <core/string.h>
+#include <io/device/console/console.h>
 #include <io/device/device.h>
 #include <io/device/driver.h>
 
 SET(drivers, struct driver);
+SET(driver_attachments, struct driver_attachment);
 
 static struct driver *generic;
 
+static void driver_add_attachment(struct driver *, struct driver_attachment *);
 static void driver_add_child(struct driver *, struct driver *);
 static struct driver *driver_lookup_child(struct driver *, const char *);
 static void driver_remove_child(struct driver *, struct driver *);
@@ -17,6 +20,7 @@ static void
 driver_compile(void *arg)
 {
 	struct driver **driverp, *driver, *parent;
+	struct driver_attachment **attachmentp, *attachment;
 
 	/*
 	 * First we have to find the "generic" driver which will be the root of
@@ -63,6 +67,16 @@ driver_compile(void *arg)
 			driver_add_child(parent, driver);
 		}
 	}
+
+	/*
+	 * Now sort out all of our driver attachments.
+	 */
+	for (attachmentp = SET_BEGIN(driver_attachments);
+	     attachmentp < SET_END(driver_attachments); attachmentp++) {
+		attachment = *attachmentp;
+		parent = driver_lookup(attachment->da_parent);
+		driver_add_attachment(parent, attachment);
+	}
 }
 STARTUP_ITEM(drivers, STARTUP_ROOT, STARTUP_BEFORE, driver_compile, NULL);
 
@@ -88,10 +102,34 @@ driver_lookup(const char *name)
 int
 driver_probe(struct driver *driver, struct device *device)
 {
-	if (driver->d_probe != NULL)
-		return (driver->d_probe(device));
-	else
-		return (driver_probe(driver->d_parent, device));
+	struct driver_attachment *attachment;
+	struct driver *child;
+	int error;
+
+	if (driver->d_probe != NULL) {
+		error = driver->d_probe(device);
+		if (error == 0 && device->d_parent != NULL) {
+			kcprintf("%s%u: attached to %s%u\n",
+				 device->d_driver->d_name, device->d_unit,
+				 device->d_parent->d_driver->d_name,
+				 device->d_parent->d_unit);
+		}
+	} else
+		error = driver_probe(driver->d_parent, device);
+	if (error != 0)
+		return (error);
+	for (attachment = driver->d_attachments; attachment != NULL;
+	     attachment = attachment->da_next) {
+		error = device_create(NULL, device, attachment->da_driver);
+	}
+	return (0);
+}
+
+static void
+driver_add_attachment(struct driver *parent, struct driver_attachment *attachment)
+{
+	attachment->da_next = parent->d_attachments;
+	parent->d_attachments = attachment;
 }
 
 static void

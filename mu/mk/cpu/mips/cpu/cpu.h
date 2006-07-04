@@ -46,6 +46,8 @@ CP0_RW64(tlb_entryhi, CP0_TLBENTRYHI);
 CP0_RW64(tlb_entrylo0, CP0_TLBENTRYLO0);
 CP0_RW64(tlb_entrylo1, CP0_TLBENTRYLO1);
 CP0_RW64(tlb_pagemask, CP0_TLBPAGEMASK);
+CP0_RW64(compare, CP0_COMPARE);
+CP0_RW64(count, CP0_COUNT);
 
 #undef CP0_RW64
 

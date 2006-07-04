@@ -1,6 +1,8 @@
 #ifndef	_CPU_INTERRUPT_H_
 #define	_CPU_INTERRUPT_H_
 
+#include <cpu/register.h>
+
 #define	CPU_INTERRUPT_COUNT	(8)
 
 typedef	void (interrupt_t)(void *, int);

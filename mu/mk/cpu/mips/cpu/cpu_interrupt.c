@@ -19,6 +19,7 @@ cpu_interrupt_establish(int interrupt, interrupt_t *func, void *arg)
 	ih->ih_arg = arg;
 	cpu_write_status(cpu_read_status() |
 			 ((1 << interrupt) << CP0_STATUS_INTERRUPT_SHIFT));
+	kcprintf("cpu%u: established interrupt %d\n", mp_whoami(), interrupt);
 }
 
 void

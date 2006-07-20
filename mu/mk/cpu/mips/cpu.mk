@@ -1,4 +1,4 @@
-# $Id: cpu.mk,v 1.21 2006-07-04 07:18:54 juli Exp $
+# $Id: cpu.mk,v 1.22 2006-07-20 15:44:24 juli Exp $
 
 .PATH: ${CPU_ROOT}/cpu
 .PATH: ${CPU_ROOT}/page
@@ -30,6 +30,11 @@ KERNEL_ENTRY=	start
 KERNEL_CPU=	-mips3
 KERNEL_FORMAT=	elf64-bigmips
 KERNEL_MACHINE=	testmips
+
+# Ask GCC to not use the GP, we may well end up with too much GP-relative
+# data to address.  In reality, though, we shouldn't have enough global data
+# for this to make sense, and we should be able to turn it back on.
+KERNEL_CFLAGS+=	-G0
 
 KERNEL_SIMFLAGS=-E ${KERNEL_MACHINE} -q
 .if defined(DISPLAY)

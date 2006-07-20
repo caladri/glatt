@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.12 2006-07-20 15:38:17 juli Exp $
+# $Id: Makefile,v 1.13 2006-07-20 15:44:23 juli Exp $
 
 KERNEL?=	mu-mk
 
@@ -10,7 +10,8 @@ BUILD_ROOT?=	${KERNEL_ROOT}/build
 
 .include "${BUILD_ROOT}/build.mk"
 
-PLATFORM?=	testmips
+.include "${BUILD_ROOT}/config.mk"
+
 PLATFORM_ROOT=	${KERNEL_ROOT}/platform/${PLATFORM}
 
 .include "${PLATFORM_ROOT}/platform.mk"
@@ -20,15 +21,10 @@ CPU_ROOT=	${KERNEL_ROOT}/cpu/${CPU}
 .include "${CPU_ROOT}/cpu.mk"
 
 KERNEL_CPPFLAGS=-I${KERNEL_ROOT} -I${PLATFORM_ROOT} -I${CPU_ROOT}
-KERNEL_CFLAGS=	${KERNEL_ABI} ${KERNEL_CPU} -nostdinc
+KERNEL_CFLAGS+=	${KERNEL_ABI} ${KERNEL_CPU} -nostdinc
 KERNEL_CFLAGS+=	-std=c99 -pedantic
 KERNEL_CFLAGS+=	-Werror -W -Wall -Wno-unused -Wformat
 KERNEL_CFLAGS+=	-O2 -fstrict-aliasing -fno-builtin
-# Ask GCC to not use the GP, we may well end up with too much GP-relative
-# data to address.  In reality, though, we shouldn't have enough global data
-# for this to make sense, and we should be able to turn it back on.
-# XXX MIPS only.
-KERNEL_CFLAGS+=	-G0
 KERNEL_LDFLAGS=	-e ${KERNEL_ENTRY} -Ttext ${KERNEL_TEXT}
 
 KERNEL_OBJECTS=	${KERNEL_SOURCES:R:S/$/.o/g}

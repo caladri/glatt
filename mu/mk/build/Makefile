@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.13 2006-07-20 15:44:23 juli Exp $
+# $Id: Makefile,v 1.14 2006-07-20 18:43:15 juli Exp $
 
 KERNEL?=	mu-mk
 
@@ -25,13 +25,20 @@ KERNEL_CFLAGS+=	${KERNEL_ABI} ${KERNEL_CPU} -nostdinc
 KERNEL_CFLAGS+=	-std=c99 -pedantic
 KERNEL_CFLAGS+=	-Werror -W -Wall -Wno-unused -Wformat
 KERNEL_CFLAGS+=	-O2 -fstrict-aliasing -fno-builtin
-KERNEL_LDFLAGS=	-e ${KERNEL_ENTRY} -Ttext ${KERNEL_TEXT}
+KERNEL_LDFLAGS=	-e ${KERNEL_ENTRY}
+.if defined(KERNEL_TEXT)
+KERNEL_LDFLAGS+=-Ttext ${KERNEL_TEXT}
+.endif
 
 KERNEL_OBJECTS=	${KERNEL_SOURCES:R:S/$/.o/g}
 
+.if defined(KERNEL_FORMAT)
+KERNEL_FORMAT:=--oformat=${KERNEL_FORMAT}
+.endif
+
 ${KERNEL}: ${KERNEL_OBJECTS}
 	${KERNEL_LD} ${KERNEL_LDFLAGS} start.o ${KERNEL_OBJECTS:Nstart.o} \
-		--oformat=${KERNEL_FORMAT} -o $@
+		${KERNEL_FORMAT} -o $@
 
 clean:
 	-rm _as.h _as.h.o

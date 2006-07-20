@@ -168,4 +168,4 @@ platform_mp_attach_cpu(void)
 		panic("%s: device create failed: %m", __func__, error);
 }
 
-DRIVER(mp, NULL, NULL);
+DRIVER(mp, "GXemul testmips multiprocessor bus", NULL, NULL);

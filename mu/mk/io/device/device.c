@@ -60,6 +60,7 @@ device_init(struct device *device, struct device *parent, struct driver *driver)
 	device->d_children = NULL;
 	device->d_driver = driver;
 	device->d_state = DEVICE_PROBING;
+	device->d_desc = driver->d_desc;
 
 	error = driver_probe(device->d_driver, device);
 	if (error != 0) {

@@ -109,8 +109,9 @@ driver_probe(struct driver *driver, struct device *device)
 	if (driver->d_probe != NULL) {
 		error = driver->d_probe(device);
 		if (error == 0 && device->d_parent != NULL) {
-			kcprintf("%s%u: attached to %s%u\n",
+			kcprintf("%s%u: <%s> on %s%u\n",
 				 device->d_driver->d_name, device->d_unit,
+				 device->d_desc,
 				 device->d_parent->d_driver->d_name,
 				 device->d_parent->d_unit);
 		}

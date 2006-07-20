@@ -39,5 +39,5 @@ clock_probe(struct device *device)
 	return (0);
 }
 
-DRIVER(clock_r4k, NULL, clock_probe);
+DRIVER(clock_r4k, "MIPS R4000-style clock", NULL, clock_probe);
 DRIVER_ATTACHMENT(clock_r4k, "cpu");

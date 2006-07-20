@@ -8,4 +8,4 @@ generic_probe(struct device *device)
 	return (0);
 }
 
-DRIVER(generic, NULL, generic_probe);
+DRIVER(generic, "Generic", NULL, generic_probe);

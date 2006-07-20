@@ -20,6 +20,7 @@ struct device {
 	struct device *d_children;
 	struct driver *d_driver;
 	enum device_state d_state;
+	const char *d_desc;
 	void *d_softc;
 };
 

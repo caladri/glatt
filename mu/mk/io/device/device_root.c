@@ -8,7 +8,7 @@
 
 static struct device device_root_storage;
 
-DRIVER(root, NULL, NULL);
+DRIVER(root, "Root device", NULL, NULL);
 
 static void
 device_startup_root(void *arg)
@@ -56,6 +56,7 @@ device_db_dump_tree(struct device *device)
 		return;
 	DEVICE_LOCK(device);
 	device_db_dump_path(device);
+	kcprintf(" <%s>\n", device->d_desc);
 	kcprintf("\n\t^ State: %u\n", device->d_state);
 	for (child = device->d_children; child != NULL; child = child->d_peer) {
 		device_db_dump_tree(child);

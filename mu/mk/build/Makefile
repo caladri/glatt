@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.11 2006-02-20 23:22:20 juli Exp $
+# $Id: Makefile,v 1.12 2006-07-20 15:38:17 juli Exp $
 
 KERNEL?=	mu-mk
 
@@ -6,7 +6,7 @@ kernel: ${KERNEL}
 simulate: simulate-${KERNEL}
 
 KERNEL_ROOT?=	${.CURDIR}/..
-BUILD_ROOT=	${KERNEL_ROOT}/build
+BUILD_ROOT?=	${KERNEL_ROOT}/build
 
 .include "${BUILD_ROOT}/build.mk"
 

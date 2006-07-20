@@ -127,8 +127,8 @@ next:		continue;
 static void
 startup_main_thread(void *arg)
 {
-	static unsigned long threadcnt;
-	unsigned long last;
+	static uint64_t threadcnt;
+	uint64_t last;
 	struct thread *td;
 
 	last = 0;

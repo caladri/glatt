@@ -14,10 +14,15 @@
 	/* Coprocessor 0 companies.  */
 
 #define	CP0_PRID_COMPANY_ANCIENT	(0x00)
+#define	CP0_PRID_COMPANY_MIPS		(0x01)
 
 	/* Coprocessor 0 types.  */
 
+	/* CP0_PRID_COMPANY_ANCIENT */
 #define	CP0_PRID_TYPE_R4000		(0x04)
+
+	/* CP0_PRID_COMPANY_MIPS */
+#define	CP0_PRID_TYPE_5KC		(0x81)
 
 	/* Coprocessor 0 revision major/minor.  */
 
@@ -68,6 +73,18 @@ cpu_identify(void)
 				cpu.cpu_type = "R4??";
 				break;
 			}
+			break;
+		default:
+			cpu.cpu_type = NULL;
+			break;
+		}
+		break;
+	case CP0_PRID_COMPANY_MIPS:
+		cpu.cpu_company = "MIPS";
+		switch (CP0_PRID_TYPE(prid)) {
+		case CP0_PRID_TYPE_5KC:
+			cpu.cpu_type = "5Kc";
+			cpu.cpu_ntlbs = 48;
 			break;
 		default:
 			cpu.cpu_type = NULL;

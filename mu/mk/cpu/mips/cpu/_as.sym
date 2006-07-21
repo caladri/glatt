@@ -63,6 +63,7 @@ DEFINE(FRAME_SIZE,	sizeof (struct frame));
 DEFINE_CONSTANT(PCPU_VIRTUAL);
 DEFINE(PC_THREAD,	offsetof(struct pcpu,	pc_thread));
 DEFINE(PC_FRAME,	offsetof(struct pcpu,	pc_frame));
+DEFINE(PC_INTERRUPT_MASK,offsetof(struct pcpu,	pc_interrupt_mask));
 
 	/* PMAP-related constants.  */
 DEFINE_CONSTANT(KERNEL_BASE);

@@ -24,6 +24,7 @@ struct pcpu {
 	struct device *pc_device;
 	unsigned pc_flags;
 	struct interrupt_handler pc_interrupt_table[CPU_INTERRUPT_COUNT];
+	register_t pc_interrupt_mask;
 };
 
 #define	PCPU_PTR()							\

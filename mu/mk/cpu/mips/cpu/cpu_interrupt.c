@@ -11,14 +11,22 @@ cpu_interrupt_establish(int interrupt, interrupt_t *func, void *arg)
 {
 	struct interrupt_handler *ih;
 
+	/*
+	 * XXX
+	 * critical section
+	 */
 	ASSERT(interrupt >= 0 && interrupt < CPU_INTERRUPT_COUNT,
 	       "invalid interrupt number");
 	ih = &PCPU_GET(interrupt_table)[interrupt];
 	ASSERT(ih->ih_func == NULL, "cannot share interrupts");
 	ih->ih_func = func;
 	ih->ih_arg = arg;
-	cpu_write_status(cpu_read_status() |
-			 ((1 << interrupt) << CP0_STATUS_INTERRUPT_SHIFT));
+	PCPU_SET(interrupt_mask, PCPU_GET(interrupt_mask) |
+		 ((1 << interrupt) << CP0_STATUS_INTERRUPT_SHIFT));
+	cpu_write_status((cpu_read_status() & ~CP0_STATUS_INTERRUPT_MASK) |
+			 PCPU_GET(interrupt_mask));
+	kcprintf("cpu%u: %d established (mask %x).\n", mp_whoami(), interrupt,
+		 PCPU_GET(interrupt_mask) >> CP0_STATUS_INTERRUPT_SHIFT);
 }
 
 void
@@ -71,6 +79,8 @@ cpu_interrupt_disable(void)
 void
 cpu_interrupt_enable(void)
 {
+	ASSERT((cpu_read_status() & CP0_STATUS_IE) == 0,
+	       "Can't reenable interrupts.");
 	cpu_write_status(cpu_read_status() | CP0_STATUS_IE);
 }
 
@@ -78,6 +88,10 @@ void
 cpu_interrupt_restore(register_t r)
 {
 	if (r == CP0_STATUS_IE &&
-	    (cpu_read_status() & CP0_STATUS_IE) == 0)
+	    (cpu_read_status() & CP0_STATUS_IE) == 0) {
+		cpu_write_status((cpu_read_status() &
+				  ~CP0_STATUS_INTERRUPT_MASK) |
+				 PCPU_GET(interrupt_mask));
 		cpu_write_status(cpu_read_status() | r);
+	}
 }

@@ -8,7 +8,7 @@
 #include <vm/page.h>
 
 /*
- * Determines which allocator we use.  We can switch to vm_alloc if the task
+ * Determines which allocator we use.  We can switch to vm_alloc if the thread
  * structure gets bigger than a PAGE.
  */
 COMPILE_TIME_ASSERT(sizeof (struct thread) <= PAGE_SIZE);

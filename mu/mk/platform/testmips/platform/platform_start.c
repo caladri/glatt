@@ -91,8 +91,15 @@ platform_halt(void)
 void
 platform_start(void)
 {
+	extern char __bss_start[], _end[];
+
 	size_t membytes;
 	int error;
+
+	/*
+	 * Initialize the BSS.
+	 */
+	memset(__bss_start, 0, _end - __bss_start);
 
 	/*
 	 * XXX if other CPUs could be running, we should stop them here.  Sort

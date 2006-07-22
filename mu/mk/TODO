@@ -11,6 +11,7 @@ o) VM.
 	o) Allocate multiple contiguous physical pages.
 o) Exceptions.
 	o) Prevent nesting/corruption of the frame.
+		o) Make everything use KERNEL_STATUS on exception entry.
 	o) TLB handling.
 	o) Interrupt handling.
 		o) Clocks.
@@ -23,6 +24,13 @@ o) Tasks.
 		   a kernel task.  Status is not a thread state.  Cannot have a
 		   task with userland and kernel threads, or 32 and 64-bit
 		   threads.  That's just silly.
+			o) Have some way of tracking when exceptions came from
+			   user threads so that we can restore the correct
+			   status, or make the thread contain a partial status
+			   register.  Saving and restoring a status register
+			   based on what's written to it *sucks*.
+			   Probably nothing should directly touch the status
+			   register.
 		o) Userland.
 		o) Scheduling.
 	o) Threads.

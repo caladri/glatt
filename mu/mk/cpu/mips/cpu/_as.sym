@@ -17,7 +17,6 @@ DEFINE(CONTEXT_S6,	offsetof(struct context,	c_regs[CONTEXT_S6]));
 DEFINE(CONTEXT_S7,	offsetof(struct context,	c_regs[CONTEXT_S7]));
 DEFINE(CONTEXT_S8,	offsetof(struct context,	c_regs[CONTEXT_S8]));
 DEFINE(CONTEXT_SP,	offsetof(struct context,	c_regs[CONTEXT_SP]));
-DEFINE(CONTEXT_STATUS,	offsetof(struct context,	c_regs[CONTEXT_STATUS]));
 DEFINE(CONTEXT_RA,	offsetof(struct context,	c_regs[CONTEXT_RA]));
 
 	/* FRAME offsets.  */
@@ -53,7 +52,6 @@ DEFINE(FRAME_GP,	offsetof(struct frame,	f_regs[FRAME_GP]));
 DEFINE(FRAME_SP,	offsetof(struct frame,	f_regs[FRAME_SP]));
 DEFINE(FRAME_S8,	offsetof(struct frame,	f_regs[FRAME_S8]));
 DEFINE(FRAME_RA,	offsetof(struct frame,	f_regs[FRAME_RA]));
-DEFINE(FRAME_STATUS,	offsetof(struct frame,	f_regs[FRAME_STATUS]));
 DEFINE(FRAME_EPC,	offsetof(struct frame,	f_regs[FRAME_EPC]));
 DEFINE(FRAME_HI,	offsetof(struct frame,	f_regs[FRAME_HI]));
 DEFINE(FRAME_LO,	offsetof(struct frame,	f_regs[FRAME_LO]));

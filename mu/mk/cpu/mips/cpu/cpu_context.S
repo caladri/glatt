@@ -1,12 +1,13 @@
 #include <core/_macro.h>
 #include <cpu/asm.h>
 
+	NOREORDER
+
 	/*
 	 * void cpu_context_restore(struct thread *a0);
 	 * t0 = thread.
 	 * t1 = context.
-	 * t2 = status.
-	 * t3 = pcpu.
+	 * t2 = pcpu.
 	 */
 ENTRY(cpu_context_restore)
 	move	t0, a0
@@ -21,7 +22,6 @@ ENTRY(cpu_context_restore)
 	ld	s7, CONTEXT_S7(t1)
 	ld	s8, CONTEXT_S8(t1)
 	ld	sp, CONTEXT_SP(t1)
-	ld	t2, CONTEXT_STATUS(t1)
 	ld	ra, CONTEXT_RA(t1)
 	/*
 	 * Copy saved registers into argument registers for upcalls.
@@ -48,15 +48,14 @@ ENTRY(cpu_context_restore)
 	 */
 	li	v0, TRUE
 	/*
-	 * Clear interrpt mask in status.  Set interrupt mask from PCPU.
-	 */
-	and	t2, ~CP0_STATUS_INTERRUPT_MASK
-	or	t2, t0
-	/*
 	 * Restore status register and jump to return address.
 	 */
-	mtc0	t2, CP0_STATUS
+	beqz	t0, 1f
+	li	t2, KERNEL_STATUS
+	or	t2, CP0_STATUS_IE
+1:	or	t2, t0
 	jr	ra
+	mtc0	t2, CP0_STATUS
 END(cpu_context_restore)
 
 	/*
@@ -66,7 +65,6 @@ END(cpu_context_restore)
 ENTRY(cpu_context_save)
 	move	t0, a0
 	dla	t0, TD_CONTEXT(a0)
-	mfc0	t1, CP0_STATUS
 	sd	s0, CONTEXT_S0(t0)
 	sd	s1, CONTEXT_S1(t0)
 	sd	s2, CONTEXT_S2(t0)
@@ -77,11 +75,10 @@ ENTRY(cpu_context_save)
 	sd	s7, CONTEXT_S7(t0)
 	sd	s8, CONTEXT_S8(t0)
 	sd	sp, CONTEXT_SP(t0)
-	sd	t1, CONTEXT_STATUS(t0)
 	sd	ra, CONTEXT_RA(t0)
 	/*
 	 * Return false to indicate this isn't a restore.
 	 */
-	li	v0, FALSE
 	jr	ra
+	li	v0, FALSE
 END(cpu_context_save)

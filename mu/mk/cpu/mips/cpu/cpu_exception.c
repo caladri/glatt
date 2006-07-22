@@ -151,8 +151,6 @@ cpu_exception_frame_dump(struct thread *td, struct frame *fp)
 	}
 	kcprintf("cause               = %x\n", cause);
 	if (fp != NULL) {
-		kcprintf("status              = %x\n",
-			 (unsigned)fp->f_regs[FRAME_STATUS]);
 		kcprintf("pc                  = %p\n",
 			 (void *)fp->f_regs[FRAME_EPC]);
 		kcprintf("ra                  = %p\n",

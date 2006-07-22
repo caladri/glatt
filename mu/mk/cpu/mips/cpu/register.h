@@ -93,4 +93,7 @@ typedef	uint64_t	register_t;
 #define	CP0_STATUS_INTERRUPT_SHIFT	(8)
 #define	CP0_STATUS_INTERRUPT_MASK	(0xff00)
 
+	/* Coprocessor 0 status register states.  */
+#define	KERNEL_STATUS	(CP0_STATUS_KX)
+
 #endif /* !_CPU_REGISTER_H_ */

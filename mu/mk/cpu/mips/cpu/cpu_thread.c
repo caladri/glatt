@@ -37,7 +37,6 @@ cpu_thread_setup(struct thread *td)
 	 */
 	memset(td->td_kstack, 0x00, KSTACK_SIZE);
 	td->td_context.c_regs[CONTEXT_SP] = kstack + KSTACK_SIZE;
-	td->td_context.c_regs[CONTEXT_STATUS] = CP0_STATUS_KX | CP0_STATUS_IE;
 	cpu_thread_set_upcall(td, cpu_thread_exception, td);
 	return (0);
 }

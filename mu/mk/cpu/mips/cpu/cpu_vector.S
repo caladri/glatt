@@ -90,6 +90,9 @@ exception_table:
 
 VECTOR_ENTRY(exception)
 	.set noat
+	li	k0, KERNEL_STATUS
+	mtc0	k0, CP0_STATUS
+
 	mfc0	k0, CP0_CAUSE
 	dla	k1, exception_table
 
@@ -257,10 +260,9 @@ ENTRY(exception_frame_save)		/* Return address is k0.  */
 	sd	t3, FRAME_T3(sp)
 
 	/* Use freshly-available temporaries to start loading externals.  */
-	mfc0	t0, CP0_STATUS
-	dmfc0	t1, CP0_EXCPC
-	mfhi	t2
-	mflo	t3
+	dmfc0	t0, CP0_EXCPC
+	mfhi	t1
+	mflo	t2
 
 	sd	s0, FRAME_S0(sp)
 	sd	s1, FRAME_S1(sp)
@@ -277,10 +279,9 @@ ENTRY(exception_frame_save)		/* Return address is k0.  */
 	sd	s8, FRAME_S8(sp)
 	sd	ra, FRAME_RA(sp)
 
-	sd	t0, FRAME_STATUS(sp)
-	sd	t1, FRAME_EPC(sp)
-	sd	t2, FRAME_HI(sp)
-	sd	t3, FRAME_LO(sp)
+	sd	t0, FRAME_EPC(sp)
+	sd	t1, FRAME_HI(sp)
+	sd	t2, FRAME_LO(sp)
 
 	jr	k0
 	nop
@@ -289,10 +290,9 @@ END(exception_frame_save)
 
 ENTRY(exception_frame_restore)		/* Return address is k0.  */
 	.set noat
-	ld      t3, FRAME_LO(sp)
-	ld      t2, FRAME_HI(sp)
-	ld      t1, FRAME_EPC(sp)
-	ld      t0, FRAME_STATUS(sp)
+	ld      t2, FRAME_LO(sp)
+	ld      t1, FRAME_HI(sp)
+	ld      t0, FRAME_EPC(sp)
 
 	ld      ra, FRAME_RA(sp)
 	ld      s8, FRAME_S8(sp)
@@ -310,10 +310,9 @@ ENTRY(exception_frame_restore)		/* Return address is k0.  */
 	ld      s0, FRAME_S0(sp)
 
 	/* Before we nuke temporaries, restore externals.  */
-	mtlo	t3
-	mthi	t2
-	dmtc0	t1, CP0_EXCPC
-	mtc0	t0, CP0_STATUS
+	mtlo	t2
+	mthi	t1
+	dmtc0	t0, CP0_EXCPC
 
 	ld      t3, FRAME_T3(sp)
 	ld      t2, FRAME_T2(sp)
@@ -333,7 +332,18 @@ ENTRY(exception_frame_restore)		/* Return address is k0.  */
 
 	daddu	sp, FRAME_SIZE
 
-	jr	k0
+	/* XXX userland.  */
+	/*
+	 * Restore kernel status, enable interrupts if needed.
+	 */
+	dla	k1, PCPU_VIRTUAL
+	ld	k1, PC_INTERRUPT_MASK(k1)
+	beqz	k1, 1f
+	or	k1, KERNEL_STATUS
+	or	k1, CP0_STATUS_IE
+
+1:	jr	k0
+	mtc0	k1, CP0_STATUS
 	nop
 	.set at
 END(exception_frame_restore)

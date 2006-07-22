@@ -5,7 +5,7 @@
 
 struct thread;
 
-#define	CONTEXT_COUNT	(12)
+#define	CONTEXT_COUNT	(11)
 
 struct context {
 	register_t c_regs[CONTEXT_COUNT];
@@ -21,8 +21,7 @@ struct context {
 #define	CONTEXT_S7	(0x07)		/* Copied to a7.  */
 #define	CONTEXT_S8	(0x08)
 #define	CONTEXT_SP	(0x09)
-#define	CONTEXT_STATUS	(0x0a)
-#define	CONTEXT_RA	(0x0b)
+#define	CONTEXT_RA	(0x0a)
 
 void cpu_context_restore(struct thread *);
 bool cpu_context_save(struct thread *);

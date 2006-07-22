@@ -5,7 +5,7 @@
 
 	/* A frame for everything for system call handling and debugging.  */
 
-#define	FRAME_COUNT	(36)
+#define	FRAME_COUNT	(35)
 
 struct frame {
 	register_t f_regs[FRAME_COUNT];
@@ -43,9 +43,8 @@ struct frame {
 #define	FRAME_SP	(0x1d)
 #define	FRAME_S8	(0x1e)
 #define	FRAME_RA	(0x1f)
-#define	FRAME_STATUS	(0x20)
-#define	FRAME_EPC	(0x21)
-#define	FRAME_HI	(0x22)
-#define	FRAME_LO	(0x23)
+#define	FRAME_EPC	(0x20)
+#define	FRAME_HI	(0x21)
+#define	FRAME_LO	(0x22)
 
 #endif /* !_CPU_FRAME_H_ */

@@ -25,8 +25,10 @@ cpu_startup(void)
 	 */
 	__asm __volatile ("move $" STRING(gp) ", $" STRING(zero) : : : "memory");
 
-	/* Start off in 64-bit mode.  */
-	cpu_write_status(CP0_STATUS_KX);
+	/*
+	 * Set kernel mode.
+	 */
+	cpu_write_status(KERNEL_STATUS);
 
 	/* Allocate a page for persistent per-CPU data.  */
 	error = page_alloc(&kernel_vm, &pcpu_addr);

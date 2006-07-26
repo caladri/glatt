@@ -62,8 +62,8 @@ typedef	uint64_t	pt_entry_t;
 #define	TLBHI_R_MASK		(0x03UL << TLBHI_R_SHIFT)
 #endif
 #define	TLBHI_VA_R(va)		((va) & TLBHI_R_MASK)
-#define	TLBHI_FILL_SHIFT	40
-#define	TLBHI_FILL_MASK		((0x7FFFFFUL) << TLBHI_FILL_SHIFT)
+#define	TLBHI_FILL_SHIFT	48
+#define	TLBHI_FILL_MASK		((0x7FFFFUL) << TLBHI_FILL_SHIFT)
 #define	TLBHI_VA_FILL(va)	((((va) & (1UL << 63)) != 0 ? TLBHI_FILL_MASK : 0))
 #define	TLBHI_VPN2_SHIFT	(PAGE_SHIFT)
 #ifdef ASSEMBLER

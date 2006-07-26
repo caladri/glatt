@@ -50,10 +50,19 @@ cpu_interrupt(void)
 		}
 		interrupts >>= 1;
 		ih = &PCPU_GET(interrupt_table)[interrupt];
-		if (ih->ih_func == NULL)
-			kcprintf("cpu%u: stray interrupt %u.\n",
+		if (ih->ih_func == NULL) {
+			kcprintf("cpu%u: stray interrupt %u",
 				 mp_whoami(), interrupt);
-		else
+			kcprintf(" mask&interrupt = %x",
+				 PCPU_GET(interrupt_mask) &
+				 ((1 << interrupt) <<
+				 CP0_STATUS_INTERRUPT_SHIFT));
+			kcprintf(" status&interrupt = %x",
+				 cpu_read_status() &
+				 ((1 << interrupt) <<
+				 CP0_STATUS_INTERRUPT_SHIFT));
+			kcprintf("\n");
+		} else
 			ih->ih_func(ih->ih_arg, interrupt);
 	}
 	ASSERT(interrupts == 0, "must handle all interrupts");

@@ -104,6 +104,8 @@ mp_ipi_handler(void *arg, enum ipi_type ipi)
 	switch (ipi) {
 	case IPI_STOP:
 		kcprintf("cpu%u: stopped.\n", mp_whoami());
+		for (;;)
+			continue;
 		cpu_halt();
 	default:
 		panic("%s: unhandled ipi %u", __func__, (unsigned)ipi);

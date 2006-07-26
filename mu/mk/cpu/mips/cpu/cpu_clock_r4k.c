@@ -20,24 +20,29 @@ clock_interrupt(void *arg, int interrupt)
 
 	device = arg;
 	ASSERT(device->d_parent->d_unit == mp_whoami(), "on wrong CPU");
-
-	kcprintf("%s%u: interrupt!\n", device->d_driver->d_name,
-		 device->d_unit);
+#if 0
+	device_printf(device, "interrupt!");
+#endif
 	cpu_write_compare(cpu_read_count() + CLOCK_CYCLES_PER_HZ);
 }
 
 static int
 clock_probe(struct device *device)
 {
-	int error;
-
 	ASSERT(device->d_parent->d_unit == mp_whoami(), "on wrong CPU");
 
+	return (0);
+}
+
+static int
+clock_attach(struct device *device)
+{
+	device_printf(device, "%u cycles/hz", CLOCK_CYCLES_PER_HZ);
 	cpu_interrupt_establish(CLOCK_INTERRUPT, clock_interrupt, device);
 	cpu_write_compare(cpu_read_count() + CLOCK_CYCLES_PER_HZ);
 
 	return (0);
 }
 
-DRIVER(clock_r4k, "MIPS R4000-style clock", NULL, clock_probe);
+DRIVER(clock_r4k, "MIPS R4000-style clock", NULL, clock_probe, clock_attach);
 DRIVER_ATTACHMENT(clock_r4k, "cpu");

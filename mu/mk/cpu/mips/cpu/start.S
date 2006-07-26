@@ -47,13 +47,15 @@ ENTRY(start)
 	 * running.  At that point we'll have a stack of KSTACK_SIZE in a
 	 * virtual address space.
 	 */
-	dla	a0, kernel_vm
+1:	dla	a0, kernel_vm
 	dsubu	sp, 8
-1:	jal	page_alloc_direct
-	move	a1, sp
+	li	a1, PAGE_FLAG_DEFAULT
+	jal	page_alloc_direct
+	move	a2, sp
+	daddu	sp, 8
 	bnez	v0, 1b
 	nop
-	ld	t0, 0(sp)		/* Wait for it...  */
+	ld	t0, -8(sp)		/* Wait for it...  */
 	daddu	t0, PAGE_SIZE		/* Wait for it...  */
 	move	sp, t0			/* Bam!  */
 

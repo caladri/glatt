@@ -1,6 +1,7 @@
 #include <core/types.h>
 #include <core/alloc.h>
 #include <core/error.h>
+#include <core/string.h>
 #include <cpu/memory.h>
 #include <cpu/tlb.h>
 #include <db/db.h>
@@ -190,6 +191,12 @@ pmap_unmap_direct(struct vm *vm, vaddr_t vaddr)
 	return (0);
 }
 
+void
+pmap_zero(paddr_t paddr)
+{
+	memset((void *)XKPHYS_MAP(XKPHYS_CCEW, paddr), 0, PAGE_SIZE);
+}
+
 static int
 pmap_alloc_pte(struct pmap *pm, vaddr_t vaddr, pt_entry_t **ptep)
 {
@@ -206,7 +213,9 @@ pmap_alloc_pte(struct pmap *pm, vaddr_t vaddr, pt_entry_t **ptep)
 
 	pml0i = pmap_index0(vaddr);
 	if (pm->pm_level0[pml0i] == NULL) {
-		error = page_alloc_direct(&kernel_vm, &tmpaddr);
+		error = page_alloc_direct(&kernel_vm,
+					  PAGE_FLAG_DEFAULT | PAGE_FLAG_ZERO,
+					  &tmpaddr);
 		if (error != 0)
 			return (error);
 		pm->pm_level0[pml0i] = (struct pmap_lev0 *)tmpaddr;
@@ -214,7 +223,9 @@ pmap_alloc_pte(struct pmap *pm, vaddr_t vaddr, pt_entry_t **ptep)
 	pml0 = pmap_find0(pm, vaddr);
 	pml1i = pmap_index1(vaddr);
 	if (pml0->pml0_level1[pml1i] == NULL) {
-		error = page_alloc_direct(&kernel_vm, &tmpaddr);
+		error = page_alloc_direct(&kernel_vm,
+					  PAGE_FLAG_DEFAULT | PAGE_FLAG_ZERO,
+					  &tmpaddr);
 		if (error != 0) {
 			/* XXX deallocate.  */
 			return (error);
@@ -224,7 +235,9 @@ pmap_alloc_pte(struct pmap *pm, vaddr_t vaddr, pt_entry_t **ptep)
 	pml1 = pmap_find1(pml0, vaddr);
 	pml2i = pmap_index2(vaddr);
 	if (pml1->pml1_level2[pml2i] == NULL) {
-		error = page_alloc_direct(&kernel_vm, &tmpaddr);
+		error = page_alloc_direct(&kernel_vm,
+					  PAGE_FLAG_DEFAULT | PAGE_FLAG_ZERO,
+					  &tmpaddr);
 		if (error != 0) {
 			/* XXX deallocate.  */
 			return (error);

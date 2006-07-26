@@ -8,4 +8,10 @@ generic_probe(struct device *device)
 	return (0);
 }
 
-DRIVER(generic, "Generic", NULL, generic_probe);
+static int
+generic_attach(struct device *device)
+{
+	return (0);
+}
+
+DRIVER(generic, "Generic", NULL, generic_probe, generic_attach);

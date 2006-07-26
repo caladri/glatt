@@ -5,6 +5,7 @@ struct device;
 struct driver_attachment;
 
 typedef	int (driver_probe_t)(struct device *);
+typedef	int (driver_attach_t)(struct device *);
 
 /*
  * Device driver interfaces, with inheritance.  Driver attachments will be
@@ -16,18 +17,20 @@ struct driver {
 	unsigned d_nextunit;
 	const char *d_base;
 	driver_probe_t *d_probe;
+	driver_attach_t *d_attach;
 	struct driver *d_parent;
 	struct driver *d_children;
 	struct driver_attachment *d_attachments;
 	struct driver *d_peer;
 };
-#define	DRIVER(type, desc, base, probe)					\
+#define	DRIVER(type, desc, base, probe, attach)				\
 	static struct driver driver_struct_ ## type = {			\
 		.d_name = #type,					\
 		.d_desc = desc,						\
 		.d_nextunit = 0,					\
 		.d_base = base,						\
 		.d_probe = probe,					\
+		.d_attach = attach,					\
 		.d_parent = NULL,					\
 		.d_children = NULL,					\
 		.d_peer = NULL,						\

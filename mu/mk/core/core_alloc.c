@@ -45,7 +45,7 @@ pool_allocate(struct pool *pool)
 	if (item++ != NULL) {
 		return ((void *)item);
 	}
-	error = page_alloc(&kernel_vm, &page_addr);
+	error = page_alloc(&kernel_vm, PAGE_FLAG_DEFAULT, &page_addr);
 	if (error != 0) {
 		/* XXX check whether we could block, try to GC some shit.  */
 		return (NULL);

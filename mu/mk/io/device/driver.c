@@ -103,17 +103,28 @@ int
 driver_probe(struct driver *driver, struct device *device)
 {
 	struct driver_attachment *attachment;
-	struct driver *child;
+	struct driver *child, *d;
 	int error;
 
 	if (driver->d_probe != NULL) {
 		error = driver->d_probe(device);
 		if (error == 0 && device->d_parent != NULL) {
-			kcprintf("%s%u: <%s> on %s%u\n",
-				 device->d_driver->d_name, device->d_unit,
-				 device->d_desc,
-				 device->d_parent->d_driver->d_name,
-				 device->d_parent->d_unit);
+			device_printf(device, "<%s> on %s%u", device->d_desc,
+				      device->d_parent->d_driver->d_name,
+				      device->d_parent->d_unit);
+			for (d = device->d_driver; d != NULL; d = d->d_parent) {
+				if (d->d_attach != NULL) {
+					error = d->d_attach(device);
+					if (error != 0) {
+						device_printf(device,
+							      "%s attach failed"
+							      ": %m",
+							      d->d_name,
+							      error);
+					}
+					break;
+				}
+			}
 		}
 	} else
 		error = driver_probe(driver->d_parent, device);

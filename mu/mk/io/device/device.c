@@ -1,6 +1,7 @@
 #include <core/types.h>
 #include <core/alloc.h>
 #include <core/error.h>
+#include <io/device/console/console.h>
 #include <io/device/device.h>
 #include <io/device/driver.h>
 
@@ -86,4 +87,16 @@ device_init(struct device *device, struct device *parent, struct driver *driver)
 	if (parent != NULL)
 		DEVICE_UNLOCK(parent);
 	return (0);
+}
+
+void
+device_printf(struct device *device, const char *fmt, ...)
+{
+	va_list ap;
+
+	kcprintf("%s%u: ", device->d_driver->d_name, device->d_unit);
+	va_start(ap, fmt);
+	kcvprintf(fmt, ap);
+	va_end(ap);
+	kcprintf("\n");
 }

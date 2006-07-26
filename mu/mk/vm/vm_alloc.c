@@ -20,7 +20,7 @@ vm_alloc(struct vm *vm, size_t size, vaddr_t *vaddrp)
 	if (error != 0)
 		return (error);
 	for (o = 0; o < pages; o++) {
-		error = page_alloc(vm, &paddr);
+		error = page_alloc(vm, PAGE_FLAG_DEFAULT, &paddr);
 		if (error != 0) {
 			while (o--) {
 				error2 = page_extract(vm, vaddr + o * PAGE_SIZE,

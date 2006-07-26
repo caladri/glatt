@@ -40,7 +40,7 @@ COMPILE_TIME_ASSERT(sizeof (struct pcpu) <= PAGE_SIZE);
 
 static struct device *platform_mp_bus;
 
-static void platform_mp_attach(void);
+static void platform_mp_attach_bus(void);
 static void platform_mp_attach_cpu(void);
 static void platform_mp_ipi_interrupt(void *, int);
 static void platform_mp_start_one(cpu_id_t, void (*)(void));
@@ -104,21 +104,17 @@ platform_mp_start_all(void *arg)
 	cpu_id_t cpu;
 	uint64_t ncpus;
 
-	platform_mp_attach();
+	platform_mp_attach_bus();
 
 	ncpus = TEST_MP_DEV_READ(TEST_MP_DEV_NCPUS);
 	if (ncpus != 1) {
-		kcprintf("cpu%u: multiprocessor system detected,"
-			 " starting %lu processors.\n", mp_whoami(), ncpus);
 		for (cpu = 0; cpu < ncpus; cpu++) {
 			if (cpu == mp_whoami())
 				platform_mp_attach_cpu();
 			else
 				platform_mp_start_one(cpu, platform_startup);
 		}
-		kcprintf("cpu%u: started processors.\n", mp_whoami());
 	} else {
-		kcprintf("cpu%u: uniprocessor system detected.\n", mp_whoami());
 		platform_mp_attach_cpu();
 	}
 }
@@ -131,7 +127,7 @@ platform_mp_start_one(cpu_id_t cpu, void (*startup)(void))
 	vaddr_t stack;
 	int error;
 
-	error = page_alloc_direct(&kernel_vm, &stack);
+	error = page_alloc_direct(&kernel_vm, PAGE_FLAG_DEFAULT, &stack);
 	if (error != 0)
 		panic("%s: page_alloc_direct failed: %m", __func__, error);
 	TEST_MP_DEV_WRITE(TEST_MP_DEV_STARTADDR, (uintptr_t)startup);
@@ -140,7 +136,7 @@ platform_mp_start_one(cpu_id_t cpu, void (*startup)(void))
 }
 
 static void
-platform_mp_attach(void)
+platform_mp_attach_bus(void)
 {
 	struct driver *driver;
 	int error;
@@ -168,4 +164,18 @@ platform_mp_attach_cpu(void)
 		panic("%s: device create failed: %m", __func__, error);
 }
 
-DRIVER(mp, "GXemul testmips multiprocessor bus", NULL, NULL);
+static int
+platform_mp_attach(struct device *device)
+{
+	uint64_t ncpus;
+
+	ncpus = TEST_MP_DEV_READ(TEST_MP_DEV_NCPUS);
+	if (ncpus == 1)
+		device_printf(device, "uniprocessor system.");
+	else
+		device_printf(device, "multiprocessor system with %lu CPUs.",
+			      ncpus);
+	return (0);
+}
+
+DRIVER(mp, "GXemul testmips multiprocessor bus", NULL, NULL, platform_mp_attach);

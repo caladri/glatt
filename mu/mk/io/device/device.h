@@ -29,6 +29,7 @@ struct device {
 
 int device_create(struct device **, struct device *, struct driver *);
 int device_init(struct device *, struct device *, struct driver *);
+void device_printf(struct device *, const char *, ...);
 struct device *device_root(void);
 
 #endif /* !_IO_DEVICE_DEVICE_H_ */

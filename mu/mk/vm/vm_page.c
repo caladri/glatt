@@ -43,7 +43,7 @@ page_init(void)
 }
 
 int
-page_alloc(struct vm *vm, paddr_t *paddrp)
+page_alloc(struct vm *vm, unsigned flags, paddr_t *paddrp)
 {
 	struct page_entry *pe;
 	struct page_index *pi;
@@ -68,6 +68,8 @@ page_alloc(struct vm *vm, paddr_t *paddrp)
 				paddr += (entry * PAGE_ENTRY_PAGES) * PAGE_SIZE;
 				paddr += off * PAGE_SIZE;
 				*paddrp = paddr;
+				if ((flags & PAGE_FLAG_ZERO) == 0)
+					page_zero(paddr);
 				return (0);
 			}
 		}
@@ -79,13 +81,13 @@ page_alloc(struct vm *vm, paddr_t *paddrp)
 }
 
 int
-page_alloc_direct(struct vm *vm, vaddr_t *vaddrp)
+page_alloc_direct(struct vm *vm, unsigned flags, vaddr_t *vaddrp)
 {
 	paddr_t paddr;
 	vaddr_t vaddr;
 	int error, error2;
 
-	error = page_alloc(vm, &paddr);
+	error = page_alloc(vm, flags, &paddr);
 	if (error != 0)
 		return (error);
 
@@ -266,4 +268,10 @@ page_unmap_direct(struct vm *vm, vaddr_t vaddr)
 	error = pmap_unmap_direct(vm, vaddr);
 	PAGE_UNLOCK();
 	return (error);
+}
+
+void
+page_zero(paddr_t paddr)
+{
+	pmap_zero(paddr);
 }

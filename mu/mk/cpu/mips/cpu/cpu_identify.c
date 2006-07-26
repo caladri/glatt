@@ -3,6 +3,8 @@
 #include <core/mp.h>
 #include <cpu/cpu.h>
 #include <cpu/cpuinfo.h>
+#include <db/db.h>
+#include <io/device/console/console.h>
 
 	/* Coprocessor 0 product ID fields.  */
 
@@ -20,6 +22,8 @@
 
 	/* CP0_PRID_COMPANY_ANCIENT */
 #define	CP0_PRID_TYPE_R4000		(0x04)
+#define	CP0_PRID_TYPE_R12000		(0x0e)
+#define	CP0_PRID_TYPE_R14000		(0x0f)
 
 	/* CP0_PRID_COMPANY_MIPS */
 #define	CP0_PRID_TYPE_5KC		(0x81)
@@ -36,6 +40,8 @@
 #define	CP0_PRID_REVISION_R4400A	(0x40)
 #define	CP0_PRID_REVISION_R4400B	(0x50)
 #define	CP0_PRID_REVISION_R4400C	(0x60)
+
+static void cpu_unknown(struct cpuinfo);
 
 struct cpuinfo
 cpu_identify(void)
@@ -74,6 +80,14 @@ cpu_identify(void)
 				break;
 			}
 			break;
+		case CP0_PRID_TYPE_R12000:
+			cpu.cpu_type = "R12000";
+			cpu.cpu_ntlbs = 64;
+			break;
+		case CP0_PRID_TYPE_R14000:
+			cpu.cpu_type = "R14000";
+			cpu.cpu_ntlbs = 64;
+			break;
 		default:
 			cpu.cpu_type = NULL;
 			break;
@@ -99,5 +113,27 @@ cpu_identify(void)
 	cpu.cpu_revision_major = CP0_PRID_REVISION_MAJOR(prid);
 	cpu.cpu_revision_minor = CP0_PRID_REVISION_MINOR(prid);
 
+	if (cpu.cpu_company == NULL || cpu.cpu_type == NULL)
+		cpu_unknown(cpu);
+
 	return (cpu);
+}
+
+static void
+cpu_unknown(struct cpuinfo cpu)
+{
+	uint32_t prid;
+
+	prid = cpu_read_prid();
+
+	if (cpu.cpu_company != NULL)
+		kcprintf("cpu%u: Company: %s\n", mp_whoami(), cpu.cpu_company);
+	else
+		kcprintf("cpu%u: Company: %x\n", mp_whoami(),
+			 CP0_PRID_COMPANY(prid));
+	kcprintf("cpu%u: Type: %x\n", mp_whoami(), CP0_PRID_TYPE(prid));
+	kcprintf("cpu%u: Revision: %u.%u\n", mp_whoami(),
+		 (unsigned)cpu.cpu_revision_major,
+		 (unsigned)cpu.cpu_revision_minor);
+	panic("Unknown CPU.");
 }

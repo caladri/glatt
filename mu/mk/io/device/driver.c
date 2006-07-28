@@ -13,6 +13,7 @@ static struct driver *generic;
 
 static void driver_add_attachment(struct driver *, struct driver_attachment *);
 static void driver_add_child(struct driver *, struct driver *);
+static int driver_attach(struct driver *, struct device *);
 static struct driver *driver_lookup_child(struct driver *, const char *);
 static void driver_remove_child(struct driver *, struct driver *);
 
@@ -112,19 +113,7 @@ driver_probe(struct driver *driver, struct device *device)
 			device_printf(device, "<%s> on %s%u", device->d_desc,
 				      device->d_parent->d_driver->d_name,
 				      device->d_parent->d_unit);
-			for (d = device->d_driver; d != NULL; d = d->d_parent) {
-				if (d->d_attach != NULL) {
-					error = d->d_attach(device);
-					if (error != 0) {
-						device_printf(device,
-							      "%s attach failed"
-							      ": %m",
-							      d->d_name,
-							      error);
-					}
-					break;
-				}
-			}
+			error = driver_attach(device->d_driver, device);
 		}
 	} else
 		error = driver_probe(driver->d_parent, device);
@@ -150,6 +139,23 @@ driver_add_child(struct driver *parent, struct driver *driver)
 	driver->d_parent = parent;
 	driver->d_peer = parent->d_children;
 	parent->d_children = driver;
+}
+
+static int
+driver_attach(struct driver *driver, struct device *device)
+{
+	int error;
+
+	if (driver->d_attach != NULL) {
+		error = driver->d_attach(device);
+		if (error != 0) {
+			device_printf(device, "%s attach failed: %m",
+				      driver->d_name, error);
+		}
+		return (error);
+	}
+	error = driver_attach(driver->d_parent, device);
+	return (error);
 }
 
 static struct driver *

@@ -216,6 +216,7 @@ tlb_invalidate_one(unsigned i)
 static void
 tlb_db_dump(void)
 {
+	register_t ehi, elo0, elo1;
 	unsigned i;
 
 	kcprintf("Beginning TLB dump...\n");
@@ -228,9 +229,17 @@ tlb_db_dump(void)
 		}
 		cpu_write_tlb_index(i);
 		tlb_read();
-		kcprintf("#%u\t=> %lx\n", i, cpu_read_tlb_entryhi());
-		kcprintf(" Lo0\t%lx\n", cpu_read_tlb_entrylo0());
-		kcprintf(" Lo1\t%lx\n", cpu_read_tlb_entrylo1());
+
+		ehi = cpu_read_tlb_entryhi();
+		elo0 = cpu_read_tlb_entrylo0();
+		elo1 = cpu_read_tlb_entrylo1();
+
+		if (elo0 == 0 && elo1 == 0)
+			continue;
+
+		kcprintf("#%u\t=> %lx\n", i, ehi);
+		kcprintf(" Lo0\t%lx\n", elo0);
+		kcprintf(" Lo1\t%lx\n", elo1);
 	}
 	kcprintf("Finished.\n");
 }

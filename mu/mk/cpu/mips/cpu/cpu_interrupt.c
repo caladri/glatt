@@ -37,9 +37,13 @@ cpu_interrupt(void)
 	unsigned interrupt;
 
 	cause = cpu_read_cause();
-	interrupts = (cause & CP0_CAUSE_INTERRUPT_MASK) >> CP0_CAUSE_INTERRUPT_SHIFT;
+	interrupts = cause & CP0_CAUSE_INTERRUPT_MASK;
+	interrupts &= PCPU_GET(interrupt_mask);
+	interrupts >>= CP0_CAUSE_INTERRUPT_SHIFT;
 	cause &= ~CP0_CAUSE_INTERRUPT_MASK;
 	cpu_write_cause(cause);
+
+	ASSERT(interrupts != 0, "need interrupts to service");
 
 	for (interrupt = 0; interrupt < CPU_INTERRUPT_COUNT; interrupt++) {
 		if (interrupts == 0)

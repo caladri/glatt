@@ -33,6 +33,9 @@ cpu_thread_setup(struct thread *td)
 	 * ad absurdum.  Trying to not use the kstack when servicing TLBMod
 	 * for the kstack would be ideal.
 	 *
+	 * XXX What do we do if the kstack goes out of the TLB?  Seems like the
+	 * access pattern should prevent that, but hey.
+	 *
 	 * XXX Just touch each page.
 	 */
 	memset(td->td_kstack, 0x00, KSTACK_SIZE);

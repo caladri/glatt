@@ -121,6 +121,11 @@ driver_probe(struct driver *driver, struct device *device)
 		return (error);
 	for (attachment = driver->d_attachments; attachment != NULL;
 	     attachment = attachment->da_next) {
+		/*
+		 * XXX
+		 * How do we figure out how many children to try and create for
+		 * each device with an attachment?
+		 */
 		error = device_create(NULL, device, attachment->da_driver);
 	}
 	return (0);

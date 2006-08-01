@@ -3,29 +3,43 @@
 #include <core/startup.h>
 #include <core/string.h>
 #include <cpu/memory.h>
+#include <io/device/device.h>
+#include <io/device/driver.h>
 #include <io/device/console/framebuffer.h>
 
 static void
-testmips_framebuffer_load(struct framebuffer *fb, struct bgr *bitmap)
+tmfb_load(struct framebuffer *fb, struct bgr *bitmap)
 {
 	memcpy(fb->fb_softc, bitmap,
 	       sizeof bitmap[0] * fb->fb_width * fb->fb_height);
 }
 
-static struct framebuffer testmips_framebuffer = {
+static struct framebuffer tmfb_softc = {
 	.fb_softc = XKPHYS_MAP(XKPHYS_UC, 0x12000000),
-	.fb_load = testmips_framebuffer_load,
+	.fb_load = tmfb_load,
 };
 
-static void
-testmips_framebuffer_startup(void *arg)
+static int
+tmfb_probe(struct device *device)
 {
-	struct framebuffer *fb;
-
-	if (1)
-		return;		/* Testing with framebuffer is pain.  */
-	fb = arg;
-	framebuffer_init(fb, 640, 480);
+	if (device->d_unit != 0)
+		return (ERROR_NOT_FOUND);
+	return (ERROR_NOT_IMPLEMENTED);
 }
-STARTUP_ITEM(testmips_framebuffer, STARTUP_DRIVERS, STARTUP_FIRST,
-	     testmips_framebuffer_startup, &testmips_framebuffer);
+
+static int
+tmfb_attach(struct device *device)
+{
+	struct framebuffer *fb = &tmfb_softc;
+
+	device->d_softc = fb;
+	/*
+	 * XXX probe for resolution.
+	 */
+	framebuffer_init(fb, 640, 480);
+
+	return (0);
+}
+
+DRIVER(tmfb, "testmips framebuffer", NULL, tmfb_probe, tmfb_attach);
+DRIVER_ATTACHMENT(tmfb, "mp");

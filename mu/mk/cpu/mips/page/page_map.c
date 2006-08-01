@@ -37,6 +37,7 @@ pmap_bootstrap(void)
 {
 	int error;
 
+#if 0
 	kcprintf("PMAP: %u level 0 pointers in each pmap.\n", NL0PMAP);
 	kcprintf("PMAP: %lu level 1 pointers in each level 0 page.\n", NL1PL0);
 	kcprintf("PMAP: %lu level 2 pointers in each level 1 page.\n", NL2PL1);
@@ -54,6 +55,7 @@ pmap_bootstrap(void)
 		  (1024 * 1024)),
 		 ((NPTEL2 * NL2PL1 * NL1PL0 * NL0PMAP * PAGE_SIZE) /
 		  (1024 * 1024 * 1024)));
+#endif
 	error = pool_create(&pmap_pool, "PMAP", sizeof (struct pmap),
 			    POOL_DEFAULT);
 	if (error != 0)

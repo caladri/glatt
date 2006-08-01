@@ -46,7 +46,6 @@ CP0_RW64(tlb_entryhi, CP0_TLBENTRYHI);
 CP0_RW64(tlb_entrylo0, CP0_TLBENTRYLO0);
 CP0_RW64(tlb_entrylo1, CP0_TLBENTRYLO1);
 CP0_RW64(tlb_pagemask, CP0_TLBPAGEMASK);
-CP0_RW64(compare, CP0_COMPARE);
 CP0_RW64(count, CP0_COUNT);
 
 #undef CP0_RW64
@@ -76,6 +75,7 @@ struct __hack
 CP0_RW32(config, CP0_CONFIG);
 CP0_RW32(cause, CP0_CAUSE);
 CP0_RW32(status, CP0_STATUS);
+CP0_RW32(compare, CP0_COMPARE);
 CP0_RW32(tlb_index, CP0_TLBINDEX);
 CP0_RW32(tlb_wired, CP0_TLBWIRED);
 CP0_RW32(prid, CP0_PRID);

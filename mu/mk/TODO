@@ -12,10 +12,6 @@ o) VM.
 o) Exceptions.
 	o) Prevent nesting/corruption of the frame.
 		o) Make everything use KERNEL_STATUS on exception entry.
-	o) TLB handling.
-	o) Interrupt handling.
-		o) Clocks.
-		o) IPI stuff seems a little broken.
 o) Tasks.
 	o) Task switching.
 		o) Better status register management.  Use the kernel one with
@@ -54,3 +50,4 @@ o) Device drivers.
 			o) IPC.
 			o) Userland.
 		o) IPC.
+	o) Clock calibration.

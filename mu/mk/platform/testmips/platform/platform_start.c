@@ -9,75 +9,8 @@
 #include <cpu/memory.h>
 #include <db/db.h>
 #include <io/device/console/console.h>
-#include <io/device/console/framebuffer.h>
 #include <vm/page.h>
 #include <vm/vm.h>
-
-static void
-testmips_framebuffer_load(struct framebuffer *fb, struct bgr *bitmap)
-{
-	memcpy(fb->fb_softc, bitmap,
-	       sizeof bitmap[0] * fb->fb_width * fb->fb_height);
-}
-
-static struct framebuffer testmips_framebuffer = {
-	.fb_softc = XKPHYS_MAP(XKPHYS_UC, 0x12000000),
-	.fb_load = testmips_framebuffer_load,
-};
-
-static void
-testmips_framebuffer_startup(void *arg)
-{
-	struct framebuffer *fb;
-
-	if (1)
-		return;		/* Testing with framebuffer is pain.  */
-	fb = arg;
-	framebuffer_init(fb, 640, 480);
-}
-STARTUP_ITEM(testmips_framebuffer, STARTUP_DRIVERS, STARTUP_FIRST,
-	     testmips_framebuffer_startup, &testmips_framebuffer);
-
-static int
-testmips_console_getc(void *sc, char *chp)
-{
-	volatile char *getcp = sc;
-	char ch;
-
-	ch = *getcp;
-	if (ch == '\0')
-		return (ERROR_AGAIN);
-	switch (ch) {
-	case '\r':
-		*chp = '\n';
-		break;
-	default:
-		*chp = ch;
-		break;
-	}
-	return (0);
-}
-
-static void
-testmips_console_putc(void *sc, char ch)
-{
-	volatile char *putcp = sc;
-	*putcp = ch;
-}
-
-static void
-testmips_console_flush(void *sc)
-{
-	(void)sc;
-}
-
-static struct console testmips_console = {
-	.c_name = "testmips",
-	.c_softc = XKPHYS_MAP(XKPHYS_UC, 0x10000000),
-	.c_getc = testmips_console_getc,
-	.c_putc = testmips_console_putc,
-	.c_flush = testmips_console_flush,
-};
 
 void
 platform_halt(void)
@@ -91,6 +24,7 @@ platform_halt(void)
 void
 platform_start(void)
 {
+	extern void testmips_console_init(void); /* XXX */
 	extern char __bss_start[], _end[];
 
 	size_t membytes;
@@ -106,7 +40,7 @@ platform_start(void)
 	 * out the mess later.
 	 */
 
-	console_init(&testmips_console);
+	testmips_console_init();
 
 	kcputs("\n");
 	kcputs(MK_NAME "\n");

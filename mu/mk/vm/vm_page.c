@@ -108,8 +108,9 @@ page_extract(struct vm *vm, vaddr_t vaddr, paddr_t *paddrp)
 	int error;
 
 	PAGE_LOCK();
-	error = pmap_extract(vm, vaddr, paddrp);
+	error = pmap_extract(vm, PAGE_FLOOR(vaddr), paddrp);
 	PAGE_UNLOCK();
+	*paddrp |= PAGE_OFFSET(vaddr);
 	return (error);
 }
 
@@ -118,6 +119,8 @@ page_free_direct(struct vm *vm, vaddr_t vaddr)
 {
 	paddr_t paddr;
 	int error;
+
+	ASSERT(PAGE_OFFSET(vaddr) == 0, "must be a page address");
 
 	error = page_extract(vm, vaddr, &paddr);
 	if (error != 0)
@@ -144,6 +147,8 @@ page_insert_pages(paddr_t base, size_t pages)
 	int error;
 
 	inserted = indexcnt = usedindex = indexpages = 0;
+
+	ASSERT(PAGE_OFFSET(base) == 0, "must be a page address");
 
 	/*
 	 * XXX check if these pages belong in an existing pool.
@@ -175,7 +180,7 @@ page_insert_pages(paddr_t base, size_t pages)
 
 			for (cnt = 0; cnt < PAGE_INDEX_ENTRIES; cnt++) {
 				struct page_entry *pe;
-				
+
 				pe = &pi->pi_entries[cnt];
 				pe->pe_bitmask = 0;
 			}
@@ -200,6 +205,8 @@ page_map(struct vm *vm, vaddr_t vaddr, paddr_t paddr)
 {
 	int error;
 
+	ASSERT(PAGE_OFFSET(vaddr) == 0, "must be a page address");
+	ASSERT(PAGE_OFFSET(paddr) == 0, "must be a page address");
 	PAGE_LOCK();
 	error = pmap_map(vm, vaddr, paddr);
 	PAGE_UNLOCK();
@@ -211,6 +218,7 @@ page_map_direct(struct vm *vm, paddr_t paddr, vaddr_t *vaddrp)
 {
 	int error;
 
+	ASSERT(PAGE_OFFSET(paddr) == 0, "must be a page address");
 	if (vm != &kernel_vm)
 		panic("%s: can't direct map for non-kernel address space.",
 		      __func__);
@@ -227,6 +235,7 @@ page_release(struct vm *vm, paddr_t paddr)
 	struct page_index *pi;
 	size_t off;
 
+	ASSERT(PAGE_OFFSET(paddr) == 0, "must be a page address");
 	PAGE_LOCK();
 	for (pi = page_index; pi != NULL; pi = pi->pi_header.ph_next) {
 		if (paddr < pi->pi_header.ph_base)
@@ -253,6 +262,7 @@ page_unmap(struct vm *vm, vaddr_t vaddr)
 {
 	int error;
 
+	ASSERT(PAGE_OFFSET(vaddr) == 0, "must be a page address");
 	PAGE_LOCK();
 	error = pmap_unmap(vm, vaddr);
 	PAGE_UNLOCK();
@@ -264,6 +274,7 @@ page_unmap_direct(struct vm *vm, vaddr_t vaddr)
 {
 	int error;
 
+	ASSERT(PAGE_OFFSET(vaddr) == 0, "must be a page address");
 	PAGE_LOCK();
 	error = pmap_unmap_direct(vm, vaddr);
 	PAGE_UNLOCK();
@@ -273,5 +284,6 @@ page_unmap_direct(struct vm *vm, vaddr_t vaddr)
 void
 page_zero(paddr_t paddr)
 {
+	ASSERT(PAGE_OFFSET(paddr) == 0, "must be a page address");
 	pmap_zero(paddr);
 }

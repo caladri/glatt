@@ -78,7 +78,7 @@ device_init(struct device *device, struct device *parent, struct driver *driver)
 		return (error);
 	}
 	device->d_state = DEVICE_ATTACHED;
-	
+
 	/*
 	 * XXX probe for possible children.
 	 */

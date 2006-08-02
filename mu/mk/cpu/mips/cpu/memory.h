@@ -17,6 +17,9 @@
 #define	KERNEL_BASE	(XKSEG_BASE + PAGE_SIZE)
 #define	KERNEL_END	(XKSEG_END)
 
+	/* 32-bit kernel physical address space mapping.  */
+#define	KSEG0_MAP(a)	(0x80000000 | (a))
+
 	/* 64-bit kernel physical address space mapping.  */
 
 #define	XKPHYS_BASE	(0x8000000000000000)

@@ -4,8 +4,11 @@
 #include <cpu/memory.h>
 #include <cpu/pcpu.h>
 #include <cpu/tlb.h>
+#include <db/db.h>
 #include <vm/page.h>
 #include <vm/vm.h>
+
+COMPILE_TIME_ASSERT(sizeof (struct pcpu) <= PAGE_SIZE);
 
 void
 cpu_halt(void)

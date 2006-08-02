@@ -196,7 +196,16 @@ pmap_unmap_direct(struct vm *vm, vaddr_t vaddr)
 void
 pmap_zero(paddr_t paddr)
 {
-	memset((void *)XKPHYS_MAP(XKPHYS_CCEW, paddr), 0, PAGE_SIZE);
+	uint64_t *p = (uint64_t *)XKPHYS_MAP(XKPHYS_CCEW, paddr);
+	size_t i;
+
+	for (i = 0; i < (PAGE_SIZE / sizeof *p) / 16; i++) {
+		p[0x0] = p[0x1] = p[0x2] = p[0x3] =
+		p[0x4] = p[0x5] = p[0x6] = p[0x7] =
+		p[0x8] = p[0x9] = p[0xa] = p[0xb] =
+		p[0xc] = p[0xd] = p[0xe] = p[0xe] = 0x0;
+		p += 16;
+	}
 }
 
 static int

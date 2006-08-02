@@ -28,7 +28,7 @@ struct frame {
 #define	FRAME_T2	(0x0e)
 #define	FRAME_T3	(0x0f)
 #define	FRAME_S0	(0x10)
-#define	FRAME_S1	(0x11)	
+#define	FRAME_S1	(0x11)
 #define	FRAME_S2	(0x12)
 #define	FRAME_S3	(0x13)
 #define	FRAME_S4	(0x14)

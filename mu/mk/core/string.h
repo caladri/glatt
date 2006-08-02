@@ -6,7 +6,7 @@ memcpy(void *dst, const void *src, size_t len)
 {
 	char *d;
 	const char *s;
-	
+
 	d = dst;
 	s = src;
 

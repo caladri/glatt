@@ -58,4 +58,6 @@ strlen(const char *s)
 	return (p - s);
 }
 
+void kfvprintf(void (*)(void *, char), void *, const char *, va_list);
+
 #endif /* !_CORE_STRING_H_ */

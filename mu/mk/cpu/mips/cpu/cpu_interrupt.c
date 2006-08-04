@@ -25,8 +25,10 @@ cpu_interrupt_establish(int interrupt, interrupt_t *func, void *arg)
 		 ((1 << interrupt) << CP0_STATUS_INTERRUPT_SHIFT));
 	cpu_write_status((cpu_read_status() & ~CP0_STATUS_INTERRUPT_MASK) |
 			 PCPU_GET(interrupt_mask));
+#if 0
 	kcprintf("cpu%u: %d established (mask %x).\n", mp_whoami(), interrupt,
 		 PCPU_GET(interrupt_mask) >> CP0_STATUS_INTERRUPT_SHIFT);
+#endif
 }
 
 void

@@ -52,7 +52,7 @@ startup_main(void)
 	else
 		thread_set_upcall(td, startup_main_thread, td);
 	PCPU_SET(idletd, td);
-	thread_block();			/* Bam! */
+	thread_switch(NULL, td);	/* Bam! */
 }
 
 static void

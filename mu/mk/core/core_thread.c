@@ -15,20 +15,6 @@ COMPILE_TIME_ASSERT(sizeof (struct thread) <= PAGE_SIZE);
 
 static struct pool thread_pool = POOL_INIT("THREAD", struct thread, POOL_VIRTUAL);
 
-void
-thread_block(void)
-{
-	struct thread *td;
-
-	td = current_thread();
-	if (td != NULL) {
-		ASSERT((td->td_flags & THREAD_BLOCKED) == 0,
-		       "can't block a blocked (but running!) thread.");
-		td->td_flags |= THREAD_BLOCKED;
-	}
-	thread_switch(td, PCPU_GET(idletd));
-}
-
 int
 thread_create(struct thread **tdp, struct task *parent, const char *name,
 	      uint32_t flags)
@@ -75,8 +61,6 @@ thread_set_upcall(struct thread *td, void (*function)(void *), void *arg)
 void
 thread_switch(struct thread *otd, struct thread *td)
 {
-	ASSERT((td->td_flags & THREAD_BLOCKED) == 0,
-	       "can't switch to a blocked thread, use wakeup.");
 	if (otd == NULL)
 		otd = current_thread();
 	ASSERT(otd != td, "cannot switch from a thread to itself.");
@@ -114,15 +98,4 @@ thread_trampoline(struct thread *td, void (*function)(void *), void *arg)
 	       "thread must be marked running.");
 	function(arg);
 	panic("%s: function returned!", __func__);
-}
-
-void
-thread_wakeup(struct thread *td)
-{
-	ASSERT((td->td_flags & THREAD_BLOCKED) != 0,
-	       "can only wake up blocked threads.");
-	ASSERT(current_thread() == PCPU_GET(idletd),
-	       "must wake up from idle thread.");
-	td->td_flags &= ~THREAD_BLOCKED;
-	thread_switch(NULL, td);
 }

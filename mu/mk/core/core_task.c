@@ -65,10 +65,6 @@ static void
 task_db_dump_thread(struct thread *td)
 {
 	kcprintf("\tTHREAD %p ", (void *)td);
-	if ((td->td_flags & THREAD_BLOCKED) != 0)
-		kcprintf("B");
-	else
-		kcprintf("-");
 	if ((td->td_flags & THREAD_RUNNING) != 0)
 		kcprintf("R");
 	else

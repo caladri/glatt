@@ -1,5 +1,6 @@
 #include <core/types.h>
 #include <core/alloc.h>
+#include <core/scheduler.h>
 #include <core/spinlock.h>
 #include <core/startup.h>
 #include <core/task.h>
@@ -136,7 +137,9 @@ startup_main_thread(void *arg)
 		/*
 		 * Our main loop should:
 		 * 	o) Deliver pending messages.
-		 * 	o) Invoke the scheduler.
+		 */
+		scheduler_schedule();
+		/*
 		 * 	o) Run garbage-collection and similar algorithms.
 		 */
 	}

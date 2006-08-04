@@ -47,6 +47,9 @@ cpu_startup(void)
 	pcpu->pc_cpuinfo = cpu_identify();
 	pcpu->pc_flags = PCPU_FLAG_RUNNING;
 
+	/* Setup the scheduler.  */
+	scheduler_cpu_setup(&pcpu->pc_scheduler);
+
 	/* Clear the TLB and add a wired mapping for my per-CPU data.  */
 	tlb_init(pcpu_addr);
 

@@ -32,10 +32,9 @@ thread_create(struct thread **tdp, struct task *parent, const char *name,
 	td->td_next = parent->t_threads;
 	parent->t_threads = td;
 	td->td_flags = flags;
-	if ((td->td_flags & THREAD_PINNED) != 0)
-		td->td_oncpu = mp_whoami();
-	else
-		td->td_oncpu = CPU_ID_INVALID;
+
+	scheduler_thread_setup(td);
+
 	/*
 	 * CPU thread setup takes care of:
 	 * 	frame
@@ -65,37 +64,20 @@ thread_switch(struct thread *otd, struct thread *td)
 		otd = current_thread();
 	ASSERT(otd != td, "cannot switch from a thread to itself.");
 	if (otd != NULL) {
-		otd->td_flags &= ~THREAD_RUNNING;
-		if ((otd->td_flags & THREAD_PINNED) == 0)
-			otd->td_oncpu = CPU_ID_INVALID;
 		if (cpu_context_save(otd)) {
-			ASSERT(otd->td_oncpu == mp_whoami(),
-			       "need valid oncpu field.");
-			ASSERT((otd->td_flags & THREAD_RUNNING) != 0,
-			       "thread must be marked running.");
 			/*
 			 * We've been restored by something, return.
 			 */
 			return;
 		}
 	}
-	if (td->td_oncpu != CPU_ID_INVALID &&
-	    (td->td_oncpu != mp_whoami() ||
-	     (td->td_flags & THREAD_PINNED) == 0)) {
-		panic("%s: thread still on a CPU but not pinned to me.",
-		      __func__);
-	}
-	td->td_flags |= THREAD_RUNNING;
-	td->td_oncpu = mp_whoami();
 	cpu_context_restore(td);
 }
 
 void
 thread_trampoline(struct thread *td, void (*function)(void *), void *arg)
 {
-	ASSERT(td->td_oncpu == mp_whoami(), "need valid oncpu field.");
-	ASSERT((td->td_flags & THREAD_RUNNING) != 0,
-	       "thread must be marked running.");
+	ASSERT(td == current_thread(), "Thread must be current thread.");
 	function(arg);
 	panic("%s: function returned!", __func__);
 }

@@ -65,6 +65,7 @@ static void
 task_db_dump_thread(struct thread *td)
 {
 	kcprintf("\tTHREAD %p ", (void *)td);
+#if 0	/* XXX task_db_dump_scheduler.  */
 	if ((td->td_flags & THREAD_RUNNING) != 0)
 		kcprintf("R");
 	else
@@ -75,6 +76,7 @@ task_db_dump_thread(struct thread *td)
 		kcprintf("-");
 	if (td->td_oncpu != CPU_ID_INVALID)
 		kcprintf(" (CPU %u)", td->td_oncpu);
+#endif
 	kcprintf(" [%s]\n", td->td_name);
 }
 

@@ -1,6 +1,7 @@
 #ifndef	_CPU_PCPU_H_
 #define	_CPU_PCPU_H_
 
+#include <core/scheduler.h>
 #include <cpu/cpuinfo.h>
 #include <cpu/frame.h>
 #include <cpu/interrupt.h>
@@ -25,6 +26,7 @@ struct pcpu {
 	unsigned pc_flags;
 	struct interrupt_handler pc_interrupt_table[CPU_INTERRUPT_COUNT];
 	register_t pc_interrupt_mask;
+	struct scheduler_queue pc_scheduler;
 };
 
 #define	PCPU_PTR()							\

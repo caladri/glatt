@@ -40,7 +40,7 @@ startup_main(void)
 			panic("%s: task_create failed: %m", __func__, error);
 	}
 
-	error = thread_create(&td, main_task, "scheduler",
+	error = thread_create(&td, main_task, "idle thread",
 			      THREAD_DEFAULT | THREAD_PINNED);
 	if (error != 0)
 		panic("%s: thread_create failed: %m", __func__, error);
@@ -127,22 +127,17 @@ next:		continue;
 static void
 startup_main_thread(void *arg)
 {
-	static uint64_t threadcnt;
-	uint64_t last;
 	struct thread *td;
 
-	last = 0;
 	td = arg;
 	ASSERT(td == current_thread(), "consistency is all I ask");
-	atomic_increment_64(&threadcnt);
-	for (;;) {
-		unsigned long now;
 
-		now = atomic_load_64(&threadcnt);
-		if (now - last > 1) {
-			kcprintf("cpu%u: threadcnt went from %lu to %lu\n",
-				 mp_whoami(), last, now);
-		}
-		last = now;
+	for (;;) {
+		/*
+		 * Our main loop should:
+		 * 	o) Deliver pending messages.
+		 * 	o) Invoke the scheduler.
+		 * 	o) Run garbage-collection and similar algorithms.
+		 */
 	}
 }

@@ -13,6 +13,8 @@ struct vm {
 	struct vm_index *vm_index;
 	struct vm_index *vm_index_free;
 };
+#define	VM_LOCK(vm)	spinlock_lock(&(vm)->vm_lock)
+#define	VM_UNLOCK(vm)	spinlock_unlock(&(vm)->vm_lock)
 
 extern struct vm kernel_vm;
 

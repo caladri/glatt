@@ -5,9 +5,6 @@
 #include <vm/page.h>
 #include <vm/vm.h>
 
-#define	VM_LOCK(vm)	spinlock_lock(&(vm)->vm_lock)
-#define	VM_UNLOCK(vm)	spinlock_unlock(&(vm)->vm_lock)
-
 struct vm_index {
 	vaddr_t vmi_base;
 	size_t vmi_size;

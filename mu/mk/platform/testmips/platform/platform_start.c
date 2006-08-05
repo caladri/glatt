@@ -12,6 +12,8 @@
 #include <vm/page.h>
 #include <vm/vm.h>
 
+extern char __bss_start[], _end[];
+
 void
 platform_halt(void)
 {
@@ -24,9 +26,6 @@ platform_halt(void)
 void
 platform_start(void)
 {
-	extern void testmips_console_init(void); /* XXX */
-	extern char __bss_start[], _end[];
-
 	size_t membytes;
 	int error;
 

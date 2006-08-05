@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.14 2006-07-20 18:43:15 juli Exp $
+# $Id: Makefile,v 1.15 2006-08-05 00:40:06 juli Exp $
 
 KERNEL?=	mu-mk
 
@@ -24,6 +24,9 @@ KERNEL_CPPFLAGS=-I${KERNEL_ROOT} -I${PLATFORM_ROOT} -I${CPU_ROOT}
 KERNEL_CFLAGS+=	${KERNEL_ABI} ${KERNEL_CPU} -nostdinc
 KERNEL_CFLAGS+=	-std=c99 -pedantic
 KERNEL_CFLAGS+=	-Werror -W -Wall -Wno-unused -Wformat
+KERNEL_CFLAGS+=	-Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wshadow
+KERNEL_CFLAGS+=	-Wcast-align -Winline -Wnested-externs -Wredundant-decls
+KERNEL_CFLAGS+=	-Wstrict-prototypes -Wmissing-prototypes -Wpointer-arith
 KERNEL_CFLAGS+=	-O2 -fstrict-aliasing -fno-builtin
 KERNEL_LDFLAGS=	-e ${KERNEL_ENTRY}
 .if defined(KERNEL_TEXT)

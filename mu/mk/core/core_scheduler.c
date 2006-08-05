@@ -2,6 +2,8 @@
 #include <core/scheduler.h>
 #include <core/thread.h>
 #include <db/db.h>
+#include <db/db_command.h>
+#include <io/device/console/console.h>
 
 static struct scheduler_queue *scheduler_queue_head;
 static struct spinlock scheduler_lock = SPINLOCK_INIT("SCHEDULER");
@@ -285,3 +287,30 @@ scheduler_yield(void)
 {
 	/* XXX cpu_yield(); ? */
 }
+
+static void
+scheduler_db_dump_queue(struct scheduler_queue *sq)
+{
+	struct scheduler_entry *se;
+
+	kcprintf("Q%p => cpu%u\n", sq, sq->sq_cpu);
+	for (se = sq->sq_first; se != NULL; se = se->se_next) {
+		struct thread *td;
+
+		td = se->se_thread;
+
+		kcprintf("E%p => td=%p, %s\n", se, td, td->td_name);
+	}
+}
+
+static void
+scheduler_db_dump(void)
+{
+	struct scheduler_queue *sq;
+
+	kcprintf("Dumping scheduler queues...\n");
+	for (sq = scheduler_queue_head; sq != NULL; sq = sq->sq_link)
+		scheduler_db_dump_queue(sq);
+	kcprintf("Done.\n");
+}
+DB_COMMAND(scheduler_dump, scheduler_db_dump, "Dump all scheduler queues.");

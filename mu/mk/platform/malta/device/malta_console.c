@@ -76,7 +76,7 @@ static struct console malta_console = {
 };
 
 void
-malta_console_init(void)
+platform_console_init(void)
 {
 	console_init(&malta_console);
 }

@@ -47,7 +47,7 @@ static struct console testmips_console = {
 };
 
 void
-testmips_console_init(void)
+platform_console_init(void)
 {
 	console_init(&testmips_console);
 }

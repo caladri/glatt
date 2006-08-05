@@ -36,7 +36,7 @@ platform_start(int32_t argc, int32_t argv, int32_t envp, uint32_t memsize)
 	 */
 	memset(__bss_start, 0, _end - __bss_start);
 
-	malta_console_init();
+	platform_console_init();
 
 	kcputs("\n");
 	kcputs(MK_NAME "\n");

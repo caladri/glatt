@@ -39,7 +39,7 @@ platform_start(void)
 	 * out the mess later.
 	 */
 
-	testmips_console_init();
+	platform_console_init();
 
 	kcputs("\n");
 	kcputs(MK_NAME "\n");

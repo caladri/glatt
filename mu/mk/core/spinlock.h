@@ -16,6 +16,7 @@ struct spinlock {
 #define	SPINLOCK_INIT(name)						\
 	{								\
 		.s_name = name,						\
+		.s_owner = CPU_ID_INVALID,				\
 	}
 
 static inline void
@@ -24,9 +25,9 @@ spinlock_lock(struct spinlock *lock)
 	critical_section_t crit;
 
 	crit = critical_enter();
-	while (!atomic_compare_and_set_64(&lock->s_owner, 0, mp_whoami() + 1)) {
-		if (atomic_load_64(&lock->s_owner) ==
-		    (uint64_t)(mp_whoami() + 1)) {
+	while (!atomic_compare_and_set_64(&lock->s_owner, CPU_ID_INVALID,
+					  mp_whoami())) {
+		if (atomic_load_64(&lock->s_owner) == (uint64_t)mp_whoami()) {
 			atomic_increment_64(&lock->s_nest);
 			critical_exit(crit);
 			return;
@@ -44,7 +45,7 @@ spinlock_unlock(struct spinlock *lock)
 	critical_section_t saved;
 
 	crit = critical_enter();
-	if (atomic_load_64(&lock->s_owner) == (uint64_t)(mp_whoami() + 1)) {
+	if (atomic_load_64(&lock->s_owner) == (uint64_t)mp_whoami()) {
 		if (atomic_load_64(&lock->s_nest) != 0) {
 			atomic_decrement_64(&lock->s_nest);
 			critical_exit(crit);
@@ -52,7 +53,8 @@ spinlock_unlock(struct spinlock *lock)
 		} else {
 			saved = lock->s_crit;
 			if (atomic_compare_and_set_64(&lock->s_owner,
-						      mp_whoami() + 1, 0)) {
+						      mp_whoami(),
+						      CPU_ID_INVALID)) {
 				critical_exit(crit);
 				critical_exit(saved);
 				return;

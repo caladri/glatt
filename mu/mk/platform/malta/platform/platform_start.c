@@ -12,6 +12,8 @@
 #include <vm/page.h>
 #include <vm/vm.h>
 
+extern char __bss_start[], _end[];
+
 void
 platform_halt(void)
 {
@@ -24,8 +26,6 @@ platform_halt(void)
 void
 platform_start(int32_t argc, int32_t argv, int32_t envp, uint32_t memsize)
 {
-	extern void malta_console_init(void);
-	extern char __bss_start[], _end[];
 	size_t membytes;
 	int error;
 

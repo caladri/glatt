@@ -1,4 +1,4 @@
-# $Id: cpu.mk,v 1.22 2006-07-20 15:44:24 juli Exp $
+# $Id: cpu.mk,v 1.23 2006-08-05 00:44:43 juli Exp $
 
 .PATH: ${CPU_ROOT}/cpu
 .PATH: ${CPU_ROOT}/page
@@ -29,17 +29,24 @@ KERNEL_ABI=	-mabi=64
 KERNEL_ENTRY=	start
 KERNEL_CPU=	-mips3
 KERNEL_FORMAT=	elf64-bigmips
-KERNEL_MACHINE=	testmips
 
 # Ask GCC to not use the GP, we may well end up with too much GP-relative
 # data to address.  In reality, though, we shouldn't have enough global data
 # for this to make sense, and we should be able to turn it back on.
 KERNEL_CFLAGS+=	-G0
 
-KERNEL_SIMFLAGS=-E ${KERNEL_MACHINE} -q
+KERNEL_SIMFLAGS+=-E ${KERNEL_MACHINE}
+.if defined(KERNEL_SUBMACHINE)
+KERNEL_SIMFLAGS+=-e ${KERNEL_SUBMACHINE}
+.endif
+.if defined(KERNEL_SIMCPUS)
+KERNEL_SIMFLAGS+=-n ${KERNEL_SIMCPUS}
+KERNEL_SIMFLAGS+=-R
+.endif
 .if defined(DISPLAY)
 KERNEL_SIMFLAGS+=-X
 .endif
+KERNEL_SIMFLAGS+=-q
 
 simulate-${KERNEL}: ${KERNEL}
 	${KERNEL_SIM} ${KERNEL_SIMFLAGS} ${KERNEL}

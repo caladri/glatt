@@ -126,48 +126,15 @@ next:		continue;
 }
 
 static void
-startup_worker(void *arg)
-{
-	for (;;) {
-		kcprintf("%s on cpu%u!\n", current_thread()->td_name, mp_whoami());
-		scheduler_schedule();
-	}
-}
-
-static void
 startup_main_thread(void *arg)
 {
 	struct thread *td;
-	struct thread *w;
-	int error;
 
 	td = arg;
 	ASSERT(td == current_thread(), "consistency is all I ask");
 
-	error = thread_create(&w, main_task, "worker 1", THREAD_DEFAULT);
-	thread_set_upcall(w, startup_worker, NULL);
-	scheduler_thread_runnable(w);
-	error = thread_create(&w, main_task, "worker 2", THREAD_DEFAULT);
-	thread_set_upcall(w, startup_worker, NULL);
-	scheduler_thread_runnable(w);
-	error = thread_create(&w, main_task, "worker 3", THREAD_DEFAULT);
-	thread_set_upcall(w, startup_worker, NULL);
-	scheduler_thread_runnable(w);
-	error = thread_create(&w, main_task, "worker 4", THREAD_DEFAULT);
-	thread_set_upcall(w, startup_worker, NULL);
-	scheduler_thread_runnable(w);
-	error = thread_create(&w, main_task, "worker 5", THREAD_DEFAULT);
-	thread_set_upcall(w, startup_worker, NULL);
-	scheduler_thread_runnable(w);
-	error = thread_create(&w, main_task, "worker 6", THREAD_DEFAULT);
-	thread_set_upcall(w, startup_worker, NULL);
-	scheduler_thread_runnable(w);
-	error = thread_create(&w, main_task, "worker 7", THREAD_DEFAULT);
-	thread_set_upcall(w, startup_worker, NULL);
-	scheduler_thread_runnable(w);
-
 	for (;;) {
-		kcprintf("main thread!\n");
+		kcprintf("%s on cpu%u\n", td->td_name, mp_whoami());
 		/*
 		 * Our main loop should:
 		 * 	o) Deliver pending messages.

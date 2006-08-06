@@ -94,7 +94,6 @@ scheduler_schedule(void)
 			return;
 		}
 		td = PCPU_GET(idletd);
-		ASSERT(td != current_thread(), "Duh?");
 	}
 	scheduler_switch(td);
 }

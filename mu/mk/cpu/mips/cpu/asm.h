@@ -9,7 +9,7 @@
 
 #define	SYMBOL(s)	.globl s; s:
 
-#define	ENTRY(s)	.globl s; .ent s; s:
+#define	ENTRY(s)	.p2align 4; .globl s; .ent s; s:
 #define	END(s)		.end s
 
 #define	NOREORDER	.set noreorder

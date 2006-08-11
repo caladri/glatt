@@ -93,7 +93,9 @@ pool_free(struct pool *pool, void *m)
 	page = pool_page(item);
 	if (page->pp_items-- == 1) {
 		/* XXX free up page? */
+#if 0
 		panic("%s: releasing last item.", __func__);
+#endif
 	}
 }
 

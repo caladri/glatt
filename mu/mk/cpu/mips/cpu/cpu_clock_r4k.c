@@ -20,6 +20,10 @@ clock_interrupt(void *arg, int interrupt)
 
 	device = arg;
 	ASSERT(device->d_parent->d_unit == mp_whoami(), "on wrong CPU");
+	/*
+	 * XXX
+	 * Preemptable threads?
+	 */
 #if 0
 	device_printf(device, "interrupt!");
 #endif

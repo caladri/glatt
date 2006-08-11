@@ -6,6 +6,7 @@
 #include <io/device/console/console.h>
 
 static struct scheduler_queue *scheduler_queue_head;
+static struct scheduler_queue scheduler_sleep_queue;
 static struct spinlock scheduler_lock = SPINLOCK_INIT("SCHEDULER");
 
 #define	SCHEDULER_LOCK()	spinlock_lock(&scheduler_lock)
@@ -14,9 +15,11 @@ static struct spinlock scheduler_lock = SPINLOCK_INIT("SCHEDULER");
 #define	SQ_LOCK(sq)	spinlock_lock(&(sq)->sq_lock)
 #define	SQ_UNLOCK(sq)	spinlock_unlock(&(sq)->sq_lock)
 
-static struct thread *scheduler_pick(void);
+static struct scheduler_entry *scheduler_pick_entry(struct scheduler_queue *);
+static struct thread *scheduler_pick_thread(void);
 static struct scheduler_queue *scheduler_pick_queue(struct scheduler_entry *);
 static void scheduler_queue(struct scheduler_queue *, struct scheduler_entry *);
+static void scheduler_queue_setup(struct scheduler_queue *, const char *, cpu_id_t);
 static void scheduler_switch(struct thread *);
 static void scheduler_yield(void);
 
@@ -61,17 +64,13 @@ scheduler_cpu_pin(struct thread *td)
 void
 scheduler_cpu_setup(struct scheduler_queue *sq)
 {
-	spinlock_init(&sq->sq_lock, "SCHEDULER QUEUE");
-	SQ_LOCK(sq);
-	sq->sq_cpu = mp_whoami();
-	sq->sq_first = NULL;
-	sq->sq_last = NULL;
-	sq->sq_length = 0;
-	SCHEDULER_LOCK();
-	sq->sq_link = scheduler_queue_head;
-	scheduler_queue_head = sq;
-	SCHEDULER_UNLOCK();
-	SQ_UNLOCK(sq);
+	scheduler_queue_setup(sq, "CPU RUN QUEUE", mp_whoami());
+}
+
+void
+scheduler_init(void)
+{
+	scheduler_queue_setup(&scheduler_sleep_queue, "SLEEP QUEUE", CPU_ID_INVALID);
 }
 
 void
@@ -86,7 +85,9 @@ scheduler_schedule(void)
 	 * CPU until we get an interrupt.  Otherwise, without a thread to run,
 	 * switch to the idle thread.
 	 */
-	td = scheduler_pick();
+	td = scheduler_pick_thread();
+	if (td == current_thread())
+		td = NULL;
 	if (td == NULL) {
 		if (PCPU_GET(idletd) == current_thread()) {
 			SCHEDULER_UNLOCK();
@@ -127,15 +128,27 @@ scheduler_thread_setup(struct thread *td)
 	 */
 }
 
-static struct thread *
-scheduler_pick(void)
+void
+scheduler_thread_sleeping(struct thread *td)
 {
 	struct scheduler_entry *se;
-	struct scheduler_queue *sq;
 
-	sq = &PCPU_GET(scheduler);
+	se = &td->td_sched;
+	scheduler_queue(&scheduler_sleep_queue, se);
+}
+
+static struct scheduler_entry *
+scheduler_pick_entry(struct scheduler_queue *sq)
+{
+	struct scheduler_entry *se;
+
 	SQ_LOCK(sq);
-	se = sq->sq_first;
+	for (se = sq->sq_first; se != NULL; se = se->se_next) {
+		if (se->se_oncpu == CPU_ID_INVALID ||
+		    se->se_oncpu == mp_whoami())
+			break;
+		
+	}
 	if (se == NULL) {
 		SQ_UNLOCK(sq);
 		return (NULL);
@@ -146,12 +159,17 @@ scheduler_pick(void)
 	 */
 	scheduler_queue(sq, se);
 
-	/*
-	 * Let the idle thread run.
-	 */
-	if (se->se_thread == current_thread())
-		return (NULL);
+	return (se);
+}
 
+static struct thread *
+scheduler_pick_thread(void)
+{
+	struct scheduler_entry *se;
+
+	se = scheduler_pick_entry(&PCPU_GET(scheduler));
+	if (se == NULL)
+		return (NULL);
 	return (se->se_thread);
 }
 
@@ -222,7 +240,7 @@ scheduler_queue(struct scheduler_queue *sq, struct scheduler_entry *se)
 		} else {
 			ASSERT(osq->sq_first == se,
 			       "Entry with no previous item must be first.");
-			osq->sq_first = se->se_next;;
+			osq->sq_first = se->se_next;
 		}
 		if (se->se_next != NULL) {
 			se->se_next->se_prev = se->se_prev;
@@ -251,6 +269,24 @@ scheduler_queue(struct scheduler_queue *sq, struct scheduler_entry *se)
 }
 
 static void
+scheduler_queue_setup(struct scheduler_queue *sq, const char *lk, cpu_id_t cpu)
+{
+	spinlock_init(&sq->sq_lock, lk);
+	SQ_LOCK(sq);
+	sq->sq_cpu = cpu;
+	sq->sq_first = NULL;
+	sq->sq_last = NULL;
+	sq->sq_length = 0;
+	if (sq != &scheduler_sleep_queue) {
+		SCHEDULER_LOCK();
+		sq->sq_link = scheduler_queue_head;
+		scheduler_queue_head = sq;
+		SCHEDULER_UNLOCK();
+	}
+	SQ_UNLOCK(sq);
+}
+
+static void
 scheduler_switch(struct thread *td)
 {
 	struct scheduler_entry *se;
@@ -268,7 +304,12 @@ scheduler_switch(struct thread *td)
 
 		ose->se_flags &= ~SCHEDULER_RUNNING;
 		if ((ose->se_flags & SCHEDULER_PINNED) == 0) {
-			scheduler_queue(NULL, ose);
+			/*
+			 * If the thread isn't asleep, and isn't pinned, throw
+			 * it on another runqueue.
+			 */
+			if (ose->se_queue != &scheduler_sleep_queue)
+				scheduler_queue(NULL, ose);
 		}
 	}
 	if ((se->se_flags & SCHEDULER_PINNED) != 0) {

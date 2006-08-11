@@ -32,8 +32,10 @@ struct scheduler_queue {
 void scheduler_cpu_idle(struct thread *);
 void scheduler_cpu_pin(struct thread *);
 void scheduler_cpu_setup(struct scheduler_queue *);
+void scheduler_init(void);
 void scheduler_schedule(void);
 void scheduler_thread_runnable(struct thread *);
 void scheduler_thread_setup(struct thread *);
+void scheduler_thread_sleeping(struct thread *);
 
 #endif /* _CORE_SCHEDULER_H_ */

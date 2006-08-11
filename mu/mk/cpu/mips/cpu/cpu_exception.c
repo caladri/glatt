@@ -15,6 +15,7 @@
 
 #define	EXCEPTION_SPACE			(0x80)
 
+#define	EXCEPTION_BASE_UTLBMISS		(XKPHYS_MAP(XKPHYS_UC, 0x00000000))
 #define	EXCEPTION_BASE_GENERAL		(XKPHYS_MAP(XKPHYS_UC, 0x00000180))
 #define	EXCEPTION_BASE_XTLBMISS		(XKPHYS_MAP(XKPHYS_UC, 0x00000080))
 
@@ -52,6 +53,7 @@
 #define	EXCEPTION_VCED			(0x1f)
 
 
+extern char utlb_vector[], utlb_vector_end[];
 extern char exception_vector[], exception_vector_end[];
 extern char xtlb_vector[], xtlb_vector_end[];
 
@@ -61,6 +63,8 @@ static void cpu_exception_frame_dump(struct thread *, struct frame *);
 void
 cpu_exception_init(void)
 {
+	cpu_exception_vector_install(EXCEPTION_BASE_UTLBMISS, utlb_vector,
+				     utlb_vector_end);
 	cpu_exception_vector_install(EXCEPTION_BASE_GENERAL, exception_vector,
 				     exception_vector_end);
 	cpu_exception_vector_install(EXCEPTION_BASE_XTLBMISS, xtlb_vector,

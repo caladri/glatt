@@ -88,6 +88,15 @@ exception_table:
 
 	NOREORDER
 
+VECTOR_ENTRY(utlb)
+	.set noat
+	dla	a0, 9f
+	jal	panic
+	nop
+9:	.asciz	"Should not hit UTLBMiss just yet."
+	.set at
+VECTOR_END(utlb)
+
 VECTOR_ENTRY(exception)
 	.set noat
 	li	k0, KERNEL_STATUS

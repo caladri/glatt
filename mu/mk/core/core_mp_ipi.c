@@ -48,6 +48,10 @@ mp_ipi_receive(enum ipi_type ipi)
 	}
 	ih->ih_usecnt++;
 	spinlock_unlock(&ih->ih_lock);
+	/*
+	 * XXX
+	 * use sleepq and a thread.
+	 */
 	ih->ih_handler(ih->ih_arg, ipi);
 	/*
 	 * XXX atomic increment/decrement.

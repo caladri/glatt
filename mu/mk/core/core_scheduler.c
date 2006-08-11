@@ -70,7 +70,7 @@ scheduler_cpu_setup(struct scheduler_queue *sq)
 void
 scheduler_init(void)
 {
-	scheduler_queue_setup(&scheduler_sleep_queue, "SLEEP QUEUE", CPU_ID_INVALID);
+	scheduler_queue_setup(&scheduler_sleep_queue, "SCHEDULER SLEEP QUEUE", CPU_ID_INVALID);
 }
 
 void
@@ -134,6 +134,7 @@ scheduler_thread_sleeping(struct thread *td)
 	struct scheduler_entry *se;
 
 	se = &td->td_sched;
+	SQ_LOCK(&scheduler_sleep_queue);
 	scheduler_queue(&scheduler_sleep_queue, se);
 }
 

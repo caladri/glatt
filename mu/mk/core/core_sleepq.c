@@ -52,6 +52,8 @@ sleepq_signal_one(const void *cookie)
 	struct sleepq *sq;
 
 	sq = sleepq_lookup(cookie, false);
+	if (sq == NULL)
+		return;
 	sleepq_signal_first(sq);
 	SQ_UNLOCK(sq);
 }
@@ -96,6 +98,8 @@ sleepq_lookup(const void *cookie, bool create)
 			return (sq);
 		}
 	}
+	if (!create)
+		return (NULL);
 	sq = pool_allocate(&sleepq_pool);
 	spinlock_init(&sq->sq_lock, "SLEEP QUEUE");
 	SQ_LOCK(sq);

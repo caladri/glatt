@@ -18,7 +18,6 @@ void cpu_interrupt(void);
 void cpu_interrupt_initialize(void);
 
 register_t cpu_interrupt_disable(void);
-void cpu_interrupt_enable(void);
 void cpu_interrupt_restore(register_t);
 
 #endif /* !_CPU_INTERRUPT_H_ */

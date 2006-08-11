@@ -352,5 +352,8 @@ scheduler_db_dump(void)
 	for (sq = scheduler_queue_head; sq != NULL; sq = sq->sq_link)
 		scheduler_db_dump_queue(sq);
 	kcprintf("Done.\n");
+	kcprintf("Dumping sleep queue...\n");
+	scheduler_db_dump_queue(&scheduler_sleep_queue);
+	kcprintf("Done.\n");
 }
 DB_COMMAND(scheduler_dump, scheduler_db_dump, "Dump all scheduler queues.");

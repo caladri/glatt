@@ -17,8 +17,8 @@ struct startup_item_sorted {
 SET(startup_items, struct startup_item);
 
 static void startup_boot_thread(void *);
-static void startup_main_thread(void *);
-STARTUP_ITEM(main, STARTUP_MAIN, STARTUP_FIRST, startup_main_thread, NULL);
+static void startup_idle_thread(void *);
+STARTUP_ITEM(main, STARTUP_MAIN, STARTUP_FIRST, startup_idle_thread, NULL);
 
 static bool startup_booting = false;
 static struct spinlock startup_spinlock = SPINLOCK_INIT("startup");
@@ -52,7 +52,7 @@ startup_main(void)
 	if (bootstrap)
 		thread_set_upcall(td, startup_boot_thread, td);
 	else
-		thread_set_upcall(td, startup_main_thread, td);
+		thread_set_upcall(td, startup_idle_thread, td);
 	scheduler_schedule();
 }
 
@@ -126,7 +126,7 @@ next:		continue;
 }
 
 static void
-startup_main_thread(void *arg)
+startup_idle_thread(void *arg)
 {
 	struct thread *td;
 
@@ -134,14 +134,10 @@ startup_main_thread(void *arg)
 	ASSERT(td == current_thread(), "consistency is all I ask");
 
 	for (;;) {
-		kcprintf("%s on cpu%u\n", td->td_name, mp_whoami());
 		/*
-		 * Our main loop should:
+		 * Our idle loop should:
 		 * 	o) Deliver pending messages.
 		 */
 		scheduler_schedule();
-		/*
-		 * 	o) Run garbage-collection and similar algorithms.
-		 */
 	}
 }

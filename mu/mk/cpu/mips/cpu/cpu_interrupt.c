@@ -77,7 +77,9 @@ cpu_interrupt(void)
 void
 cpu_interrupt_initialize(void)
 {
-	cpu_interrupt_enable();
+	ASSERT((cpu_read_status() & CP0_STATUS_IE) == 0,
+	       "Can't reenable interrupts.");
+	cpu_write_status(cpu_read_status() | CP0_STATUS_IE);
 }
 
 register_t
@@ -89,14 +91,6 @@ cpu_interrupt_disable(void)
 	if ((status & CP0_STATUS_IE) != 0)
 		cpu_write_status(status & ~CP0_STATUS_IE);
 	return (status & CP0_STATUS_IE);
-}
-
-void
-cpu_interrupt_enable(void)
-{
-	ASSERT((cpu_read_status() & CP0_STATUS_IE) == 0,
-	       "Can't reenable interrupts.");
-	cpu_write_status(cpu_read_status() | CP0_STATUS_IE);
 }
 
 void

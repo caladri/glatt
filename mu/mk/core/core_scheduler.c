@@ -185,6 +185,7 @@ scheduler_pick_queue(struct scheduler_entry *se)
 		sq = se->se_queue;
 		ASSERT(sq != NULL, "Pinned thread must be on a queue.");
 		SQ_LOCK(sq);
+		SCHEDULER_UNLOCK();
 		return (sq);
 	}
 	winner = NULL;
@@ -202,6 +203,7 @@ scheduler_pick_queue(struct scheduler_entry *se)
 		winner = sq;
 	}
 	ASSERT(winner != NULL, "Must find a winner.");
+	SCHEDULER_UNLOCK();
 	return (winner);
 }
 

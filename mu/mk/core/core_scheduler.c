@@ -303,14 +303,13 @@ scheduler_switch(struct thread *td)
 		ose = &otd->td_sched;
 
 		ose->se_flags &= ~SCHEDULER_RUNNING;
-		if ((ose->se_flags & SCHEDULER_PINNED) == 0) {
-			/*
-			 * If the thread isn't asleep, and isn't pinned, throw
-			 * it on another runqueue.
-			 */
-			if (ose->se_queue != &scheduler_sleep_queue)
-				scheduler_queue(NULL, ose);
-		}
+		/*
+		 * If the thread isn't asleep, throw it back onto a runqueue.
+		 * This will retain the current runqueue if the thread is
+		 * pinned.
+		 */
+		if (ose->se_queue != &scheduler_sleep_queue)
+			scheduler_queue(NULL, ose);
 	}
 	if ((se->se_flags & SCHEDULER_PINNED) != 0) {
 		if (se->se_oncpu != mp_whoami())

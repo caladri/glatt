@@ -30,10 +30,8 @@
  * $FreeBSD: src/sys/sys/queue.h,v 1.63 2005/11/23 04:02:27 emaste Exp $
  */
 
-#ifndef _SYS_QUEUE_H_
-#define	_SYS_QUEUE_H_
-
-#include <sys/cdefs.h>
+#ifndef _CORE_QUEUE_H_
+#define	_CORE_QUEUE_H_
 
 /*
  * This file defines four types of data structures: singly-linked lists,
@@ -326,7 +324,7 @@ struct {								\
  * List functions.
  */
 
-#if (defined(_KERNEL) && defined(INVARIANTS)) || defined(QUEUE_MACRO_DEBUG)
+#if defined(QUEUE_MACRO_DEBUG)
 #define	QMD_LIST_CHECK_HEAD(head, field) do {				\
 	if (LIST_FIRST((head)) != NULL &&				\
 	    LIST_FIRST((head))->field.le_prev !=			\
@@ -349,7 +347,7 @@ struct {								\
 #define	QMD_LIST_CHECK_HEAD(head, field)
 #define	QMD_LIST_CHECK_NEXT(elm, field)
 #define	QMD_LIST_CHECK_PREV(elm, field)
-#endif /* (_KERNEL && INVARIANTS) || QUEUE_MACRO_DEBUG */
+#endif /* QUEUE_MACRO_DEBUG */
 
 #define	LIST_EMPTY(head)	((head)->lh_first == NULL)
 
@@ -537,50 +535,4 @@ struct {								\
 	QMD_TRACE_ELEM(&(elm)->field);					\
 } while (0)
 
-
-#ifdef _KERNEL
-
-/*
- * XXX insque() and remque() are an old way of handling certain queues.
- * They bogusly assumes that all queue heads look alike.
- */
-
-struct quehead {
-	struct quehead *qh_link;
-	struct quehead *qh_rlink;
-};
-
-#ifdef __CC_SUPPORTS___INLINE
-
-static __inline void
-insque(void *a, void *b)
-{
-	struct quehead *element = (struct quehead *)a,
-		 *head = (struct quehead *)b;
-
-	element->qh_link = head->qh_link;
-	element->qh_rlink = head;
-	head->qh_link = element;
-	element->qh_link->qh_rlink = element;
-}
-
-static __inline void
-remque(void *a)
-{
-	struct quehead *element = (struct quehead *)a;
-
-	element->qh_link->qh_rlink = element->qh_rlink;
-	element->qh_rlink->qh_link = element->qh_link;
-	element->qh_rlink = 0;
-}
-
-#else /* !__CC_SUPPORTS___INLINE */
-
-void	insque(void *a, void *b);
-void	remque(void *a);
-
-#endif /* __CC_SUPPORTS___INLINE */
-
-#endif /* _KERNEL */
-
-#endif /* !_SYS_QUEUE_H_ */
+#endif /* !_CORE_QUEUE_H_ */

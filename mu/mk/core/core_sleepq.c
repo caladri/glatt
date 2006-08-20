@@ -90,8 +90,10 @@ sleepq_lookup(const void *cookie, bool create)
 			return (sq);
 		}
 	}
-	if (!create)
+	if (!create) {
+		SLEEPQ_UNLOCK();
 		return (NULL);
+	}
 	sq = pool_allocate(&sleepq_pool);
 	spinlock_init(&sq->sq_lock, "SLEEP QUEUE");
 	SQ_LOCK(sq);

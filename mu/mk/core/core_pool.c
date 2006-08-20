@@ -189,8 +189,7 @@ pool_initialize_page(struct pool_page *page)
 		if (PAGE_FLOOR(addr) != (uintptr_t)page)
 			break;
 		item = (struct pool_item *)addr;
-		ASSERT(pool_page(item) == page,
-		       "item is within its page");
+		ASSERT(pool_page(item) == page, "item is within its page");
 		item->pi_flags = POOL_ITEM_DEFAULT;
 		item->pi_flags |= POOL_ITEM_FREE;
 		addr += sizeof *item;

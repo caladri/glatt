@@ -3,8 +3,6 @@ hokey and hard to maintain.
 
 Make sure that all STAILQs and TAILQs and the like have their HEADs initialized properly.
 
-o) Scheduler.
-	o) Debug.
 o) VM.
 	o) Better physical page data structures.
 	o) Virtual page data structures.

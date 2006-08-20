@@ -119,8 +119,7 @@ driver_probe(struct driver *driver, struct device *device)
 		error = driver_probe(driver->d_parent, device);
 	if (error != 0)
 		return (error);
-	for (attachment = driver->d_attachments; attachment != NULL;
-	     attachment = attachment->da_next) {
+	STAILQ_FOREACH(attachment, &driver->d_attachments, da_link) {
 		/*
 		 * XXX
 		 * How do we figure out how many children to try and create for
@@ -134,16 +133,14 @@ driver_probe(struct driver *driver, struct device *device)
 static void
 driver_add_attachment(struct driver *parent, struct driver_attachment *attachment)
 {
-	attachment->da_next = parent->d_attachments;
-	parent->d_attachments = attachment;
+	STAILQ_INSERT_TAIL(&parent->d_attachments, attachment, da_link);
 }
 
 static void
 driver_add_child(struct driver *parent, struct driver *driver)
 {
 	driver->d_parent = parent;
-	driver->d_peer = parent->d_children;
-	parent->d_children = driver;
+	STAILQ_INSERT_TAIL(&parent->d_children, driver, d_link);
 }
 
 static int
@@ -168,10 +165,10 @@ driver_lookup_child(struct driver *driver, const char *name)
 {
 	struct driver *child, *t;
 
-	for (child = driver->d_children; child != NULL; child = child->d_peer)
+	STAILQ_FOREACH(child, &driver->d_children, d_link)
 		if (strcmp(child->d_name, name) == 0)
 			return (child);
-	for (child = driver->d_children; child != NULL; child = child->d_peer) {
+	STAILQ_FOREACH(child, &driver->d_children, d_link) {
 		t = driver_lookup_child(child, name);
 		if (t == NULL)
 			continue;
@@ -185,21 +182,6 @@ driver_remove_child(struct driver *parent, struct driver *driver)
 {
 	struct driver *peer;
 
-	if (parent->d_children == driver) {
-		parent->d_children = driver->d_peer;
-		driver->d_parent = NULL;
-	} else {
-		for (peer = parent->d_children; peer != NULL;
-		     peer = peer->d_peer) {
-			if (peer->d_peer == driver) {
-				peer->d_peer = driver->d_peer;
-				driver->d_parent = NULL;
-				break;
-			}
-		}
-		if (driver->d_parent != NULL)
-			panic("%s: cannot remove %s from %s.", __func__,
-			      driver->d_name, parent->d_name);
-	}
-	driver->d_peer = NULL;
+	STAILQ_REMOVE(&parent->d_children, driver, driver, d_link);
+	driver->d_parent = NULL;
 }

@@ -1,6 +1,8 @@
 #ifndef	_IO_DEVICE_DRIVER_H_
 #define	_IO_DEVICE_DRIVER_H_
 
+#include <core/queue.h>
+
 struct device;
 struct driver_attachment;
 
@@ -19,9 +21,9 @@ struct driver {
 	driver_probe_t *d_probe;
 	driver_attach_t *d_attach;
 	struct driver *d_parent;
-	struct driver *d_children;
-	struct driver_attachment *d_attachments;
-	struct driver *d_peer;
+	STAILQ_HEAD(, driver) d_children;
+	STAILQ_HEAD(, driver_attachment) d_attachments;
+	STAILQ_ENTRY(driver) d_link;
 };
 #define	DRIVER(type, desc, base, probe, attach)				\
 	static struct driver driver_struct_ ## type = {			\
@@ -32,22 +34,22 @@ struct driver {
 		.d_probe = probe,					\
 		.d_attach = attach,					\
 		.d_parent = NULL,					\
-		.d_children = NULL,					\
-		.d_peer = NULL,						\
-		.d_attachments = NULL,					\
+		.d_children = STAILQ_HEAD_INITIALIZER(			\
+		    _CONCAT(driver_struct_, type).d_children),		\
+		.d_attachments = STAILQ_HEAD_INITIALIZER(		\
+		    _CONCAT(driver_struct_, type).d_attachments),	\
 	};								\
 	SET_ADD(drivers, driver_struct_ ## type)
 
 struct driver_attachment {
 	struct driver *da_driver;
 	const char *da_parent;
-	struct driver_attachment *da_next;
+	STAILQ_ENTRY(driver_attachment) da_link;
 };
 #define	DRIVER_ATTACHMENT(type, parent)					\
 	static struct driver_attachment driver_attachment_ ## type = {	\
 		.da_driver = &driver_struct_ ## type,			\
 		.da_parent = parent,					\
-		.da_next = NULL,					\
 	};								\
 	SET_ADD(driver_attachments, driver_attachment_ ## type)
 

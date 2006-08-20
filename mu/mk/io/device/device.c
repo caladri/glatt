@@ -51,14 +51,12 @@ device_init(struct device *device, struct device *parent, struct driver *driver)
 		DEVICE_LOCK(parent);
 		DEVICE_LOCK(device);
 		device->d_parent = parent;
-		device->d_peer = parent->d_children;
-		parent->d_children = device;
+		STAILQ_INSERT_TAIL(&parent->d_children, device, d_link);
 	} else {
 		DEVICE_LOCK(device);
 		device->d_parent = NULL;
-		device->d_peer = NULL;
 	}
-	device->d_children = NULL;
+	STAILQ_INIT(&device->d_children);
 	device->d_driver = driver;
 	device->d_state = DEVICE_PROBING;
 	device->d_desc = driver->d_desc;
@@ -66,9 +64,9 @@ device_init(struct device *device, struct device *parent, struct driver *driver)
 	error = driver_probe(device->d_driver, device);
 	if (error != 0) {
 		if (parent != NULL) {
-			parent->d_children = device->d_peer;
 			device->d_parent = NULL;
-			device->d_peer = NULL;
+			STAILQ_REMOVE(&parent->d_children, device, device,
+				      d_link);
 			DEVICE_UNLOCK(device);
 			DEVICE_UNLOCK(parent);
 		} else {

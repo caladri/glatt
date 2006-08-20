@@ -58,7 +58,7 @@ device_db_dump_tree(struct device *device)
 	device_db_dump_path(device);
 	kcprintf(" <%s>\n", device->d_desc);
 	kcprintf("\n\t^ State: %u\n", device->d_state);
-	for (child = device->d_children; child != NULL; child = child->d_peer) {
+	STAILQ_FOREACH(child, &device->d_children, d_link) {
 		device_db_dump_tree(child);
 	}
 	DEVICE_UNLOCK(device);

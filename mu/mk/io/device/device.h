@@ -1,6 +1,7 @@
 #ifndef	_IO_DEVICE_DEVICE_H_
 #define	_IO_DEVICE_DEVICE_H_
 
+#include <core/queue.h>
 #include <core/spinlock.h>
 
 struct driver;
@@ -16,8 +17,8 @@ struct device {
 	struct spinlock d_lock;
 	unsigned d_unit;
 	struct device *d_parent;
-	struct device *d_peer;
-	struct device *d_children;
+	STAILQ_HEAD(, device) d_children;
+	STAILQ_ENTRY(device) d_link;
 	struct driver *d_driver;
 	enum device_state d_state;
 	const char *d_desc;

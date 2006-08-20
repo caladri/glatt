@@ -13,8 +13,8 @@
  */
 COMPILE_TIME_ASSERT(sizeof (struct task) <= PAGE_SIZE);
 
-static struct task *task_main;
 static struct pool task_pool = POOL_INIT("TASK", struct task, POOL_VIRTUAL);
+static STAILQ_HEAD(, task) task_list = STAILQ_HEAD_INITIALIZER(task_list);
 
 int
 task_create(struct task **taskp, struct task *parent, const char *name,
@@ -26,20 +26,14 @@ task_create(struct task **taskp, struct task *parent, const char *name,
 	task = pool_allocate(&task_pool);
 	if (task == NULL)
 		return (ERROR_EXHAUSTED);
-	if (parent == NULL) {
-		if (task_main == NULL)
-			task_main = task;
-		else
-			parent = task_main;
-	}
 	strlcpy(task->t_name, name, sizeof task->t_name);
 	task->t_parent = parent;
-	task->t_children = NULL;
-	task->t_threads = NULL;
-	task->t_next = NULL;
+	STAILQ_INIT(&task->t_children);
+	STAILQ_INIT(&task->t_threads);
 	if (parent != NULL) {
-		task->t_next = parent->t_children;
-		parent->t_children = task;
+		STAILQ_INSERT_TAIL(&task_list, task, t_link);
+	} else {
+		STAILQ_INSERT_TAIL(&parent->t_children, task, t_link);
 	}
 	task->t_flags = flags;
 	/*

@@ -1,6 +1,7 @@
 #ifndef	_CORE_THREAD_H_
 #define	_CORE_THREAD_H_
 
+#include <core/queue.h>
 #include <core/scheduler.h>
 #include <cpu/context.h>
 #include <cpu/frame.h>
@@ -13,7 +14,7 @@
 
 struct thread {
 	struct task *td_parent;
-	struct thread *td_next;
+	STAILQ_ENTRY(thread) td_link;
 	char td_name[THREAD_NAME_SIZE];
 	uint32_t td_flags;
 	struct scheduler_entry td_sched;

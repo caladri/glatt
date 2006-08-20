@@ -29,8 +29,7 @@ thread_create(struct thread **tdp, struct task *parent, const char *name,
 		return (ERROR_EXHAUSTED);
 	strlcpy(td->td_name, name, sizeof td->td_name);
 	td->td_parent = parent;
-	td->td_next = parent->t_threads;
-	parent->t_threads = td;
+	STAILQ_INSERT_TAIL(&parent->t_threads, td, td_link);
 	td->td_flags = flags;
 
 	scheduler_thread_setup(td);

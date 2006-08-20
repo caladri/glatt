@@ -1,6 +1,7 @@
 #ifndef	_CORE_TASK_H_
 #define	_CORE_TASK_H_
 
+#include <core/queue.h>
 #include <cpu/pcpu.h>
 #include <cpu/task.h>
 #include <vm/vm.h>
@@ -13,9 +14,9 @@
 struct task {
 	char t_name[TASK_NAME_SIZE];
 	struct task *t_parent;
-	struct task *t_children;
-	struct thread *t_threads;
-	struct task *t_next;
+	STAILQ_HEAD(, task) t_children;
+	STAILQ_HEAD(, thread) t_threads;
+	STAILQ_ENTRY(task) t_link;
 	uint32_t t_flags;
 	struct vm *t_vm;
 };

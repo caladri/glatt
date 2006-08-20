@@ -1,6 +1,7 @@
 #ifndef	_CORE_SCHEDULER_H_
 #define	_CORE_SCHEDULER_H_
 
+#include <core/queue.h>
 #include <core/spinlock.h>
 
 struct scheduler_queue;
@@ -12,10 +13,9 @@ struct thread;
 #define	SCHEDULER_IDLE		(0x00000004)	/* Thread is idle thread.  */
 
 struct scheduler_entry {
-	struct scheduler_entry *se_next;
 	struct thread *se_thread;
 	struct scheduler_queue *se_queue;
-	struct scheduler_entry *se_prev;
+	TAILQ_ENTRY(scheduler_entry) se_link;
 	unsigned se_flags;
 	cpu_id_t se_oncpu;
 };
@@ -23,10 +23,9 @@ struct scheduler_entry {
 struct scheduler_queue {
 	struct spinlock sq_lock;
 	cpu_id_t sq_cpu;
-	struct scheduler_entry *sq_first;
-	struct scheduler_entry *sq_last;
-	struct scheduler_queue *sq_link;
+	TAILQ_HEAD(, scheduler_entry) sq_queue;
 	unsigned sq_length;
+	TAILQ_ENTRY(scheduler_queue) sq_link;
 };
 
 void scheduler_cpu_idle(struct thread *);

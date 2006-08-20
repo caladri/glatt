@@ -2,7 +2,6 @@ Ad infinitum: Keep going over code and restructuring to make less ugly and
 hokey and hard to maintain.
 
 o) Scheduler.
-	o) Rewrite to use <core/queue.h>.
 	o) Debug.
 o) VM.
 	o) Better physical page data structures.

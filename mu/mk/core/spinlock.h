@@ -1,9 +1,9 @@
 #ifndef	_CORE_SPINLOCK_H_
 #define	_CORE_SPINLOCK_H_
 
-#include <core/atomic.h>
 #include <core/critical.h>
 #include <core/mp.h>
+#include <cpu/atomic.h>
 #include <db/db.h>
 
 struct spinlock {

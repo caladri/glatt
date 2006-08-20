@@ -54,7 +54,8 @@ sleepq_signal_one(const void *cookie)
 	sq = sleepq_lookup(cookie, false);
 	if (sq == NULL)
 		return;
-	sleepq_signal_first(sq);
+	if (!STAILQ_EMPTY(&sq->sq_entries))
+		sleepq_signal_first(sq);
 	SQ_UNLOCK(sq);
 }
 

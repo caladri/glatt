@@ -1,6 +1,6 @@
 #include <core/types.h>
-#include <core/alloc.h>
 #include <core/error.h>
+#include <core/pool.h>
 #include <core/startup.h>
 #include <io/device/console/console.h>
 #include <io/device/device.h>

@@ -1,5 +1,5 @@
 #include <core/types.h>
-#include <core/alloc.h>
+#include <core/pool.h>
 #include <core/scheduler.h>
 #include <core/spinlock.h>
 #include <core/startup.h>

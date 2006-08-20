@@ -1,5 +1,5 @@
-#ifndef	_CORE_ALLOC_H_
-#define	_CORE_ALLOC_H_
+#ifndef	_CORE_POOL_H_
+#define	_CORE_POOL_H_
 
 #include <core/queue.h>
 
@@ -31,4 +31,4 @@ int pool_create(struct pool *, const char *, size_t, unsigned);
 void pool_free(struct pool *, void *);
 int pool_destroy(struct pool *);
 
-#endif /* _CORE_ALLOC_H_ */
+#endif /* _CORE_POOL_H_ */

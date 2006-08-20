@@ -1,6 +1,6 @@
 #include <core/types.h>
-#include <core/alloc.h>
 #include <core/error.h>
+#include <core/pool.h>
 #include <vm/alloc.h>
 #include <vm/page.h>
 #include <vm/vm.h>

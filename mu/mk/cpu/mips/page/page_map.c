@@ -1,6 +1,6 @@
 #include <core/types.h>
-#include <core/alloc.h>
 #include <core/error.h>
+#include <core/pool.h>
 #include <core/string.h>
 #include <cpu/memory.h>
 #include <cpu/tlb.h>

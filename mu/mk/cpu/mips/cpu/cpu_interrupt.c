@@ -1,6 +1,6 @@
 #include <core/types.h>
-#include <core/alloc.h>
 #include <core/mp.h>
+#include <core/pool.h>
 #include <cpu/cpu.h>
 #include <cpu/interrupt.h>
 #include <cpu/pcpu.h>

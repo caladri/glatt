@@ -1,6 +1,8 @@
 Ad infinitum: Keep going over code and restructuring to make less ugly and
 hokey and hard to maintain.
 
+Make sure that all STAILQs and TAILQs and the like have their HEADs initialized properly.
+
 o) Scheduler.
 	o) Debug.
 o) VM.

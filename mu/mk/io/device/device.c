@@ -1,11 +1,12 @@
 #include <core/types.h>
 #include <core/alloc.h>
 #include <core/error.h>
+#include <core/startup.h>
 #include <io/device/console/console.h>
 #include <io/device/device.h>
 #include <io/device/driver.h>
 
-static struct pool device_pool = POOL_INIT("DEVICE", struct device, POOL_VIRTUAL);
+static struct pool device_pool;
 
 /*
  * XXX
@@ -98,3 +99,15 @@ device_printf(struct device *device, const char *fmt, ...)
 	va_end(ap);
 	kcprintf("\n");
 }
+
+static void
+device_pool_setup(void *arg)
+{
+	int error;
+
+	error = pool_create(&device_pool, "DEVICE", sizeof (struct device),
+			    POOL_VIRTUAL);
+	if (error != 0)
+		panic("%s: pool_create failed: %m", __func__, error);
+}
+STARTUP_ITEM(device_pool, STARTUP_POOL, STARTUP_FIRST, device_pool_setup, NULL);

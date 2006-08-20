@@ -65,8 +65,8 @@ device_init(struct device *device, struct device *parent, struct driver *driver)
 	if (error != 0) {
 		if (parent != NULL) {
 			device->d_parent = NULL;
-			STAILQ_REMOVE(&parent->d_children, device, device,
-				      d_link);
+			STAILQ_REMOVE(&parent->d_children, device,
+				      struct device, d_link);
 			DEVICE_UNLOCK(device);
 			DEVICE_UNLOCK(parent);
 		} else {

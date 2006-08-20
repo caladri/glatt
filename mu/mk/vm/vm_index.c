@@ -10,7 +10,7 @@ struct vm_index {
 	size_t vmi_size;
 	struct vm_index *vmi_left;
 	struct vm_index *vmi_right;
-	TAILQ_ENTRY(vm_index) vmi_free_link;
+	TAILQ_ENTRY(struct vm_index) vmi_free_link;
 };
 
 static struct pool vm_index_pool;

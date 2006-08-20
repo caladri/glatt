@@ -136,7 +136,7 @@ struct qm_trace {
  */
 #define	SLIST_HEAD(name, type)						\
 struct name {								\
-	struct type *slh_first;	/* first element */			\
+	type *slh_first;	/* first element */			\
 }
 
 #define	SLIST_HEAD_INITIALIZER()					\
@@ -144,7 +144,7 @@ struct name {								\
 
 #define	SLIST_ENTRY(type)						\
 struct {								\
-	struct type *sle_next;	/* next element */			\
+	type *sle_next;	/* next element */				\
 }
 
 /*
@@ -190,7 +190,7 @@ struct {								\
 		SLIST_REMOVE_HEAD((head), field);			\
 	}								\
 	else {								\
-		struct type *curelm = SLIST_FIRST((head));		\
+		type *curelm = SLIST_FIRST((head));			\
 		while (SLIST_NEXT(curelm, field) != (elm))		\
 			curelm = SLIST_NEXT(curelm, field);		\
 		SLIST_NEXT(curelm, field) =				\
@@ -208,8 +208,8 @@ struct {								\
  */
 #define	STAILQ_HEAD(name, type)						\
 struct name {								\
-	struct type *stqh_first;/* first element */			\
-	struct type **stqh_last;/* addr of last next element */		\
+	type *stqh_first;/* first element */				\
+	type **stqh_last;/* addr of last next element */		\
 }
 
 #define	STAILQ_HEAD_INITIALIZER(head)					\
@@ -217,7 +217,7 @@ struct name {								\
 
 #define	STAILQ_ENTRY(type)						\
 struct {								\
-	struct type *stqe_next;	/* next element */			\
+	type *stqe_next;	/* next element */			\
 }
 
 /*
@@ -272,8 +272,8 @@ struct {								\
 #define	STAILQ_LAST(head, type, field)					\
 	(STAILQ_EMPTY((head)) ?						\
 		NULL :							\
-	        ((struct type *)					\
-		((char *)((head)->stqh_last) - __offsetof(struct type, field))))
+	        ((type *)						\
+		((char *)((head)->stqh_last) - __offsetof(type, field))))
 
 #define	STAILQ_NEXT(elm, field)	((elm)->field.stqe_next)
 
@@ -282,7 +282,7 @@ struct {								\
 		STAILQ_REMOVE_HEAD((head), field);			\
 	}								\
 	else {								\
-		struct type *curelm = STAILQ_FIRST((head));		\
+		type *curelm = STAILQ_FIRST((head));			\
 		while (STAILQ_NEXT(curelm, field) != (elm))		\
 			curelm = STAILQ_NEXT(curelm, field);		\
 		if ((STAILQ_NEXT(curelm, field) =			\
@@ -308,7 +308,7 @@ struct {								\
  */
 #define	LIST_HEAD(name, type)						\
 struct name {								\
-	struct type *lh_first;	/* first element */			\
+	type *lh_first;	/* first element */				\
 }
 
 #define	LIST_HEAD_INITIALIZER()						\
@@ -316,8 +316,8 @@ struct name {								\
 
 #define	LIST_ENTRY(type)						\
 struct {								\
-	struct type *le_next;	/* next element */			\
-	struct type **le_prev;	/* address of previous next element */	\
+	type *le_next;	/* next element */				\
+	type **le_prev;	/* address of previous next element */		\
 }
 
 /*
@@ -410,8 +410,8 @@ struct {								\
  */
 #define	TAILQ_HEAD(name, type)						\
 struct name {								\
-	struct type *tqh_first;	/* first element */			\
-	struct type **tqh_last;	/* addr of last next element */		\
+	type *tqh_first;	/* first element */			\
+	type **tqh_last;	/* addr of last next element */		\
 	TRACEBUF							\
 }
 
@@ -420,8 +420,8 @@ struct name {								\
 
 #define	TAILQ_ENTRY(type)						\
 struct {								\
-	struct type *tqe_next;	/* next element */			\
-	struct type **tqe_prev;	/* address of previous next element */	\
+	type *tqe_next;		/* next element */			\
+	type **tqe_prev;	/* address of previous next element */	\
 	TRACEBUF							\
 }
 
@@ -514,12 +514,12 @@ struct {								\
 } while (0)
 
 #define	TAILQ_LAST(head, headname)					\
-	(*(((struct headname *)((head)->tqh_last))->tqh_last))
+	(*(((headname *)((head)->tqh_last))->tqh_last))
 
 #define	TAILQ_NEXT(elm, field) ((elm)->field.tqe_next)
 
 #define	TAILQ_PREV(elm, headname, field)				\
-	(*(((struct headname *)((elm)->field.tqe_prev))->tqh_last))
+	(*(((headname *)((elm)->field.tqe_prev))->tqh_last))
 
 #define	TAILQ_REMOVE(head, elm, field) do {				\
 	if ((TAILQ_NEXT((elm), field)) != NULL)				\

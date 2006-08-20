@@ -21,9 +21,9 @@ struct driver {
 	driver_probe_t *d_probe;
 	driver_attach_t *d_attach;
 	struct driver *d_parent;
-	STAILQ_HEAD(, driver) d_children;
-	STAILQ_HEAD(, driver_attachment) d_attachments;
-	STAILQ_ENTRY(driver) d_link;
+	STAILQ_HEAD(, struct driver) d_children;
+	STAILQ_HEAD(, struct driver_attachment) d_attachments;
+	STAILQ_ENTRY(struct driver) d_link;
 };
 #define	DRIVER(type, desc, base, probe, attach)				\
 	static struct driver driver_struct_ ## type = {			\
@@ -44,7 +44,7 @@ struct driver {
 struct driver_attachment {
 	struct driver *da_driver;
 	const char *da_parent;
-	STAILQ_ENTRY(driver_attachment) da_link;
+	STAILQ_ENTRY(struct driver_attachment) da_link;
 };
 #define	DRIVER_ATTACHMENT(type, parent)					\
 	static struct driver_attachment driver_attachment_ ## type = {	\

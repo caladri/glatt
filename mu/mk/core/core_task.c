@@ -14,7 +14,7 @@
 COMPILE_TIME_ASSERT(sizeof (struct task) <= PAGE_SIZE);
 
 static struct pool task_pool = POOL_INIT("TASK", struct task, POOL_VIRTUAL);
-static STAILQ_HEAD(, task) task_list = STAILQ_HEAD_INITIALIZER(task_list);
+static STAILQ_HEAD(, struct task) task_list = STAILQ_HEAD_INITIALIZER(task_list);
 
 int
 task_create(struct task **taskp, struct task *parent, const char *name,

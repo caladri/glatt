@@ -17,7 +17,7 @@ COMPILE_TIME_ASSERT(sizeof (struct pool_item) == 8);
 
 struct pool_page {
 	struct pool *pp_pool;
-	SLIST_ENTRY(pool_page) pp_link;
+	SLIST_ENTRY(struct pool_page) pp_link;
 	size_t pp_items;
 };
 

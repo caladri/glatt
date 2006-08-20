@@ -15,7 +15,7 @@ struct thread;
 struct scheduler_entry {
 	struct thread *se_thread;
 	struct scheduler_queue *se_queue;
-	TAILQ_ENTRY(scheduler_entry) se_link;
+	TAILQ_ENTRY(struct scheduler_entry) se_link;
 	unsigned se_flags;
 	cpu_id_t se_oncpu;
 };
@@ -23,9 +23,9 @@ struct scheduler_entry {
 struct scheduler_queue {
 	struct spinlock sq_lock;
 	cpu_id_t sq_cpu;
-	TAILQ_HEAD(, scheduler_entry) sq_queue;
+	TAILQ_HEAD(, struct scheduler_entry) sq_queue;
 	unsigned sq_length;
-	TAILQ_ENTRY(scheduler_queue) sq_link;
+	TAILQ_ENTRY(struct scheduler_queue) sq_link;
 };
 
 void scheduler_cpu_idle(struct thread *);

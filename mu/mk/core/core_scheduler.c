@@ -5,7 +5,7 @@
 #include <db/db_command.h>
 #include <io/device/console/console.h>
 
-static TAILQ_HEAD(, scheduler_queue) scheduler_queue_list;
+static TAILQ_HEAD(, struct scheduler_queue) scheduler_queue_list;
 static struct scheduler_queue scheduler_sleep_queue;
 static struct spinlock scheduler_lock = SPINLOCK_INIT("SCHEDULER");
 

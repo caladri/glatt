@@ -17,8 +17,8 @@ struct device {
 	struct spinlock d_lock;
 	unsigned d_unit;
 	struct device *d_parent;
-	STAILQ_HEAD(, device) d_children;
-	STAILQ_ENTRY(device) d_link;
+	STAILQ_HEAD(, struct device) d_children;
+	STAILQ_ENTRY(struct device) d_link;
 	struct driver *d_driver;
 	enum device_state d_state;
 	const char *d_desc;

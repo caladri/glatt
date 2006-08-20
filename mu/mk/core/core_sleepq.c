@@ -11,7 +11,7 @@ static struct spinlock sleepq_lock = SPINLOCK_INIT("SLEEPQ");
 
 struct sleepq_entry {
 	struct thread *se_thread;
-	STAILQ_ENTRY(sleepq_entry) se_link;
+	STAILQ_ENTRY(struct sleepq_entry) se_link;
 };
 
 static struct pool sleepq_entry_pool = POOL_INIT("SLEEPQ ENTRY", struct sleepq_entry, POOL_VIRTUAL);
@@ -19,8 +19,8 @@ static struct pool sleepq_entry_pool = POOL_INIT("SLEEPQ ENTRY", struct sleepq_e
 struct sleepq {
 	struct spinlock sq_lock;
 	const void *sq_cookie;
-	STAILQ_HEAD(, sleepq_entry) sq_entries;
-	STAILQ_ENTRY(sleepq) sq_link;
+	STAILQ_HEAD(, struct sleepq_entry) sq_entries;
+	STAILQ_ENTRY(struct sleepq) sq_link;
 };
 
 static struct pool sleepq_pool = POOL_INIT("SLEEPQ", struct sleepq, POOL_VIRTUAL);
@@ -28,7 +28,7 @@ static struct pool sleepq_pool = POOL_INIT("SLEEPQ", struct sleepq, POOL_VIRTUAL
 #define	SQ_LOCK(sq)	spinlock_lock(&(sq)->sq_lock)
 #define	SQ_UNLOCK(sq)	spinlock_unlock(&(sq)->sq_lock)
 
-static STAILQ_HEAD(, sleepq) sleep_queue_list = STAILQ_HEAD_INITIALIZER(sleep_queue_list);
+static STAILQ_HEAD(, struct sleepq) sleep_queue_list = STAILQ_HEAD_INITIALIZER(sleep_queue_list);
 
 static struct sleepq *sleepq_lookup(const void *, bool);
 static void sleepq_signal_first(struct sleepq *);
@@ -110,7 +110,7 @@ sleepq_signal_first(struct sleepq *sq)
 
 	/* XXX assert lock is held.  */
 	se = STAILQ_FIRST(&sq->sq_entries);
-	STAILQ_REMOVE(&sq->sq_entries, se, sleepq_entry, se_link);
+	STAILQ_REMOVE(&sq->sq_entries, se, struct sleepq_entry, se_link);
 	td = se->se_thread;
 	pool_free(&sleepq_entry_pool, se);
 	scheduler_thread_runnable(td);

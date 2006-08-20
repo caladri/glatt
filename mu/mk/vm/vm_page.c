@@ -8,7 +8,7 @@
 struct page_index;
 
 struct page_header {
-	STAILQ_ENTRY(page_index) ph_link;
+	STAILQ_ENTRY(struct page_index) ph_link;
 	paddr_t ph_base;
 	size_t ph_pages;
 };
@@ -28,7 +28,7 @@ struct page_index {
 	struct page_entry pi_entries[PAGE_INDEX_ENTRIES];
 };
 
-static STAILQ_HEAD(, page_index) page_index_list = STAILQ_HEAD_INITIALIZER(page_index_list);
+static STAILQ_HEAD(, struct page_index) page_index_list = STAILQ_HEAD_INITIALIZER(page_index_list);
 
 COMPILE_TIME_ASSERT(sizeof (struct page_index) * PAGE_INDEX_SPLIT == PAGE_SIZE);
 

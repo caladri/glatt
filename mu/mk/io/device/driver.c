@@ -182,6 +182,6 @@ driver_remove_child(struct driver *parent, struct driver *driver)
 {
 	struct driver *peer;
 
-	STAILQ_REMOVE(&parent->d_children, driver, driver, d_link);
+	STAILQ_REMOVE(&parent->d_children, driver, struct driver, d_link);
 	driver->d_parent = NULL;
 }

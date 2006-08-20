@@ -14,9 +14,9 @@
 struct task {
 	char t_name[TASK_NAME_SIZE];
 	struct task *t_parent;
-	STAILQ_HEAD(, task) t_children;
-	STAILQ_HEAD(, thread) t_threads;
-	STAILQ_ENTRY(task) t_link;
+	STAILQ_HEAD(, struct task) t_children;
+	STAILQ_HEAD(, struct thread) t_threads;
+	STAILQ_ENTRY(struct task) t_link;
 	uint32_t t_flags;
 	struct vm *t_vm;
 };

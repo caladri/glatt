@@ -14,7 +14,7 @@
 
 struct thread {
 	struct task *td_parent;
-	STAILQ_ENTRY(thread) td_link;
+	STAILQ_ENTRY(struct thread) td_link;
 	char td_name[THREAD_NAME_SIZE];
 	uint32_t td_flags;
 	struct scheduler_entry td_sched;

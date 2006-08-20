@@ -11,7 +11,7 @@ typedef	void (interrupt_t)(void *, int);
 struct interrupt_handler {
 	interrupt_t *ih_func;
 	void *ih_arg;
-	STAILQ_ENTRY(interrupt_handler) ih_link;
+	STAILQ_ENTRY(struct interrupt_handler) ih_link;
 };
 
 void cpu_interrupt_establish(int, interrupt_t *, void *);

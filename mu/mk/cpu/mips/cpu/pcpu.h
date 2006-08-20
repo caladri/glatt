@@ -25,7 +25,7 @@ struct pcpu {
 	struct pcpu *pc_physaddr;
 	struct device *pc_device;
 	unsigned pc_flags;
-	STAILQ_HEAD(, interrupt_handler) pc_interrupt_table[CPU_INTERRUPT_COUNT];
+	STAILQ_HEAD(, struct interrupt_handler) pc_interrupt_table[CPU_INTERRUPT_COUNT];
 	register_t pc_interrupt_mask;
 	struct scheduler_queue pc_scheduler;
 };

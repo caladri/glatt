@@ -12,7 +12,7 @@ struct pool_page;
 struct pool {
 	const char *pool_name;
 	size_t pool_size;
-	SLIST_HEAD(, pool_page) pool_pages;
+	SLIST_HEAD(, struct pool_page) pool_pages;
 	uint32_t pool_flags;
 };
 

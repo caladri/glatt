@@ -26,6 +26,7 @@ test_thread_player(void *arg)
 			kcprintf("(waking up the next person in queue.)\n");
 			sleepq_signal_one(&test_ball);
 		}
+		/* Go to sleep.  */
 		sleepq_wait(&test_ball);
 	}
 }

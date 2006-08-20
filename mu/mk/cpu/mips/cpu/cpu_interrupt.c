@@ -7,7 +7,7 @@
 #include <db/db.h>
 #include <io/device/console/console.h>
 
-static struct pool interrupt_handler_pool = POOL_INIT("INTERRUPT HANDLER", struct interrupt_handler, POOL_DEFAULT);
+static struct pool interrupt_handler_pool;
 
 void
 cpu_interrupt_establish(int interrupt, interrupt_t *func, void *arg)
@@ -91,7 +91,10 @@ cpu_interrupt_initialize(void)
 {
 	struct interrupt_handler *ih;
 	unsigned interrupt;
+	int error;
 
+	error = pool_create(&interrupt_handler_pool, "INTERRUPT HANDLER",
+			    sizeof (struct interrupt_handler), POOL_DEFAULT);
 	for (interrupt = 0; interrupt < CPU_INTERRUPT_COUNT; interrupt++)
 		STAILQ_INIT(&PCPU_GET(interrupt_table)[interrupt]);
 	ASSERT((cpu_read_status() & CP0_STATUS_IE) == 0,

@@ -1,6 +1,7 @@
 #ifndef	_CPU_PCPU_H_
 #define	_CPU_PCPU_H_
 
+#include <core/queue.h>
 #include <core/scheduler.h>
 #include <cpu/cpuinfo.h>
 #include <cpu/frame.h>
@@ -24,7 +25,7 @@ struct pcpu {
 	struct pcpu *pc_physaddr;
 	struct device *pc_device;
 	unsigned pc_flags;
-	struct interrupt_handler pc_interrupt_table[CPU_INTERRUPT_COUNT];
+	STAILQ_HEAD(, interrupt_handler) pc_interrupt_table[CPU_INTERRUPT_COUNT];
 	register_t pc_interrupt_mask;
 	struct scheduler_queue pc_scheduler;
 };

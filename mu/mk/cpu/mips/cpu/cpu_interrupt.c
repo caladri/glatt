@@ -1,10 +1,13 @@
 #include <core/types.h>
+#include <core/alloc.h>
 #include <core/mp.h>
 #include <cpu/cpu.h>
 #include <cpu/interrupt.h>
 #include <cpu/pcpu.h>
 #include <db/db.h>
 #include <io/device/console/console.h>
+
+static struct pool interrupt_handler_pool = POOL_INIT("INTERRUPT HANDLER", struct interrupt_handler, POOL_DEFAULT);
 
 void
 cpu_interrupt_establish(int interrupt, interrupt_t *func, void *arg)
@@ -17,10 +20,16 @@ cpu_interrupt_establish(int interrupt, interrupt_t *func, void *arg)
 	 */
 	ASSERT(interrupt >= 0 && interrupt < CPU_INTERRUPT_COUNT,
 	       "invalid interrupt number");
-	ih = &PCPU_GET(interrupt_table)[interrupt];
-	ASSERT(ih->ih_func == NULL, "cannot share interrupts");
+	if (!STAILQ_EMPTY(&PCPU_GET(interrupt_table)[interrupt])) {
+		kcprintf("cpu%u: sharing interrupt %d.\n", mp_whoami(),
+			 interrupt);
+	}
+	ih = pool_allocate(&interrupt_handler_pool);
 	ih->ih_func = func;
 	ih->ih_arg = arg;
+	STAILQ_INSERT_TAIL(&PCPU_GET(interrupt_table)[interrupt], ih, ih_link);
+	ASSERT(!STAILQ_EMPTY(&PCPU_GET(interrupt_table)[interrupt]),
+	       "Insert must work.");
 	PCPU_SET(interrupt_mask, PCPU_GET(interrupt_mask) |
 		 ((1 << interrupt) << CP0_STATUS_INTERRUPT_SHIFT));
 	cpu_write_status((cpu_read_status() & ~CP0_STATUS_INTERRUPT_MASK) |
@@ -55,8 +64,7 @@ cpu_interrupt(void)
 			continue;
 		}
 		interrupts >>= 1;
-		ih = &PCPU_GET(interrupt_table)[interrupt];
-		if (ih->ih_func == NULL) {
+		if (STAILQ_EMPTY(&PCPU_GET(interrupt_table)[interrupt])) {
 			kcprintf("cpu%u: stray interrupt %u",
 				 mp_whoami(), interrupt);
 			kcprintf(" mask&interrupt = %x",
@@ -68,8 +76,12 @@ cpu_interrupt(void)
 				 ((1 << interrupt) <<
 				 CP0_STATUS_INTERRUPT_SHIFT));
 			kcprintf("\n");
-		} else
+			continue;
+		}
+		STAILQ_FOREACH(ih, &PCPU_GET(interrupt_table)[interrupt],
+			       ih_link) {
 			ih->ih_func(ih->ih_arg, interrupt);
+		}
 	}
 	ASSERT(interrupts == 0, "must handle all interrupts");
 }
@@ -77,6 +89,11 @@ cpu_interrupt(void)
 void
 cpu_interrupt_initialize(void)
 {
+	struct interrupt_handler *ih;
+	unsigned interrupt;
+
+	for (interrupt = 0; interrupt < CPU_INTERRUPT_COUNT; interrupt++)
+		STAILQ_INIT(&PCPU_GET(interrupt_table)[interrupt]);
 	ASSERT((cpu_read_status() & CP0_STATUS_IE) == 0,
 	       "Can't reenable interrupts.");
 	cpu_write_status(cpu_read_status() | CP0_STATUS_IE);

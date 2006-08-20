@@ -8,7 +8,7 @@
 struct page_index;
 
 struct page_header {
-	struct page_index *ph_next;
+	STAILQ_ENTRY(page_index) ph_link;
 	paddr_t ph_base;
 	size_t ph_pages;
 };
@@ -23,10 +23,12 @@ struct page_entry {
 				  sizeof (struct page_header)) /	\
 				 sizeof (struct page_entry))
 #define	PAGE_INDEX_COUNT	(PAGE_INDEX_ENTRIES * PAGE_ENTRY_PAGES)
-static struct page_index {
+struct page_index {
 	struct page_header pi_header;
 	struct page_entry pi_entries[PAGE_INDEX_ENTRIES];
-} *page_index;
+};
+
+static STAILQ_HEAD(, page_index) page_index_list = STAILQ_HEAD_INITIALIZER(page_index_list);
 
 COMPILE_TIME_ASSERT(sizeof (struct page_index) * PAGE_INDEX_SPLIT == PAGE_SIZE);
 
@@ -51,7 +53,7 @@ page_alloc(struct vm *vm, unsigned flags, paddr_t *paddrp)
 	paddr_t paddr;
 
 	PAGE_LOCK();
-	for (pi = page_index; pi != NULL; pi = pi->pi_header.ph_next) {
+	STAILQ_FOREACH(pi, &page_index_list, pi_header.ph_link) {
 		if (pi->pi_header.ph_pages == 0)
 			continue;
 		for (entry = 0; entry < PAGE_INDEX_ENTRIES; entry++) {
@@ -165,8 +167,7 @@ page_insert_pages(paddr_t base, size_t pages)
 
 		for (pix = 0; pix < PAGE_INDEX_SPLIT; pix++) {
 			pi = &((struct page_index *)va)[pix];
-			pi->pi_header.ph_next = page_index;
-			page_index = pi;
+			STAILQ_INSERT_HEAD(&page_index_list, pi, pi_header.ph_link);
 			pi->pi_header.ph_base = base;
 			pi->pi_header.ph_pages = MIN(pages, PAGE_INDEX_COUNT);
 
@@ -237,7 +238,7 @@ page_release(struct vm *vm, paddr_t paddr)
 
 	ASSERT(PAGE_OFFSET(paddr) == 0, "must be a page address");
 	PAGE_LOCK();
-	for (pi = page_index; pi != NULL; pi = pi->pi_header.ph_next) {
+	STAILQ_FOREACH(pi, &page_index_list, pi_header.ph_link) {
 		if (paddr < pi->pi_header.ph_base)
 			continue;
 		/*

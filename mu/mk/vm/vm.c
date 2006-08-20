@@ -44,7 +44,7 @@ vm_setup(struct vm **vmp, vaddr_t base, vaddr_t end)
 		return (error);
 	}
 	vm->vm_index = NULL;
-	vm->vm_index_free = NULL;
+	TAILQ_INIT(&vm->vm_index_free);
 	VM_UNLOCK(vm);
 	return (0);
 }

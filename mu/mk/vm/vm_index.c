@@ -10,8 +10,7 @@ struct vm_index {
 	size_t vmi_size;
 	struct vm_index *vmi_left;
 	struct vm_index *vmi_right;
-	struct vm_index *vmi_free_prev;
-	struct vm_index *vmi_free_next;
+	TAILQ_ENTRY(vm_index) vmi_free_link;
 };
 
 static struct pool vm_index_pool;
@@ -43,7 +42,7 @@ vm_alloc_address(struct vm *vm, vaddr_t *vaddrp, size_t pages)
 
 	VM_LOCK(vm);
 	/* Look for a best match.  */
-	for (t = vm->vm_index_free; t != NULL; t = t->vmi_free_next) {
+	TAILQ_FOREACH(t, &vm->vm_index_free, vmi_free_link) {
 		if (t->vmi_size == pages) {
 			error = vm_use_index(vm, t, pages);
 			if (error != 0) {
@@ -130,11 +129,7 @@ vm_insert_range(struct vm *vm, vaddr_t begin, vaddr_t end)
 static void
 vm_free_index(struct vm *vm, struct vm_index *vmi)
 {
-	vmi->vmi_free_prev = NULL;
-	vmi->vmi_free_next = vm->vm_index_free;
-	if (vm->vm_index_free != NULL)
-		vm->vm_index_free->vmi_free_prev = vmi;
-	vm->vm_index_free = vmi;
+	TAILQ_INSERT_HEAD(&vm->vm_index_free, vmi, vmi_free_link);
 }
 
 static void
@@ -157,15 +152,7 @@ vm_use_index(struct vm *vm, struct vm_index *vmi, size_t pages)
 	size_t count;
 	int error;
 
-	if (vm->vm_index_free == vmi) {
-		vm->vm_index_free = vmi->vmi_free_next;
-	}
-	if (vmi->vmi_free_prev != NULL) {
-		vmi->vmi_free_prev->vmi_free_next = vmi->vmi_free_next;
-	}
-	if (vmi->vmi_free_next != NULL) {
-		vmi->vmi_free_next->vmi_free_prev = vmi->vmi_free_prev;
-	}
+	TAILQ_REMOVE(&vm->vm_index_free, vmi, vmi_free_link);
 	if (vmi->vmi_size != pages) {
 		count = vmi->vmi_size - pages;
 		vmi->vmi_size = pages;

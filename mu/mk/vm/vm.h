@@ -1,6 +1,7 @@
 #ifndef	_VM_VM_H_
 #define	_VM_VM_H_
 
+#include <core/queue.h>
 #include <core/spinlock.h>
 #include <vm/types.h>
 
@@ -11,7 +12,7 @@ struct vm {
 	struct spinlock vm_lock;
 	struct pmap *vm_pmap;
 	struct vm_index *vm_index;
-	struct vm_index *vm_index_free;
+	TAILQ_HEAD(, vm_index) vm_index_free;
 };
 #define	VM_LOCK(vm)	spinlock_lock(&(vm)->vm_lock)
 #define	VM_UNLOCK(vm)	spinlock_unlock(&(vm)->vm_lock)

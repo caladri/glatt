@@ -95,6 +95,8 @@ pool_free(struct pool *pool, void *m)
 	item--;
 	item->pi_flags |= POOL_ITEM_FREE;
 	page = pool_page(item);
+	if (page->pp_items == 0)
+		panic("%s: pool %s has no items.", __func__, pool->pool_name);
 	if (page->pp_items-- != 1)
 		return;
 	/*

@@ -16,6 +16,7 @@ struct pool_item {
 COMPILE_TIME_ASSERT(sizeof (struct pool_item) == 8);
 
 struct pool_page {
+	paddr_t pp_page;
 	struct pool *pp_pool;
 	SLIST_ENTRY(struct pool_page) pp_link;
 	size_t pp_items;
@@ -69,6 +70,7 @@ pool_allocate(struct pool *pool)
 		panic("%s: can't map page for allocation: %m", __func__, error);
 
 	page = (struct pool_page *)page_mapped;
+	page->pp_page = page_addr;
 	page->pp_pool = pool;
 	SLIST_INSERT_HEAD(&pool->pool_pages, page, pp_link);
 	page->pp_items = 0;
@@ -85,17 +87,38 @@ pool_free(struct pool *pool, void *m)
 {
 	struct pool_item *item;
 	struct pool_page *page;
+	paddr_t paddr;
+	vaddr_t vaddr;
+	int error;
 
 	item = m;
 	item--;
 	item->pi_flags |= POOL_ITEM_FREE;
 	page = pool_page(item);
-	if (page->pp_items-- == 1) {
-		/* XXX free up page? */
-#if 0
-		panic("%s: releasing last item.", __func__);
-#endif
+	if (page->pp_items-- != 1)
+		return;
+	/*
+	 * Last item in page, unmap it, free any virtual addresses and put the
+	 * page itself back into the free pool.
+	 */
+	SLIST_REMOVE(&pool->pool_pages, page, struct pool_page, pp_link);
+	paddr = page->pp_page;
+	vaddr = (vaddr_t)page;
+	if ((pool->pool_flags & POOL_VIRTUAL) != 0) {
+		error = page_unmap(&kernel_vm, vaddr);
+		if (error != 0)
+			panic("%s: page_unmap failed: %m", __func__, error);
+		error = vm_free_address(&kernel_vm, vaddr);
+		if (error != 0)
+			panic("%s: vm_free_address failed: %m", __func__, error);
+	} else {
+		error = page_unmap_direct(&kernel_vm, vaddr);
+		if (error != 0)
+			panic("%s: page_unmap_direct failed: %m", __func__, error);
 	}
+	error = page_release(&kernel_vm, paddr);
+	if (error != 0)
+		panic("%s: page_release failed: %m", __func__, error);
 }
 
 int

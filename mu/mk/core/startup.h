@@ -4,6 +4,7 @@
 #include <cpu/startup.h>
 
 enum startup_component {
+	STARTUP_POOL,			/* Setup pools for later startup.  */
 	STARTUP_ROOT,			/* Attach root device.  */
 	STARTUP_MP,			/* Start up multiprocessor.  */
 	STARTUP_DRIVERS,		/* Register device drivers.  */

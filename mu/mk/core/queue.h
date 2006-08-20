@@ -139,7 +139,7 @@ struct name {								\
 	struct type *slh_first;	/* first element */			\
 }
 
-#define	SLIST_HEAD_INITIALIZER(head)					\
+#define	SLIST_HEAD_INITIALIZER()					\
 	{ NULL }
 
 #define	SLIST_ENTRY(type)						\
@@ -311,7 +311,7 @@ struct name {								\
 	struct type *lh_first;	/* first element */			\
 }
 
-#define	LIST_HEAD_INITIALIZER(head)					\
+#define	LIST_HEAD_INITIALIZER()						\
 	{ NULL }
 
 #define	LIST_ENTRY(type)						\

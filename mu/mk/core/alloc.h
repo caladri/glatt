@@ -1,6 +1,8 @@
 #ifndef	_CORE_ALLOC_H_
 #define	_CORE_ALLOC_H_
 
+#include <core/queue.h>
+
 struct pool_page;
 
 #define	POOL_DEFAULT	(0x00000000)	/* Default pool flags.  */
@@ -10,7 +12,7 @@ struct pool_page;
 struct pool {
 	const char *pool_name;
 	size_t pool_size;
-	struct pool_page *pool_pages;
+	SLIST_HEAD(, pool_page) pool_pages;
 	uint32_t pool_flags;
 };
 
@@ -19,6 +21,7 @@ struct pool {
 		.pool_name = name,					\
 		.pool_size = sizeof (type),				\
 		.pool_flags = flags,					\
+		.pool_pages = SLIST_HEAD_INITIALIZER()			\
 	}
 
 extern size_t pool_max_alloc;

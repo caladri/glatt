@@ -17,7 +17,7 @@ COMPILE_TIME_ASSERT(sizeof (struct pool_item) == 8);
 
 struct pool_page {
 	struct pool *pp_pool;
-	struct pool_page *pp_next;
+	SLIST_ENTRY(pool_page) pp_link;
 	size_t pp_items;
 };
 
@@ -70,9 +70,8 @@ pool_allocate(struct pool *pool)
 
 	page = (struct pool_page *)page_mapped;
 	page->pp_pool = pool;
-	page->pp_next = pool->pool_pages;
+	SLIST_INSERT_HEAD(&pool->pool_pages, page, pp_link);
 	page->pp_items = 0;
-	pool->pool_pages = page;
 	pool_initialize_page(page);
 
 	item = pool_get(pool);
@@ -93,9 +92,7 @@ pool_free(struct pool *pool, void *m)
 	page = pool_page(item);
 	if (page->pp_items-- == 1) {
 		/* XXX free up page? */
-#if 0
 		panic("%s: releasing last item.", __func__);
-#endif
 	}
 }
 
@@ -107,7 +104,7 @@ pool_create(struct pool *pool, const char *name, size_t size, unsigned flags)
 		      " allocation interfaces instead.", __func__);
 	pool->pool_name = name;
 	pool->pool_size = size;
-	pool->pool_pages = NULL;
+	SLIST_INIT(&pool->pool_pages);
 	pool->pool_flags = flags;
 	return (0);
 }
@@ -129,7 +126,7 @@ pool_get(struct pool *pool)
 
 	page_items = (PAGE_SIZE - sizeof (struct pool_page)) /
 		(pool->pool_size + sizeof (struct pool_item));
-	for (page = pool->pool_pages; page != NULL; page = page->pp_next) {
+	SLIST_FOREACH(page, &pool->pool_pages, pp_link) {
 		if (page->pp_items == page_items)
 			continue;
 		addr = (uintptr_t)(page + 1);

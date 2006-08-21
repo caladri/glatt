@@ -69,9 +69,7 @@ sleepq_wait(const void *cookie)
 	td = current_thread();
 
 	sq = sleepq_lookup(cookie, true);
-	SLEEPQ_LOCK();
 	se = pool_allocate(&sleepq_entry_pool);
-	SLEEPQ_UNLOCK();
 	se->se_thread = td;
 	STAILQ_INSERT_TAIL(&sq->sq_entries, se, se_link);
 	SQ_UNLOCK(sq);
@@ -117,12 +115,6 @@ sleepq_signal_first(struct sleepq *sq)
 	se = STAILQ_FIRST(&sq->sq_entries);
 	STAILQ_REMOVE(&sq->sq_entries, se, struct sleepq_entry, se_link);
 	td = se->se_thread;
-	/*
-	 * XXX
-	 * It seems more intuitive for the pool to have its own lock?
-	 */
-	SLEEPQ_LOCK();
 	pool_free(&sleepq_entry_pool, se);
-	SLEEPQ_UNLOCK();
 	scheduler_thread_runnable(td);
 }

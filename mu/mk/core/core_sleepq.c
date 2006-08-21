@@ -2,9 +2,10 @@
 #include <core/pool.h>
 #include <core/scheduler.h>
 #include <core/sleepq.h>
+#include <core/startup.h>
 #include <core/thread.h>
 
-static struct spinlock sleepq_lock = SPINLOCK_INIT("SLEEPQ");
+static struct spinlock sleepq_lock;
 
 #define	SLEEPQ_LOCK()	spinlock_lock(&sleepq_lock)
 #define	SLEEPQ_UNLOCK()	spinlock_unlock(&sleepq_lock)
@@ -14,7 +15,7 @@ struct sleepq_entry {
 	STAILQ_ENTRY(struct sleepq_entry) se_link;
 };
 
-static struct pool sleepq_entry_pool = POOL_INIT("SLEEPQ ENTRY", struct sleepq_entry, POOL_VIRTUAL);
+static struct pool sleepq_entry_pool;
 
 struct sleepq {
 	struct spinlock sq_lock;
@@ -23,7 +24,7 @@ struct sleepq {
 	STAILQ_ENTRY(struct sleepq) sq_link;
 };
 
-static struct pool sleepq_pool = POOL_INIT("SLEEPQ", struct sleepq, POOL_VIRTUAL);
+static struct pool sleepq_pool;
 
 #define	SQ_LOCK(sq)	spinlock_lock(&(sq)->sq_lock)
 #define	SQ_UNLOCK(sq)	spinlock_unlock(&(sq)->sq_lock)
@@ -118,3 +119,20 @@ sleepq_signal_first(struct sleepq *sq)
 	pool_free(&sleepq_entry_pool, se);
 	scheduler_thread_runnable(td);
 }
+
+static void
+sleepq_startup(void *arg)
+{
+	int error;
+
+	spinlock_init(&sleepq_lock, "SLEEPQ");
+	error = pool_create(&sleepq_entry_pool, "SLEEPQ ENTRY",
+			    sizeof (struct sleepq_entry), POOL_VIRTUAL);
+	if (error != 0)
+		panic("%s: pool_create failed: %m", __func__, error);
+	error = pool_create(&sleepq_pool, "SLEEPQ", sizeof (struct sleepq),
+			    POOL_VIRTUAL);
+	if (error != 0)
+		panic("%s: pool_create failed: %m", __func__, error);
+}
+STARTUP_ITEM(sleepq, STARTUP_POOL, STARTUP_FIRST, sleepq_startup, NULL);

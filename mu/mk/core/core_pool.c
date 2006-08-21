@@ -25,6 +25,8 @@ struct pool_page {
 	struct pool *pp_pool;
 	SLIST_ENTRY(struct pool_page) pp_link;
 	size_t pp_items;
+	/* XXX push into 'struct pool' once we nuke static initializers.  */
+	size_t pp_maxitems;
 };
 
 #define	MAX_ALLOC_SIZE	((PAGE_SIZE - (sizeof (struct pool_item) + \
@@ -33,6 +35,7 @@ struct pool_page {
 static struct pool_item *pool_get(struct pool *);
 static void pool_initialize_page(struct pool_page *);
 static struct pool_page *pool_page(struct pool_item *);
+static struct pool_item *pool_page_item(struct pool_page *, unsigned);
 
 size_t pool_max_alloc = MAX_ALLOC_SIZE;
 
@@ -83,6 +86,8 @@ pool_allocate(struct pool *pool)
 	page->pp_pool = pool;
 	SLIST_INSERT_HEAD(&pool->pool_pages, page, pp_link);
 	page->pp_items = 0;
+	page->pp_maxitems = (PAGE_SIZE - sizeof (struct pool_page)) /
+		(pool->pool_size + sizeof (struct pool_item));
 	pool_initialize_page(page);
 
 	item = pool_get(pool);
@@ -162,26 +167,15 @@ pool_destroy(struct pool *pool)
 static struct pool_item *
 pool_get(struct pool *pool)
 {
-	struct pool_item *item;
 	struct pool_page *page;
-	size_t page_items;
-	uintptr_t addr;
+	struct pool_item *item;
+	unsigned i;
 
-	page_items = (PAGE_SIZE - sizeof (struct pool_page)) /
-		(pool->pool_size + sizeof (struct pool_item));
 	SLIST_FOREACH(page, &pool->pool_pages, pp_link) {
-		if (page->pp_items == page_items)
+		if (page->pp_items == page->pp_maxitems)
 			continue;
-		addr = (uintptr_t)(page + 1);
-		for (;;) {
-			/*
-			 * If we walk past the end of the page without finding
-			 * something to give up then our item count must be
-			 * inconsistent, or we forgot to mark the items free.
-			 */
-			if (PAGE_FLOOR(addr) != (uintptr_t)page)
-				panic("%s: inconsistent item count.", __func__);
-			item = (struct pool_item *)addr;
+		for (i = 0; i < page->pp_maxitems; i++) {
+			item = pool_page_item(page, i);
 			ASSERT(pool_page(item) == page,
 			       "item is within its page");
 			if ((item->pi_flags & POOL_ITEM_FREE) != 0) {
@@ -189,8 +183,6 @@ pool_get(struct pool *pool)
 				page->pp_items++;
 				return (item);
 			}
-			addr += sizeof *item;
-			addr += pool->pool_size;
 		}
 	}
 	return (NULL);
@@ -200,18 +192,12 @@ static void
 pool_initialize_page(struct pool_page *page)
 {
 	struct pool_item *item;
-	uintptr_t addr;
+	unsigned i;
 
-	addr = (uintptr_t)(page + 1);
-	for (;;) {
-		if (PAGE_FLOOR(addr) != (uintptr_t)page)
-			break;
-		item = (struct pool_item *)addr;
-		ASSERT(pool_page(item) == page, "item is within its page");
+	for (i = 0; i < page->pp_maxitems; i++) {
+		item = pool_page_item(page, i);
 		item->pi_flags = POOL_ITEM_DEFAULT;
 		item->pi_flags |= POOL_ITEM_FREE;
-		addr += sizeof *item;
-		addr += page->pp_pool->pool_size;
 	}
 }
 
@@ -223,4 +209,17 @@ pool_page(struct pool_item *item)
 	page = (struct pool_page *)PAGE_FLOOR((uintptr_t)item);
 	ASSERT(page->pp_magic == POOL_PAGE_MAGIC, "item in invalid page");
 	return (page);
+}
+
+static struct pool_item *
+pool_page_item(struct pool_page *page, unsigned i)
+{
+	struct pool_item *item;
+	unsigned offset;
+
+	ASSERT(i < page->pp_maxitems, "access past end of page.");
+	offset = i * (page->pp_pool->pool_size + sizeof *item);
+	item = (struct pool_item *)((uintptr_t)(page + 1) + offset);
+	ASSERT(pool_page(item) == page, "item is within its page");
+	return (item);
 }

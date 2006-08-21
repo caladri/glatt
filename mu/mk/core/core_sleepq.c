@@ -29,7 +29,7 @@ static struct pool sleepq_pool;
 #define	SQ_LOCK(sq)	spinlock_lock(&(sq)->sq_lock)
 #define	SQ_UNLOCK(sq)	spinlock_unlock(&(sq)->sq_lock)
 
-static STAILQ_HEAD(, struct sleepq) sleep_queue_list = STAILQ_HEAD_INITIALIZER(sleep_queue_list);
+static STAILQ_HEAD(, struct sleepq) sleepq_queue_list;
 
 static struct sleepq *sleepq_lookup(const void *, bool);
 static void sleepq_signal_first(struct sleepq *);
@@ -85,7 +85,7 @@ sleepq_lookup(const void *cookie, bool create)
 	struct sleepq *sq;
 
 	SLEEPQ_LOCK();
-	STAILQ_FOREACH(sq, &sleep_queue_list, sq_link) {
+	STAILQ_FOREACH(sq, &sleepq_queue_list, sq_link) {
 		if (sq->sq_cookie == cookie) {
 			SQ_LOCK(sq);
 			SLEEPQ_UNLOCK();
@@ -101,7 +101,7 @@ sleepq_lookup(const void *cookie, bool create)
 	SQ_LOCK(sq);
 	sq->sq_cookie = cookie;
 	STAILQ_INIT(&sq->sq_entries);
-	STAILQ_INSERT_TAIL(&sleep_queue_list, sq, sq_link);
+	STAILQ_INSERT_TAIL(&sleepq_queue_list, sq, sq_link);
 	SLEEPQ_UNLOCK();
 	return (sq);
 }
@@ -134,5 +134,6 @@ sleepq_startup(void *arg)
 			    POOL_VIRTUAL);
 	if (error != 0)
 		panic("%s: pool_create failed: %m", __func__, error);
+	STAILQ_INIT(&sleepq_queue_list);
 }
 STARTUP_ITEM(sleepq, STARTUP_POOL, STARTUP_FIRST, sleepq_startup, NULL);

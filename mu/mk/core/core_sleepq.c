@@ -12,7 +12,7 @@ static struct spinlock sleepq_lock;
 
 struct sleepq_entry {
 	struct thread *se_thread;
-	STAILQ_ENTRY(struct sleepq_entry) se_link;
+	TAILQ_ENTRY(struct sleepq_entry) se_link;
 };
 
 static struct pool sleepq_entry_pool;
@@ -20,8 +20,8 @@ static struct pool sleepq_entry_pool;
 struct sleepq {
 	struct spinlock sq_lock;
 	const void *sq_cookie;
-	STAILQ_HEAD(, struct sleepq_entry) sq_entries;
-	STAILQ_ENTRY(struct sleepq) sq_link;
+	TAILQ_HEAD(, struct sleepq_entry) sq_entries;
+	TAILQ_ENTRY(struct sleepq) sq_link;
 };
 
 static struct pool sleepq_pool;
@@ -29,7 +29,7 @@ static struct pool sleepq_pool;
 #define	SQ_LOCK(sq)	spinlock_lock(&(sq)->sq_lock)
 #define	SQ_UNLOCK(sq)	spinlock_unlock(&(sq)->sq_lock)
 
-static STAILQ_HEAD(, struct sleepq) sleepq_queue_list;
+static TAILQ_HEAD(, struct sleepq) sleepq_queue_list;
 
 static struct sleepq *sleepq_lookup(const void *, bool);
 static void sleepq_signal_first(struct sleepq *);
@@ -42,7 +42,7 @@ sleepq_signal(const void *cookie)
 	sq = sleepq_lookup(cookie, false);
 	if (sq == NULL)
 		return;
-	while (!STAILQ_EMPTY(&sq->sq_entries))
+	while (!TAILQ_EMPTY(&sq->sq_entries))
 		sleepq_signal_first(sq);
 	SQ_UNLOCK(sq);
 }
@@ -55,7 +55,7 @@ sleepq_signal_one(const void *cookie)
 	sq = sleepq_lookup(cookie, false);
 	if (sq == NULL)
 		return;
-	if (!STAILQ_EMPTY(&sq->sq_entries))
+	if (!TAILQ_EMPTY(&sq->sq_entries))
 		sleepq_signal_first(sq);
 	SQ_UNLOCK(sq);
 }
@@ -72,7 +72,7 @@ sleepq_wait(const void *cookie)
 	sq = sleepq_lookup(cookie, true);
 	se = pool_allocate(&sleepq_entry_pool);
 	se->se_thread = td;
-	STAILQ_INSERT_TAIL(&sq->sq_entries, se, se_link);
+	TAILQ_INSERT_TAIL(&sq->sq_entries, se, se_link);
 	SQ_UNLOCK(sq);
 	scheduler_thread_sleeping(td);
 	scheduler_schedule();
@@ -85,7 +85,7 @@ sleepq_lookup(const void *cookie, bool create)
 	struct sleepq *sq;
 
 	SLEEPQ_LOCK();
-	STAILQ_FOREACH(sq, &sleepq_queue_list, sq_link) {
+	TAILQ_FOREACH(sq, &sleepq_queue_list, sq_link) {
 		if (sq->sq_cookie == cookie) {
 			SQ_LOCK(sq);
 			SLEEPQ_UNLOCK();
@@ -100,8 +100,8 @@ sleepq_lookup(const void *cookie, bool create)
 	spinlock_init(&sq->sq_lock, "SLEEP QUEUE");
 	SQ_LOCK(sq);
 	sq->sq_cookie = cookie;
-	STAILQ_INIT(&sq->sq_entries);
-	STAILQ_INSERT_TAIL(&sleepq_queue_list, sq, sq_link);
+	TAILQ_INIT(&sq->sq_entries);
+	TAILQ_INSERT_TAIL(&sleepq_queue_list, sq, sq_link);
 	SLEEPQ_UNLOCK();
 	return (sq);
 }
@@ -113,8 +113,8 @@ sleepq_signal_first(struct sleepq *sq)
 	struct thread *td;
 
 	/* XXX assert lock is held.  */
-	se = STAILQ_FIRST(&sq->sq_entries);
-	STAILQ_REMOVE(&sq->sq_entries, se, struct sleepq_entry, se_link);
+	se = TAILQ_FIRST(&sq->sq_entries);
+	TAILQ_REMOVE(&sq->sq_entries, se, se_link);
 	td = se->se_thread;
 	pool_free(&sleepq_entry_pool, se);
 	scheduler_thread_runnable(td);
@@ -134,6 +134,6 @@ sleepq_startup(void *arg)
 			    POOL_VIRTUAL);
 	if (error != 0)
 		panic("%s: pool_create failed: %m", __func__, error);
-	STAILQ_INIT(&sleepq_queue_list);
+	TAILQ_INIT(&sleepq_queue_list);
 }
 STARTUP_ITEM(sleepq, STARTUP_POOL, STARTUP_FIRST, sleepq_startup, NULL);

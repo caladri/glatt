@@ -5,6 +5,9 @@
 #include <vm/page.h>
 #include <vm/vm.h>
 
+#define	POOL_LOCK(pool)		spinlock_lock(&(pool)->pool_lock)
+#define	POOL_UNLOCK(pool)	spinlock_unlock(&(pool)->pool_lock)
+
 #define	POOL_ITEM_DEFAULT	(0x0000)
 #define	POOL_ITEM_FREE		(0x0001)
 
@@ -15,7 +18,9 @@ struct pool_item {
 };
 COMPILE_TIME_ASSERT(sizeof (struct pool_item) == 8);
 
+#define	POOL_PAGE_MAGIC		(0x19800604)
 struct pool_page {
+	uint32_t pp_magic;
 	paddr_t pp_page;
 	struct pool *pp_pool;
 	SLIST_ENTRY(struct pool_page) pp_link;
@@ -42,13 +47,16 @@ pool_allocate(struct pool *pool)
 
 	ASSERT(pool->pool_size <= MAX_ALLOC_SIZE, "pool must not be so big.");
 
+	POOL_LOCK(pool);
 	item = pool_get(pool);
 	if (item++ != NULL) {
+		POOL_UNLOCK(pool);
 		return ((void *)item);
 	}
 	error = page_alloc(&kernel_vm, PAGE_FLAG_DEFAULT, &page_addr);
 	if (error != 0) {
 		/* XXX check whether we could block, try to GC some shit.  */
+		POOL_UNLOCK(pool);
 		return (NULL);
 	}
 	if ((pool->pool_flags & POOL_VIRTUAL) != 0) {
@@ -70,6 +78,7 @@ pool_allocate(struct pool *pool)
 		panic("%s: can't map page for allocation: %m", __func__, error);
 
 	page = (struct pool_page *)page_mapped;
+	page->pp_magic = POOL_PAGE_MAGIC;
 	page->pp_page = page_addr;
 	page->pp_pool = pool;
 	SLIST_INSERT_HEAD(&pool->pool_pages, page, pp_link);
@@ -79,6 +88,7 @@ pool_allocate(struct pool *pool)
 	item = pool_get(pool);
 	if (item++ == NULL)
 		panic("%s: can't get memory but we just allocated!", __func__);
+	POOL_UNLOCK(pool);
 	return ((void *)item);
 }
 
@@ -91,18 +101,22 @@ pool_free(struct pool *pool, void *m)
 	vaddr_t vaddr;
 	int error;
 
+	POOL_LOCK(pool);
 	item = m;
 	item--;
 	item->pi_flags |= POOL_ITEM_FREE;
 	page = pool_page(item);
 	if (page->pp_items == 0)
 		panic("%s: pool %s has no items.", __func__, pool->pool_name);
-	if (page->pp_items-- != 1)
+	if (page->pp_items-- != 1) {
+		POOL_UNLOCK(pool);
 		return;
+	}
 	/*
 	 * Last item in page, unmap it, free any virtual addresses and put the
 	 * page itself back into the free pool.
 	 */
+	page->pp_magic = ~POOL_PAGE_MAGIC;
 	SLIST_REMOVE(&pool->pool_pages, page, struct pool_page, pp_link);
 	paddr = page->pp_page;
 	vaddr = (vaddr_t)page;
@@ -121,6 +135,7 @@ pool_free(struct pool *pool, void *m)
 	error = page_release(&kernel_vm, paddr);
 	if (error != 0)
 		panic("%s: page_release failed: %m", __func__, error);
+	POOL_UNLOCK(pool);
 }
 
 int
@@ -129,6 +144,7 @@ pool_create(struct pool *pool, const char *name, size_t size, unsigned flags)
 	if (size > MAX_ALLOC_SIZE)
 		panic("%s: don't use pools for large allocations, use the VM"
 		      " allocation interfaces instead.", __func__);
+	spinlock_init(&pool->pool_lock, "DYNAMIC POOL");
 	pool->pool_name = name;
 	pool->pool_size = size;
 	SLIST_INIT(&pool->pool_pages);
@@ -202,9 +218,9 @@ pool_initialize_page(struct pool_page *page)
 static struct pool_page *
 pool_page(struct pool_item *item)
 {
-	uintptr_t page;
+	struct pool_page *page;
 
-	page = (uintptr_t)item;
-	page = PAGE_FLOOR(page);
-	return ((struct pool_page *)page);
+	page = (struct pool_page *)PAGE_FLOOR((uintptr_t)item);
+	ASSERT(page->pp_magic == POOL_PAGE_MAGIC, "item in invalid page");
+	return (page);
 }

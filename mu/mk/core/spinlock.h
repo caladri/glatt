@@ -65,6 +65,10 @@ spinlock_unlock(struct spinlock *lock)
 	panic("%s: not my lock to unlock (%s)", __func__, lock->s_name);
 }
 
+#define	SPINLOCK_ASSERT_HELD(lock)					\
+	ASSERT(atomic_load_64(&(lock)->s_owner) == (uint64_t)mp_whoami(),\
+	       "Lock must be held.")
+
 void spinlock_init(struct spinlock *, const char *);
 
 #endif /* !_CORE_SPINLOCK_H_ */

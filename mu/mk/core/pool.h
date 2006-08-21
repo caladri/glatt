@@ -2,6 +2,7 @@
 #define	_CORE_POOL_H_
 
 #include <core/queue.h>
+#include <core/spinlock.h>
 
 struct pool_page;
 
@@ -10,6 +11,7 @@ struct pool_page;
 #define	POOL_VIRTUAL	(0x00000002)	/* Map virtual, not direct-map.  */
 
 struct pool {
+	struct spinlock pool_lock;
 	const char *pool_name;
 	size_t pool_size;
 	SLIST_HEAD(, struct pool_page) pool_pages;
@@ -18,6 +20,7 @@ struct pool {
 
 #define	POOL_INIT(name, type, flags)					\
 	{								\
+		.pool_lock = SPINLOCK_INIT(name " POOL"),		\
 		.pool_name = name,					\
 		.pool_size = sizeof (type),				\
 		.pool_flags = flags,					\

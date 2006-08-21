@@ -1,18 +1,14 @@
 #ifndef	_PAGE_TABLE_H_
 #define	_PAGE_TABLE_H_
 
-#ifndef	ASSEMBLER
 #include <vm/types.h>
-#endif
 
 /*
  * 64-bit PTE.
  */
-#ifndef	ASSEMBLER
 struct pmap;
 
 typedef	uint64_t	pt_entry_t;
-#endif
 
 /*
  * TLB and PTE management.  Most things operate within the context of
@@ -50,27 +46,16 @@ typedef	uint64_t	pt_entry_t;
  * Note that in Glatt, we map 2 TLB pages is equal to 1 VM page.
  */
 #define	TLBHI_R_SHIFT		62
-#ifdef ASSEMBLER
-#define	TLBHI_R_USER		(0x00 << TLBHI_R_SHIFT)
-#define	TLBHI_R_SUPERVISOR	(0x01 << TLBHI_R_SHIFT)
-#define	TLBHI_R_KERNEL		(0x03 << TLBHI_R_SHIFT)
-#define	TLBHI_R_MASK		(0x03 << TLBHI_R_SHIFT)
-#else
 #define	TLBHI_R_USER		(0x00UL << TLBHI_R_SHIFT)
 #define	TLBHI_R_SUPERVISOR	(0x01UL << TLBHI_R_SHIFT)
 #define	TLBHI_R_KERNEL		(0x03UL << TLBHI_R_SHIFT)
 #define	TLBHI_R_MASK		(0x03UL << TLBHI_R_SHIFT)
-#endif
 #define	TLBHI_VA_R(va)		((va) & TLBHI_R_MASK)
 #define	TLBHI_FILL_SHIFT	48
 #define	TLBHI_FILL_MASK		((0x7FFFFUL) << TLBHI_FILL_SHIFT)
 #define	TLBHI_VA_FILL(va)	((((va) & (1UL << 63)) != 0 ? TLBHI_FILL_MASK : 0))
 #define	TLBHI_VPN2_SHIFT	(PAGE_SHIFT)
-#ifdef ASSEMBLER
-#define	TLBHI_VPN2_MASK		(((~((1 << TLBHI_VPN2_SHIFT) - 1)) << (63 - TLBHI_FILL_SHIFT)) >> (63 - TLBHI_FILL_SHIFT))
-#else
 #define	TLBHI_VPN2_MASK		(((~((1UL << TLBHI_VPN2_SHIFT) - 1)) << (63 - TLBHI_FILL_SHIFT)) >> (63 - TLBHI_FILL_SHIFT))
-#endif
 #define	TLBHI_VA_TO_VPN2(va)	((va) & TLBHI_VPN2_MASK)
 #define	TLBHI_ENTRY(va, asid)	((TLBHI_VA_R((va))) /* Region. */ | \
 				 (TLBHI_VA_FILL((va))) /* Fill. */ | \
@@ -120,8 +105,6 @@ typedef	uint64_t	pt_entry_t;
 #define	pte_set(pte, bit)	atomic_set_64((pte), (bit))
 #define	pte_test(pte, bit)	(((atomic_load_64((pte))) & (bit)) == (bit))
 
-#ifndef	ASSEMBLER
 pt_entry_t *pmap_find(struct pmap *, vaddr_t);
-#endif
 
 #endif /* !_PAGE_TABLE_H_ */

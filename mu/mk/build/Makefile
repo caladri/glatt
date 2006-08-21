@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.15 2006-08-05 00:40:06 juli Exp $
+# $Id: Makefile,v 1.16 2006-08-21 23:37:58 juli Exp $
 
 KERNEL?=	mu-mk
 
@@ -28,6 +28,7 @@ KERNEL_CFLAGS+=	-Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wshadow
 KERNEL_CFLAGS+=	-Wcast-align -Winline -Wnested-externs -Wredundant-decls
 KERNEL_CFLAGS+=	-Wstrict-prototypes -Wmissing-prototypes -Wpointer-arith
 KERNEL_CFLAGS+=	-O2 -fstrict-aliasing -fno-builtin
+KERNEL_CFLAGS+=	--param inline-unit-growth=100 --param large-function-growth=1000
 KERNEL_LDFLAGS=	-e ${KERNEL_ENTRY}
 .if defined(KERNEL_TEXT)
 KERNEL_LDFLAGS+=-Ttext ${KERNEL_TEXT}

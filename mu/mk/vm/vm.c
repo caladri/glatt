@@ -40,7 +40,7 @@ vm_setup(struct vm **vmp, vaddr_t base, vaddr_t end)
 	error = pmap_init(vm, base, end);
 	if (error != 0) {
 		VM_UNLOCK(vm);
-		pool_free(&vm_pool, vm);
+		pool_free(vm);
 		return (error);
 	}
 	vm->vm_index = NULL;

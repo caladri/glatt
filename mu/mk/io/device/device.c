@@ -26,7 +26,7 @@ device_create(struct device **devicep, struct device *parent,
 		parent = device_root();
 	error = device_init(device, parent, driver);
 	if (error != 0) {
-		pool_free(&device_pool, device);
+		pool_free(device);
 		return (error);
 	}
 	if (devicep != NULL)

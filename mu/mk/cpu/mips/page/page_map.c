@@ -127,7 +127,7 @@ pmap_init(struct vm *vm, vaddr_t base, vaddr_t end)
 
 	error = vm_insert_range(vm, base, end);
 	if (error != 0) {
-		pool_free(&pmap_pool, pm);
+		pool_free(pm);
 		return (error);
 	}
 	return (0);

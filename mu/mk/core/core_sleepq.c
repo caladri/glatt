@@ -116,7 +116,7 @@ sleepq_signal_first(struct sleepq *sq)
 	se = TAILQ_FIRST(&sq->sq_entries);
 	TAILQ_REMOVE(&sq->sq_entries, se, se_link);
 	td = se->se_thread;
-	pool_free(&sleepq_entry_pool, se);
+	pool_free(se);
 	scheduler_thread_runnable(td);
 }
 

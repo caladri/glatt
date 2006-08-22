@@ -31,7 +31,7 @@ extern size_t pool_max_alloc;
 
 void *pool_allocate(struct pool *);
 int pool_create(struct pool *, const char *, size_t, unsigned);
-void pool_free(struct pool *, void *);
+void pool_free(void *);
 int pool_destroy(struct pool *);
 
 #endif /* _CORE_POOL_H_ */

@@ -98,19 +98,21 @@ pool_allocate(struct pool *pool)
 }
 
 void
-pool_free(struct pool *pool, void *m)
+pool_free(void *m)
 {
 	struct pool_item *item;
 	struct pool_page *page;
+	struct pool *pool;
 	paddr_t paddr;
 	vaddr_t vaddr;
 	int error;
 
-	POOL_LOCK(pool);
 	item = m;
 	item--;
-	item->pi_flags |= POOL_ITEM_FREE;
 	page = pool_page(item);
+	pool = page->pp_pool;
+	POOL_LOCK(pool);
+	item->pi_flags |= POOL_ITEM_FREE;
 	if (page->pp_items == 0)
 		panic("%s: pool %s has no items.", __func__, pool->pool_name);
 	if (page->pp_items-- != 1) {

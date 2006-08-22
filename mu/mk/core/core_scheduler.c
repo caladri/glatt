@@ -215,9 +215,7 @@ scheduler_queue(struct scheduler_queue *sq, struct scheduler_entry *se)
 {
 	struct scheduler_queue *osq;
 
-	/*
-	 * sq MUST BE LOCKED. XXX
-	 */
+	SPINLOCK_ASSERT_HELD(&sq->sq_lock);
 
 	/*
 	 * The idle thread cannot go on a queue.
@@ -271,7 +269,7 @@ scheduler_switch(struct thread *td)
 	struct scheduler_entry *se;
 	struct thread *otd;
 
-	/* XXX SCHEDULER_LOCK MUST BE HELD */
+	SPINLOCK_ASSERT_HELD(&scheduler_lock);
 
 	otd = current_thread();
 	se = &td->td_sched;

@@ -1,33 +1,28 @@
 #include <core/types.h>
-#include <core/sleepq.h>
+#include <core/mutex.h>
+#include <core/scheduler.h>
 #include <core/startup.h>
 #include <core/task.h>
 #include <core/thread.h>
 
 #include <io/device/console/console.h>
 
-static unsigned test_ball;
+static struct mutex test_mutex;
 
 static void
 test_thread_player(void *arg)
 {
-	unsigned i;
+	struct mutex *mtx;
 
-	i = (unsigned)(uintptr_t)arg;
-
-	kcprintf("Player %u playing...\n", i);
+	mtx = arg;
 
 	for (;;) {
-		kcprintf("%u got the ball on cpu%u!\n", i, mp_whoami());
-		if (i == 0) {
-			kcprintf("(waking everyone up cause I'm a troublemaker!)\n");
-			sleepq_signal(&test_ball);
-		} else {
-			kcprintf("(waking up the next person in queue.)\n");
-			sleepq_signal_one(&test_ball);
-		}
-		/* Go to sleep.  */
-		sleepq_wait(&test_ball);
+		mutex_lock(mtx);
+		kcprintf("%p got the ball on cpu%u!\n",
+			 current_thread(), mp_whoami());
+		mutex_unlock(mtx);
+
+		scheduler_schedule(); /* Yield.  No preemption yet.  */
 	}
 }
 
@@ -41,6 +36,8 @@ test_thread_startup(void *arg)
 	unsigned i;
 	int error;
 
+	mutex_init(&test_mutex, "ball");
+
 	kcprintf("Setting up a nice ball game...\n");
 	error = task_create(&task, NULL, "ball game", TASK_KERNEL);
 	if (error != 0)
@@ -51,7 +48,7 @@ test_thread_startup(void *arg)
 		if (error != 0)
 			panic("%s: thread_create #%u failed: %m",
 			      __func__, i, error);
-		thread_set_upcall(td, test_thread_player, (void *)(uintptr_t)i);
+		thread_set_upcall(td, test_thread_player, &test_mutex);
 		scheduler_thread_runnable(td);
 	}
 }

@@ -90,10 +90,15 @@ exception_table:
 
 VECTOR_ENTRY(utlb)
 	.set noat
+#if 0
+	dmfc0	a1, CP0_BADVADDR
 	dla	a0, 9f
 	jal	panic
 	nop
-9:	.asciz	"Should not hit UTLBMiss just yet."
+9:	.asciz	"Should not hit UTLBMiss just yet (badvaddr=%p)."
+#endif
+	j	tlb_exception
+	nop
 	.set at
 VECTOR_END(utlb)
 
@@ -131,10 +136,8 @@ ENTRY(generic_exception)
 1:	dla	a0, 0(sp)
 	jal	exception
 	nop
-	dla	k0, 1f
 	j	exception_frame_restore
 	nop
-1:	eret
 	.set at
 END(generic_exception)
 
@@ -234,10 +237,8 @@ ENTRY(tlbmod_exception)
 1:	dmfc0	a0, CP0_BADVADDR
 	jal	tlb_modify
 	nop
-	dla	k0, 1f
 	j	exception_frame_restore
 	nop
-1:	eret
 	.set at
 END(tlbmod_exception)
 
@@ -297,7 +298,7 @@ ENTRY(exception_frame_save)		/* Return address is k0.  */
 	.set at
 END(exception_frame_save)
 
-ENTRY(exception_frame_restore)		/* Return address is k0.  */
+ENTRY(exception_frame_restore)		/* Does not return.  */
 	.set noat
 	ld      t2, FRAME_LO(sp)
 	ld      t1, FRAME_HI(sp)
@@ -341,6 +342,13 @@ ENTRY(exception_frame_restore)		/* Return address is k0.  */
 
 	daddu	sp, FRAME_SIZE
 
+	j	exception_return
+	nop
+	.set at
+END(exception_frame_restore)
+
+ENTRY(exception_return)
+	.set noat
 	/* XXX userland.  */
 	/*
 	 * Restore kernel status, enable interrupts if needed.
@@ -350,9 +358,7 @@ ENTRY(exception_frame_restore)		/* Return address is k0.  */
 	beqz	k1, 1f
 	or	k1, KERNEL_STATUS
 	or	k1, CP0_STATUS_IE
-
-1:	jr	k0
-	mtc0	k1, CP0_STATUS
-	nop
+1:	mtc0	k1, CP0_STATUS
+	eret
 	.set at
-END(exception_frame_restore)
+END(exception_return)

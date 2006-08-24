@@ -215,8 +215,6 @@ scheduler_queue(struct scheduler_queue *sq, struct scheduler_entry *se)
 {
 	struct scheduler_queue *osq;
 
-	SPINLOCK_ASSERT_HELD(&sq->sq_lock);
-
 	/*
 	 * The idle thread cannot go on a queue.
 	 */
@@ -228,6 +226,9 @@ scheduler_queue(struct scheduler_queue *sq, struct scheduler_entry *se)
 
 	if (sq == NULL)
 		sq = scheduler_pick_queue(se);
+
+	SPINLOCK_ASSERT_HELD(&sq->sq_lock);
+
 	/*
 	 * XXX
 	 * We allow for se->se_queue == sq.  In that case, the se will be

@@ -5,6 +5,12 @@
 #include <db/db_command.h>
 #include <io/device/console/console.h>
 
+/*
+ * XXX
+ * All IPIs are fast interrupts for now and run in a stolen context.  They
+ * are not threads and may not block, or hilarity will ensue.
+ */
+
 struct ipi_handler {
 	struct spinlock ih_lock;
 	unsigned ih_usecnt;

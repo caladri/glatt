@@ -1,4 +1,4 @@
-# $Id: build.mk,v 1.25 2006-08-22 00:40:31 juli Exp $
+# $Id: build.mk,v 1.26 2006-08-24 18:18:52 juli Exp $
 
 .PATH: ${KERNEL_ROOT}/core
 .PATH: ${KERNEL_ROOT}/db
@@ -19,6 +19,7 @@ KERNEL_SOURCES+=core_startup.c
 KERNEL_SOURCES+=core_task.c
 KERNEL_SOURCES+=core_test.c
 KERNEL_SOURCES+=core_thread.c
+KERNEL_SOURCES+=core_vdae.c
 
 # db
 KERNEL_SOURCES+=db.c

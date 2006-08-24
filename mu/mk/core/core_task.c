@@ -4,7 +4,6 @@
 #include <core/string.h>
 #include <core/task.h>
 #include <db/db_command.h>
-#include <io/device/console/console.h>
 #include <vm/page.h>
 
 /*
@@ -30,7 +29,7 @@ task_create(struct task **taskp, struct task *parent, const char *name,
 	task->t_parent = parent;
 	STAILQ_INIT(&task->t_children);
 	STAILQ_INIT(&task->t_threads);
-	if (parent != NULL) {
+	if (parent == NULL) {
 		STAILQ_INSERT_TAIL(&task_list, task, t_link);
 	} else {
 		STAILQ_INSERT_TAIL(&parent->t_children, task, t_link);

@@ -49,7 +49,8 @@ driver_compile(void *arg)
 		driver = *driverp;
 		if (generic == driver)
 			continue;
-		if (strcmp(driver->d_name, driver->d_base) == 0)
+		if (driver->d_base != NULL &&
+		    strcmp(driver->d_name, driver->d_base) == 0)
 			panic("%s: driver is a child of itself.", __func__);
 		driver_add_child(generic, driver);
 	}

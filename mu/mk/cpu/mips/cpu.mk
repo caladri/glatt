@@ -1,4 +1,4 @@
-# $Id: cpu.mk,v 1.23 2006-08-05 00:44:43 juli Exp $
+# $Id: cpu.mk,v 1.24 2006-08-24 18:15:49 juli Exp $
 
 .PATH: ${CPU_ROOT}/cpu
 .PATH: ${CPU_ROOT}/page
@@ -42,6 +42,9 @@ KERNEL_SIMFLAGS+=-e ${KERNEL_SUBMACHINE}
 .if defined(KERNEL_SIMCPUS)
 KERNEL_SIMFLAGS+=-n ${KERNEL_SIMCPUS}
 KERNEL_SIMFLAGS+=-R
+.endif
+.if defined(KERNEL_SIMCLOCKHZ)
+KERNEL_SIMFLAGS+=-I ${KERNEL_SIMCLOCKHZ}
 .endif
 .if defined(DISPLAY)
 KERNEL_SIMFLAGS+=-X

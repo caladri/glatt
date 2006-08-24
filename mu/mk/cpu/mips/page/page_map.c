@@ -125,7 +125,11 @@ pmap_init(struct vm *vm, vaddr_t base, vaddr_t end)
 	vm->vm_pmap = pm;
 	pmap_pinit(vm->vm_pmap, base, end);
 
-	error = vm_insert_range(vm, base, end);
+	/*
+	 * Skip the first page of any mapping.  For userland, that's NULL.  For
+	 * kernel, that's where the PCPU data goes.
+	 */
+	error = vm_insert_range(vm, base + PAGE_SIZE, end);
 	if (error != 0) {
 		pool_free(pm);
 		return (error);
@@ -313,6 +317,10 @@ pmap_pinit(struct pmap *pm, vaddr_t base, vaddr_t end)
 {
 	unsigned l0;
 
+	ASSERT(pmap_index0(base) == 0, "Base must be aligned.");
+	ASSERT(pmap_index1(base) == 0, "Base must be aligned.");
+	ASSERT(pmap_index2(base) == 0, "Base must be aligned.");
+	ASSERT(pmap_index_pte(base) == 0, "Base must be aligned.");
 	pm->pm_base = base;
 	pm->pm_end = end;
 	for (l0 = 0; l0 < NL0PMAP; l0++) {

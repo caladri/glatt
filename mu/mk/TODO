@@ -39,9 +39,6 @@ o) Locking.
 o) IPC.
 	o) Userland.
 o) Device drivers.
-	o) device_get_child_unit(device->d_parent, device) OR
-	   driver_get_unit(device) ?  Use it instead of %s.%p in the debugger
-	   dump.  Use it for named device lookup.
 	o) Ethernet.
 		o) IP.
 			o) Arp.

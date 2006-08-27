@@ -31,8 +31,9 @@ struct pool_page {
 	size_t pp_maxitems;
 };
 
-#define	MAX_ALLOC_SIZE	((PAGE_SIZE - (sizeof (struct pool_item) + \
-				       sizeof (struct pool_page))) / 2)
+#define	MAX_ALLOC_SIZE	((PAGE_SIZE - (sizeof (struct pool_page) +	\
+				       (sizeof (struct pool_item) * 2)))\
+			 / 2)
 
 static struct pool_item *pool_get(struct pool *);
 static void pool_initialize_page(struct pool_page *);

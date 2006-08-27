@@ -72,6 +72,10 @@ again:
 				kfputs(put, arg, "0x");
 			kfformat(put, arg, val, 0x10, 0);
 			break;
+		case 'z':
+			if (!lmod++)
+				val = va_arg(ap, ssize_t);
+			goto again;
 		default:
 			(*put)(arg, '%');
 			(*put)(arg, *p);

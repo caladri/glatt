@@ -22,8 +22,14 @@ o) VM.
 	o) Userland.
 	o) Allocate multiple contiguous physical pages.
 o) Exceptions.
-	o) Prevent nesting/corruption of the frame.
-		o) Make everything use KERNEL_STATUS on exception entry.
+	o) Be careful to make correct use of EXL and ERL.  Without it, I am
+	   leaving open a race where I can take an interrupt at 'eret' and then
+	   when the exception pc is trashed, that eret will return to itself ad
+	   absurdum.
+	o) I think I'd like to rewrite it all with EXL and ERL in mind.  Might
+	   be nice to wire the kernel stack, mark it dirty on insert, and start
+	   using that as a place to store random crap.  Or use $gp as an
+	   exception frame thing?
 o) Tasks.
 	o) Task switching.
 		o) Better status register management.  Use the kernel one with

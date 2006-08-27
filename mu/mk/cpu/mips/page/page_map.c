@@ -349,6 +349,7 @@ pmap_update(struct pmap *pm, vaddr_t vaddr, paddr_t paddr, pt_entry_t flags)
 			return;
 		}
 		/* XXX flush TLB, clear cache.  */
+		/* XXX shootdown remote TLB entries.  */
 		tlb_invalidate(pm, vaddr);
 	}
 	atomic_store_64(pte, TLBLO_PA_TO_PFN(paddr) | flags);

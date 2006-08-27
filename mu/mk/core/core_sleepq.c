@@ -112,7 +112,8 @@ sleepq_signal_first(struct sleepq *sq)
 	struct sleepq_entry *se;
 	struct thread *td;
 
-	/* XXX assert lock is held.  */
+	SPINLOCK_ASSERT_HELD(&sq->sq_lock);
+
 	se = TAILQ_FIRST(&sq->sq_entries);
 	TAILQ_REMOVE(&sq->sq_entries, se, se_link);
 	td = se->se_thread;

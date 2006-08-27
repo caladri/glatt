@@ -78,10 +78,6 @@ device_init(struct device *device, struct device *parent, struct driver *driver)
 	}
 	device->d_state = DEVICE_ATTACHED;
 
-	/*
-	 * XXX probe for possible children.
-	 */
-
 	DEVICE_UNLOCK(device);
 	if (parent != NULL)
 		DEVICE_UNLOCK(parent);

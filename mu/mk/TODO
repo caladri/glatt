@@ -1,3 +1,13 @@
+Urgent:
+
+I clearly missed something basic along the way.  Accesses to NULL are hitting my
+0xc....0000 mapping!  It's like it's checking KSU to determine which address
+space to look in, but I didn't think that's how it was supposed to work!  I am
+going to rewrite as much of the TLB code as I can and make sure I'm actually
+setting up mappings correctly (maybe fire up an IRIX box and look at what's in
+the TLB), and make sure that I can trap on NULL access.  Maybe go over what
+GXemul does and what Linux does, too.
+
 Ad infinitum: Keep going over code and restructuring to make less ugly and
 hokey and hard to maintain.
 

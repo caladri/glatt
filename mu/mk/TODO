@@ -1,5 +1,10 @@
 Urgent:
 
+Rewrite exception and TLB code.  Don't frob status unless we're task switching
+out of an exception, as we really want happy-fun ERL and EXL so we don't have to
+manually prevent exception nesting.  Also need to rework how TLBHI is used in
+entirety.
+
 I clearly missed something basic along the way.  Accesses to NULL are hitting my
 0xc....0000 mapping!  It's like it's checking KSU to determine which address
 space to look in, but I didn't think that's how it was supposed to work!  I am

@@ -84,6 +84,8 @@ typedef	uint64_t	register_t;
 	/* Coprocessor 0 status register bits.  */
 
 #define	CP0_STATUS_IE	0x00000001	/* Interrupts enabled.  */
+#define	CP0_STATUS_EXL	0x00000002	/* Error level.  */
+#define	CP0_STATUS_ERL	0x00000004	/* Exception level.  */
 #define	CP0_STATUS_UX	0x00000020	/* User extended mode.  */
 #define	CP0_STATUS_SX	0x00000040	/* Supervisor extended mode.  */
 #define	CP0_STATUS_KX	0x00000080	/* Kernel extended mode.  */

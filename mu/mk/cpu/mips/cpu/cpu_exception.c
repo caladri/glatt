@@ -153,6 +153,7 @@ cpu_exception_frame_dump(struct thread *td, struct frame *fp)
 			 (void *)td->td_parent, td->td_parent == NULL ? "nil" :
 			 td->td_parent->t_name);
 	}
+	kcprintf("status              = %x\n", cpu_read_status());
 	kcprintf("cause               = %x\n", cause);
 	if (fp != NULL) {
 		kcprintf("pc                  = %p\n",

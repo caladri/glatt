@@ -93,6 +93,7 @@ cpu_interrupt_initialize(void)
 	unsigned interrupt;
 	int error;
 
+	PCPU_SET(interrupt_mask, 0);
 	error = pool_create(&interrupt_handler_pool, "INTERRUPT HANDLER",
 			    sizeof (struct interrupt_handler), POOL_DEFAULT);
 	if (error != 0)
@@ -101,6 +102,8 @@ cpu_interrupt_initialize(void)
 		STAILQ_INIT(&PCPU_GET(interrupt_table)[interrupt]);
 	ASSERT((cpu_read_status() & CP0_STATUS_IE) == 0,
 	       "Can't reenable interrupts.");
+	cpu_write_status((cpu_read_status() & ~CP0_STATUS_INTERRUPT_MASK) |
+			 PCPU_GET(interrupt_mask));
 	cpu_write_status(cpu_read_status() | CP0_STATUS_IE);
 }
 

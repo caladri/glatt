@@ -26,10 +26,13 @@ static struct pool pmap_pool;
 unsigned
 pmap_asid(struct pmap *pm)
 {
-	if (pm == NULL)
-		return (0); /* XXX invalid ASID? */
+	/*
+	 * XXX
+	 * Maybe have pm==NULL return an invalid ASID?
+	 */
+	ASSERT(pm != NULL, "cannot get ASID for NULL pmap");
 	ASSERT(pm == kernel_vm.vm_pmap, "only support kernel address space");
-	return (0);
+	return (1);
 }
 
 void

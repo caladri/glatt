@@ -52,19 +52,19 @@ tlb_write_random(void)
 	cpu_barrier();
 }
 
-static void tlb_insert_wired(vaddr_t, paddr_t);
+static void tlb_insert_wired(struct pmap *pm, vaddr_t, paddr_t);
 static void tlb_invalidate_all(void);
 static void tlb_invalidate_one(unsigned);
 
 void
-tlb_init(paddr_t pcpu_addr)
+tlb_init(struct pmap *pm, paddr_t pcpu_addr)
 {
 	critical_section_t crit;
 
 	crit = critical_enter();
 
-	/* Set address-space ID to zero.  */
-	cpu_write_tlb_entryhi(0);
+	/* Set address-space ID to the kernel's ASID.  */
+	cpu_write_tlb_entryhi(pmap_asid(pm));
 
 	/* Don't keep any old wired entries.  */
 	cpu_write_tlb_wired(0);
@@ -78,7 +78,7 @@ tlb_init(paddr_t pcpu_addr)
 	 * PCPU data to get the number of TLB entries, which needs to be
 	 * mapped to work.
 	 */
-	tlb_insert_wired(PCPU_VIRTUAL, pcpu_addr);
+	tlb_insert_wired(pm, PCPU_VIRTUAL, pcpu_addr);
 
 	/* Invalidate all entries (except wired ones.)  */
 	tlb_invalidate_all();
@@ -165,7 +165,7 @@ tlb_update(struct pmap *pm, vaddr_t vaddr)
 }
 
 static void
-tlb_insert_wired(vaddr_t vaddr, paddr_t paddr)
+tlb_insert_wired(struct pmap *pm, vaddr_t vaddr, paddr_t paddr)
 {
 	critical_section_t crit;
 
@@ -173,7 +173,7 @@ tlb_insert_wired(vaddr_t vaddr, paddr_t paddr)
 	paddr &= ~PAGE_MASK;
 
 	crit = critical_enter();
-	cpu_write_tlb_entryhi(TLBHI_ENTRY(vaddr, pmap_asid(NULL)));
+	cpu_write_tlb_entryhi(TLBHI_ENTRY(vaddr, pmap_asid(pm)));
 	cpu_write_tlb_entrylo0(TLBLO_PA_TO_PFN(paddr) |
 			       PG_V | PG_D | PG_G | PG_C_CNC);
 	cpu_write_tlb_entrylo1(TLBLO_PA_TO_PFN(paddr + TLB_PAGE_SIZE) |

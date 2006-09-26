@@ -51,7 +51,7 @@ cpu_startup(void)
 	scheduler_cpu_setup(&pcpu->pc_scheduler);
 
 	/* Clear the TLB and add a wired mapping for my per-CPU data.  */
-	tlb_init(pcpu_addr);
+	tlb_init(kernel_vm.vm_pmap, pcpu_addr);
 
 	/* Now we can take VM-related exceptions appropriately.  */
 

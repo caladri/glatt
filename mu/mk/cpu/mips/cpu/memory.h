@@ -14,6 +14,13 @@
 #define	XKSEG_BASE	(0xc000000000000000)
 #define	XKSEG_END	(0xc00000ff7fffffff)
 
+	/* 32-bit kernel virtual address space.  */
+
+#define	KSEG2_BASE	(0xffffffffc0000000)
+#define	KSEG2_END	(0xffffffffffffffff)
+
+	/* Address space to use for the kernel.  */
+
 #define	KERNEL_BASE	(XKSEG_BASE)
 #define	KERNEL_END	(XKSEG_END)
 

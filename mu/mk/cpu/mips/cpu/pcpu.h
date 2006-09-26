@@ -11,7 +11,7 @@
 struct device;
 struct thread;
 
-#define	PCPU_VIRTUAL	(XKSEG_BASE)
+#define	PCPU_VIRTUAL	(KERNEL_BASE)
 
 #define	PCPU_FLAG_RUNNING	(0x00000001)
 #define	PCPU_FLAG_PANICKED	(0x00000002)

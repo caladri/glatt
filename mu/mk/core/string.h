@@ -27,7 +27,8 @@ static __inline int
 strcmp(const char *a, const char *b)
 {
 	while (*a != '\0' && *a == *b) {
-		a++, b++;
+		a++;
+		b++;
 	}
 	return (*a - *b);
 }
@@ -56,6 +57,16 @@ strlen(const char *s)
 	for (p = s; *p != '\0'; p++)
 		continue;
 	return (p - s);
+}
+
+static __inline int
+strncmp(const char *a, const char *b, size_t n)
+{
+	while (n-- != 0 && *a != '\0' && *a == *b) {
+		a++;
+		b++;
+	}
+	return (*a - *b);
 }
 
 void kfvprintf(void (*)(void *, char), void *, const char *, va_list);

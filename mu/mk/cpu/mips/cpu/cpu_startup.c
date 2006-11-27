@@ -20,6 +20,7 @@ void
 cpu_startup(void)
 {
 	struct pcpu *pcpu;
+	struct vm_page *pcpu_page;
 	paddr_t pcpu_addr;
 	int error;
 
@@ -35,9 +36,10 @@ cpu_startup(void)
 
 	/* Allocate a page for persistent per-CPU data.  */
 	error = page_alloc(&kernel_vm, PAGE_FLAG_DEFAULT | PAGE_FLAG_ZERO,
-			   &pcpu_addr);
+			   &pcpu_page);
 	if (error != 0)
 		panic("cpu%u: page allocate failed: %m", mp_whoami(), error);
+	pcpu_addr = page_address(pcpu_page);
 	pcpu = (struct pcpu *)XKPHYS_MAP(XKPHYS_CNC, pcpu_addr);
 
 	/* Keep our original physical address in the PCPU data, too.  */

@@ -9,7 +9,7 @@ int
 vm_alloc(struct vm *vm, size_t size, vaddr_t *vaddrp)
 {
 	size_t o, pages;
-	paddr_t paddr;
+	struct vm_page *page;
 	vaddr_t vaddr;
 	int error, error2;
 
@@ -20,11 +20,11 @@ vm_alloc(struct vm *vm, size_t size, vaddr_t *vaddrp)
 	if (error != 0)
 		return (error);
 	for (o = 0; o < pages; o++) {
-		error = page_alloc(vm, PAGE_FLAG_DEFAULT, &paddr);
+		error = page_alloc(vm, PAGE_FLAG_DEFAULT, &page);
 		if (error != 0) {
 			while (o--) {
 				error2 = page_extract(vm, vaddr + o * PAGE_SIZE,
-						     &paddr);
+						     &page);
 				if (error2 != 0)
 					panic("%s: failed to extract from mapping: %m",
 					      __func__, error2);
@@ -36,7 +36,7 @@ vm_alloc(struct vm *vm, size_t size, vaddr_t *vaddrp)
 			}
 			return (error);
 		}
-		error = page_map(vm, vaddr + o * PAGE_SIZE, paddr);
+		error = page_map(vm, vaddr + o * PAGE_SIZE, page);
 		if (error != 0) {
 			panic("%s: must free pages for failed mapping.", __func__);
 		}
@@ -49,14 +49,14 @@ int
 vm_free(struct vm *vm, size_t size, vaddr_t vaddr)
 {
 	size_t o, pages;
-	paddr_t paddr;
+	struct vm_page *page;
 	int error;
 
 	pages = size / PAGE_SIZE;
 	if ((size % PAGE_SIZE) != 0)
 		pages++;
 	for (o = 0; o < pages; o++) {
-		error = page_extract(vm, vaddr + o * PAGE_SIZE, &paddr);
+		error = page_extract(vm, vaddr + o * PAGE_SIZE, &page);
 		if (error != 0)
 			panic("%s: failed to extract from mapping: %m",
 			      __func__, error);
@@ -64,7 +64,7 @@ vm_free(struct vm *vm, size_t size, vaddr_t vaddr)
 		if (error != 0)
 			panic("%s: failed to release mapping: %m",
 			      __func__, error);
-		error = page_release(vm, paddr);
+		error = page_release(vm, page);
 		if (error != 0)
 			panic("%s: failed to release page: %m", __func__,
 			      error);

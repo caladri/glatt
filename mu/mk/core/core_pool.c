@@ -23,7 +23,7 @@ COMPILE_TIME_ASSERT(sizeof (struct pool_item) == 8);
 #define	POOL_PAGE_MAGIC		(0x19800604)
 struct pool_page {
 	uint32_t pp_magic;
-	paddr_t pp_page;
+	struct vm_page *pp_backing;
 	struct pool *pp_pool;
 	SLIST_ENTRY(struct pool_page) pp_link;
 	size_t pp_items;
@@ -47,8 +47,8 @@ pool_allocate(struct pool *pool)
 {
 	struct pool_item *item;
 	struct pool_page *page;
-	paddr_t page_addr;
-	vaddr_t page_mapped;
+	struct vm_page *backing;
+	vaddr_t vaddr;
 	int error;
 
 	ASSERT(pool->pool_size <= MAX_ALLOC_SIZE, "pool must not be so big.");
@@ -59,33 +59,33 @@ pool_allocate(struct pool *pool)
 		POOL_UNLOCK(pool);
 		return ((void *)item);
 	}
-	error = page_alloc(&kernel_vm, PAGE_FLAG_DEFAULT, &page_addr);
+	error = page_alloc(&kernel_vm, PAGE_FLAG_DEFAULT, &backing);
 	if (error != 0) {
 		/* XXX check whether we could block, try to GC some shit.  */
 		POOL_UNLOCK(pool);
 		return (NULL);
 	}
 	if ((pool->pool_flags & POOL_VIRTUAL) != 0) {
-		error = vm_alloc_address(&kernel_vm, &page_mapped, 1);
+		error = vm_alloc_address(&kernel_vm, &vaddr, 1);
 		if (error == 0) {
-			error = page_map(&kernel_vm, page_mapped, page_addr);
+			error = page_map(&kernel_vm, vaddr, backing);
 			if (error != 0) {
 				int error2;
-				error2 = vm_free_address(&kernel_vm, page_mapped);
+				error2 = vm_free_address(&kernel_vm, vaddr);
 				if (error2 != 0)
 					panic("%s: vm_free_address failed: %m",
 					      __func__, error2);
 			}
 		}
 	} else {
-		error = page_map_direct(&kernel_vm, page_addr, &page_mapped);
+		error = page_map_direct(&kernel_vm, backing, &vaddr);
 	}
 	if (error != 0)
 		panic("%s: can't map page for allocation: %m", __func__, error);
 
-	page = (struct pool_page *)page_mapped;
+	page = (struct pool_page *)vaddr;
 	page->pp_magic = POOL_PAGE_MAGIC;
-	page->pp_page = page_addr;
+	page->pp_backing = backing;
 	page->pp_pool = pool;
 	SLIST_INSERT_HEAD(&pool->pool_pages, page, pp_link);
 	page->pp_items = 0;
@@ -106,7 +106,7 @@ pool_free(void *m)
 	struct pool_item *item;
 	struct pool_page *page;
 	struct pool *pool;
-	paddr_t paddr;
+	struct vm_page *backing;
 	vaddr_t vaddr;
 	int error;
 
@@ -128,7 +128,7 @@ pool_free(void *m)
 	 */
 	page->pp_magic = ~POOL_PAGE_MAGIC;
 	SLIST_REMOVE(&pool->pool_pages, page, struct pool_page, pp_link);
-	paddr = page->pp_page;
+	backing = page->pp_backing;
 	vaddr = (vaddr_t)page;
 	if ((pool->pool_flags & POOL_VIRTUAL) != 0) {
 		error = page_unmap(&kernel_vm, vaddr);
@@ -142,7 +142,7 @@ pool_free(void *m)
 		if (error != 0)
 			panic("%s: page_unmap_direct failed: %m", __func__, error);
 	}
-	error = page_release(&kernel_vm, paddr);
+	error = page_release(&kernel_vm, backing);
 	if (error != 0)
 		panic("%s: page_release failed: %m", __func__, error);
 	POOL_UNLOCK(pool);

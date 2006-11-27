@@ -1,9 +1,20 @@
 #ifndef	_VM_PAGE_H_
 #define	_VM_PAGE_H_
 
+#include <core/queue.h>
 #include <page/page.h>
 
 struct vm;
+
+#define	VM_PAGE_DEFAULT	(0x00000000)
+#define	VM_PAGE_DIRTY	(0x00000001)
+
+struct vm_page {
+	paddr_t pg_addr;	/* XXX Can do better.  */
+	TAILQ_ENTRY(struct vm_page) pg_link;
+	uint32_t pg_flags;
+	uint32_t pg_refcnt;
+};
 
 #define	PAGE_SIZE		(1 << PAGE_SHIFT)
 #define	PAGE_MASK		(PAGE_SIZE - 1)
@@ -19,16 +30,17 @@ struct vm;
 
 void page_init(void);
 
-int page_alloc(struct vm *, uint32_t, paddr_t *);
+paddr_t page_address(struct vm_page *);
+int page_alloc(struct vm *, uint32_t, struct vm_page **);
 int page_alloc_direct(struct vm *, uint32_t, vaddr_t *);
-int page_extract(struct vm *, vaddr_t, paddr_t *);
+int page_extract(struct vm *, vaddr_t, struct vm_page **);
 int page_free_direct(struct vm *, vaddr_t);
 int page_insert_pages(paddr_t, size_t);
-int page_map(struct vm *, vaddr_t, paddr_t);
-int page_map_direct(struct vm *, paddr_t, vaddr_t *);
-int page_release(struct vm *, paddr_t);
+int page_map(struct vm *, vaddr_t, struct vm_page *);
+int page_map_direct(struct vm *, struct vm_page *, vaddr_t *);
+int page_release(struct vm *, struct vm_page *);
 int page_unmap(struct vm *, vaddr_t);
 int page_unmap_direct(struct vm *, vaddr_t);
-void page_zero(paddr_t);
+void page_zero(struct vm_page *);
 
 #endif /* !_VM_PAGE_H_ */

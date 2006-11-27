@@ -1,38 +1,29 @@
 #include <core/types.h>
 #include <core/error.h>
+#include <core/string.h>
 #include <db/db.h>
 #include <io/device/console/console.h>
 #include <vm/page.h>
 #include <vm/vm.h>
 
-struct page_index;
+#define	VM_PAGE_ARRAY_ENTRIES	(PAGE_SIZE / sizeof (struct vm_page))
+#define	VM_PAGE_ARRAY_COUNT	(1024)
 
-struct page_header {
-	STAILQ_ENTRY(struct page_index) ph_link;
-	paddr_t ph_base;
-	size_t ph_pages;
-};
+static struct vm_page_array {
+	struct vm_page vmpa_pages[VM_PAGE_ARRAY_ENTRIES];
+} page_array_pages[VM_PAGE_ARRAY_COUNT];
+static unsigned page_array_count;
 
-struct page_entry {
-	uint64_t pe_bitmask;
-};
+COMPILE_TIME_ASSERT(sizeof (struct vm_page_array) == PAGE_SIZE);
 
-#define	PAGE_INDEX_SPLIT	(8)
-#define	PAGE_ENTRY_PAGES	(sizeof (struct page_entry) * 8)
-#define	PAGE_INDEX_ENTRIES	(((PAGE_SIZE / PAGE_INDEX_SPLIT) -	\
-				  sizeof (struct page_header)) /	\
-				 sizeof (struct page_entry))
-#define	PAGE_INDEX_COUNT	(PAGE_INDEX_ENTRIES * PAGE_ENTRY_PAGES)
-struct page_index {
-	struct page_header pi_header;
-	struct page_entry pi_entries[PAGE_INDEX_ENTRIES];
-};
-
-static STAILQ_HEAD(, struct page_index) page_index_list = STAILQ_HEAD_INITIALIZER(page_index_list);
-
-COMPILE_TIME_ASSERT(sizeof (struct page_index) * PAGE_INDEX_SPLIT == PAGE_SIZE);
-
+static TAILQ_HEAD(, struct vm_page) page_free_queue;
+static TAILQ_HEAD(, struct vm_page) page_use_queue;
 static struct spinlock page_lock = SPINLOCK_INIT("PAGE");
+
+static struct vm_page *page_array_get_page(void);
+static void page_insert(struct vm_page *, paddr_t, uint32_t);
+static void page_ref_drop(struct vm_page *);
+static void page_ref_hold(struct vm_page *);
 
 #define	PAGE_LOCK()	spinlock_lock(&page_lock)
 #define	PAGE_UNLOCK()	spinlock_unlock(&page_lock)
@@ -40,64 +31,56 @@ static struct spinlock page_lock = SPINLOCK_INIT("PAGE");
 void
 page_init(void)
 {
-	kcprintf("PAGE: page size is %uK, %lu pages per index entry.\n",
-		 PAGE_SIZE / 1024, PAGE_INDEX_COUNT);
+	TAILQ_INIT(&page_free_queue);
+	TAILQ_INIT(&page_use_queue);
+	kcprintf("PAGE: page size is %uK, %lu pages per page array.\n",
+		 PAGE_SIZE / 1024, VM_PAGE_ARRAY_ENTRIES);
+}
+
+paddr_t
+page_address(struct vm_page *page)
+{
+	ASSERT(page != NULL, "Must have a page.");
+	ASSERT(page->pg_refcnt != 0, "Cannot take address of unused page.");
+	return (page->pg_addr);
 }
 
 int
-page_alloc(struct vm *vm, unsigned flags, paddr_t *paddrp)
+page_alloc(struct vm *vm, unsigned flags, struct vm_page **pagep)
 {
-	struct page_entry *pe;
-	struct page_index *pi;
-	size_t entry, off;
-	paddr_t paddr;
+	struct vm_page *page;
 
 	PAGE_LOCK();
-	STAILQ_FOREACH(pi, &page_index_list, pi_header.ph_link) {
-		if (pi->pi_header.ph_pages == 0)
-			continue;
-		for (entry = 0; entry < PAGE_INDEX_ENTRIES; entry++) {
-			pe = &pi->pi_entries[entry];
-			if (pe->pe_bitmask == 0)
-				continue;
-			for (off = 0; off < PAGE_ENTRY_PAGES; off++) {
-				if ((pe->pe_bitmask & (1ul << off)) == 0)
-					continue;
-				pe->pe_bitmask ^= 1ul << off;
-				pi->pi_header.ph_pages--;
-				paddr = pi->pi_header.ph_base;
-				PAGE_UNLOCK();
-				paddr += (entry * PAGE_ENTRY_PAGES) * PAGE_SIZE;
-				paddr += off * PAGE_SIZE;
-				*paddrp = paddr;
-				if ((flags & PAGE_FLAG_ZERO) == 0)
-					page_zero(paddr);
-				return (0);
-			}
-		}
-		panic("%s: page index has %lu pages but no bits set.",
-		      __func__, pi->pi_header.ph_pages);
+	if (TAILQ_EMPTY(&page_free_queue)) {
+		PAGE_UNLOCK();
+		return (ERROR_EXHAUSTED);
 	}
+
+	page = TAILQ_FIRST(&page_free_queue);
+	page_ref_hold(page);
 	PAGE_UNLOCK();
-	return (ERROR_EXHAUSTED);
+	if ((flags & PAGE_FLAG_ZERO) != 0)
+		page_zero(page);
+	*pagep = page;
+	return (0);
 }
 
 int
 page_alloc_direct(struct vm *vm, unsigned flags, vaddr_t *vaddrp)
 {
-	paddr_t paddr;
+	struct vm_page *page;
 	vaddr_t vaddr;
 	int error, error2;
 
-	error = page_alloc(vm, flags, &paddr);
+	error = page_alloc(vm, flags, &page);
 	if (error != 0)
 		return (error);
 
-	error = page_map_direct(vm, paddr, &vaddr);
+	error = page_map_direct(vm, page, &vaddr);
 	if (error != 0) {
-		error2 = page_release(vm, paddr);
+		error2 = page_release(vm, page);
 		if (error2 != 0)
-			panic("%s: can't release paddr: %m", __func__, error);
+			panic("%s: can't release page: %m", __func__, error);
 		return (error);
 	}
 	*vaddrp = vaddr;
@@ -105,26 +88,31 @@ page_alloc_direct(struct vm *vm, unsigned flags, vaddr_t *vaddrp)
 }
 
 int
-page_extract(struct vm *vm, vaddr_t vaddr, paddr_t *paddrp)
+page_extract(struct vm *vm, vaddr_t vaddr, struct vm_page **pagep)
 {
+	panic("%s: unimplemented.", __func__);
+#if 0
 	int error;
 
 	PAGE_LOCK();
-	error = pmap_extract(vm, PAGE_FLOOR(vaddr), paddrp);
+	error = pmap_extract(vm, PAGE_FLOOR(vaddr), pagep);
 	PAGE_UNLOCK();
 	*paddrp |= PAGE_OFFSET(vaddr);
 	return (error);
+#else
+	return (ERROR_NOT_IMPLEMENTED);
+#endif
 }
 
 int
 page_free_direct(struct vm *vm, vaddr_t vaddr)
 {
-	paddr_t paddr;
+	struct vm_page *page;
 	int error;
 
 	ASSERT(PAGE_OFFSET(vaddr) == 0, "must be a page address");
 
-	error = page_extract(vm, vaddr, &paddr);
+	error = page_extract(vm, vaddr, &page);
 	if (error != 0)
 		return (error);
 
@@ -132,7 +120,7 @@ page_free_direct(struct vm *vm, vaddr_t vaddr)
 	if (error != 0)
 		return (error);
 
-	error = page_release(vm, paddr);
+	error = page_release(vm, page);
 	if (error != 0)
 		return (error);
 
@@ -142,130 +130,114 @@ page_free_direct(struct vm *vm, vaddr_t vaddr)
 int
 page_insert_pages(paddr_t base, size_t pages)
 {
-	struct page_index *pi;
+	struct vm_page_array *vpa;
+	struct vm_page *page;
+	size_t inserted;
 	vaddr_t va;
-	size_t cnt, pix;
-	size_t inserted, indexcnt, usedindex, indexpages;
+	unsigned i;
 	int error;
 
-	inserted = indexcnt = usedindex = indexpages = 0;
+	inserted = 0;
 
 	ASSERT(PAGE_OFFSET(base) == 0, "must be a page address");
-
-	/*
-	 * XXX check if these pages belong in an existing pool.
-	 */
-	while (pages != 0) {
+	for (;;) {
+		if (pages == 1) {
+			kcprintf("PAGE: no array for %p.\n", (void *)base);
+			break;
+		}
 		PAGE_LOCK();
-		error = page_map_direct(&kernel_vm, base, &va);
+		page = page_array_get_page();
+		page_insert(page, base, VM_PAGE_DEFAULT);
+		page_ref_hold(page);
+		PAGE_UNLOCK();
+		error = page_map_direct(&kernel_vm, page, &va);
 		if (error != 0)
-			panic("%s: couldn't map page index directly: %d\n",
-			      __func__, error);
+			panic("%s: failed to map page array: %m", __func__,
+			      error);
+		vpa = (struct vm_page_array *)va;
 		base += PAGE_SIZE;
 		pages--;
-		indexpages++;
-
-		for (pix = 0; pix < PAGE_INDEX_SPLIT; pix++) {
-			pi = &((struct page_index *)va)[pix];
-			STAILQ_INSERT_HEAD(&page_index_list, pi, pi_header.ph_link);
-			pi->pi_header.ph_base = base;
-			pi->pi_header.ph_pages = MIN(pages, PAGE_INDEX_COUNT);
-
-			if (pages != 0)
-				usedindex++;
-			base += (pi->pi_header.ph_pages) * PAGE_SIZE;
-			pages -= pi->pi_header.ph_pages;
-			inserted += pi->pi_header.ph_pages;
-
-			indexcnt++;
-
-			for (cnt = 0; cnt < PAGE_INDEX_ENTRIES; cnt++) {
-				struct page_entry *pe;
-
-				pe = &pi->pi_entries[cnt];
-				pe->pe_bitmask = 0;
+		for (i = 0; i < VM_PAGE_ARRAY_ENTRIES; i++) {
+			if (pages == 0) {
+				page_ref_drop(page);
+				break;
 			}
-			for (cnt = 0; cnt < pi->pi_header.ph_pages; cnt++) {
-				struct page_entry *pe;
-
-				pe = &pi->pi_entries[cnt / PAGE_ENTRY_PAGES];
-				pe->pe_bitmask |= 1ul << (cnt % PAGE_ENTRY_PAGES);
-			}
+			PAGE_LOCK();
+			page_ref_hold(page);
+			page_insert(&vpa->vmpa_pages[i], base, VM_PAGE_DEFAULT);
+			PAGE_UNLOCK();
+			base += PAGE_SIZE;
+			pages--;
+			inserted++;
 		}
-		PAGE_UNLOCK();
+		page_ref_drop(page);
+		if (pages == 0)
+			break;
 	}
+
 	kcprintf("PAGE: inserted %lu pages (%luM)\n", inserted,
 		 (inserted * PAGE_SIZE) / (1024 * 1024));
-	kcprintf("PAGE: %lu/%lu indexes in use in %lu pages\n",
-		 usedindex, indexcnt, indexpages);
+	kcprintf("PAGE: using %u arrays (%u, %u)\n", page_array_count,
+		 page_array_count / VM_PAGE_ARRAY_COUNT,
+		 page_array_count % VM_PAGE_ARRAY_COUNT);
 	return (0);
 }
 
 int
-page_map(struct vm *vm, vaddr_t vaddr, paddr_t paddr)
+page_map(struct vm *vm, vaddr_t vaddr, struct vm_page *page)
 {
 	int error;
 
 	ASSERT(PAGE_OFFSET(vaddr) == 0, "must be a page address");
-	ASSERT(PAGE_OFFSET(paddr) == 0, "must be a page address");
 	PAGE_LOCK();
-	error = pmap_map(vm, vaddr, paddr);
+	page_ref_hold(page);
+	error = pmap_map(vm, vaddr, page);
+	if (error != 0)
+		page_ref_drop(page);
 	PAGE_UNLOCK();
 	return (error);
 }
 
 int
-page_map_direct(struct vm *vm, paddr_t paddr, vaddr_t *vaddrp)
+page_map_direct(struct vm *vm, struct vm_page *page, vaddr_t *vaddrp)
 {
 	int error;
 
-	ASSERT(PAGE_OFFSET(paddr) == 0, "must be a page address");
 	if (vm != &kernel_vm)
 		panic("%s: can't direct map for non-kernel address space.",
 		      __func__);
 	PAGE_LOCK();
-	error = pmap_map_direct(vm, paddr, vaddrp);
+	page_ref_hold(page);
+	error = pmap_map_direct(vm, page, vaddrp);
+	if (error != 0)
+		page_ref_drop(page);
 	PAGE_UNLOCK();
 	return (error);
 }
 
 int
-page_release(struct vm *vm, paddr_t paddr)
+page_release(struct vm *vm, struct vm_page *page)
 {
-	struct page_entry *pe;
-	struct page_index *pi;
-	size_t off;
-
-	ASSERT(PAGE_OFFSET(paddr) == 0, "must be a page address");
 	PAGE_LOCK();
-	STAILQ_FOREACH(pi, &page_index_list, pi_header.ph_link) {
-		if (paddr < pi->pi_header.ph_base)
-			continue;
-		/*
-		 * If this is not one first PAGE_INDEX_COUNT pages after the
-		 * base address, then we should keep scanning.
-		 */
-		off = ADDR_TO_PAGE(paddr - pi->pi_header.ph_base);
-		if (off >= PAGE_INDEX_COUNT)
-			continue;
-		pe = &pi->pi_entries[off / PAGE_ENTRY_PAGES];
-		pe->pe_bitmask |= 1ul << (off % PAGE_ENTRY_PAGES);
-		pi->pi_header.ph_pages++;
-		PAGE_UNLOCK();
-		return (0);
-	}
+	page_ref_drop(page);
+	ASSERT(page->pg_refcnt == 0, "Cannot release if refs held.");
 	PAGE_UNLOCK();
-	return (ERROR_NOT_FOUND);
+	return (0);
 }
 
 int
 page_unmap(struct vm *vm, vaddr_t vaddr)
 {
+	struct vm_page *page;
 	int error;
 
 	ASSERT(PAGE_OFFSET(vaddr) == 0, "must be a page address");
 	PAGE_LOCK();
-	error = pmap_unmap(vm, vaddr);
+	error = page_extract(vm, vaddr, &page);
+	if (error == 0) {
+		error = pmap_unmap(vm, vaddr);
+		page_ref_drop(page);
+	}
 	PAGE_UNLOCK();
 	return (error);
 }
@@ -273,18 +245,79 @@ page_unmap(struct vm *vm, vaddr_t vaddr)
 int
 page_unmap_direct(struct vm *vm, vaddr_t vaddr)
 {
+	struct vm_page *page;
 	int error;
 
 	ASSERT(PAGE_OFFSET(vaddr) == 0, "must be a page address");
 	PAGE_LOCK();
-	error = pmap_unmap_direct(vm, vaddr);
+	error = page_extract(vm, vaddr, &page);
+	if (error == 0) {
+		error = pmap_unmap_direct(vm, vaddr);
+		page_ref_drop(page);
+	}
 	PAGE_UNLOCK();
 	return (error);
 }
 
 void
-page_zero(paddr_t paddr)
+page_zero(struct vm_page *page)
 {
-	ASSERT(PAGE_OFFSET(paddr) == 0, "must be a page address");
-	pmap_zero(paddr);
+	/*
+	 * XXX check VM_PAGE_ZERO
+	 */
+	page_ref_hold(page);
+	pmap_zero(page);
+	page_ref_drop(page);
+}
+
+static struct vm_page *
+page_array_get_page(void)
+{
+	struct vm_page_array *vpa;
+	struct vm_page *page;
+	unsigned i;
+
+	ASSERT(page_array_count !=
+	       (VM_PAGE_ARRAY_ENTRIES * VM_PAGE_ARRAY_COUNT),
+	       "Too many page arrays.");
+
+	i = page_array_count++;
+	vpa = &page_array_pages[i / VM_PAGE_ARRAY_COUNT];
+	page = &vpa->vmpa_pages[i % VM_PAGE_ARRAY_COUNT];
+	return (page);
+}
+
+static void
+page_insert(struct vm_page *page, paddr_t paddr, uint32_t flags)
+{
+	page->pg_addr = paddr;
+	page->pg_flags = flags;
+	page->pg_refcnt = 0;
+	TAILQ_INSERT_TAIL(&page_free_queue, page, pg_link);
+}
+
+static void
+page_ref_drop(struct vm_page *page)
+{
+	PAGE_LOCK();
+	ASSERT(page->pg_refcnt != 0, "Cannot drop refcount on unheld page.");
+	page->pg_refcnt--;
+	if (page->pg_refcnt == 0) {
+		TAILQ_REMOVE(&page_use_queue, page, pg_link);
+		TAILQ_INSERT_TAIL(&page_free_queue, page, pg_link);
+	}
+	PAGE_UNLOCK();
+}
+
+static void
+page_ref_hold(struct vm_page *page)
+{
+	PAGE_LOCK();
+	if (page->pg_refcnt == 0) {
+		TAILQ_REMOVE(&page_free_queue, page, pg_link);
+		TAILQ_INSERT_TAIL(&page_use_queue, page, pg_link);
+	}
+	page->pg_refcnt++;
+	ASSERT(page->pg_refcnt != 0, "Refcount wrapped.");
+	PAGE_UNLOCK();
 }

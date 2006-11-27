@@ -19,7 +19,7 @@ static struct pmap_lev2 *pmap_find2(struct pmap_lev1 *, vaddr_t);
 static pt_entry_t *pmap_find_pte(struct pmap_lev2 *, vaddr_t);
 static bool pmap_is_direct(vaddr_t);
 static void pmap_pinit(struct pmap *, vaddr_t, vaddr_t);
-static void pmap_update(struct pmap *, vaddr_t, paddr_t, pt_entry_t);
+static void pmap_update(struct pmap *, vaddr_t, struct vm_page *, pt_entry_t);
 
 static struct pool pmap_pool;
 
@@ -141,7 +141,7 @@ pmap_init(struct vm *vm, vaddr_t base, vaddr_t end)
 }
 
 int
-pmap_map(struct vm *vm, vaddr_t vaddr, paddr_t paddr)
+pmap_map(struct vm *vm, vaddr_t vaddr, struct vm_page *page)
 {
 	struct pmap *pm;
 	pt_entry_t *pte, flags;
@@ -162,15 +162,18 @@ pmap_map(struct vm *vm, vaddr_t vaddr, paddr_t paddr)
 		flags |= PG_G;
 	/* Cache? */
 	flags |= PG_C_CCEOW;
-	pmap_update(pm, vaddr, paddr, flags);
+	pmap_update(pm, vaddr, page, flags);
 	return (0);
 }
 
 int
-pmap_map_direct(struct vm *vm, paddr_t paddr, vaddr_t *vaddrp)
+pmap_map_direct(struct vm *vm, struct vm_page *page, vaddr_t *vaddrp)
 {
+	paddr_t paddr;
+
 	if (vm != &kernel_vm)
 		return (ERROR_NOT_IMPLEMENTED);
+	paddr = page_address(page);
 	*vaddrp = (vaddr_t)XKPHYS_MAP(XKPHYS_CCEW, paddr);
 	return (0);
 }
@@ -201,10 +204,14 @@ pmap_unmap_direct(struct vm *vm, vaddr_t vaddr)
 }
 
 void
-pmap_zero(paddr_t paddr)
+pmap_zero(struct vm_page *page)
 {
-	uint64_t *p = (uint64_t *)XKPHYS_MAP(XKPHYS_CCEW, paddr);
+	paddr_t paddr;
+	uint64_t *p;
 	size_t i;
+
+	paddr = page_address(page);
+	p = (uint64_t *)XKPHYS_MAP(XKPHYS_CCEW, paddr);
 
 	for (i = 0; i < (PAGE_SIZE / sizeof *p) / 16; i++) {
 		p[0x0] = p[0x1] = p[0x2] = p[0x3] =
@@ -332,12 +339,12 @@ pmap_pinit(struct pmap *pm, vaddr_t base, vaddr_t end)
 }
 
 static void
-pmap_update(struct pmap *pm, vaddr_t vaddr, paddr_t paddr, pt_entry_t flags)
+pmap_update(struct pmap *pm, vaddr_t vaddr, struct vm_page *page, pt_entry_t flags)
 {
 	pt_entry_t *pte;
-	paddr_t opaddr;
+	paddr_t opaddr, paddr;
 
-	paddr &= ~PAGE_MASK;
+	paddr = page_address(page);
 	vaddr &= ~PAGE_MASK;
 
 	pte = pmap_find(pm, vaddr);

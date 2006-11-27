@@ -17,13 +17,13 @@ typedef void (*malta_getchar_t)(int32_t, int32_t);
 static int32_t
 malta_console_map(char *p)
 {
-	paddr_t paddr;
+	struct vm_page *page;
 	int error;
 
-	error = page_extract(&kernel_vm, (vaddr_t)p, &paddr);
+	error = page_extract(&kernel_vm, (vaddr_t)p, &page);
 	if (error != 0)
 		panic("%s: page_extract failed: %m", __func__, error);
-	return (KSEG0_MAP(paddr));
+	return (KSEG0_MAP(page_address(page)));
 }
 
 static int

@@ -17,6 +17,13 @@ typedef void (*malta_getchar_t)(int32_t, int32_t);
 static int32_t
 malta_console_map(char *p)
 {
+	/*
+	 * This code requires page_extract() to work, which it doesn't since
+	 * the addition of the vm_page structure.  Even in the immediate future
+	 * page_extract will only work on virtual mappings, whereas this is
+	 * probably a direct one.  Should probably go directly to pmap!
+	 */
+#if 0
 	struct vm_page *page;
 	int error;
 
@@ -24,6 +31,7 @@ malta_console_map(char *p)
 	if (error != 0)
 		panic("%s: page_extract failed: %m", __func__, error);
 	return (KSEG0_MAP(page_address(page)));
+#endif
 }
 
 static int

@@ -22,6 +22,7 @@ struct vm_page {
 #define	PAGE_TO_ADDR(a)		((a) << PAGE_SHIFT)
 #define	PAGE_FLOOR(a)		((a) & ~PAGE_MASK)
 #define	PAGE_OFFSET(a)		((a) & PAGE_MASK)
+#define	PAGE_ALIGNED(a)		(PAGE_OFFSET(a) == 0)
 
 #define	PAGE_FLAG_DEFAULT	(0x00000000)
 #define	PAGE_FLAG_ZERO		(0x00000001)

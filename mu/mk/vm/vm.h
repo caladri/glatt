@@ -7,6 +7,7 @@
 
 struct pmap;
 struct vm_index;
+struct vm_page;
 
 struct vm {
 	struct spinlock vm_lock;
@@ -25,6 +26,9 @@ int vm_init_index(void);
 int vm_alloc_address(struct vm *, vaddr_t *, size_t);
 int vm_free_address(struct vm *, vaddr_t);
 int vm_insert_range(struct vm *, vaddr_t, vaddr_t);
+int vm_map_extract(struct vm *, vaddr_t, struct vm_page **);
+int vm_map_free(struct vm *, vaddr_t);
+int vm_map_insert(struct vm *, vaddr_t, struct vm_page *);
 int vm_setup(struct vm **, vaddr_t, vaddr_t);
 
 #endif /* !_VM_VM_H_ */

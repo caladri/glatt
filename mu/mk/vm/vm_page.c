@@ -87,21 +87,18 @@ page_alloc_direct(struct vm *vm, unsigned flags, vaddr_t *vaddrp)
 	return (0);
 }
 
+/*
+ * Only works for non-direct-mapped addresses.  Need to have a fast way to go
+ * from a physical address to a page pointer.  When we do that, we can stop
+ * going through the vm_map code (and maybe eliminate it altogether?)
+ */
 int
 page_extract(struct vm *vm, vaddr_t vaddr, struct vm_page **pagep)
 {
-	panic("%s: unimplemented.", __func__);
-#if 0
 	int error;
 
-	PAGE_LOCK();
-	error = pmap_extract(vm, PAGE_FLOOR(vaddr), pagep);
-	PAGE_UNLOCK();
-	*paddrp |= PAGE_OFFSET(vaddr);
+	error = vm_map_extract(vm, vaddr, pagep);
 	return (error);
-#else
-	return (ERROR_NOT_IMPLEMENTED);
-#endif
 }
 
 int
@@ -110,7 +107,7 @@ page_free_direct(struct vm *vm, vaddr_t vaddr)
 	struct vm_page *page;
 	int error;
 
-	ASSERT(PAGE_OFFSET(vaddr) == 0, "must be a page address");
+	ASSERT(PAGE_ALIGNED(vaddr), "must be a page address");
 
 	error = page_extract(vm, vaddr, &page);
 	if (error != 0)
@@ -139,7 +136,8 @@ page_insert_pages(paddr_t base, size_t pages)
 
 	inserted = 0;
 
-	ASSERT(PAGE_OFFSET(base) == 0, "must be a page address");
+	ASSERT(PAGE_ALIGNED(base), "must be a page address");
+
 	for (;;) {
 		if (pages == 1) {
 			kcprintf("PAGE: no array for %p.\n", (void *)base);
@@ -188,12 +186,18 @@ page_map(struct vm *vm, vaddr_t vaddr, struct vm_page *page)
 {
 	int error;
 
-	ASSERT(PAGE_OFFSET(vaddr) == 0, "must be a page address");
+	ASSERT(PAGE_ALIGNED(vaddr), "must be a page address");
 	PAGE_LOCK();
 	page_ref_hold(page);
-	error = pmap_map(vm, vaddr, page);
-	if (error != 0)
-		page_ref_drop(page);
+	error = vm_map_insert(vm, vaddr, page);
+	if (error == 0) {
+		error = pmap_map(vm, vaddr, page);
+		if (error == 0) {
+			PAGE_UNLOCK();
+			return (0);
+		}
+	}
+	page_ref_drop(page);
 	PAGE_UNLOCK();
 	return (error);
 }
@@ -231,12 +235,17 @@ page_unmap(struct vm *vm, vaddr_t vaddr)
 	struct vm_page *page;
 	int error;
 
-	ASSERT(PAGE_OFFSET(vaddr) == 0, "must be a page address");
+	ASSERT(PAGE_ALIGNED(vaddr), "must be a page address");
 	PAGE_LOCK();
 	error = page_extract(vm, vaddr, &page);
 	if (error == 0) {
 		error = pmap_unmap(vm, vaddr);
-		page_ref_drop(page);
+		if (error == 0) {
+			error = vm_map_free(vm, vaddr);
+			if (error == 0) {
+				page_ref_drop(page);
+			}
+		}
 	}
 	PAGE_UNLOCK();
 	return (error);
@@ -248,7 +257,7 @@ page_unmap_direct(struct vm *vm, vaddr_t vaddr)
 	struct vm_page *page;
 	int error;
 
-	ASSERT(PAGE_OFFSET(vaddr) == 0, "must be a page address");
+	ASSERT(PAGE_ALIGNED(vaddr), "must be a page address");
 	PAGE_LOCK();
 	error = page_extract(vm, vaddr, &page);
 	if (error == 0) {

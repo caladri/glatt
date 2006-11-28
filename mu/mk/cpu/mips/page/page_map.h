@@ -68,6 +68,7 @@ struct pmap {
 	struct pmap_lev0 *pm_level0[NL0PMAP];
 	vaddr_t pm_base;
 	vaddr_t pm_end;
+	unsigned pm_asid;
 };
 
 /*

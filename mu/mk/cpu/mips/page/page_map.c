@@ -1,8 +1,10 @@
 #include <core/types.h>
 #include <core/error.h>
 #include <core/pool.h>
+#include <core/startup.h>
 #include <core/string.h>
 #include <cpu/memory.h>
+#include <cpu/pcpu.h>
 #include <cpu/tlb.h>
 #include <db/db.h>
 #include <db/db_command.h>
@@ -11,6 +13,11 @@
 #include <vm/page.h>
 #include <vm/vm.h>
 
+#define	PMAP_ASID_RESERVED	(0)
+#define	PMAP_ASID_FIRST		(1)
+#define	PMAP_ASID_MAX		(255)
+
+static void pmap_alloc_asid(struct pmap *);
 static int pmap_alloc_pte(struct pmap *, vaddr_t, pt_entry_t **);
 static void pmap_collect(struct pmap *);
 static struct pmap_lev0 *pmap_find0(struct pmap *, vaddr_t);
@@ -26,13 +33,8 @@ static struct pool pmap_pool;
 unsigned
 pmap_asid(struct pmap *pm)
 {
-	/*
-	 * XXX
-	 * Maybe have pm==NULL return an invalid ASID?
-	 */
 	ASSERT(pm != NULL, "cannot get ASID for NULL pmap");
-	ASSERT(pm == kernel_vm.vm_pmap, "only support kernel address space");
-	return (1);
+	return (pm->pm_asid);
 }
 
 void
@@ -59,6 +61,7 @@ pmap_bootstrap(void)
 		 ((NPTEL2 * NL2PL1 * NL1PL0 * NL0PMAP * PAGE_SIZE) /
 		  (1024 * 1024 * 1024)));
 #endif
+
 	error = pool_create(&pmap_pool, "PMAP", sizeof (struct pmap),
 			    POOL_DEFAULT);
 	if (error != 0)
@@ -222,6 +225,34 @@ pmap_zero(struct vm_page *page)
 	}
 }
 
+static void
+pmap_alloc_asid(struct pmap *pm)
+{
+	critical_section_t crit;
+	unsigned asid;
+
+	if (pm == kernel_vm.vm_pmap) {
+		pm->pm_asid = PMAP_ASID_RESERVED;
+		return;
+	}
+	/*
+	 * XXX
+	 * If we use ASID generations and the generation is the same as the
+	 * current one, just reuse it rather than generating a new one and
+	 * possibly forcing a TLB flush.
+	 */
+	crit = critical_enter();
+	asid = PCPU_GET(asidnext);
+	if (asid == PMAP_ASID_MAX) {
+		PCPU_SET(asidnext, PMAP_ASID_FIRST);
+		/* XXX Do something with an asid generation like *BSD? */
+		/* XXX Flush TLB.  ASIDs may be reused.  */
+	} else {
+		PCPU_SET(asidnext, asid + 1);
+	}
+	critical_exit(crit);
+}
+
 static int
 pmap_alloc_pte(struct pmap *pm, vaddr_t vaddr, pt_entry_t **ptep)
 {
@@ -327,6 +358,7 @@ pmap_pinit(struct pmap *pm, vaddr_t base, vaddr_t end)
 {
 	unsigned l0;
 
+	pmap_alloc_asid(pm);
 	ASSERT(pmap_index0(base) == 0, "Base must be aligned.");
 	ASSERT(pmap_index1(base) == 0, "Base must be aligned.");
 	ASSERT(pmap_index2(base) == 0, "Base must be aligned.");
@@ -364,6 +396,14 @@ pmap_update(struct pmap *pm, vaddr_t vaddr, struct vm_page *page, pt_entry_t fla
 	}
 	atomic_store_64(pte, TLBLO_PA_TO_PFN(paddr) | flags);
 }
+
+static void
+pmap_startup(void *arg)
+{
+	kcprintf("PMAP: initialization complete.\n");
+	PCPU_SET(asidnext, PMAP_ASID_FIRST);
+}
+STARTUP_ITEM(pmap, STARTUP_PMAP, STARTUP_FIRST, pmap_startup, NULL);
 
 static void
 pmap_db_dump_kvm(void)

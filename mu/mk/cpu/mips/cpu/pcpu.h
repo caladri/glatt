@@ -28,6 +28,7 @@ struct pcpu {
 	STAILQ_HEAD(, struct interrupt_handler) pc_interrupt_table[CPU_INTERRUPT_COUNT];
 	register_t pc_interrupt_mask;
 	struct scheduler_queue pc_scheduler;
+	unsigned pc_asidnext;
 };
 
 #define	PCPU_PTR()							\

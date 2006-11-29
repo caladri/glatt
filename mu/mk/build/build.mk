@@ -1,4 +1,4 @@
-# $Id: build.mk,v 1.26 2006-08-24 18:18:52 juli Exp $
+# $Id: build.mk,v 1.27 2006-11-29 04:39:41 juli Exp $
 
 .PATH: ${KERNEL_ROOT}/core
 .PATH: ${KERNEL_ROOT}/db
@@ -24,6 +24,7 @@ KERNEL_SOURCES+=core_vdae.c
 # db
 KERNEL_SOURCES+=db.c
 KERNEL_SOURCES+=db_panic.c
+KERNEL_SOURCES+=db_show.c
 
 # io/device
 KERNEL_SOURCES+=device.c

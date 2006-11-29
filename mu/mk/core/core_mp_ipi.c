@@ -2,7 +2,6 @@
 #include <core/mp.h>
 #include <core/spinlock.h>
 #include <core/startup.h>
-#include <db/db_command.h>
 #include <io/device/console/console.h>
 
 /*
@@ -122,6 +121,7 @@ mp_ipi_handler(void *arg, enum ipi_type ipi)
 	}
 }
 
+#if 0
 static void
 mp_db_ipi_list(void)
 {
@@ -143,3 +143,4 @@ mp_db_whoami(void)
 	kcprintf("cpu%u\n", mp_whoami());
 }
 DB_COMMAND(whoami, mp_db_whoami, "Show which CPU the debugger is on.");
+#endif

@@ -1,7 +1,6 @@
 #include <core/types.h>
 #include <core/startup.h>
 #include <db/db.h>
-#include <db/db_command.h>
 #include <io/device/console/console.h>
 #include <io/device/device.h>
 #include <io/device/driver.h>
@@ -36,6 +35,7 @@ device_root(void)
 	return (root);
 }
 
+#if 0
 static void
 device_db_dump_path(struct device *device)
 {
@@ -72,3 +72,4 @@ device_db_dump(void)
 	kcprintf("Finished.\n");
 }
 DB_COMMAND(device_dump, device_db_dump, "Dump a listing of devices.");
+#endif

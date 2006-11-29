@@ -10,7 +10,6 @@
 #include <cpu/pcpu.h>
 #include <cpu/register.h>
 #include <db/db.h>
-#include <db/db_command.h>
 #include <io/device/console/console.h>
 
 #define	EXCEPTION_SPACE			(0x80)
@@ -167,6 +166,7 @@ cpu_exception_frame_dump(struct thread *td, struct frame *fp)
 	kcprintf("badvaddr            = %p\n", (void *)cpu_read_badvaddr());
 }
 
+#if 0
 static void
 cpu_exception_db_frame(void)
 {
@@ -179,3 +179,4 @@ cpu_exception_db_frame(void)
 		cpu_exception_frame_dump(td, &td->td_frame);
 }
 DB_COMMAND(frame, cpu_exception_db_frame, "Show the exception frame.");
+#endif

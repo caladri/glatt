@@ -3,7 +3,6 @@
 #include <core/pool.h>
 #include <core/string.h>
 #include <core/task.h>
-#include <db/db_command.h>
 #include <vm/page.h>
 
 /*

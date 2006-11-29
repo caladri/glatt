@@ -8,7 +8,6 @@
 #include <cpu/pcpu.h>
 #include <cpu/tlb.h>
 #include <db/db.h>
-#include <db/db_command.h>
 #include <io/device/console/console.h>
 #include <page/page_map.h>
 #include <page/page_table.h>
@@ -213,6 +212,7 @@ tlb_invalidate_one(unsigned i)
 	tlb_write_indexed();
 }
 
+#if 0
 static void
 tlb_db_dump(void)
 {
@@ -244,3 +244,4 @@ tlb_db_dump(void)
 	kcprintf("Finished.\n");
 }
 DB_COMMAND(tlb_dump, tlb_db_dump, "Dump contents of the TLB.");
+#endif

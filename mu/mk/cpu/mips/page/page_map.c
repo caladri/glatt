@@ -7,7 +7,6 @@
 #include <cpu/pcpu.h>
 #include <cpu/tlb.h>
 #include <db/db.h>
-#include <db/db_command.h>
 #include <io/device/console/console.h>
 #include <page/page_map.h>
 #include <vm/page.h>
@@ -405,6 +404,7 @@ pmap_startup(void *arg)
 }
 STARTUP_ITEM(pmap, STARTUP_PMAP, STARTUP_FIRST, pmap_startup, NULL);
 
+#if 0
 static void
 pmap_db_dump_kvm(void)
 {
@@ -455,3 +455,4 @@ pmap_db_dump_kvm(void)
 	kcprintf("Finished.\n");
 }
 DB_COMMAND(dump_kvm, pmap_db_dump_kvm, "Dump kernel virtual address mappings.");
+#endif

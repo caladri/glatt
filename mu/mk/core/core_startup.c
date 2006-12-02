@@ -10,8 +10,7 @@
 
 struct startup_item_sorted {
 	struct startup_item *sis_item;
-	struct startup_item_sorted *sis_prev;
-	struct startup_item_sorted *sis_next;
+	TAILQ_ENTRY(struct startup_item_sorted) sis_link;
 };
 
 SET(startup_items, struct startup_item);
@@ -61,7 +60,8 @@ startup_boot_thread(void *arg)
 {
 	struct thread *td;
 	struct startup_item **itemp, *item;
-	struct startup_item_sorted *first, *sorted, *ip;
+	struct startup_item_sorted *sorted, *ip;
+	TAILQ_HEAD(, struct startup_item_sorted) sortedq;
 	struct pool startup_item_pool;
 	int error;
 
@@ -72,7 +72,7 @@ startup_boot_thread(void *arg)
 
 	error = pool_create(&startup_item_pool, "startup item", sizeof *sorted,
 			    POOL_VIRTUAL);
-	first = NULL;
+	TAILQ_INIT(&sortedq);
 	for (itemp = SET_BEGIN(startup_items); itemp < SET_END(startup_items);
 	     itemp++) {
 		item = *itemp;
@@ -85,35 +85,22 @@ startup_boot_thread(void *arg)
 		 ((a)->sis_item->si_order <				\
 		  (b)->sis_item->si_order))
 
-		if (first == NULL || LESS_THAN(sorted, first)) {
-			if (first != NULL)
-				first->sis_prev = sorted;
-			sorted->sis_prev = NULL;
-			sorted->sis_next = first;
-			first = sorted;
+		if (TAILQ_EMPTY(&sortedq) ||
+		    LESS_THAN(sorted, TAILQ_FIRST(&sortedq))) {
+			TAILQ_INSERT_HEAD(&sortedq, sorted, sis_link);
 		} else {
-			for (ip = first; ip != NULL; ip = ip->sis_next) {
+			TAILQ_FOREACH(ip, &sortedq, sis_link) {
 				if (LESS_THAN(sorted, ip)) {
-					sorted->sis_next = ip;
-					if (ip->sis_prev != NULL)
-						ip->sis_prev->sis_next = sorted;
-					sorted->sis_prev = ip->sis_prev;
-					ip->sis_prev = sorted;
+					TAILQ_INSERT_BEFORE(ip, sorted, sis_link);
 					goto next;
 				}
 			}
-			for (ip = first; ip->sis_next != NULL;
-			     ip = ip->sis_next) {
-				continue;
-			}
-			ip->sis_next = sorted;
-			sorted->sis_prev = ip;
-			sorted->sis_next = NULL;
+			TAILQ_INSERT_TAIL(&sortedq, sorted, sis_link);
 		}
 #undef LESS_THAN
 next:		continue;
 	}
-	for (ip = first; ip != NULL; ip = ip->sis_next) {
+	TAILQ_FOREACH(ip, &sortedq, sis_link) {
 		item = ip->sis_item;
 		/* XXX lord of dirty hacks.  */
 		if (item->si_component == STARTUP_MAIN) {

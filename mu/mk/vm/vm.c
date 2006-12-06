@@ -5,6 +5,8 @@
 #include <vm/page.h>
 #include <vm/vm.h>
 
+DB_SHOW_TREE(vm, vm, true);
+
 struct vm kernel_vm;
 static struct pool vm_pool;
 

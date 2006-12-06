@@ -71,6 +71,7 @@ db_show(void)
 				if (!db_show_change_current(&current,
 							    db_show_argv[i]))
 					return;
+				continue;
 			}
 			if (strcmp(db_show_argv[i], "") == 0 ||
 			    strcmp(db_show_argv[i], ".") == 0 ||
@@ -235,7 +236,7 @@ static void
 db_show_path(struct db_show_tree *current)
 {
 	if (current == NULL) {
-		kcprintf("(root)");
+		kcprintf("/");
 		return;
 	}
 	db_show_path(current->st_parent);

@@ -10,6 +10,9 @@ struct pmap;
 struct vm_index;
 struct vm_page;
 
+DB_SHOW_TREE_DECLARE(vm);
+DB_SHOW_TREE_DECLARE(vm_index);
+
 struct vm {
 	struct spinlock vm_lock;
 	struct pmap *vm_pmap;

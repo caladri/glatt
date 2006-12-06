@@ -6,6 +6,9 @@
 #include <vm/page.h>
 #include <vm/vm.h>
 
+DB_SHOW_TREE(vm_index, index, false);
+DB_SHOW_VALUE_TREE(index, vm, DB_SHOW_TREE_POINTER(vm_index));
+
 struct vm_index_page {
 	vaddr_t vmip_base;
 	struct vm_page *vmip_page;
@@ -330,3 +333,45 @@ vm_use_index(struct vm *vm, struct vm_index *vmi, size_t pages)
 	}
 	return (0);
 }
+
+static void
+db_vm_index_dump_one(struct vm_index *vmi)
+{
+	struct vm_index_page *vmip;
+
+	kcprintf("VM Index %p [ %p ... %p (%zu pages) ]\n", vmi,
+		 (void *)vmi->vmi_base,
+		 (void *)(vmi->vmi_base + vmi->vmi_size * PAGE_SIZE),
+		 vmi->vmi_size);
+	TAILQ_FOREACH(vmip, &vmi->vmi_page_queue, vmip_link) {
+		kcprintf("\tMapping %p -> %p (vm_page %p, vm_index_page %p)\n",
+			 (void *)vmip->vmip_base,
+			 (void *)page_address(vmip->vmip_page),
+			 vmip->vmip_page, vmip);
+	}
+}
+
+static void
+db_vm_index_dump(struct vm_index *vmi)
+{
+	if (vmi == NULL)
+		return;
+	db_vm_index_dump(vmi->vmi_left);
+	db_vm_index_dump_one(vmi);
+	db_vm_index_dump(vmi->vmi_right);
+}
+
+
+static void
+db_vm_index_dump_vm(struct vm *vm, const char *name)
+{
+	kcprintf("Dumping %s VM Index...\n", name);
+	db_vm_index_dump(vm->vm_index);
+}
+
+static void
+db_vm_index_dump_kvm(void)
+{
+	db_vm_index_dump_vm(&kernel_vm, "Kernel");
+}
+DB_SHOW_VALUE_VOIDF(kvm, vm_index, db_vm_index_dump_kvm);

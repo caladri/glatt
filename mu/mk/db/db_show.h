@@ -13,18 +13,18 @@ struct db_show_tree {
 	SLIST_ENTRY(struct db_show_tree) st_link;
 };
 
-#define	DB_SHOW_TREE(name, root)					\
-	struct db_show_tree db_show_tree_ ## name = 	{		\
+#define	DB_SHOW_TREE(symbol, name, root)				\
+	struct db_show_tree db_show_tree_ ## symbol = 	{		\
 		.st_name = #name,					\
 		.st_root = root,					\
 	};								\
-	SET_ADD(db_show_trees, db_show_tree_ ## name)
+	SET_ADD(db_show_trees, db_show_tree_ ## symbol)
 
-#define	DB_SHOW_TREE_DECLARE(name)					\
-	extern struct db_show_tree db_show_tree_ ## name
+#define	DB_SHOW_TREE_DECLARE(symbol)					\
+	extern struct db_show_tree db_show_tree_ ## symbol
 
-#define	DB_SHOW_TREE_POINTER(name)					\
-	(&_CONCAT(db_show_tree_, name))
+#define	DB_SHOW_TREE_POINTER(symbol)					\
+	(&_CONCAT(db_show_tree_, symbol))
 
 enum db_show_type {
 	DB_SHOW_TYPE_TREE,

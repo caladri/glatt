@@ -5,7 +5,7 @@
 #include <db/db_show.h>
 #include <io/device/console/console.h>
 
-DB_SHOW_TREE(scheduler, true);
+DB_SHOW_TREE(scheduler, scheduler, true);
 
 static TAILQ_HEAD(, struct scheduler_queue) scheduler_queue_list;
 static struct scheduler_queue scheduler_sleep_queue;

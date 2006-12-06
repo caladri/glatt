@@ -45,10 +45,8 @@ db_show_init(void)
 	     valuep != SET_END(db_show_values); valuep++) {
 		value = *valuep;
 		SLIST_INSERT_HEAD(&value->sv_parent->st_values, value, sv_link);
-#if 0 /* XXX GCC */
 		if (value->sv_type == DB_SHOW_TYPE_TREE)
 			value->sv_value.sv_tree->st_parent = value->sv_parent;
-#endif
 	}
 }
 
@@ -150,13 +148,9 @@ db_show_change_current(struct db_show_tree **currentp, const char *name)
 			 value->sv_name);
 		return (false);
 	}
-#if 0
 	*currentp = value->sv_value.sv_tree;
 	db_show_listing(*currentp);
 	return (true);
-#else
-	panic("%s: cannot implement yet, as GCC sucks.", __func__);
-#endif
 }
 
 static int

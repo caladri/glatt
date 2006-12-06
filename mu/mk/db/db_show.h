@@ -32,9 +32,7 @@ enum db_show_type {
 };
 
 union db_show_value_union {
-#if 0
 	struct db_show_tree *sv_tree;
-#endif
 	void (*sv_voidf)(void);
 };
 
@@ -46,12 +44,21 @@ struct db_show_value {
 	SLIST_ENTRY(struct db_show_value) sv_link;
 };
 
-#define	DB_SHOW_VALUE(name, parent, type, value)			\
+#define	DB_SHOW_VALUE_TREE(name, parent, value)				\
 	struct db_show_value db_show_value_ ## parent ## _ ## name = {	\
 		.sv_name = #name,					\
 		.sv_parent = DB_SHOW_TREE_POINTER(parent),		\
-		.sv_type = type,					\
-		.sv_value = { value },					\
+		.sv_type = DB_SHOW_TYPE_TREE,				\
+		.sv_value.sv_tree = value,				\
+	};								\
+	SET_ADD(db_show_values, db_show_value_ ## parent ## _ ## name)
+
+#define	DB_SHOW_VALUE_VOIDF(name, parent, value)			\
+	struct db_show_value db_show_value_ ## parent ## _ ## name = {	\
+		.sv_name = #name,					\
+		.sv_parent = DB_SHOW_TREE_POINTER(parent),		\
+		.sv_type = DB_SHOW_TYPE_VOIDF,				\
+		.sv_value.sv_voidf = value,				\
 	};								\
 	SET_ADD(db_show_values, db_show_value_ ## parent ## _ ## name)
 

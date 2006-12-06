@@ -335,4 +335,4 @@ scheduler_db_dump(void)
 	scheduler_db_dump_queue(&scheduler_sleep_queue);
 	kcprintf("Done.\n");
 }
-DB_SHOW_VALUE(queues, scheduler, DB_SHOW_TYPE_VOIDF, scheduler_db_dump);
+DB_SHOW_VALUE_VOIDF(queues, scheduler, scheduler_db_dump);

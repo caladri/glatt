@@ -42,6 +42,8 @@ platform_start(void)
 
 	platform_console_init();
 
+	db_init();
+
 	kcputs("\n");
 	kcputs(MK_NAME "\n");
 	kcputs(COPYRIGHT "\n");

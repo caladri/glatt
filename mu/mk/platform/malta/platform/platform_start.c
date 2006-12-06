@@ -39,6 +39,8 @@ platform_start(int32_t argc, int32_t argv, int32_t envp, uint32_t memsize)
 
 	platform_console_init();
 
+	db_init();
+
 	kcputs("\n");
 	kcputs(MK_NAME "\n");
 	kcputs(COPYRIGHT "\n");

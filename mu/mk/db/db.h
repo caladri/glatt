@@ -10,6 +10,8 @@
 
 void panic(const char *, ...) __noreturn/*XXX %m __printf(1, 2)*/;
 
+void db_init(void);
+
 void db_enter(void) __noreturn;
 
 #endif /* !_DB_DB_H_ */

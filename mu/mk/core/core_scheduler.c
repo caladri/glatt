@@ -2,7 +2,10 @@
 #include <core/scheduler.h>
 #include <core/thread.h>
 #include <db/db.h>
+#include <db/db_show.h>
 #include <io/device/console/console.h>
+
+DB_SHOW_TREE(scheduler, true);
 
 static TAILQ_HEAD(, struct scheduler_queue) scheduler_queue_list;
 static struct scheduler_queue scheduler_sleep_queue;
@@ -304,7 +307,6 @@ scheduler_yield(void)
 	/* XXX cpu_yield(); ? */
 }
 
-#if 0
 static void
 scheduler_db_dump_queue(struct scheduler_queue *sq)
 {
@@ -333,5 +335,4 @@ scheduler_db_dump(void)
 	scheduler_db_dump_queue(&scheduler_sleep_queue);
 	kcprintf("Done.\n");
 }
-DB_COMMAND(scheduler_dump, scheduler_db_dump, "Dump all scheduler queues.");
-#endif
+DB_SHOW_VALUE(queues, scheduler, DB_SHOW_TYPE_VOIDF, scheduler_db_dump);

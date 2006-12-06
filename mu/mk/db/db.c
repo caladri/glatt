@@ -5,11 +5,19 @@
 #include <core/string.h>
 #include <db/db.h>
 #include <db/db_action.h>
+#include <db/db_show.h>
 #include <io/device/console/console.h>
 
 SET(db_actions, struct db_action);
 
 static void db_usage(char);
+
+void
+db_init(void)
+{
+	kcprintf("DB: debugger support compiled in.\n");
+	db_show_init();
+}
 
 void
 db_enter(void)
@@ -56,10 +64,11 @@ again:		error = kcgetc(&ch);
 		     actionp < SET_END(db_actions); actionp++) {
 			if (ch == (*actionp)->dba_char[0]) {
 				(*actionp)->dba_function();
-				goto again;
+				goto next;
 			}
 		}
 		db_usage(ch);
+next:		continue;
 	}
 bad:	kcprintf("Read error, can't enter interactive debugger.\n");
 	kcprintf("Halting the system, instead.\n");

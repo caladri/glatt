@@ -3,6 +3,7 @@
 
 #include <core/queue.h>
 #include <core/spinlock.h>
+#include <db/db_show.h>
 #include <vm/types.h>
 
 struct pmap;

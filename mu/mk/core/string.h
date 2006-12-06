@@ -63,6 +63,8 @@ static __inline int
 strncmp(const char *a, const char *b, size_t n)
 {
 	while (n-- != 0 && *a != '\0' && *a == *b) {
+		if (n == 0)
+			return (0);
 		a++;
 		b++;
 	}

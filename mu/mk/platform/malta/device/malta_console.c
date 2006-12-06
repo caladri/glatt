@@ -14,24 +14,21 @@
 typedef	void (*malta_print_count_t)(int32_t, int32_t, int32_t);
 typedef void (*malta_getchar_t)(int32_t, int32_t);
 
+/*
+ * Go straight through pmap as we're doing this before paging is really set up.
+ */
 static int32_t
 malta_console_map(char *p)
 {
-	/*
-	 * This code requires page_extract() to work, which it doesn't since
-	 * the addition of the vm_page structure.  Even in the immediate future
-	 * page_extract will only work on virtual mappings, whereas this is
-	 * probably a direct one.  Should probably go directly to pmap!
-	 */
-#if 0
-	struct vm_page *page;
+	paddr_t paddr;
+	vaddr_t vaddr;
 	int error;
 
-	error = page_extract(&kernel_vm, (vaddr_t)p, &page);
+	vaddr = (vaddr_t)p;
+	error = pmap_extract(&kernel_vm, PAGE_FLOOR(vaddr), &paddr);
 	if (error != 0)
-		panic("%s: page_extract failed: %m", __func__, error);
-	return (KSEG0_MAP(page_address(page)));
-#endif
+		panic("%s: pmap_extract failed: %m", __func__, error);
+	return (KSEG0_MAP(paddr | PAGE_OFFSET(vaddr)));
 }
 
 static int

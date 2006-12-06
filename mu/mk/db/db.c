@@ -62,8 +62,14 @@ again:		error = kcgetc(&ch);
 
 		for (actionp = SET_BEGIN(db_actions);
 		     actionp < SET_END(db_actions); actionp++) {
-			if (ch == (*actionp)->dba_char[0]) {
-				(*actionp)->dba_function();
+			struct db_action *action;
+
+			action = *actionp;
+
+			if (ch == action->dba_char[0]) {
+				while (action->dba_alias != NULL)
+					action = action->dba_alias;
+				action->dba_function();
 				goto next;
 			}
 		}
@@ -83,12 +89,17 @@ db_usage(char ch)
 	kcprintf("Available commands:\n");
 	for (actionp = SET_BEGIN(db_actions);
 	     actionp < SET_END(db_actions); actionp++) {
-		/*
-		 * Skip hidden commands.
-		 */
-		if ((*actionp)->dba_help == NULL)
-			continue;
-		kcprintf("%s\t%s\n",
-			 (*actionp)->dba_char, (*actionp)->dba_help);
+		struct db_action *action;
+
+		action = *actionp;
+		if (action->dba_alias == NULL) {
+			/* Skip hidden commands.  */
+			if (action->dba_help == NULL)
+				continue;
+			kcprintf("%s %s\n", action->dba_char, action->dba_help);
+		} else {
+			kcprintf("%s Alias for %s.\n", action->dba_char,
+				 action->dba_alias->dba_char);
+		}
 	}
 }

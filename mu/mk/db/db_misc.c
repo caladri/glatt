@@ -11,6 +11,7 @@ db_halt(void)
 	platform_halt();
 }
 DB_ACTION(h, "Halt the system.", db_halt);
+DB_ACTION_ALIAS(q, h);
 
 static void
 db_panic(void)

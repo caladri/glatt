@@ -29,6 +29,8 @@ int vm_insert_range(struct vm *, vaddr_t, vaddr_t);
 int vm_map_extract(struct vm *, vaddr_t, struct vm_page **);
 int vm_map_free(struct vm *, vaddr_t);
 int vm_map_insert(struct vm *, vaddr_t, struct vm_page *);
+int vm_page_map(struct vm *, struct vm_page *, vaddr_t *);
+int vm_page_unmap(struct vm *, vaddr_t);
 int vm_setup(struct vm **, vaddr_t, vaddr_t);
 
 #endif /* !_VM_VM_H_ */

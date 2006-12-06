@@ -22,6 +22,7 @@ static struct spinlock page_lock = SPINLOCK_INIT("PAGE");
 
 static struct vm_page *page_array_get_page(void);
 static void page_insert(struct vm_page *, paddr_t, uint32_t);
+static int page_lookup(paddr_t, struct vm_page **);
 static void page_ref_drop(struct vm_page *);
 static void page_ref_hold(struct vm_page *);
 
@@ -91,6 +92,9 @@ page_alloc_direct(struct vm *vm, unsigned flags, vaddr_t *vaddrp)
  * Only works for non-direct-mapped addresses.  Need to have a fast way to go
  * from a physical address to a page pointer.  When we do that, we can stop
  * going through the vm_map code (and maybe eliminate it altogether?)
+ *
+ * XXX
+ * Doesn't hold a reference on the page it returns, which is no good.
  */
 int
 page_extract(struct vm *vm, vaddr_t vaddr, struct vm_page **pagep)
@@ -98,6 +102,14 @@ page_extract(struct vm *vm, vaddr_t vaddr, struct vm_page **pagep)
 	int error;
 
 	error = vm_map_extract(vm, vaddr, pagep);
+	if (error != 0) {
+		paddr_t paddr;
+
+		error = pmap_extract(vm, vaddr, &paddr);
+		if (error != 0)
+			return (error);
+		error = page_lookup(paddr, pagep);
+	}
 	return (error);
 }
 
@@ -303,6 +315,57 @@ page_insert(struct vm_page *page, paddr_t paddr, uint32_t flags)
 	page->pg_flags = flags;
 	page->pg_refcnt = 0;
 	TAILQ_INSERT_TAIL(&page_free_queue, page, pg_link);
+}
+
+static int
+page_lookup(paddr_t paddr, struct vm_page **pagep)
+{
+	struct vm_page_array *vmpa, *vmpa2;
+	struct vm_page *page, *page2;
+	unsigned i, j, k;
+	vaddr_t va;
+	int error;
+
+	ASSERT(PAGE_ALIGNED(paddr), "must be a page address");
+
+	PAGE_LOCK();
+	for (i = 0; i < VM_PAGE_ARRAY_COUNT; i++) {
+		vmpa = &page_array_pages[i];
+		for (j = 0; j < VM_PAGE_ARRAY_ENTRIES; j++) {
+			page = &vmpa->vmpa_pages[j];
+			if (page_address(page) == paddr) {
+				*pagep = page;
+				PAGE_UNLOCK();
+				return (0);
+			}
+
+			/*
+			 * Don't use direct mappings here, as direct mappings
+			 * will always use page_lookup from page_extract, which
+			 * means we can end up recursing indefinitely.  Use
+			 * virtual mappings, even though they make less sense.
+			 */
+			error = vm_page_map(&kernel_vm, page, &va);
+			if (error != 0)
+				panic("%s: vm_page_map failed: %m", __func__,
+				      error);
+			vmpa2 = (struct vm_page_array *)va;
+			for (k = 0; k < VM_PAGE_ARRAY_ENTRIES; k++) {
+				page2 = &vmpa2->vmpa_pages[k];
+				if (page_address(page2) == paddr) {
+					*pagep = page2;
+					PAGE_UNLOCK();
+					return (0);
+				}
+			}
+			error = vm_page_unmap(&kernel_vm, va);
+			if (error != 0)
+				panic("%s: vm_page_unmap failed: %m",
+				      __func__, error);
+		}
+	}
+	PAGE_UNLOCK();
+	return (ERROR_NOT_FOUND);
 }
 
 static void

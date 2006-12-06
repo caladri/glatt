@@ -210,6 +210,39 @@ vm_map_insert(struct vm *vm, vaddr_t vaddr, struct vm_page *page)
 	return (0);
 }
 
+int
+vm_page_map(struct vm *vm, struct vm_page *page, vaddr_t *vaddrp)
+{
+	int error, error2;
+
+	error = vm_alloc_address(vm, vaddrp, 1);
+	if (error != 0)
+		return (error);
+	error = page_map(vm, *vaddrp, page);
+	if (error != 0) {
+		error2 = vm_free_address(vm, *vaddrp);
+		if (error2 != 0)
+			panic("%s: vm_free_address failed: %m", __func__,
+			      error2);
+		return (error);
+	}
+	return (0);
+}
+
+int
+vm_page_unmap(struct vm *vm, vaddr_t vaddr)
+{
+	int error;
+
+	error = page_unmap(vm, vaddr);
+	if (error != 0)
+		return (error);
+	error = vm_free_address(vm, vaddr);
+	if (error != 0)
+		return (error);
+	return (0);
+}
+
 static struct vm_index *
 vm_find_index(struct vm *vm, vaddr_t vaddr)
 {

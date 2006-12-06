@@ -66,17 +66,7 @@ pool_allocate(struct pool *pool)
 		return (NULL);
 	}
 	if ((pool->pool_flags & POOL_VIRTUAL) != 0) {
-		error = vm_alloc_address(&kernel_vm, &vaddr, 1);
-		if (error == 0) {
-			error = page_map(&kernel_vm, vaddr, backing);
-			if (error != 0) {
-				int error2;
-				error2 = vm_free_address(&kernel_vm, vaddr);
-				if (error2 != 0)
-					panic("%s: vm_free_address failed: %m",
-					      __func__, error2);
-			}
-		}
+		error = vm_page_map(&kernel_vm, backing, &vaddr);
 	} else {
 		error = page_map_direct(&kernel_vm, backing, &vaddr);
 	}
@@ -131,17 +121,12 @@ pool_free(void *m)
 	backing = page->pp_backing;
 	vaddr = (vaddr_t)page;
 	if ((pool->pool_flags & POOL_VIRTUAL) != 0) {
-		error = page_unmap(&kernel_vm, vaddr);
-		if (error != 0)
-			panic("%s: page_unmap failed: %m", __func__, error);
-		error = vm_free_address(&kernel_vm, vaddr);
-		if (error != 0)
-			panic("%s: vm_free_address failed: %m", __func__, error);
+		error = vm_page_unmap(&kernel_vm, vaddr);
 	} else {
 		error = page_unmap_direct(&kernel_vm, vaddr);
-		if (error != 0)
-			panic("%s: page_unmap_direct failed: %m", __func__, error);
 	}
+	if (error != 0)
+		panic("%s: can't unmap page: %m", __func__, error);
 	error = page_release(&kernel_vm, backing);
 	if (error != 0)
 		panic("%s: page_release failed: %m", __func__, error);

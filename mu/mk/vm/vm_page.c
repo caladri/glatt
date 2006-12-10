@@ -157,7 +157,7 @@ page_insert_pages(paddr_t base, size_t pages)
 		}
 		PAGE_LOCK();
 		page = page_array_get_page();
-		page_insert(page, base, VM_PAGE_DEFAULT);
+		page_insert(page, base, PAGE_FLAG_DEFAULT);
 		page_ref_hold(page);
 		PAGE_UNLOCK();
 		error = page_map_direct(&kernel_vm, page, &va);
@@ -174,7 +174,7 @@ page_insert_pages(paddr_t base, size_t pages)
 			}
 			PAGE_LOCK();
 			page_ref_hold(page);
-			page_insert(&vpa->vmpa_pages[i], base, VM_PAGE_DEFAULT);
+			page_insert(&vpa->vmpa_pages[i], base, PAGE_FLAG_DEFAULT);
 			PAGE_UNLOCK();
 			base += PAGE_SIZE;
 			pages--;

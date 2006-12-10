@@ -6,8 +6,6 @@
 
 struct vm;
 
-#define	VM_PAGE_DEFAULT	(0x00000000)
-
 struct vm_page {
 	paddr_t pg_addr;	/* XXX Can do better.  */
 	TAILQ_ENTRY(struct vm_page) pg_link;

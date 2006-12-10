@@ -191,8 +191,11 @@ pmap_unmap(struct vm *vm, vaddr_t vaddr)
 	pte = pmap_find(pm, vaddr);
 	if (pte == NULL)
 		return (ERROR_NOT_FOUND);
+	if (!pte_test(pte, PG_V))
+		return (0);
 	/* Invalidate by updating to not have PG_V set.  */
-	pmap_update(pm, vaddr, 0, 0);
+	tlb_invalidate(pm, vaddr);
+	atomic_store_64(pte, 0);
 	return (0);
 }
 

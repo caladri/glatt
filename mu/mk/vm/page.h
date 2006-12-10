@@ -7,7 +7,6 @@
 struct vm;
 
 #define	VM_PAGE_DEFAULT	(0x00000000)
-#define	VM_PAGE_DIRTY	(0x00000001)
 
 struct vm_page {
 	paddr_t pg_addr;	/* XXX Can do better.  */

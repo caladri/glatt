@@ -7,7 +7,7 @@
 #include <vm/vm.h>
 
 #define	VM_PAGE_ARRAY_ENTRIES	(PAGE_SIZE / sizeof (struct vm_page))
-#define	VM_PAGE_ARRAY_COUNT	(1024)
+#define	VM_PAGE_ARRAY_COUNT	(1)
 
 static struct vm_page_array {
 	struct vm_page vmpa_pages[VM_PAGE_ARRAY_ENTRIES];
@@ -303,8 +303,8 @@ page_array_get_page(void)
 	       "Too many page arrays.");
 
 	i = page_array_count++;
-	vpa = &page_array_pages[i / VM_PAGE_ARRAY_COUNT];
-	page = &vpa->vmpa_pages[i % VM_PAGE_ARRAY_COUNT];
+	vpa = &page_array_pages[i / VM_PAGE_ARRAY_ENTRIES];
+	page = &vpa->vmpa_pages[i % VM_PAGE_ARRAY_ENTRIES];
 	return (page);
 }
 

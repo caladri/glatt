@@ -64,6 +64,10 @@ platform_start(int32_t argc, int32_t argv, int32_t envp, uint32_t memsize)
 #define	KERNEL_PHYSICAL_HOLE	(KERNEL_MAX_SIZE + KERNEL_OFFSET)
 	if (membytes <= KERNEL_PHYSICAL_HOLE)
 		panic("%s: not enough attached memory.", __func__);
+	if (XKPHYS_EXTRACT(_end) >= KERNEL_PHYSICAL_HOLE)
+		panic("%s: kernel end is beyond physical hole (%p >= %p).",
+		      __func__, (void *)XKPHYS_EXTRACT(_end),
+		      (void *)KERNEL_PHYSICAL_HOLE);
 	membytes -= KERNEL_PHYSICAL_HOLE;
 	error = page_insert_pages(KERNEL_PHYSICAL_HOLE, ADDR_TO_PAGE(membytes));
 	if (error != 0)

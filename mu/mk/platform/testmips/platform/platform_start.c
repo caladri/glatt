@@ -68,6 +68,10 @@ platform_start(void)
 	membytes = platform_mp_memory();
 	if (membytes <= KERNEL_PHYSICAL_HOLE)
 		panic("%s: not enough attached memory.", __func__);
+	if (XKPHYS_EXTRACT(_end) >= KERNEL_PHYSICAL_HOLE)
+		panic("%s: kernel end is beyond physical hole (%p >= %p).",
+		      __func__, (void *)XKPHYS_EXTRACT(_end),
+		      (void *)KERNEL_PHYSICAL_HOLE);
 	membytes -= KERNEL_PHYSICAL_HOLE;
 	error = page_insert_pages(KERNEL_PHYSICAL_HOLE, ADDR_TO_PAGE(membytes));
 	if (error != 0)

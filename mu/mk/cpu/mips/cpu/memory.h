@@ -34,7 +34,7 @@
 #define	XKPHYS_MAP(cca,a)						\
 	((void *)((0x2ULL << 62) | ((uintptr_t)(cca) << 59) | (uintptr_t)(a)))
 #define	XKPHYS_EXTRACT(a)						\
-	((uintptr_t)(a) & 0x0effffffffffffff)
+	((uintptr_t)(a) & 0x07ffffffffffffff)
 
 	/* 64-bit kernel physical address space cache modes.  */
 

@@ -97,9 +97,14 @@ vdae_list_wakeup(struct vdae_list *vlist)
 	struct vdae *v;
 
 	VDAE_LIST_LOCK(vlist);
+	/*
+	 * Wake up every thread but ourselves.  If we are waking up ourselves,
+	 * and there is only one CPU, the other threads will be starved.
+	 */
 	TAILQ_FOREACH(v, &vlist->vl_list, v_link) {
 		VDAE_LOCK(v);
-		v->v_flags |= VDAE_FLAG_WAKEUP;
+		if (v->v_thread != current_thread())
+			v->v_flags |= VDAE_FLAG_WAKEUP;
 		VDAE_UNLOCK(v);
 	}
 	VDAE_LIST_UNLOCK(vlist);
@@ -131,13 +136,6 @@ vdae_thread_loop(void *arg)
 		VDAE_LOCK(v);
 		v->v_flags &= ~VDAE_FLAG_RUNNING;
 		VDAE_UNLOCK(v);
-
-		/*
-		 * XXX
-		 * Badly need preemption.  Why doesn't the sleepq_wait handle
-		 * this for us?  It *should*!
-		 */
-		scheduler_schedule();
 	}
 }
 

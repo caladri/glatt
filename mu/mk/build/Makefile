@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.16 2006-08-21 23:37:58 juli Exp $
+# $Id: Makefile,v 1.17 2006-12-14 17:42:24 juli Exp $
 
 KERNEL?=	mu-mk
 
@@ -48,7 +48,6 @@ clean:
 	-rm _as.h _as.h.o
 	-rm ${KERNEL_OBJECTS}
 	-rm ${KERNEL}
-
 
 _as.h: ${PLATFORM_ROOT}/platform/_as.sym
 	${KERNEL_CC} -x c ${KERNEL_CPPFLAGS} ${KERNEL_CFLAGS} -c -o $@.o $>

@@ -37,6 +37,8 @@ cpu_thread_setup(struct thread *td)
 	 * access pattern should prevent that, but hey.
 	 *
 	 * XXX Just touch each page.
+	 *
+	 * XXX Maybe put kstack in wired entries.
 	 */
 	memset(td->td_kstack, 0x00, KSTACK_SIZE);
 	td->td_context.c_regs[CONTEXT_SP] = kstack + KSTACK_SIZE;

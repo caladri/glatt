@@ -1,4 +1,5 @@
 #include <core/types.h>
+#include <core/ipc.h>
 #include <core/pool.h>
 #include <core/scheduler.h>
 #include <core/spinlock.h>
@@ -15,9 +16,9 @@ struct startup_item_sorted {
 
 SET(startup_items, struct startup_item);
 
+static void startup_bootstrap(void);
 static void startup_boot_thread(void *);
 static void startup_idle_thread(void *);
-STARTUP_ITEM(main, STARTUP_MAIN, STARTUP_FIRST, startup_idle_thread, NULL);
 
 static bool startup_booting = false;
 static struct spinlock startup_spinlock = SPINLOCK_INIT("startup");
@@ -34,11 +35,8 @@ startup_main(void)
 	bootstrap = !startup_booting;
 	startup_booting = true;
 
-	if (bootstrap) {
-		error = task_create(&main_task, NULL, "main", TASK_KERNEL);
-		if (error != 0)
-			panic("%s: task_create failed: %m", __func__, error);
-	}
+	if (bootstrap)
+		startup_bootstrap();
 
 	error = thread_create(&td, main_task, "idle thread",
 			      THREAD_DEFAULT);
@@ -49,24 +47,38 @@ startup_main(void)
 	spinlock_unlock(&startup_spinlock);
 
 	if (bootstrap)
-		thread_set_upcall(td, startup_boot_thread, td);
+		thread_set_upcall(td, startup_boot_thread, NULL);
 	else
-		thread_set_upcall(td, startup_idle_thread, td);
+		thread_set_upcall(td, startup_idle_thread, NULL);
 	scheduler_schedule();
+}
+
+static void
+startup_bootstrap(void)
+{
+	int error;
+
+	/*
+	 * Initialize IPC functionality.
+	 */
+	ipc_init();
+
+	/*
+	 * Create our first task.
+	 */
+	error = task_create(&main_task, NULL, "main", TASK_KERNEL);
+	if (error != 0)
+		panic("%s: task_create failed: %m", __func__, error);
 }
 
 static void
 startup_boot_thread(void *arg)
 {
-	struct thread *td;
 	struct startup_item **itemp, *item;
 	struct startup_item_sorted *sorted, *ip;
 	TAILQ_HEAD(, struct startup_item_sorted) sortedq;
 	struct pool startup_item_pool;
 	int error;
-
-	td = arg;
-	ASSERT(td == current_thread(), "booting with wrong thread");
 
 	kcprintf("The system is coming up.\n");
 
@@ -102,29 +114,13 @@ next:		continue;
 	}
 	TAILQ_FOREACH(ip, &sortedq, sis_link) {
 		item = ip->sis_item;
-		/* XXX lord of dirty hacks.  */
-		if (item->si_component == STARTUP_MAIN) {
-			ASSERT(td != NULL, "must have a thread.");
-			item->si_function(td);
-		} else {
-			item->si_function(item->si_arg);
-		}
+		item->si_function(item->si_arg);
 	}
 }
 
 static void
 startup_idle_thread(void *arg)
 {
-	struct thread *td;
-
-	td = arg;
-	ASSERT(td == current_thread(), "consistency is all I ask");
-
-	for (;;) {
-		/*
-		 * Our idle loop should:
-		 * 	o) Deliver pending messages.
-		 */
-		scheduler_schedule();
-	}
+	ipc_process();
 }
+STARTUP_ITEM(main, STARTUP_MAIN, STARTUP_FIRST, startup_idle_thread, NULL);

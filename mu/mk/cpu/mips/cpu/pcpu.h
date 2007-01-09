@@ -1,8 +1,9 @@
 #ifndef	_CPU_PCPU_H_
 #define	_CPU_PCPU_H_
 
-#include <core/queue.h>
+#include <core/ipc.h>
 #include <core/scheduler.h>
+#include <core/queue.h>
 #include <cpu/cpuinfo.h>
 #include <cpu/frame.h>
 #include <cpu/interrupt.h>
@@ -29,6 +30,7 @@ struct pcpu {
 	register_t pc_interrupt_mask;
 	struct scheduler_queue pc_scheduler;
 	unsigned pc_asidnext;
+	struct ipc_queue pc_ipc_queue;
 };
 
 #define	PCPU_PTR()							\

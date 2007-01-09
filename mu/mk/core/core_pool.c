@@ -51,6 +51,7 @@ pool_allocate(struct pool *pool)
 	vaddr_t vaddr;
 	int error;
 
+	ASSERT((pool->pool_flags & POOL_VALID) != 0, "pool must be valid.");
 	ASSERT(pool->pool_size <= MAX_ALLOC_SIZE, "pool must not be so big.");
 
 	POOL_LOCK(pool);
@@ -104,6 +105,7 @@ pool_free(void *m)
 	item--;
 	page = pool_page(item);
 	pool = page->pp_pool;
+	ASSERT((pool->pool_flags & POOL_VALID) != 0, "pool must be valid.");
 	POOL_LOCK(pool);
 	item->pi_flags |= POOL_ITEM_FREE;
 	if (page->pp_items == 0)
@@ -144,7 +146,7 @@ pool_create(struct pool *pool, const char *name, size_t size, unsigned flags)
 	pool->pool_name = name;
 	pool->pool_size = size;
 	SLIST_INIT(&pool->pool_pages);
-	pool->pool_flags = flags;
+	pool->pool_flags = flags | POOL_VALID;
 	return (0);
 }
 

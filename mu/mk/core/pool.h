@@ -9,6 +9,7 @@ struct pool_page;
 #define	POOL_DEFAULT	(0x00000000)	/* Default pool flags.  */
 #define	POOL_BLOCKING	(0x00000001)	/* Pool allocations may block.  */
 #define	POOL_VIRTUAL	(0x00000002)	/* Map virtual, not direct-map.  */
+#define	POOL_VALID	(0x00000004)	/* Pool is valid.  */
 
 struct pool {
 	struct spinlock pool_lock;
@@ -23,7 +24,7 @@ struct pool {
 		.pool_lock = SPINLOCK_INIT(name " POOL"),		\
 		.pool_name = name,					\
 		.pool_size = sizeof (type),				\
-		.pool_flags = flags,					\
+		.pool_flags = flags | POOL_VALID,			\
 		.pool_pages = SLIST_HEAD_INITIALIZER()			\
 	}
 

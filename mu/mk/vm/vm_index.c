@@ -275,15 +275,12 @@ vm_find_index(struct vm *vm, vaddr_t vaddr)
 	return (NULL);
 }
 
-/*
- * XXX
- * Assert that vm is locked.
- */
 static struct vm_index_page *
 vm_find_index_page(struct vm *vm, struct vm_index *vmi, vaddr_t vaddr)
 {
 	struct vm_index_page *vmip;
 
+	SPINLOCK_ASSERT_HELD(&vm->vm_lock);
 	TAILQ_FOREACH(vmip, &vmi->vmi_page_queue, vmip_link) {
 		if (PAGE_FLOOR(vaddr) == vmip->vmip_base) {
 			return (vmip);

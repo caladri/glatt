@@ -1,6 +1,7 @@
 #include <core/types.h>
 #include <core/scheduler.h>
 #include <core/thread.h>
+#include <cpu/scheduler.h>
 #include <db/db.h>
 #include <db/db_show.h>
 #include <io/device/console/console.h>
@@ -304,7 +305,7 @@ scheduler_switch(struct thread *td)
 static void
 scheduler_yield(void)
 {
-	/* XXX cpu_yield(); ? */
+	cpu_scheduler_yield();
 }
 
 static void

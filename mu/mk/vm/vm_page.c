@@ -283,9 +283,6 @@ page_unmap_direct(struct vm *vm, vaddr_t vaddr)
 void
 page_zero(struct vm_page *page)
 {
-	/*
-	 * XXX check VM_PAGE_ZERO
-	 */
 	page_ref_hold(page);
 	pmap_zero(page);
 	page_ref_drop(page);

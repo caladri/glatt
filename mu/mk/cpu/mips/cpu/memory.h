@@ -5,8 +5,10 @@
 
 #define	XUSEG_BASE	(0x0000000000000000)
 #define	XUSEG_END	(0x000000ffffffffff)
-	/* Skip one page for NULL.  */
-#define	USER_BASE	(XUSEG_BASE + PAGE_SIZE)
+
+	/* Address space to use for userland.  */
+
+#define	USER_BASE	(XUSEG_BASE)
 #define	USER_END	(XUSEG_END)
 
 	/* 64-bit kernel virtual address space.  */
@@ -23,6 +25,11 @@
 
 #define	KERNEL_BASE	(XKSEG_BASE)
 #define	KERNEL_END	(XKSEG_END)
+
+	/* Place thread stack at the end of address space.  */
+
+#define	KSTACK_BASE	(KERNEL_END - KSTACK_SIZE)
+#define	KSTACK_END	(KERNEL_END)
 
 	/* 32-bit kernel physical address space mapping.  */
 #define	KSEG0_MAP(a)	(0x80000000 | (a))

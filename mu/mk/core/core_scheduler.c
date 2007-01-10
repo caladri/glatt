@@ -118,15 +118,12 @@ scheduler_thread_setup(struct thread *td)
 	struct scheduler_entry *se;
 
 	se = &td->td_sched;
-
-	/* XXX assume that the tailq se_link stuff is ok? */
 	se->se_thread = td;
 	se->se_queue = NULL;
 	se->se_flags = SCHEDULER_DEFAULT;
 	se->se_oncpu = CPU_ID_INVALID;
 
 	/*
-	 * XXX
 	 * Caller must eventually call scheduler_thread_runnable(td).
 	 */
 }
@@ -177,7 +174,6 @@ scheduler_pick_thread(void)
 	return (se->se_thread);
 }
 
-/* XXX RETURNS SQ LOCKED */
 static struct scheduler_queue *
 scheduler_pick_queue(struct scheduler_entry *se)
 {
@@ -187,7 +183,6 @@ scheduler_pick_queue(struct scheduler_entry *se)
 	if ((se->se_flags & SCHEDULER_PINNED) != 0) {
 		sq = se->se_queue;
 		ASSERT(sq != NULL, "Pinned thread must be on a queue.");
-		SQ_LOCK(sq);
 		SCHEDULER_UNLOCK();
 		return (sq);
 	}
@@ -206,13 +201,11 @@ scheduler_pick_queue(struct scheduler_entry *se)
 		winner = sq;
 	}
 	ASSERT(winner != NULL, "Must find a winner.");
+	SQ_UNLOCK(winner);
 	SCHEDULER_UNLOCK();
 	return (winner);
 }
 
-/*
- * XXX WILL UNLOCK sq.
- */
 static void
 scheduler_queue(struct scheduler_queue *sq, struct scheduler_entry *se)
 {
@@ -221,19 +214,13 @@ scheduler_queue(struct scheduler_queue *sq, struct scheduler_entry *se)
 	/*
 	 * The idle thread cannot go on a queue.
 	 */
-	if ((se->se_flags & SCHEDULER_IDLE) != 0) {
-		if (sq != NULL)
-			SQ_UNLOCK(sq);
+	if ((se->se_flags & SCHEDULER_IDLE) != 0)
 		return;
-	}
 
 	if (sq == NULL)
 		sq = scheduler_pick_queue(se);
 
-	SPINLOCK_ASSERT_HELD(&sq->sq_lock);
-
 	/*
-	 * XXX
 	 * We allow for se->se_queue == sq.  In that case, the se will be
 	 * pushed to the end of sq.
 	 */
@@ -245,6 +232,7 @@ scheduler_queue(struct scheduler_queue *sq, struct scheduler_entry *se)
 		osq->sq_length--;
 		SQ_UNLOCK(osq);
 	}
+	SQ_LOCK(sq);
 	se->se_queue = sq;
 	TAILQ_INSERT_TAIL(&sq->sq_queue, se, se_link);
 	sq->sq_length++;

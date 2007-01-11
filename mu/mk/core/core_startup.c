@@ -9,11 +9,6 @@
 #include <db/db.h>
 #include <io/device/console/console.h>
 
-struct startup_item_sorted {
-	struct startup_item *sis_item;
-	TAILQ_ENTRY(struct startup_item_sorted) sis_link;
-};
-
 SET(startup_items, struct startup_item);
 
 static void startup_bootstrap(void);
@@ -74,48 +69,36 @@ startup_bootstrap(void)
 static void
 startup_boot_thread(void *arg)
 {
-	struct startup_item **itemp, *item;
-	struct startup_item_sorted *sorted, *ip;
-	TAILQ_HEAD(, struct startup_item_sorted) sortedq;
-	struct pool startup_item_pool;
+	struct startup_item **itemp, *item, *ip;
+	static TAILQ_HEAD(, struct startup_item) sorted_items;
 	int error;
 
 	kcprintf("The system is coming up.\n");
 
-	error = pool_create(&startup_item_pool, "startup item", sizeof *sorted,
-			    POOL_VIRTUAL);
-	TAILQ_INIT(&sortedq);
 	for (itemp = SET_BEGIN(startup_items); itemp < SET_END(startup_items);
 	     itemp++) {
 		item = *itemp;
-		sorted = pool_allocate(&startup_item_pool);
-		ASSERT(sorted != NULL, "allocation failed");
-		sorted->sis_item = item;
 #define	LESS_THAN(a, b)							\
-		(((a)->sis_item->si_component <				\
-		  (b)->sis_item->si_component) ||			\
-		 ((a)->sis_item->si_order <				\
-		  (b)->sis_item->si_order))
-
-		if (TAILQ_EMPTY(&sortedq) ||
-		    LESS_THAN(sorted, TAILQ_FIRST(&sortedq))) {
-			TAILQ_INSERT_HEAD(&sortedq, sorted, sis_link);
+		(((a)->si_component < (b)->si_component) ||		\
+		 (((a)->si_component == (b)->si_component) &&		\
+		  ((a)->si_order < (b)->si_order)))
+		if (TAILQ_EMPTY(&sorted_items) ||
+		    LESS_THAN(item, TAILQ_FIRST(&sorted_items))) {
+			TAILQ_INSERT_HEAD(&sorted_items, item, si_link);
 		} else {
-			TAILQ_FOREACH(ip, &sortedq, sis_link) {
-				if (LESS_THAN(sorted, ip)) {
-					TAILQ_INSERT_BEFORE(ip, sorted, sis_link);
+			TAILQ_FOREACH(ip, &sorted_items, si_link) {
+				if (LESS_THAN(item, ip)) {
+					TAILQ_INSERT_BEFORE(ip, item, si_link);
 					goto next;
 				}
 			}
-			TAILQ_INSERT_TAIL(&sortedq, sorted, sis_link);
+			TAILQ_INSERT_TAIL(&sorted_items, item, si_link);
 		}
 #undef LESS_THAN
 next:		continue;
 	}
-	TAILQ_FOREACH(ip, &sortedq, sis_link) {
-		item = ip->sis_item;
+	TAILQ_FOREACH(item, &sorted_items, si_link)
 		item->si_function(item->si_arg);
-	}
 }
 
 static void

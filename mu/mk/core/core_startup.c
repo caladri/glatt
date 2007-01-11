@@ -8,6 +8,7 @@
 #include <core/thread.h>
 #include <db/db.h>
 #include <io/device/console/console.h>
+#include <vm/vm.h>
 
 SET(startup_items, struct startup_item);
 
@@ -18,6 +19,25 @@ static void startup_idle_thread(void *);
 static bool startup_booting = false;
 static struct spinlock startup_spinlock = SPINLOCK_INIT("startup");
 static struct task *main_task;
+
+void
+startup_init(void)
+{
+	/*
+	 * Turn on the virtual memory subsystem.
+	 */
+	vm_init();
+
+	/*
+	 * Set up scheduler subsystem.
+	 */
+	scheduler_init();
+
+	/*
+	 * Initialize IPC functionality.
+	 */
+	ipc_init();
+}
 
 void
 startup_main(void)
@@ -52,11 +72,6 @@ static void
 startup_bootstrap(void)
 {
 	int error;
-
-	/*
-	 * Initialize IPC functionality.
-	 */
-	ipc_init();
 
 	/*
 	 * Create our first task.

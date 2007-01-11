@@ -87,12 +87,7 @@ platform_start(int32_t argc, int32_t argv, int32_t envp, uint32_t memsize)
 	cpu_interrupt_init();
 
 	/*
-	 * Turn on the virtual memory subsystem.
+	 * Early system startup.
 	 */
-	vm_init();
-
-	/*
-	 * Set up scheduler subsystem.
-	 */
-	scheduler_init();
+	startup_init();
 }

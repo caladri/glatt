@@ -1,7 +1,6 @@
 #include <core/types.h>
 #include <core/copyright.h>
 #include <core/error.h>
-#include <core/scheduler.h>
 #include <core/startup.h>
 #include <core/string.h>
 #include <core/mp.h>
@@ -95,12 +94,7 @@ platform_start(void)
 	cpu_interrupt_init();
 
 	/*
-	 * Turn on the virtual memory subsystem.
+	 * Early system startup.
 	 */
-	vm_init();
-
-	/*
-	 * Set up scheduler subsystem.
-	 */
-	scheduler_init();
+	startup_init();
 }

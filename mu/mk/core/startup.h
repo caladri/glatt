@@ -39,6 +39,7 @@ struct startup_item {
 	};								\
 	SET_ADD(startup_items, startup_item_ ## name)
 
+void startup_init(void);
 void startup_main(void);
 
 #endif /* !_CORE_STARTUP_H_ */

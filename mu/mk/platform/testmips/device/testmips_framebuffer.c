@@ -41,5 +41,5 @@ tmfb_attach(struct device *device)
 	return (0);
 }
 
-DRIVER(tmfb, "testmips framebuffer", NULL, tmfb_probe, tmfb_attach);
+DRIVER(tmfb, "testmips framebuffer", NULL, DRIVER_FLAG_DEFAULT, tmfb_probe, tmfb_attach);
 DRIVER_ATTACHMENT(tmfb, "mp");

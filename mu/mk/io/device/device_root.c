@@ -7,7 +7,7 @@
 
 static struct device device_root_storage;
 
-DRIVER(root, "Root device", NULL, NULL, NULL);
+DRIVER(root, "Root device", NULL, DRIVER_FLAG_DEFAULT, NULL, NULL);
 
 static void
 device_startup_root(void *arg)

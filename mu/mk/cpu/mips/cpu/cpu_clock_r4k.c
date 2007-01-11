@@ -33,7 +33,8 @@ clock_interrupt(void *arg, int interrupt)
 static int
 clock_probe(struct device *device)
 {
-	ASSERT(device->d_parent->d_unit == mp_whoami(), "on wrong CPU");
+	ASSERT(device->d_unit == -1, "Must not have a unit number.");
+	device->d_unit = device->d_parent->d_unit;
 
 	return (0);
 }
@@ -48,5 +49,5 @@ clock_attach(struct device *device)
 	return (0);
 }
 
-DRIVER(clock_r4k, "MIPS R4000-style clock", NULL, clock_probe, clock_attach);
+DRIVER(clock_r4k, "MIPS R4000-style clock", NULL, DRIVER_FLAG_DEFAULT | DRIVER_FLAG_PROBE_UNIT, clock_probe, clock_attach);
 DRIVER_ATTACHMENT(clock_r4k, "cpu");

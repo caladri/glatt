@@ -17,6 +17,7 @@ struct driver {
 	const char *d_name;
 	const char *d_desc;
 	unsigned d_nextunit;
+	unsigned d_flags;
 	const char *d_base;
 	driver_probe_t *d_probe;
 	driver_attach_t *d_attach;
@@ -25,7 +26,7 @@ struct driver {
 	STAILQ_HEAD(, struct driver_attachment) d_attachments;
 	STAILQ_ENTRY(struct driver) d_link;
 };
-#define	DRIVER(type, desc, base, probe, attach)				\
+#define	DRIVER(type, desc, base, flags, probe, attach)			\
 	static struct driver driver_struct_ ## type = {			\
 		.d_name = #type,					\
 		.d_desc = desc,						\
@@ -38,9 +39,13 @@ struct driver {
 		    _CONCAT(driver_struct_, type).d_children),		\
 		.d_attachments = STAILQ_HEAD_INITIALIZER(		\
 		    _CONCAT(driver_struct_, type).d_attachments),	\
+		.d_flags = flags,					\
 	};								\
 	SET_ADD(drivers, driver_struct_ ## type)
 
+#define	DRIVER_FLAG_DEFAULT	(0x00000000)
+#define	DRIVER_FLAG_PROBE_UNIT	(0x00000001)
+	
 struct driver_attachment {
 	struct driver *da_driver;
 	const char *da_parent;

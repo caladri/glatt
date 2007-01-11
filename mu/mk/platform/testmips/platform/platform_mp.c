@@ -176,4 +176,4 @@ platform_mp_attach(struct device *device)
 	return (0);
 }
 
-DRIVER(mp, "GXemul testmips multiprocessor bus", NULL, NULL, platform_mp_attach);
+DRIVER(mp, "GXemul testmips multiprocessor bus", NULL, DRIVER_FLAG_DEFAULT, NULL, platform_mp_attach);

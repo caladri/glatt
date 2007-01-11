@@ -47,7 +47,10 @@ device_init(struct device *device, struct device *parent, struct driver *driver)
 	ASSERT(driver != NULL, "need a driver for a device");
 
 	spinlock_init(&device->d_lock, driver->d_name);
-	device->d_unit = driver->d_nextunit++;
+	if ((driver->d_flags & DRIVER_FLAG_PROBE_UNIT) == 0)
+		device->d_unit = driver->d_nextunit++;
+	else
+		device->d_unit = -1;
 	if (parent != NULL) {
 		DEVICE_LOCK(parent);
 		DEVICE_LOCK(device);
@@ -76,6 +79,7 @@ device_init(struct device *device, struct device *parent, struct driver *driver)
 		device->d_state = DEVICE_DYING;
 		return (error);
 	}
+	ASSERT(device->d_unit != -1, "Must have a unit number after probe.");
 	device->d_state = DEVICE_ATTACHED;
 
 	DEVICE_UNLOCK(device);

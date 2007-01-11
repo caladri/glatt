@@ -8,7 +8,8 @@
 static int
 cpu_probe(struct device *device)
 {
-	ASSERT(device->d_unit == mp_whoami(), "unit must match cpu id");
+	ASSERT(device->d_unit == -1, "Must not have a unit number.");
+	device->d_unit = mp_whoami();
 
 	/*
 	 * XXX
@@ -39,4 +40,4 @@ cpu_attach(struct device *device)
 	return (0);
 }
 
-DRIVER(cpu, "MIPS CPU", NULL, cpu_probe, cpu_attach);
+DRIVER(cpu, "MIPS CPU", NULL, DRIVER_FLAG_DEFAULT | DRIVER_FLAG_PROBE_UNIT, cpu_probe, cpu_attach);

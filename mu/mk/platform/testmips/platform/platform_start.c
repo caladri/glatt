@@ -99,8 +99,6 @@ platform_start(void)
 	 */
 	vm_init();
 
-	pmap_bootstrap();
-
 	/*
 	 * Set up scheduler subsystem.
 	 */

@@ -51,7 +51,9 @@ pool_allocate(struct pool *pool)
 	vaddr_t vaddr;
 	int error;
 
-	ASSERT((pool->pool_flags & POOL_VALID) != 0, "pool must be valid.");
+	if ((pool->pool_flags & POOL_VALID) == 0)
+		panic("%s: pool %s used before initialization!", __func__,
+		      pool->pool_name);
 	ASSERT(pool->pool_size <= MAX_ALLOC_SIZE, "pool must not be so big.");
 
 	POOL_LOCK(pool);

@@ -69,10 +69,6 @@ platform_mp_startup(void)
 	 */
 	if (platform_mp_bus != NULL)
 		platform_mp_attach_cpu();
-
-	/* Install an IPI interrupt handler.  */
-	cpu_interrupt_establish(TEST_MP_DEV_IPI_INTERRUPT,
-				platform_mp_ipi_interrupt, NULL);
 }
 
 cpu_id_t
@@ -160,6 +156,10 @@ platform_mp_attach_cpu(void)
 	error = device_create(&device, platform_mp_bus, driver);
 	if (error != 0)
 		panic("%s: device create failed: %m", __func__, error);
+
+	/* Install an IPI interrupt handler.  */
+	cpu_interrupt_establish(TEST_MP_DEV_IPI_INTERRUPT,
+				platform_mp_ipi_interrupt, NULL);
 }
 
 static int

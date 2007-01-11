@@ -17,7 +17,8 @@ struct interrupt_handler {
 void cpu_interrupt_establish(int, interrupt_t *, void *);
 
 void cpu_interrupt(void);
-void cpu_interrupt_initialize(void);
+void cpu_interrupt_init(void);
+void cpu_interrupt_setup(void);
 
 register_t cpu_interrupt_disable(void);
 void cpu_interrupt_restore(register_t);

@@ -86,27 +86,6 @@ cpu_interrupt(void)
 	ASSERT(interrupts == 0, "must handle all interrupts");
 }
 
-void
-cpu_interrupt_initialize(void)
-{
-	struct interrupt_handler *ih;
-	unsigned interrupt;
-	int error;
-
-	PCPU_SET(interrupt_mask, 0);
-	error = pool_create(&interrupt_handler_pool, "INTERRUPT HANDLER",
-			    sizeof (struct interrupt_handler), POOL_DEFAULT);
-	if (error != 0)
-		panic("%s: pool_created failed: %m", __func__, error);
-	for (interrupt = 0; interrupt < CPU_INTERRUPT_COUNT; interrupt++)
-		STAILQ_INIT(&PCPU_GET(interrupt_table)[interrupt]);
-	ASSERT((cpu_read_status() & CP0_STATUS_IE) == 0,
-	       "Can't reenable interrupts.");
-	cpu_write_status((cpu_read_status() & ~CP0_STATUS_INTERRUPT_MASK) |
-			 PCPU_GET(interrupt_mask));
-	cpu_write_status(cpu_read_status() | CP0_STATUS_IE);
-}
-
 register_t
 cpu_interrupt_disable(void)
 {
@@ -119,6 +98,17 @@ cpu_interrupt_disable(void)
 }
 
 void
+cpu_interrupt_init(void)
+{
+	int error;
+
+	error = pool_create(&interrupt_handler_pool, "INTERRUPT HANDLER",
+			    sizeof (struct interrupt_handler), POOL_DEFAULT);
+	if (error != 0)
+		panic("%s: pool_created failed: %m", __func__, error);
+}
+
+void
 cpu_interrupt_restore(register_t r)
 {
 	if (r == CP0_STATUS_IE &&
@@ -128,4 +118,20 @@ cpu_interrupt_restore(register_t r)
 				 PCPU_GET(interrupt_mask));
 		cpu_write_status(cpu_read_status() | r);
 	}
+}
+
+void
+cpu_interrupt_setup(void)
+{
+	struct interrupt_handler *ih;
+	unsigned interrupt;
+
+	PCPU_SET(interrupt_mask, 0);
+	for (interrupt = 0; interrupt < CPU_INTERRUPT_COUNT; interrupt++)
+		STAILQ_INIT(&PCPU_GET(interrupt_table)[interrupt]);
+	ASSERT((cpu_read_status() & CP0_STATUS_IE) == 0,
+	       "Can't reenable interrupts.");
+	cpu_write_status((cpu_read_status() & ~CP0_STATUS_INTERRUPT_MASK) |
+			 PCPU_GET(interrupt_mask));
+	cpu_write_status(cpu_read_status() | CP0_STATUS_IE);
 }

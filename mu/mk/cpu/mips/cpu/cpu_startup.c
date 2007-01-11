@@ -57,11 +57,5 @@ cpu_startup(void)
 
 	/* Now we can take VM-related exceptions appropriately.  */
 
-	/*
-	 * XXX push to CPU device attachment.
-	 */
-	/* Kick off interrupts.  */
-	cpu_interrupt_initialize();
-
 	/* Return to the platform code.  */
 }

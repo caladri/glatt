@@ -7,6 +7,7 @@
 #include <core/mp.h>
 #include <cpu/cpu.h>
 #include <cpu/exception.h>
+#include <cpu/interrupt.h>
 #include <cpu/memory.h>
 #include <db/db.h>
 #include <io/device/console/console.h>
@@ -79,6 +80,11 @@ platform_start(int32_t argc, int32_t argv, int32_t envp, uint32_t memsize)
 	 * Turn on exception handlers.
 	 */
 	cpu_exception_init();
+
+	/*
+	 * Set up data structures for later interrupt handling.
+	 */
+	cpu_interrupt_init();
 
 	/*
 	 * Turn on the virtual memory subsystem.

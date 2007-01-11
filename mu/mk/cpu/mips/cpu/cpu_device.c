@@ -1,5 +1,6 @@
 #include <core/types.h>
 #include <cpu/cpuinfo.h>
+#include <cpu/interrupt.h>
 #include <cpu/pcpu.h>
 #include <io/device/console/console.h>
 #include <io/device/device.h>
@@ -36,6 +37,8 @@ cpu_attach(struct device *device)
 		      (unsigned)PCPU_GET(cpuinfo).cpu_revision_major,
 		      (unsigned)PCPU_GET(cpuinfo).cpu_revision_minor,
 		      (unsigned)PCPU_GET(cpuinfo).cpu_ntlbs);
+
+	cpu_interrupt_setup();
 
 	return (0);
 }

@@ -8,13 +8,14 @@
 static void
 test_vdae_callback(void *arg)
 {
+	static int i;
 	struct vdae_list *vlist;
 
 	vlist = arg;
 
 	vdae_list_wakeup(vlist);
 
-	kcprintf("%p got the ball on cpu%u!\n", current_thread(), mp_whoami());
+	kcprintf("%p got the ball (%d) on cpu%u!\n", current_thread(), i++, mp_whoami());
 }
 
 static void

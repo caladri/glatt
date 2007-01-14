@@ -220,12 +220,12 @@ ENTRY(tlb_exception)
 	nop
 
 	/* Found!  Indexed write.  */
+	j	exception_return
 	tlbwi
-	eret
 
 	/* Not found.  Random write.  */
-1:	tlbwr
-	eret
+1:	j	exception_return
+	tlbwr
 	.set at
 END(tlb_exception)
 
@@ -350,6 +350,12 @@ END(exception_frame_restore)
 ENTRY(exception_return)
 	.set noat
 	/* XXX userland.  */
+	dmfc0	k0, CP0_EXCPC
+	dla	k1, exception_return_fixup
+	dmtc0	k1, CP0_EXCPC
+	eret
+	break
+exception_return_fixup:
 	/*
 	 * Restore kernel status, enable interrupts if needed.
 	 */
@@ -358,7 +364,7 @@ ENTRY(exception_return)
 	beqz	k1, 1f
 	or	k1, KERNEL_STATUS
 	or	k1, CP0_STATUS_IE
-1:	mtc0	k1, CP0_STATUS
-	eret
+1:	j	k0
+	mtc0	k1, CP0_STATUS
 	.set at
 END(exception_return)

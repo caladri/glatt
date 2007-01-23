@@ -1,5 +1,6 @@
 #include <core/types.h>
 #include <core/startup.h>
+#include <core/string.h>
 #include <cpu/cpu.h>
 #include <cpu/memory.h>
 #include <cpu/pcpu.h>
@@ -41,6 +42,11 @@ cpu_startup(void)
 		panic("cpu%u: page allocate failed: %m", mp_whoami(), error);
 	pcpu_addr = page_address(pcpu_page);
 	pcpu = (struct pcpu *)XKPHYS_MAP(XKPHYS_CNC, pcpu_addr);
+
+	/*
+	 * Dirty the whole PCPU area.
+	 */
+	memset(pcpu, 0, sizeof *pcpu);
 
 	/* Keep our original physical address in the PCPU data, too.  */
 	pcpu->pc_physaddr = pcpu;

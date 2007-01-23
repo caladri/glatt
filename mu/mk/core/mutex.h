@@ -13,6 +13,7 @@ struct mutex {
 
 void mutex_init(struct mutex *, const char *);
 void mutex_lock(struct mutex *);
+bool mutex_try_lock(struct mutex *);
 void mutex_unlock(struct mutex *);
 
 #endif	/* !_CORE_MUTEX_H_ */

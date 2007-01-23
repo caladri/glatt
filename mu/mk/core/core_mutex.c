@@ -19,26 +19,34 @@ mutex_init(struct mutex *mtx, const char *name)
 void
 mutex_lock(struct mutex *mtx)
 {
+	for (;;) {
+		if (mutex_try_lock(mtx))
+			return;
+		sleepq_wait(mtx);
+	}
+}
+
+bool
+mutex_try_lock(struct mutex *mtx)
+{
 	struct thread *td;
 
 	td = current_thread();
 
-	for (;;) {
-		MTX_SPINLOCK(mtx);
-		if (mtx->mtx_owner == td) {
-			mtx->mtx_nested++;
-			MTX_SPINUNLOCK(mtx);
-			return;
-		}
-		if (mtx->mtx_owner == NULL) {
-			mtx->mtx_nested++;
-			mtx->mtx_owner = td;
-			MTX_SPINUNLOCK(mtx);
-			return;
-		}
+	MTX_SPINLOCK(mtx);
+	if (mtx->mtx_owner == td) {
+		mtx->mtx_nested++;
 		MTX_SPINUNLOCK(mtx);
-		sleepq_wait(mtx);
+		return (true);
 	}
+	if (mtx->mtx_owner == NULL) {
+		mtx->mtx_nested++;
+		mtx->mtx_owner = td;
+		MTX_SPINUNLOCK(mtx);
+		return (true);
+	}
+	MTX_SPINUNLOCK(mtx);
+	return (false);
 }
 
 void

@@ -122,7 +122,11 @@ vdae_thread_loop(void *arg)
 
 	for (;;) {
 		VDAE_LOCK(v);
-		/*while?*/if ((v->v_flags & VDAE_FLAG_WAKEUP) == 0) {
+		/*
+		 * Use a while loop rather than an if, in case we get spurious
+		 * wakeups from the sleepq.
+		 */
+		while ((v->v_flags & VDAE_FLAG_WAKEUP) == 0) {
 			VDAE_UNLOCK(v);
 			sleepq_wait(v->v_list);
 			VDAE_LOCK(v);

@@ -293,8 +293,10 @@ ENTRY(exception_frame_save)		/* Return address is k0.  */
 	sd	t1, FRAME_HI(sp)
 	sd	t2, FRAME_LO(sp)
 
+	li	k1, KERNEL_STATUS
+
 	jr	k0
-	nop
+	mtc0	k1, CP0_STATUS
 	.set at
 END(exception_frame_save)
 
@@ -353,7 +355,10 @@ ENTRY(exception_return)
 	dmfc0	k0, CP0_EXCPC
 	dla	k1, exception_return_fixup
 	dmtc0	k1, CP0_EXCPC
+
 	eret
+
+	/* Should not be reached.  */
 	break
 exception_return_fixup:
 	/*

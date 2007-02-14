@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.18 2006-12-14 17:43:32 juli Exp $
+# $Id: Makefile,v 1.19 2007-02-14 09:24:25 juli Exp $
 
 KERNEL?=	mu-mk
 
@@ -45,13 +45,13 @@ ${KERNEL}: ${KERNEL_OBJECTS}
 		${KERNEL_FORMAT} -o $@
 
 clean:
-	-rm _as.h _as.h.o
+	-rm _as.h _as.h.S
 	-rm ${KERNEL_OBJECTS}
 	-rm ${KERNEL}
 
 _as.h: ${PLATFORM_ROOT}/platform/_as.sym
-	${KERNEL_CC} -x c ${KERNEL_CPPFLAGS} ${KERNEL_CFLAGS} -c -o $@.o $>
-	env NM='${KERNEL_NM}' sh ${BUILD_ROOT}/tools/mkassym.sh $@.o > $@
+	${KERNEL_CC} -S -x c ${KERNEL_CPPFLAGS} ${KERNEL_CFLAGS} -c -o $@.S $>
+	grep '@assym@' $@.S | sed 's/.*@assym@ /#/' > $@
 
 .c.o:
 	${KERNEL_CC} ${KERNEL_CPPFLAGS} ${KERNEL_CFLAGS} -c -o $@ $<

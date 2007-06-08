@@ -28,12 +28,12 @@ panic(const char *s, ...)
 			winner = false;
 			break;
 		}
+		ASSERT(false, "Should not be reached.");
 	}
 
 	if (winner) {
 		/*
 		 * Ask other CPUs to stop.
-		 * XXX check if there are other CPUs at all?
 		 */
 		mp_ipi_send_but(mp_whoami(), IPI_STOP);
 	}
@@ -46,13 +46,9 @@ panic(const char *s, ...)
 	kcputs("\n");
 	spinlock_unlock(&console_lock);
 
-	/*
-	 * XXX do in a critical section?
-	 */
 	if ((PCPU_GET(flags) & PCPU_FLAG_PANICKED) != 0) {
 		kcprintf("cpu%u: double panic.\n", mp_whoami());
-		for (;;)
-			continue;
+		mp_ipi_send(mp_whoami(), IPI_STOP);
 	}
 	PCPU_SET(flags, PCPU_GET(flags) | PCPU_FLAG_PANICKED);
 

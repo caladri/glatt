@@ -25,14 +25,10 @@ db_enter(void)
 	kcprintf("DB: Entering debugger.\n");
 
 	/*
-	 * Ask other CPUs to stop.  XXX check if there are other CPUs at all?
+	 * Ask other CPUs to stop.
 	 */
 	mp_ipi_send_but(mp_whoami(), IPI_STOP);
 
-	/*
-	 * XXX acquire a spinlock or halt all other CPUs to prevent lots of
-	 * them entering the debugger at the same time.
-	 */
 	for (;;) {
 		struct db_action **actionp;
 		int error;

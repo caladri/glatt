@@ -1,12 +1,14 @@
 #include <core/types.h>
 #include <core/ipc.h>
 #include <core/malloc.h>
+#include <core/pool.h>
 #include <core/sleepq.h>
 #include <core/thread.h>
 #include <core/vdae.h>
 
 static TAILQ_HEAD(, struct ipc_port) ipc_ports;
 static struct mutex ipc_ports_lock;
+static struct pool ipc_port_pool;
 
 #define	IPC_PORTS_LOCK()	mutex_lock(&ipc_ports_lock)
 #define	IPC_PORTS_UNLOCK()	mutex_unlock(&ipc_ports_lock)
@@ -29,6 +31,14 @@ static struct ipc_port *ipc_port_lookup(ipc_port_t);
 void
 ipc_init(void)
 {
+	int error;
+
+	error = pool_create(&ipc_port_pool, "IPC PORT",
+			    sizeof (struct ipc_port),
+			    POOL_DEFAULT | POOL_VIRTUAL);
+	if (error != 0)
+		panic("%s: pool_create failed: %m", __func__, error);
+
 	mutex_init(&ipc_ports_lock, "IPC Ports");
 	TAILQ_INIT(&ipc_ports);
 
@@ -70,6 +80,38 @@ ipc_process(void)
 		IPC_QUEUE_LOCK(ipcq);
 		IPC_QUEUE_UNLOCK(ipcq);
 	}
+}
+
+static struct ipc_port *
+ipc_port_alloc(ipc_port_t port)
+{
+	struct ipc_port *ipcp, *old;
+
+	old = ipc_port_lookup(port);
+	if (old != NULL) {
+		IPC_PORT_UNLOCK(old);
+		return (NULL);
+	}
+
+	ipcp = pool_allocate(&ipc_port_pool);
+	mutex_init(&ipcp->ipcp_mutex, "IPC Port");
+	ipcp->ipcp_port = port;
+	ipcp->ipcp_vdae = NULL;
+	TAILQ_INIT(&ipcp->ipcp_msgs);
+
+	IPC_PORTS_LOCK();
+	IPC_PORT_LOCK(ipcp);
+	/*
+	 * Check to see if we lost a race for this port.
+	 */
+	old = ipc_port_lookup(port);
+	if (old != NULL) {
+		IPC_PORT_UNLOCK(old);
+		pool_free(ipcp);
+		return (NULL);
+	}
+	IPC_PORT_UNLOCK(ipcp);
+	IPC_PORTS_UNLOCK();
 }
 
 static void

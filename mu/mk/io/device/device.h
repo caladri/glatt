@@ -1,8 +1,8 @@
 #ifndef	_IO_DEVICE_DEVICE_H_
 #define	_IO_DEVICE_DEVICE_H_
 
+#include <core/mutex.h>
 #include <core/queue.h>
-#include <core/spinlock.h>
 
 struct driver;
 
@@ -14,7 +14,7 @@ enum device_state {
 };
 
 struct device {
-	struct spinlock d_lock;
+	struct mutex d_mtx;
 	int d_unit;
 	struct device *d_parent;
 	STAILQ_HEAD(, struct device) d_children;
@@ -25,8 +25,8 @@ struct device {
 	void *d_softc;
 };
 
-#define	DEVICE_LOCK(d)		spinlock_lock(&(d)->d_lock)
-#define	DEVICE_UNLOCK(d)	spinlock_unlock(&(d)->d_lock)
+#define	DEVICE_LOCK(d)		mutex_lock(&(d)->d_mtx)
+#define	DEVICE_UNLOCK(d)	mutex_unlock(&(d)->d_mtx)
 
 int device_create(struct device **, struct device *, struct driver *);
 int device_init(struct device *, struct device *, struct driver *);

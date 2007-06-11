@@ -50,6 +50,15 @@ o) Clocks.
 o) Locking.
 o) IPC.
 	o) Userland.
+	o) CRUX system for renaming ports in a task.  For example mapping the
+	   system port to a user port for emulation.  Such as:
+	   	crux(IPC_PORT_SYSTEM, 1024);
+		ipc_port_listen(1024);
+		fd = open(name);
+		ipc_port_receive(1024);
+		/* fake open */
+		crux_teardown(IPC_PORT_SYSTEM);
+		/* real open */
 o) Device drivers.
 	o) Ethernet.
 		o) IP.

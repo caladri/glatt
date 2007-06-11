@@ -55,6 +55,8 @@ vdae_create(struct vdae_list *vlist, vdae_callback_t *callback, void *arg)
 	struct vdae *v;
 	int error;
 
+	ASSERT(vlist != NULL, "Cannot create VDAE for NULL list.");
+
 	v = pool_allocate(&vdae_pool);
 	mutex_init(&v->v_mutex, "VDAE");
 	VDAE_LIST_LOCK(vlist);
@@ -95,6 +97,8 @@ void
 vdae_list_wakeup(struct vdae_list *vlist)
 {
 	struct vdae *v;
+
+	ASSERT(vlist != NULL, "Cannot wakeup NULL list.");
 
 	VDAE_LIST_LOCK(vlist);
 	/*

@@ -33,13 +33,10 @@ test_ipc_thread(void *arg)
 	hdr.ipchdr_type = NTHREADS;
 	hdr.ipchdr_len = 0;
 
-	kcprintf("Worker %d should send from %lu to %lu.\n", priv->i, priv->receive, priv->send);
-
 	send = true;
 
 	for (;;) {
 		if (send) {
-			kcprintf("Worker %d is sending.\n", priv->i);
 			error = ipc_port_send(&hdr, NULL);
 			if (error != 0)
 				panic("%s: ipc_port_send failed: %m", __func__,
@@ -62,8 +59,6 @@ test_ipc_thread(void *arg)
 		if (rx.ipchdr_dst != priv->receive)
 			panic("%s: incorrect destination.", __func__);
 
-		kcprintf("Worker %d is receiving.\n", priv->i);
-
 		hdr.ipchdr_dst = rx.ipchdr_src;
 
 		send = true;
@@ -83,7 +78,6 @@ test_ipc_startup(void *arg)
 		if (error != 0)
 			panic("%s: ipc_port_allocate failed: %m", __func__,
 			      error);
-		kcprintf("Worker %d rx port is %lu.\n", i, test_privates[i].receive);
 		if (i != 0) {
 			test_privates[i].send = test_privates[i - 1].receive;
 			if (i == NTHREADS - 1)

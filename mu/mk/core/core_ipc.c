@@ -1,4 +1,5 @@
 #include <core/types.h>
+#include <core/error.h>
 #include <core/ipc.h>
 #include <core/malloc.h>
 #include <core/pool.h>
@@ -9,6 +10,7 @@
 static TAILQ_HEAD(, struct ipc_port) ipc_ports;
 static struct mutex ipc_ports_lock;
 static struct pool ipc_port_pool;
+static ipc_port_t ipc_port_next		= IPC_PORT_UNRESERVED_START;
 
 #define	IPC_PORTS_LOCK()	mutex_lock(&ipc_ports_lock)
 #define	IPC_PORTS_UNLOCK()	mutex_unlock(&ipc_ports_lock)
@@ -25,6 +27,7 @@ static struct mutex ipc_queues_lock;
 
 #define	current_ipcq()		(&PCPU_GET(ipc_queue))
 
+static struct ipc_port *ipc_port_alloc(ipc_port_t);
 static void ipc_port_deliver(struct ipc_message *);
 static struct ipc_port *ipc_port_lookup(ipc_port_t);
 
@@ -82,6 +85,69 @@ ipc_process(void)
 	}
 }
 
+int
+ipc_port_allocate(ipc_port_t *portp)
+{
+	struct ipc_port *ipcp;
+	ipc_port_t port;
+
+	for (;;) {
+		IPC_PORTS_LOCK();
+		for (;;) {
+			if (ipc_port_next < IPC_PORT_UNRESERVED_START ||
+			    ipc_port_next >= IPC_PORT_UNRESERVED_END) {
+				ipc_port_next = IPC_PORT_UNRESERVED_START;
+				continue;
+			}
+			port = ipc_port_next++;
+			ipcp = ipc_port_lookup(port);
+			if (ipcp == NULL)
+				break;
+			IPC_PORT_UNLOCK(ipcp);
+		}
+		IPC_PORTS_UNLOCK();
+
+		ipcp = ipc_port_alloc(port);
+		if (ipcp == NULL)
+			continue;
+		*portp = port;
+		return (0);
+	}
+}
+
+void
+ipc_port_free(ipc_port_t port)
+{
+	panic("%s: not implemented yet.", __func__);
+}
+
+int
+ipc_port_receive(ipc_port_t port, struct ipc_header *ipch, struct ipc_data *ipcd)
+{
+	struct ipc_message *ipcmsg;
+	struct ipc_port *ipcp;
+
+	ASSERT(ipch != NULL, "Must be able to copy out header.");
+
+	ipcp = ipc_port_lookup(port);
+	if (ipcp == NULL)
+		return (ERROR_NOT_FOUND);
+	if (TAILQ_EMPTY(&ipcp->ipcp_msgs)) {
+		IPC_PORT_UNLOCK(ipcp);
+		return (ERROR_AGAIN);
+	}
+	ipcmsg = TAILQ_FIRST(&ipcp->ipcp_msgs);
+	ASSERT(ipcmsg != NULL, "Queue must not change out from under us.");
+	IPC_PORT_UNLOCK(ipcp);
+
+	*ipch = ipcmsg->ipcmsg_header;
+	if (ipcd != NULL) {
+		*ipcd = ipcmsg->ipcmsg_data;
+	}
+	free(ipcmsg);
+	return (0);
+}
+
 static struct ipc_port *
 ipc_port_alloc(ipc_port_t port)
 {
@@ -112,6 +178,8 @@ ipc_port_alloc(ipc_port_t port)
 	}
 	IPC_PORT_UNLOCK(ipcp);
 	IPC_PORTS_UNLOCK();
+
+	return (ipcp);
 }
 
 static void
@@ -120,12 +188,13 @@ ipc_port_deliver(struct ipc_message *ipcmsg)
 	struct ipc_port *ipcp;
 
 	ipcp = ipc_port_lookup(ipcmsg->ipcmsg_header.ipchdr_dst);
-	if (ipcp != NULL) {
-		TAILQ_INSERT_TAIL(&ipcp->ipcp_msgs, ipcmsg, ipcmsg_link);
-		vdae_list_wakeup(ipcp->ipcp_vdae);
-		IPC_PORT_UNLOCK(ipcp);
+	if (ipcp == NULL) {
+		free(ipcmsg);
+		return;
 	}
-	free(ipcmsg);
+	TAILQ_INSERT_TAIL(&ipcp->ipcp_msgs, ipcmsg, ipcmsg_link);
+	vdae_list_wakeup(ipcp->ipcp_vdae);
+	IPC_PORT_UNLOCK(ipcp);
 }
 
 static struct ipc_port *

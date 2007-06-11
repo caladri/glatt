@@ -8,6 +8,11 @@ typedef	uint64_t	ipc_port_t;
 typedef	int64_t		ipc_msg_t;
 typedef	uint64_t	ipc_size_t;
 
+#define	IPC_PORT_RESERVED_START		(0)
+#define	IPC_PORT_RESERVED_END		(100)
+#define	IPC_PORT_UNRESERVED_START	(100)
+#define	IPC_PORT_UNRESERVED_END		((ipc_port_t)1 << ((8 * sizeof (ipc_port_t)) - 1))
+
 struct ipc_port {
 	struct mutex ipcp_mutex;
 	ipc_port_t ipcp_port;
@@ -23,9 +28,13 @@ struct ipc_header {
 	ipc_size_t ipchdr_len;
 };
 
+struct ipc_data {
+	int dummy;
+};
+
 struct ipc_message {
 	struct ipc_header ipcmsg_header;
-	/* XXX Some sort of buffer structure.  */
+	struct ipc_data ipcmsg_data;
 	TAILQ_ENTRY(struct ipc_message) ipcmsg_link;
 };
 
@@ -40,6 +49,6 @@ void ipc_process(void);
 
 int ipc_port_allocate(ipc_port_t *);
 void ipc_port_free(ipc_port_t);
-int ipc_port_receive(ipc_port_t, struct ipc_header *);
+int ipc_port_receive(ipc_port_t, struct ipc_header *, struct ipc_data *);
 
 #endif /* !_CORE_IPC_H_ */

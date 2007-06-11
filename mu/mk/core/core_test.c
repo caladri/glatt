@@ -1,4 +1,5 @@
 #include <core/types.h>
+#include <core/error.h>
 #include <core/ipc.h>
 #include <core/startup.h>
 #include <core/task.h>
@@ -10,6 +11,7 @@
 
 static struct test_private {
 	struct thread *td;
+	int i;
 	ipc_port_t send;
 	ipc_port_t receive;
 } test_privates[NTHREADS];
@@ -18,12 +20,47 @@ static void
 test_ipc_thread(void *arg)
 {
 	struct test_private *priv = arg;
+	struct ipc_header hdr, rx;
+	bool send;
+	int error;
 
 	ASSERT(priv != NULL, "Must have a private.");
 	ASSERT(priv->td == current_thread(), "Must be on right thread.");
 
+	hdr.ipchdr_src = priv->receive;
+	hdr.ipchdr_dst = priv->send;
+	hdr.ipchdr_type = NTHREADS;
+	hdr.ipchdr_len = 0;
+
+	send = true;
+
 	for (;;) {
-		ipc_port_wait(priv->receive);
+		if (send) {
+			kcprintf("Worker %d is sending.\n", priv->i);
+			error = ipc_port_send(&hdr, NULL);
+			if (error != 0)
+				panic("%s: ipc_port_send failed: %m", __func__,
+				      error);
+		}
+
+		error = ipc_port_receive(priv->receive, &rx, NULL);
+		if (error == ERROR_AGAIN) {
+			send = false;
+			ipc_port_wait(priv->receive);
+			continue;
+		}
+		if (error != 0)
+			panic("%s: ipc_port_receive failed: %m", __func__,
+			      error);
+
+		if (rx.ipchdr_type != NTHREADS)
+			panic("%s: incorrect type.", __func__);
+		
+		kcprintf("Worker %d is receiving.\n", priv->i);
+
+		hdr.ipchdr_dst = rx.ipchdr_src;
+
+		send = true;
 	}
 }
 
@@ -35,6 +72,8 @@ test_ipc_startup(void *arg)
 	int error;
 
 	for (i = 0; i < NTHREADS; i++) {
+		test_privates[i].i = i;
+
 		error = ipc_port_allocate(&test_privates[i].receive);
 		if (error != 0)
 			panic("%s: ipc_port_allocate failed: %m", __func__,

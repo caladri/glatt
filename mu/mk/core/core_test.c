@@ -10,6 +10,7 @@
 #define	NTHREADS	3
 
 static struct test_private {
+	struct task *task;
 	struct thread *td;
 	int i;
 	ipc_port_t send;
@@ -72,7 +73,6 @@ test_ipc_thread(void *arg)
 static void
 test_ipc_startup(void *arg)
 {
-	struct task *task;
 	unsigned i;
 	int error;
 
@@ -91,13 +91,17 @@ test_ipc_startup(void *arg)
 		}
 	}
 
-	error = task_create(&task, NULL, "test", TASK_DEFAULT | TASK_KERNEL);
-	if (error != 0)
-		panic("%s: task_create failed: %m", __func__, error);
-
 	for (i = 0; i < NTHREADS; i++) {
+		struct task **taskp = &test_privates[i].task;
 		struct thread **tdp = &test_privates[i].td;
-		error = thread_create(tdp, task, "thread i", THREAD_DEFAULT);
+
+		error = task_create(taskp, NULL, "test i",
+				    TASK_DEFAULT | TASK_KERNEL);
+		if (error != 0)
+			panic("%s: task_create failed: %m", __func__, error);
+
+		error = thread_create(tdp, *taskp, "test thread",
+				      THREAD_DEFAULT);
 		if (error != 0)
 			panic("%s: thread_create failed: %m", __func__, error);
 		thread_set_upcall(*tdp, test_ipc_thread, &test_privates[i]);

@@ -119,6 +119,7 @@ next:		continue;
 static void
 startup_idle_thread(void *arg)
 {
+	kcprintf("cpu%u: The system is up.\n", mp_whoami());
 	ipc_process();
 }
 STARTUP_ITEM(main, STARTUP_MAIN, STARTUP_FIRST, startup_idle_thread, NULL);

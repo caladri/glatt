@@ -7,7 +7,7 @@
 
 #include <io/device/console/console.h>
 
-#define	NTHREADS	3
+#define	NTHREADS	10
 
 static struct test_private {
 	struct task *task;

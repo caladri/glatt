@@ -148,6 +148,22 @@ ipc_port_receive(ipc_port_t port, struct ipc_header *ipch, struct ipc_data *ipcd
 	return (0);
 }
 
+void
+ipc_port_wait(ipc_port_t port)
+{
+	struct ipc_port *ipcp;
+
+	ipcp = ipc_port_lookup(port);
+	ASSERT(ipcp != NULL, "Must have a port to wait on.");
+	if (!TAILQ_EMPTY(&ipcp->ipcp_msgs)) {
+		IPC_PORT_UNLOCK(ipcp);
+		return;
+	}
+	/* XXX refcount.  */
+	IPC_PORT_UNLOCK(ipcp);
+	sleepq_wait(ipcp);
+}
+
 static struct ipc_port *
 ipc_port_alloc(ipc_port_t port)
 {
@@ -176,6 +192,12 @@ ipc_port_alloc(ipc_port_t port)
 		pool_free(ipcp);
 		return (NULL);
 	}
+
+	/*
+	 * Register ourselves.
+	 */
+	TAILQ_INSERT_TAIL(&ipc_ports, ipcp, ipcp_link);
+
 	IPC_PORT_UNLOCK(ipcp);
 	IPC_PORTS_UNLOCK();
 
@@ -194,6 +216,7 @@ ipc_port_deliver(struct ipc_message *ipcmsg)
 	}
 	TAILQ_INSERT_TAIL(&ipcp->ipcp_msgs, ipcmsg, ipcmsg_link);
 	vdae_list_wakeup(ipcp->ipcp_vdae);
+	sleepq_signal_one(ipcp);
 	IPC_PORT_UNLOCK(ipcp);
 }
 

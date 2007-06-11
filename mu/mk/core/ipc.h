@@ -50,5 +50,6 @@ void ipc_process(void);
 int ipc_port_allocate(ipc_port_t *);
 void ipc_port_free(ipc_port_t);
 int ipc_port_receive(ipc_port_t, struct ipc_header *, struct ipc_data *);
+void ipc_port_wait(ipc_port_t);
 
 #endif /* !_CORE_IPC_H_ */

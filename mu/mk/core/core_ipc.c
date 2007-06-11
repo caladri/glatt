@@ -148,6 +148,44 @@ ipc_port_receive(ipc_port_t port, struct ipc_header *ipch, struct ipc_data *ipcd
 	return (0);
 }
 
+int
+ipc_port_send(struct ipc_header *ipch, struct ipc_data *ipcd)
+{
+	struct ipc_message *ipcmsg;
+	struct ipc_queue *ipcq;
+	struct ipc_port *ipcp;
+
+	ASSERT(ipch != NULL, "Must have a header.");
+	ASSERT(ipch->ipchdr_len == 0 || ipcd != NULL,
+	       "Must have data or no size.");
+
+	ipcp = ipc_port_lookup(ipch->ipchdr_src);
+	if (ipcp == NULL)
+		return (ERROR_INVALID);
+	IPC_PORT_UNLOCK(ipcp);
+
+	ipcp = ipc_port_lookup(ipch->ipchdr_dst);
+	if (ipcp == NULL)
+		return (ERROR_NOT_FOUND);
+	IPC_PORT_UNLOCK(ipcp);
+
+	ipcmsg = malloc(sizeof *ipcmsg);
+	ipcmsg->ipcmsg_header = *ipch;
+	if (ipcd != NULL)
+		ipcmsg->ipcmsg_data = *ipcd;
+
+	/*
+	 * XXX
+	 * This should be in ipc_queue_msg or something.
+	 */
+	ipcq = current_ipcq();
+	IPC_QUEUE_LOCK(ipcq);
+	TAILQ_INSERT_TAIL(&ipcq->ipcq_msgs, ipcmsg, ipcmsg_link);
+	sleepq_signal_one(ipcq);
+	IPC_QUEUE_UNLOCK(ipcq);
+	return (0);
+}
+
 void
 ipc_port_wait(ipc_port_t port)
 {

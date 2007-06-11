@@ -13,9 +13,21 @@ static struct test_private {
 	struct task *task;
 	struct thread *td;
 	int i;
+	ipc_msg_t last;
 	ipc_port_t send;
 	ipc_port_t receive;
 } test_privates[NTHREADS];
+
+static void
+test_ipc_status(void)
+{
+	unsigned i;
+
+	for (i = 0; i < NTHREADS; i++) {
+		kcprintf("%s%d%s", i == 0 ? "[" : ",", test_privates[i].last,
+			 i == NTHREADS - 1 ? "]\n" : "");
+	}
+}
 
 static void
 test_ipc_thread(void *arg)
@@ -25,12 +37,14 @@ test_ipc_thread(void *arg)
 	bool send;
 	int error;
 
+	priv->last = -1;
+
 	ASSERT(priv != NULL, "Must have a private.");
 	ASSERT(priv->td == current_thread(), "Must be on right thread.");
 
 	hdr.ipchdr_src = priv->receive;
 	hdr.ipchdr_dst = priv->send;
-	hdr.ipchdr_type = NTHREADS;
+	hdr.ipchdr_type = priv->i;
 	hdr.ipchdr_len = 0;
 
 	send = true;
@@ -53,15 +67,17 @@ test_ipc_thread(void *arg)
 			panic("%s: ipc_port_receive failed: %m", __func__,
 			      error);
 
-		if (rx.ipchdr_type != NTHREADS)
-			panic("%s: incorrect type.", __func__);
-
 		if (rx.ipchdr_dst != priv->receive)
 			panic("%s: incorrect destination.", __func__);
 
-		hdr.ipchdr_dst = rx.ipchdr_src;
+		hdr.ipchdr_dst = priv->send;
+		hdr.ipchdr_type = rx.ipchdr_type;
 
 		send = true;
+
+		if (priv->i == 0)
+			test_ipc_status();
+		priv->last = rx.ipchdr_type;
 	}
 }
 

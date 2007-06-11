@@ -7,7 +7,7 @@
 
 #include <io/device/console/console.h>
 
-#define	NTHREADS	2
+#define	NTHREADS	3
 
 static struct test_private {
 	struct thread *td;
@@ -32,6 +32,8 @@ test_ipc_thread(void *arg)
 	hdr.ipchdr_type = NTHREADS;
 	hdr.ipchdr_len = 0;
 
+	kcprintf("Worker %d should send from %lu to %lu.\n", priv->i, priv->receive, priv->send);
+
 	send = true;
 
 	for (;;) {
@@ -55,7 +57,10 @@ test_ipc_thread(void *arg)
 
 		if (rx.ipchdr_type != NTHREADS)
 			panic("%s: incorrect type.", __func__);
-		
+
+		if (rx.ipchdr_dst != priv->receive)
+			panic("%s: incorrect destination.", __func__);
+
 		kcprintf("Worker %d is receiving.\n", priv->i);
 
 		hdr.ipchdr_dst = rx.ipchdr_src;

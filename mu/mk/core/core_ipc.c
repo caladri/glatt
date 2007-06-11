@@ -265,6 +265,15 @@ ipc_port_lookup(ipc_port_t port)
 {
 	struct ipc_port *ipcp;
 
+	if (port == IPC_PORT_UNKNOWN)
+		return (NULL);
+
+	/*
+	 * XXX
+	 * System ports will be frequently used so they should be in a static
+	 * array.
+	 */
+
 	IPC_PORTS_LOCK();
 	TAILQ_FOREACH(ipcp, &ipc_ports, ipcp_link) {
 		IPC_PORT_LOCK(ipcp);

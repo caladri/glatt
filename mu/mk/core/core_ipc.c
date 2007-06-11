@@ -138,6 +138,9 @@ ipc_port_receive(ipc_port_t port, struct ipc_header *ipch, struct ipc_data *ipcd
 	}
 	ipcmsg = TAILQ_FIRST(&ipcp->ipcp_msgs);
 	ASSERT(ipcmsg != NULL, "Queue must not change out from under us.");
+	ASSERT(ipcmsg->ipcmsg_header.ipchdr_dst == ipcp->ipcp_port,
+	       "Destination must be this port.");
+	TAILQ_REMOVE(&ipcp->ipcp_msgs, ipcmsg, ipcmsg_link);
 	IPC_PORT_UNLOCK(ipcp);
 
 	*ipch = ipcmsg->ipcmsg_header;
@@ -257,8 +260,16 @@ ipc_port_deliver(struct ipc_message *ipcmsg)
 		free(ipcmsg);
 		return;
 	}
+	ASSERT(ipcmsg->ipcmsg_header.ipchdr_dst == ipcp->ipcp_port,
+	       "Destination must be the same as the port we are inserting into.");
 	TAILQ_INSERT_TAIL(&ipcp->ipcp_msgs, ipcmsg, ipcmsg_link);
+	/*
+	 * XXX
+	 * We don't yet have a VDAE list associated with each port.
+	 */
+#if 0
 	vdae_list_wakeup(ipcp->ipcp_vdae);
+#endif
 	sleepq_signal_one(ipcp);
 	IPC_PORT_UNLOCK(ipcp);
 }

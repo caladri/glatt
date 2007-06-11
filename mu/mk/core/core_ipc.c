@@ -239,7 +239,10 @@ ipc_port_alloc(ipc_port_t port)
 	IPC_PORT_UNLOCK(ipcp);
 	IPC_PORTS_UNLOCK();
 
-	ASSERT(ipc_port_lookup(port) == ipcp, "Port just registered is invalid.");
+	old = ipc_port_lookup(port);
+	if (old != ipcp)
+		panic("%s: port we just allocated is duplicate.\n", __func__);
+	IPC_PORT_UNLOCK(old);
 
 	return (ipcp);
 }

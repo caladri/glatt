@@ -3,10 +3,14 @@
 
 #include <cpu/db.h>
 
+#ifndef	NO_ASSERT
 #define	ASSERT(p, s)							\
 	if (!(p))							\
 		panic("%s:%u (in %s): %s failed: %s",			\
 		      __FILE__, __LINE__, __func__, #p, s)
+#else
+#define	ASSERT(p, s)	while (0)
+#endif
 
 void panic(const char *, ...) __noreturn/*XXX %m __printf(1, 2)*/;
 

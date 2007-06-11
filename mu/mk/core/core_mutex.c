@@ -33,6 +33,8 @@ mutex_try_lock(struct mutex *mtx)
 
 	td = current_thread();
 
+	ASSERT(mtx != NULL, "Cannot lock NULL mutex.");
+
 	MTX_SPINLOCK(mtx);
 	if (mtx->mtx_owner == td) {
 		mtx->mtx_nested++;

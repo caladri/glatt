@@ -21,7 +21,7 @@ kfvprintf(void (*put)(void *, char), void *arg, const char *s, va_list ap)
 		lmod = false;
 		alt = false;
 		val = -1; /* Not necessary, but GCC is still dumb in 2006 XXX */
-again:
+again:	
 		switch (*++p) {
 		case '#':
 			alt++;

@@ -86,7 +86,6 @@ startup_boot_thread(void *arg)
 {
 	struct startup_item **itemp, *item, *ip;
 	static TAILQ_HEAD(, struct startup_item) sorted_items;
-	int error;
 
 	kcprintf("The system is coming up.\n");
 

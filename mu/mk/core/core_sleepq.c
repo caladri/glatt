@@ -64,7 +64,7 @@ void
 sleepq_wait(const void *cookie)
 {
 	struct sleepq *sq;
-	struct sleepq_entry *se, *ep;
+	struct sleepq_entry *se;
 	struct thread *td;
 
 	td = current_thread();

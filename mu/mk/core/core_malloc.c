@@ -11,7 +11,6 @@ struct malloc_bucket {
 #define	MALLOC_NBUCKETS	(7)
 
 static struct malloc_bucket malloc_buckets[MALLOC_NBUCKETS];
-static size_t malloc_biggest;
 static struct pool malloc_bigbucket;
 
 static struct pool *malloc_pool(size_t);

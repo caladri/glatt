@@ -37,10 +37,9 @@ test_ipc_thread(void *arg)
 	bool send;
 	int error;
 
-	priv->last = -1;
-
-	ASSERT(priv != NULL, "Must have a private.");
 	ASSERT(priv->td == current_thread(), "Must be on right thread.");
+
+	priv->last = -1;
 
 	hdr.ipchdr_src = priv->receive;
 	hdr.ipchdr_dst = priv->send;

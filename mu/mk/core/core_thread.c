@@ -44,7 +44,9 @@ thread_create(struct thread **tdp, struct task *parent, const char *name,
 	if (error != 0) {
 		panic("%s: need to destroy thread, cpu_thread_setup failed: %m",
 		      __func__, error);
+#if 0
 		return (error);
+#endif
 	}
 	*tdp = td;
 	return (0);

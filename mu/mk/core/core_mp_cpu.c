@@ -115,7 +115,9 @@ mp_ipi_handler(void *arg, enum ipi_type ipi)
 		kcprintf("cpu%u: stopped.\n", mp_whoami());
 		for (;;)
 			continue;
+#if 0
 		cpu_halt();
+#endif
 	default:
 		panic("%s: unhandled ipi %u", __func__, (unsigned)ipi);
 	}

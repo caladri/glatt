@@ -136,6 +136,7 @@ scheduler_thread_sleeping(struct thread *td)
 	se = &td->td_sched;
 	SQ_LOCK(&scheduler_sleep_queue);
 	scheduler_queue(&scheduler_sleep_queue, se);
+	SQ_UNLOCK(&scheduler_sleep_queue);
 }
 
 static struct scheduler_entry *
@@ -159,6 +160,8 @@ scheduler_pick_entry(struct scheduler_queue *sq)
 	 * Push to tail of list.
 	 */
 	scheduler_queue(sq, se);
+
+	SQ_UNLOCK(sq);
 
 	return (se);
 }

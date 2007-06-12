@@ -1,4 +1,4 @@
-# $Id: build.mk,v 1.29 2007-01-09 19:45:37 juli Exp $
+# $Id: build.mk,v 1.30 2007-06-12 03:08:18 juli Exp $
 
 .PATH: ${KERNEL_ROOT}/core
 .PATH: ${KERNEL_ROOT}/db
@@ -7,6 +7,7 @@
 .PATH: ${KERNEL_ROOT}/vm
 
 # core
+KERNEL_SOURCES+=core_clock.c
 KERNEL_SOURCES+=core_ipc.c
 KERNEL_SOURCES+=core_malloc.c
 KERNEL_SOURCES+=core_mp.c

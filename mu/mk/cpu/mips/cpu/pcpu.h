@@ -1,6 +1,7 @@
 #ifndef	_CPU_PCPU_H_
 #define	_CPU_PCPU_H_
 
+#include <core/clock.h> /* XXX clock_ticks_t in types.h? */
 #include <core/ipc.h>
 #include <core/scheduler.h>
 #include <core/queue.h>
@@ -31,6 +32,7 @@ struct pcpu {
 	struct scheduler_queue pc_scheduler;
 	unsigned pc_asidnext;
 	struct ipc_queue pc_ipc_queue;
+	clock_ticks_t pc_clock;
 };
 
 #define	PCPU_PTR()							\

@@ -37,8 +37,8 @@ spinlock_lock(struct spinlock *lock)
 			return;
 		}
 		critical_exit(crit);
-		if (clock() - ticks > 1000)
-			panic("Spinlock \"%s\" spun for 1000 ticks.\n",
+		if (clock() - ticks > 100)
+			panic("Spinlock \"%s\" spun for 100 ticks.\n",
 			      lock->s_name);
 		crit = critical_enter();
 	}

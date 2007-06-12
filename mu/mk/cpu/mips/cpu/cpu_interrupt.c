@@ -123,7 +123,6 @@ cpu_interrupt_restore(register_t r)
 void
 cpu_interrupt_setup(void)
 {
-	struct interrupt_handler *ih;
 	unsigned interrupt;
 
 	PCPU_SET(interrupt_mask, 0);

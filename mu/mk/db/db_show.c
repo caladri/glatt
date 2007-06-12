@@ -54,7 +54,6 @@ static void
 db_show(void)
 {
 	struct db_show_tree *current;
-	struct db_show_value *value;
 	int argc, i;
 
 	current = NULL;
@@ -157,7 +156,6 @@ db_show_change_current(struct db_show_tree **currentp, const char *name)
 static int
 db_show_input(void)
 {
-	char ch;
 	int argc;
 	int error;
 	unsigned c;

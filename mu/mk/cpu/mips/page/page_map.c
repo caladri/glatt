@@ -156,7 +156,7 @@ pmap_map(struct vm *vm, vaddr_t vaddr, struct vm_page *page)
 
 	error = pmap_alloc_pte(pm, vaddr, &pte);
 	if (error != 0) {
-		/* XXX mark that the pmap needs pmap_collect run.  */
+		pmap_collect(pm);
 		return (error);
 	}
 	flags = PG_V;

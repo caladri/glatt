@@ -116,7 +116,7 @@ vm_free_address(struct vm *vm, vaddr_t vaddr)
 int
 vm_insert_range(struct vm *vm, vaddr_t begin, vaddr_t end)
 {
-	struct vm_index *vmi, *t;
+	struct vm_index *vmi;
 
 	vmi = pool_allocate(&vm_index_pool);
 	if (vmi == NULL)

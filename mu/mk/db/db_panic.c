@@ -14,7 +14,6 @@ panic(const char *s, ...)
 	static uint64_t magic;
 	static struct spinlock console_lock = SPINLOCK_INIT("panic");
 	va_list ap;
-	int error;
 	bool winner;
 
 	winner = true;

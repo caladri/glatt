@@ -105,7 +105,6 @@ int
 driver_probe(struct driver *driver, struct device *device)
 {
 	struct driver_attachment *attachment;
-	struct driver *child, *d;
 	int error;
 
 	if (driver->d_probe != NULL) {
@@ -181,8 +180,6 @@ driver_lookup_child(struct driver *driver, const char *name)
 static void
 driver_remove_child(struct driver *parent, struct driver *driver)
 {
-	struct driver *peer;
-
 	STAILQ_REMOVE(&parent->d_children, driver, struct driver, d_link);
 	driver->d_parent = NULL;
 }

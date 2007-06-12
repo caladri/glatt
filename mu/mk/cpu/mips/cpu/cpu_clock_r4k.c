@@ -11,8 +11,6 @@
 
 #define	CLOCK_INTERRUPT	(7)
 
-#define	CLOCK_CYCLES_PER_HZ	(100000)
-
 struct clock_r4k_softc {
 	unsigned csc_cycles_per_hz;
 	unsigned csc_last_count;
@@ -59,7 +57,7 @@ clock_r4k_attach(struct device *device)
 	struct clock_r4k_softc *csc;
 
 	csc = malloc(sizeof *csc);
-	csc->csc_cycles_per_hz = 100000;
+	csc->csc_cycles_per_hz = 1000000;
 	csc->csc_last_count = cpu_read_count();
 
 	device->d_softc = csc;

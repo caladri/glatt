@@ -61,6 +61,12 @@ platform_mp_memory(void)
 	return ((size_t)TEST_MP_DEV_READ(TEST_MP_DEV_MEMORY));
 }
 
+unsigned
+platform_mp_ncpus(void)
+{
+	return ((unsigned)TEST_MP_DEV_READ(TEST_MP_DEV_NCPUS));
+}
+
 void
 platform_mp_startup(void)
 {
@@ -100,7 +106,7 @@ platform_mp_start_all(void *arg)
 
 	platform_mp_attach_bus();
 
-	ncpus = TEST_MP_DEV_READ(TEST_MP_DEV_NCPUS);
+	ncpus = mp_ncpus();
 	if (ncpus != 1) {
 		for (cpu = 0; cpu < ncpus; cpu++) {
 			if (cpu == mp_whoami())

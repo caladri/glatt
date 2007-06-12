@@ -3,6 +3,12 @@
 
 #include <cpu/mp.h>
 
+static inline unsigned
+mp_ncpus(void)
+{
+	return (cpu_mp_ncpus());
+}
+
 /*
  * XXX
  * Once a CPU is up and running, should use its PCPU data as a much faster

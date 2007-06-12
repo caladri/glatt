@@ -23,6 +23,10 @@
 COMPILE_TIME_ASSERT(PAGE_SIZE == 8192);
 COMPILE_TIME_ASSERT(TLB_PAGE_SIZE == 4096);
 
+static struct spinlock tlb_shootdown_lock = SPINLOCK_INIT("TLB SHOOTDOWN");
+static volatile uint64_t tlb_shootdown_entryhi;
+static volatile unsigned tlb_shootdown_count;
+
 static __inline void
 tlb_probe(void)
 {
@@ -54,6 +58,7 @@ tlb_write_random(void)
 static void tlb_insert_wired(struct pmap *pm, vaddr_t, paddr_t);
 static void tlb_invalidate_all(void);
 static void tlb_invalidate_one(unsigned);
+static void tlb_shootdown(void *, enum ipi_type);
 
 void
 tlb_init(struct pmap *pm, paddr_t pcpu_addr)
@@ -83,6 +88,8 @@ tlb_init(struct pmap *pm, paddr_t pcpu_addr)
 	tlb_invalidate_all();
 
 	critical_exit(crit);
+
+	mp_ipi_register(IPI_TLBS, tlb_shootdown, NULL);
 }
 
 void
@@ -100,6 +107,22 @@ tlb_invalidate(struct pmap *pm, vaddr_t vaddr)
 	if (i >= 0)
 		tlb_invalidate_one(i);
 	critical_exit(crit);
+
+	if (mp_ncpus() == 1)
+		return;
+
+	spinlock_lock(&tlb_shootdown_lock);
+	kcprintf("Shooting down..\n");
+	tlb_shootdown_count = 1;
+	tlb_shootdown_entryhi = TLBHI_ENTRY(vaddr, pmap_asid(pm));
+	mp_ipi_send_but(mp_whoami(), IPI_TLBS);
+	/*
+	 * XXX Spin more gracefully.
+	 */
+	while (tlb_shootdown_count != mp_ncpus())
+		continue;
+	kcprintf("Shot down.\n");
+	spinlock_unlock(&tlb_shootdown_lock);
 }
 
 void
@@ -210,6 +233,23 @@ tlb_invalidate_one(unsigned i)
 	cpu_write_tlb_entrylo1(0);
 	cpu_write_tlb_index(i);
 	tlb_write_indexed();
+}
+
+static void
+tlb_shootdown(void *arg, enum ipi_type type)
+{
+	critical_section_t crit;
+	int i;
+
+	crit = critical_enter();
+	cpu_write_tlb_entryhi(tlb_shootdown_entryhi);
+	tlb_probe();
+	i = cpu_read_tlb_index();
+	if (i >= 0)
+		tlb_invalidate_one(i);
+	critical_exit(crit);
+
+	tlb_shootdown_count++;
 }
 
 #if 0

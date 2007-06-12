@@ -3,6 +3,12 @@
 
 #include <platform/mp.h>
 
+static inline unsigned
+cpu_mp_ncpus(void)
+{
+	return (platform_mp_ncpus());
+}
+
 static inline cpu_id_t
 cpu_mp_whoami(void)
 {

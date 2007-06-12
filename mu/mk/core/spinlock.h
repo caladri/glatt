@@ -1,6 +1,7 @@
 #ifndef	_CORE_SPINLOCK_H_
 #define	_CORE_SPINLOCK_H_
 
+#include <core/clock.h>
 #include <core/critical.h>
 #include <core/mp.h>
 #include <cpu/atomic.h>
@@ -23,6 +24,9 @@ static inline void
 spinlock_lock(struct spinlock *lock)
 {
 	critical_section_t crit;
+	clock_ticks_t ticks;
+
+	ticks = clock();
 
 	crit = critical_enter();
 	while (!atomic_compare_and_set_64(&lock->s_owner, CPU_ID_INVALID,
@@ -33,6 +37,9 @@ spinlock_lock(struct spinlock *lock)
 			return;
 		}
 		critical_exit(crit);
+		if (clock() - ticks > 1000)
+			panic("Spinlock \"%s\" spun for 1000 ticks.\n",
+			      lock->s_name);
 		crit = critical_enter();
 	}
 	lock->s_crit = crit;

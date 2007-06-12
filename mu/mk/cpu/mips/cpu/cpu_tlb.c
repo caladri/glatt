@@ -1,5 +1,6 @@
 #include <core/types.h>
 #include <core/critical.h>
+#include <core/startup.h>
 #include <core/task.h>
 #include <core/thread.h>
 #include <cpu/cpu.h>
@@ -26,6 +27,7 @@ COMPILE_TIME_ASSERT(TLB_PAGE_SIZE == 4096);
 static struct spinlock tlb_shootdown_lock = SPINLOCK_INIT("TLB SHOOTDOWN");
 static volatile uint64_t tlb_shootdown_entryhi;
 static volatile unsigned tlb_shootdown_count;
+static bool tlb_shootdown_registered;
 
 static __inline void
 tlb_probe(void)
@@ -88,8 +90,6 @@ tlb_init(struct pmap *pm, paddr_t pcpu_addr)
 	tlb_invalidate_all();
 
 	critical_exit(crit);
-
-	mp_ipi_register(IPI_TLBS, tlb_shootdown, NULL);
 }
 
 void
@@ -112,6 +112,10 @@ tlb_invalidate(struct pmap *pm, vaddr_t vaddr)
 		return;
 
 	spinlock_lock(&tlb_shootdown_lock);
+	if (!tlb_shootdown_registered) {
+		spinlock_unlock(&tlb_shootdown_lock);
+		panic("Too early for TLB shootdown.");
+	}
 	kcprintf("Shooting down..\n");
 	tlb_shootdown_count = 1;
 	tlb_shootdown_entryhi = TLBHI_ENTRY(vaddr, pmap_asid(pm));
@@ -251,6 +255,19 @@ tlb_shootdown(void *arg, enum ipi_type type)
 
 	tlb_shootdown_count++;
 }
+
+static void
+tlb_shootdown_startup(void *arg)
+{
+	spinlock_lock(&tlb_shootdown_lock);
+	if (!tlb_shootdown_registered) {
+		mp_ipi_register(IPI_TLBS, tlb_shootdown, NULL);
+		tlb_shootdown_registered = true;
+	}
+	spinlock_unlock(&tlb_shootdown_lock);
+}
+STARTUP_ITEM(tlb_shootdown, STARTUP_MP, STARTUP_SECOND,
+	     tlb_shootdown_startup, NULL);
 
 #if 0
 static void

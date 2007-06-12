@@ -90,20 +90,13 @@ exception_table:
 
 VECTOR_ENTRY(utlb)
 	.set noat
-#if 0
-	dmfc0	a1, CP0_BADVADDR
-	dla	a0, 9f
-	jal	panic
-	nop
-9:	.asciz	"Should not hit UTLBMiss just yet (badvaddr=%p)."
-#endif
-	j	tlb_exception
-	nop
+	break
 	.set at
 VECTOR_END(utlb)
 
 VECTOR_ENTRY(exception)
 	.set noat
+	mtc0	zero, CP0_STATUS
 	li	k0, KERNEL_STATUS
 	mtc0	k0, CP0_STATUS
 
@@ -147,6 +140,10 @@ END(generic_exception)
  */
 ENTRY(tlb_exception)
 	.set noat
+	mtc0	zero, CP0_STATUS
+	li	k0, KERNEL_STATUS
+	mtc0	k0, CP0_STATUS
+
 	dmfc0	k0, CP0_BADVADDR
 	dli	k1, KERNEL_END
 	tgeu	k0, k1

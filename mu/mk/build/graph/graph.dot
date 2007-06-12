@@ -114,6 +114,8 @@ digraph callgraph {
 "vm_page_map" -> "vm_alloc_address" [style=solid];
 "vm_page_map" -> "page_map" [style=solid];
 "vm_page_map" -> "panic" [style=solid];
+"thread_switch" -> "cpu_context_restore" [style=solid];
+"thread_switch" -> "cpu_context_save" [style=solid];
 "thread_switch" -> "panic" [style=solid];
 "critical_enter" -> "cpu_critical_enter" [style=solid];
 "tlb_modify" -> "pmap_find" [style=solid];

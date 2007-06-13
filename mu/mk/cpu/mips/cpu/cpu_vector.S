@@ -362,11 +362,19 @@ exception_return_fixup:
 	 * Restore kernel status, enable interrupts if needed.
 	 */
 	dla	k1, PCPU_VIRTUAL
-	ld	k1, PC_INTERRUPT_MASK(k1)
+	ld	k1, PC_INTERRUPT_ENABLE(k1)
 	beqz	k1, 1f
-	or	k1, KERNEL_STATUS
+	nop
+
+	/* Interrupts enabled.  */
+	dla	k1, PCPU_VIRTUAL
+	ld	k1, PC_INTERRUPT_MASK(k1)
 	or	k1, CP0_STATUS_IE
-1:	j	k0
+	/* Fallthrough.  */
+
+1:	/* Interrupts disabled.  */
+	or	k1, KERNEL_STATUS
+	j	k0
 	mtc0	k1, CP0_STATUS
 	.set at
 END(exception_return)

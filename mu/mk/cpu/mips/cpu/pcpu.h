@@ -33,6 +33,7 @@ struct pcpu {
 	unsigned pc_asidnext;
 	struct ipc_queue pc_ipc_queue;
 	clock_ticks_t pc_clock;
+	unsigned pc_interrupt_enable;
 };
 
 #define	PCPU_PTR()							\

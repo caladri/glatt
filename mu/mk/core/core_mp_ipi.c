@@ -112,6 +112,8 @@ mp_ipi_handler(void *arg, enum ipi_type ipi)
 {
 	switch (ipi) {
 	case IPI_STOP:
+		/* XXX Is this the right place to do it?  */
+		mp_cpu_stopped(mp_whoami());
 		kcprintf("cpu%u: stopped.\n", mp_whoami());
 		for (;;)
 			continue;

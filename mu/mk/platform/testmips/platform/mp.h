@@ -1,16 +1,48 @@
 #ifndef	_PLATFORM_MP_H_
 #define	_PLATFORM_MP_H_
 
+#include <db/db.h>
+
 typedef	uint64_t	cpu_bitmask_t;
 
 #define	MAXCPUS		(8 * sizeof (cpu_bitmask_t))
+
+static __inline bool
+cpu_bitmask_is_set(const volatile cpu_bitmask_t *maskp, cpu_id_t cpu)
+{
+	if (cpu >= MAXCPUS)
+		panic("%s: cpu%u exceeds system limit of %u CPUs.",
+		      __func__, cpu, MAXCPUS);
+	if ((*maskp & ((cpu_bitmask_t)1 << cpu)) == 0)
+		return (false);
+	return (true);
+}
+
+static __inline void
+cpu_bitmask_set(volatile cpu_bitmask_t *maskp, cpu_id_t cpu)
+{
+	ASSERT(cpu < MAXCPUS, "CPU cannot exceed bounds of type.");
+	if (cpu_bitmask_is_set(maskp, cpu))
+		panic("%s: cannot set bit twice for cpu%u.", __func__, cpu);
+	*maskp ^= (cpu_bitmask_t)1 << cpu;
+}
+
+static __inline void
+cpu_bitmask_clear(volatile cpu_bitmask_t *maskp, cpu_id_t cpu)
+{
+	ASSERT(cpu < MAXCPUS, "CPU cannot exceed bounds of type.");
+	if (!cpu_bitmask_is_set(maskp, cpu))
+		panic("%s: cannot clear bit twice for cpu%u.", __func__, cpu);
+	*maskp ^= (cpu_bitmask_t)1 << cpu;
+}
 
 enum ipi_type {
 	IPI_NONE	= 0,
 	IPI_STOP	= 1,
 	IPI_TLBS	= 2,
+	IPI_HOKUSAI	= 3,
 	IPI_FIRST	= IPI_STOP,
-	IPI_LAST	= IPI_TLBS,
+	IPI_LAST	= IPI_HOKUSAI,
 };
 
 #define	CPU_ID_INVALID	((cpu_id_t)~0)

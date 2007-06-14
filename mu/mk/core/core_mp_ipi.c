@@ -4,19 +4,6 @@
 #include <core/startup.h>
 #include <io/device/console/console.h>
 
-static cpu_bitmask_t mp_cpu_bitmask;
-
-void
-mp_cpu_running(cpu_id_t cpu)
-{
-	if (cpu > MAXCPUS)
-		panic("%s: cannot start cpu%u (system limit is %u CPUs.)",
-		      __func__, cpu, MAXCPUS);
-	if ((mp_cpu_bitmask & ((cpu_bitmask_t)1 << cpu)) != 0)
-		panic("%s: cpu%u is already running!", __func__, cpu);
-	mp_cpu_bitmask |= (cpu_bitmask_t)1 << cpu;
-}
-
 /*
  * XXX
  * All IPIs are fast interrupts for now and run in a stolen context.  They
@@ -151,11 +138,4 @@ mp_db_ipi_list(void)
 	}
 }
 DB_COMMAND(ipi_list, mp_db_ipi_list, "List IPI handlers.");
-
-static void
-mp_db_whoami(void)
-{
-	kcprintf("cpu%u\n", mp_whoami());
-}
-DB_COMMAND(whoami, mp_db_whoami, "Show which CPU the debugger is on.");
 #endif

@@ -15,6 +15,7 @@
 #include <vm/page.h>
 #include <vm/vm.h>
 
+
 /*
  * Right now this code (and hopefully only this code) assumes that we are using
  * 8K pages in VM.  If we are, then we can use the default TLB pagesize (4K)
@@ -24,10 +25,10 @@
 COMPILE_TIME_ASSERT(PAGE_SIZE == 8192);
 COMPILE_TIME_ASSERT(TLB_PAGE_SIZE == 4096);
 
-static struct spinlock tlb_shootdown_lock = SPINLOCK_INIT("TLB SHOOTDOWN");
-static volatile uint64_t tlb_shootdown_entryhi;
-static volatile unsigned tlb_shootdown_count;
-static bool tlb_shootdown_registered;
+struct tlb_shootdown_arg {
+	struct pmap *pmap;
+	vaddr_t vaddr;
+};
 
 static __inline void
 tlb_probe(void)
@@ -58,9 +59,10 @@ tlb_write_random(void)
 }
 
 static void tlb_insert_wired(struct pmap *pm, vaddr_t, paddr_t);
+static void tlb_invalidate_addr(struct pmap *, vaddr_t);
 static void tlb_invalidate_all(void);
 static void tlb_invalidate_one(unsigned);
-static void tlb_shootdown(void *, enum ipi_type);
+static void tlb_shootdown(void *);
 
 void
 tlb_init(struct pmap *pm, paddr_t pcpu_addr)
@@ -95,38 +97,21 @@ tlb_init(struct pmap *pm, paddr_t pcpu_addr)
 void
 tlb_invalidate(struct pmap *pm, vaddr_t vaddr)
 {
-	critical_section_t crit;
-	int i;
+	tlb_invalidate_addr(pm, vaddr);
 
-	vaddr &= ~PAGE_MASK;
-
-	crit = critical_enter();
-	cpu_write_tlb_entryhi(TLBHI_ENTRY(vaddr, pmap_asid(pm)));
-	tlb_probe();
-	i = cpu_read_tlb_index();
-	if (i >= 0)
-		tlb_invalidate_one(i);
-	critical_exit(crit);
-
-	if (mp_ncpus() == 1)
-		return;
-
-	spinlock_lock(&tlb_shootdown_lock);
-	if (!tlb_shootdown_registered) {
-		spinlock_unlock(&tlb_shootdown_lock);
-		panic("Too early for TLB shootdown.");
-	}
-	kcprintf("Shooting down..\n");
-	tlb_shootdown_count = 1;
-	tlb_shootdown_entryhi = TLBHI_ENTRY(vaddr, pmap_asid(pm));
-	mp_ipi_send_but(mp_whoami(), IPI_TLBS);
 	/*
-	 * XXX Spin more gracefully.
+	 * XXX
+	 * Check if this VA is active on any other CPUs.
 	 */
-	while (tlb_shootdown_count != mp_ncpus())
-		continue;
-	kcprintf("Shot down.\n");
-	spinlock_unlock(&tlb_shootdown_lock);
+	if (mp_ncpus() != 1) {
+		struct tlb_shootdown_arg shootdown;
+
+		shootdown.pmap = pm;
+		shootdown.vaddr = vaddr;
+
+		mp_hokusai_master(NULL, NULL,
+				  tlb_shootdown, &shootdown);
+	}
 }
 
 void
@@ -210,6 +195,23 @@ tlb_insert_wired(struct pmap *pm, vaddr_t vaddr, paddr_t paddr)
 	critical_exit(crit);
 }
 
+static void
+tlb_invalidate_addr(struct pmap *pm, vaddr_t vaddr)
+{
+	critical_section_t crit;
+	int i;
+
+	vaddr &= ~PAGE_MASK;
+
+	crit = critical_enter();
+	cpu_write_tlb_entryhi(TLBHI_ENTRY(vaddr, pmap_asid(pm)));
+	tlb_probe();
+	i = cpu_read_tlb_index();
+	if (i >= 0)
+		tlb_invalidate_one(i);
+	critical_exit(crit);
+}
+
 /*
  * Note that this skips wired entries.
  */
@@ -240,34 +242,13 @@ tlb_invalidate_one(unsigned i)
 }
 
 static void
-tlb_shootdown(void *arg, enum ipi_type type)
+tlb_shootdown(void *arg)
 {
-	critical_section_t crit;
-	int i;
+	struct tlb_shootdown_arg *tsa;
 
-	crit = critical_enter();
-	cpu_write_tlb_entryhi(tlb_shootdown_entryhi);
-	tlb_probe();
-	i = cpu_read_tlb_index();
-	if (i >= 0)
-		tlb_invalidate_one(i);
-	critical_exit(crit);
-
-	tlb_shootdown_count++;
+	tsa = arg;
+	tlb_invalidate_addr(tsa->pmap, tsa->vaddr);
 }
-
-static void
-tlb_shootdown_startup(void *arg)
-{
-	spinlock_lock(&tlb_shootdown_lock);
-	if (!tlb_shootdown_registered) {
-		mp_ipi_register(IPI_TLBS, tlb_shootdown, NULL);
-		tlb_shootdown_registered = true;
-	}
-	spinlock_unlock(&tlb_shootdown_lock);
-}
-STARTUP_ITEM(tlb_shootdown, STARTUP_MP, STARTUP_SECOND,
-	     tlb_shootdown_startup, NULL);
 
 #if 0
 static void

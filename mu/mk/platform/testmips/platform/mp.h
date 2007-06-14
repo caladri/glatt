@@ -39,8 +39,7 @@ cpu_bitmask_clear(volatile cpu_bitmask_t *maskp, cpu_id_t cpu)
 enum ipi_type {
 	IPI_NONE	= 0,
 	IPI_STOP	= 1,
-	IPI_TLBS	= 2,
-	IPI_HOKUSAI	= 3,
+	IPI_HOKUSAI	= 2,
 	IPI_FIRST	= IPI_STOP,
 	IPI_LAST	= IPI_HOKUSAI,
 };

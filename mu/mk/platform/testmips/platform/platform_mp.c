@@ -70,6 +70,8 @@ platform_mp_ncpus(void)
 void
 platform_mp_startup(void)
 {
+	mp_cpu_running(mp_whoami());
+
 	/*
 	 * Attach a device for the CPU if the bus is set up already.
 	 */
@@ -107,6 +109,11 @@ platform_mp_start_all(void *arg)
 	platform_mp_attach_bus();
 
 	ncpus = mp_ncpus();
+	if (ncpus > MAXCPUS) {
+		device_printf(platform_mp_bus, "Warning: system limit is %u CPUs, but there are %u attached!\n", MAXCPUS, ncpus);
+		ncpus = MAXCPUS;
+	}
+
 	if (ncpus != 1) {
 		for (cpu = 0; cpu < ncpus; cpu++) {
 			if (cpu == mp_whoami())

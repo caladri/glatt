@@ -4,6 +4,19 @@
 #include <core/startup.h>
 #include <io/device/console/console.h>
 
+static cpu_bitmask_t mp_cpu_bitmask;
+
+void
+mp_cpu_running(cpu_id_t cpu)
+{
+	if (cpu > MAXCPUS)
+		panic("%s: cannot start cpu%u (system limit is %u CPUs.)",
+		      __func__, cpu, MAXCPUS);
+	if ((mp_cpu_bitmask & ((cpu_bitmask_t)1 << cpu)) != 0)
+		panic("%s: cpu%u is already running!", __func__, cpu);
+	mp_cpu_bitmask |= (cpu_bitmask_t)1 << cpu;
+}
+
 /*
  * XXX
  * All IPIs are fast interrupts for now and run in a stolen context.  They

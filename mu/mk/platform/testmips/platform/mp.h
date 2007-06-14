@@ -1,6 +1,10 @@
 #ifndef	_PLATFORM_MP_H_
 #define	_PLATFORM_MP_H_
 
+typedef	uint64_t	cpu_bitmask_t;
+
+#define	MAXCPUS		(8 * sizeof (cpu_bitmask_t))
+
 enum ipi_type {
 	IPI_NONE	= 0,
 	IPI_STOP	= 1,

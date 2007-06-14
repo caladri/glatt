@@ -22,6 +22,8 @@ mp_whoami(void)
 
 typedef	void (mp_ipi_handler_t)(void *, enum ipi_type);
 
+void mp_cpu_running(cpu_id_t);
+
 void mp_ipi_receive(enum ipi_type);
 void mp_ipi_register(enum ipi_type, mp_ipi_handler_t, void *);
 void mp_ipi_send(cpu_id_t, enum ipi_type);

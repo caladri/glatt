@@ -64,7 +64,12 @@ platform_mp_memory(void)
 unsigned
 platform_mp_ncpus(void)
 {
-	return ((unsigned)TEST_MP_DEV_READ(TEST_MP_DEV_NCPUS));
+	unsigned ncpus;
+
+	ncpus = (unsigned)TEST_MP_DEV_READ(TEST_MP_DEV_NCPUS);
+	if (ncpus > MAXCPUS)
+		return (MAXCPUS);
+	return (ncpus);
 }
 
 void
@@ -82,7 +87,12 @@ platform_mp_startup(void)
 cpu_id_t
 platform_mp_whoami(void)
 {
-	return ((cpu_id_t)TEST_MP_DEV_READ(TEST_MP_DEV_WHOAMI));
+	cpu_id_t me;
+
+	me = (cpu_id_t)TEST_MP_DEV_READ(TEST_MP_DEV_WHOAMI);
+	if (me >= MAXCPUS)
+		panic("%s: cpu%u is above the system limit of %u CPUs and cannot run.", __func__, me, MAXCPUS);
+	return (me);
 }
 
 static void

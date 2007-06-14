@@ -75,6 +75,13 @@ platform_mp_ncpus(void)
 void
 platform_mp_startup(void)
 {
+	/*
+	 * If the MP bus is not set up then we are the boot CPU and must mark
+	 * ourselves both present and running.  The boot CPU will mark all other
+	 * CPUs present, regardless of whether they run.
+	 */
+	if (platform_mp_bus == NULL)
+		mp_cpu_present(mp_whoami());
 	mp_cpu_running(mp_whoami());
 
 	/*
@@ -123,6 +130,10 @@ platform_mp_start_all(void *arg)
 		device_printf(platform_mp_bus, "Warning: system limit is %u CPUs, but there are %u attached!\n", MAXCPUS, ncpus);
 		ncpus = MAXCPUS;
 	}
+
+	for (cpu = 0; cpu < ncpus; cpu++)
+		if (cpu != mp_whoami())
+			mp_cpu_present(cpu);
 
 	if (ncpus != 1) {
 		for (cpu = 0; cpu < ncpus; cpu++) {

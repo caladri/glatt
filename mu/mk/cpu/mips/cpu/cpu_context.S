@@ -40,21 +40,18 @@ ENTRY(cpu_context_restore)
 	dla	t3, PCPU_VIRTUAL
 	sd	t0, PC_THREAD(t3)
 	/*
-	 * Get interrupt mask.
-	 */
-	ld	t0, PC_INTERRUPT_MASK(t3)
-	/*
 	 * We'll be returning true from cpu_context_save().
 	 */
 	li	v0, TRUE
 	/*
-	 * Restore status register and jump to return address.
+	 * Set status register (including enabling interrupts if needed.)
 	 */
-	beqz	t0, 1f
+	ld	t1, PC_INTERRUPT_ENABLE(t3)
+	beqz	t1, 1f
 	li	t2, KERNEL_STATUS
-	or	t2, CP0_STATUS_IE
-1:	or	t2, t0
-	jr	ra
+	ld	t1, PC_INTERRUPT_MASK(t3)
+	or	t1, CP0_STATUS_IE
+1:	jr	ra
 	mtc0	t2, CP0_STATUS
 END(cpu_context_restore)
 

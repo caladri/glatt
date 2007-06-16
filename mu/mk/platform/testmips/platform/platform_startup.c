@@ -6,6 +6,11 @@ void
 platform_startup(void)
 {
 	cpu_startup();
-	platform_mp_startup();
 	startup_main();
+}
+
+void
+platform_startup_thread(void)
+{
+	platform_mp_startup();
 }

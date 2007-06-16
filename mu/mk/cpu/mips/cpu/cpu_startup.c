@@ -65,3 +65,13 @@ cpu_startup(void)
 
 	/* Return to the platform code.  */
 }
+
+void
+cpu_startup_thread(void *arg)
+{
+	void (*callback)(void *);
+
+	callback = (void (*)(void *))(uintptr_t)arg;
+	platform_startup_thread();
+	callback(NULL);
+}

@@ -62,9 +62,11 @@ startup_main(void)
 	spinlock_unlock(&startup_spinlock);
 
 	if (bootstrap)
-		thread_set_upcall(td, startup_boot_thread, NULL);
+		thread_set_upcall(td, cpu_startup_thread,
+				  (void *)(uintptr_t)startup_boot_thread);
 	else
-		thread_set_upcall(td, startup_idle_thread, NULL);
+		thread_set_upcall(td, cpu_startup_thread,
+				  (void *)(uintptr_t)startup_idle_thread);
 	scheduler_schedule();
 }
 
@@ -118,7 +120,7 @@ next:		continue;
 static void
 startup_idle_thread(void *arg)
 {
-	kcprintf("cpu%u: The system is up.\n", mp_whoami());
+	kcprintf("STARTUP: cpu%u starting idle thread.\n");
 	ipc_process();
 }
 STARTUP_ITEM(main, STARTUP_MAIN, STARTUP_FIRST, startup_idle_thread, NULL);

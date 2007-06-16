@@ -19,6 +19,8 @@ mutex_init(struct mutex *mtx, const char *name)
 void
 mutex_lock(struct mutex *mtx)
 {
+	ASSERT(current_thread() != NULL, "Must have a thread.");
+
 	for (;;) {
 		if (mutex_try_lock(mtx))
 			return;
@@ -32,6 +34,8 @@ mutex_try_lock(struct mutex *mtx)
 	struct thread *td;
 
 	td = current_thread();
+
+	ASSERT(td != NULL, "Must have a thread.");
 
 	ASSERT(mtx != NULL, "Cannot lock NULL mutex.");
 
@@ -57,6 +61,8 @@ mutex_unlock(struct mutex *mtx)
 	struct thread *td;
 
 	td = current_thread();
+
+	ASSERT(td != NULL, "Must have a thread.");
 
 	MTX_SPINLOCK(mtx);
 	ASSERT(mtx->mtx_owner == td, "Not my lock to unlock.");

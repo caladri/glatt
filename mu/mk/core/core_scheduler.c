@@ -27,17 +27,17 @@ static void scheduler_switch(struct thread *);
 static void scheduler_yield(void);
 
 void
-scheduler_cpu_idle(struct thread *td)
+scheduler_cpu_main(struct thread *td)
 {
 	struct scheduler_entry *se;
 
 	SCHEDULER_LOCK();
 	se = &td->td_sched;
-	se->se_flags |= SCHEDULER_IDLE;
-	ASSERT(se->se_queue == NULL, "Idle thread cannot be on a queue.");
-	ASSERT(PCPU_GET(idletd) == NULL,
-	       "Can only have one idle thread per CPU.");
-	PCPU_SET(idletd, td);
+	se->se_flags |= SCHEDULER_MAIN;
+	ASSERT(se->se_queue == NULL, "main thread cannot be on a queue.");
+	ASSERT(PCPU_GET(maintd) == NULL,
+	       "Can only have one main thread per CPU.");
+	PCPU_SET(maintd, td);
 
 	/*
 	 * Make sure we are only ever on this CPU.
@@ -85,20 +85,20 @@ scheduler_schedule(void)
 	SCHEDULER_LOCK();
 	/*
 	 * Find a thread to run.  If there's nothing in the runqueue, check to
-	 * see if we're the idle thread.  If we are the idle thread, yield the
+	 * see if we're the main thread.  If we are the main thread, yield the
 	 * CPU until we get an interrupt.  Otherwise, without a thread to run,
-	 * switch to the idle thread.
+	 * switch to the main thread.
 	 */
 	td = scheduler_pick_thread();
 	if (td == current_thread())
 		td = NULL;
 	if (td == NULL) {
-		if (PCPU_GET(idletd) == current_thread()) {
+		if (PCPU_GET(maintd) == current_thread()) {
 			SCHEDULER_UNLOCK();
 			scheduler_yield();
 			return;
 		}
-		td = PCPU_GET(idletd);
+		td = PCPU_GET(maintd);
 	}
 	scheduler_switch(td);
 }
@@ -215,9 +215,9 @@ scheduler_queue(struct scheduler_queue *sq, struct scheduler_entry *se)
 	struct scheduler_queue *osq;
 
 	/*
-	 * The idle thread cannot go on a queue.
+	 * The main thread cannot go on a queue.
 	 */
-	if ((se->se_flags & SCHEDULER_IDLE) != 0)
+	if ((se->se_flags & SCHEDULER_MAIN) != 0)
 		return;
 
 	if (sq == NULL)

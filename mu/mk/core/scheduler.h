@@ -10,7 +10,7 @@ struct thread;
 #define	SCHEDULER_DEFAULT	(0x00000000)	/* Default flags.  */
 #define	SCHEDULER_RUNNING	(0x00000001)	/* Thread is running.  */
 #define	SCHEDULER_PINNED	(0x00000002)	/* Thread is pinned to CPU.  */
-#define	SCHEDULER_IDLE		(0x00000004)	/* Thread is idle thread.  */
+#define	SCHEDULER_MAIN		(0x00000004)	/* Thread is main thread.  */
 
 struct scheduler_entry {
 	struct thread *se_thread;
@@ -28,7 +28,7 @@ struct scheduler_queue {
 	TAILQ_ENTRY(struct scheduler_queue) sq_link;
 };
 
-void scheduler_cpu_idle(struct thread *);
+void scheduler_cpu_main(struct thread *);
 void scheduler_cpu_pin(struct thread *);
 void scheduler_cpu_setup(struct scheduler_queue *);
 void scheduler_init(void);

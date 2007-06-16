@@ -14,7 +14,7 @@ SET(startup_items, struct startup_item);
 
 static void startup_bootstrap(void);
 static void startup_boot_thread(void *);
-static void startup_idle_thread(void *);
+static void startup_main_thread(void *);
 
 static bool startup_booting = false;
 static struct spinlock startup_spinlock = SPINLOCK_INIT("startup");
@@ -53,11 +53,11 @@ startup_main(void)
 	if (bootstrap)
 		startup_bootstrap();
 
-	error = thread_create(&td, main_task, "idle thread",
+	error = thread_create(&td, main_task, "main thread",
 			      THREAD_DEFAULT);
 	if (error != 0)
 		panic("%s: thread_create failed: %m", __func__, error);
-	scheduler_cpu_idle(td);
+	scheduler_cpu_main(td);
 
 	spinlock_unlock(&startup_spinlock);
 
@@ -66,7 +66,7 @@ startup_main(void)
 				  (void *)(uintptr_t)startup_boot_thread);
 	else
 		thread_set_upcall(td, cpu_startup_thread,
-				  (void *)(uintptr_t)startup_idle_thread);
+				  (void *)(uintptr_t)startup_main_thread);
 	scheduler_schedule();
 }
 
@@ -118,9 +118,9 @@ next:		continue;
 }
 
 static void
-startup_idle_thread(void *arg)
+startup_main_thread(void *arg)
 {
-	kcprintf("STARTUP: cpu%u starting idle thread.\n");
+	kcprintf("STARTUP: cpu%u starting main thread.\n", mp_whoami());
 	ipc_process();
 }
-STARTUP_ITEM(main, STARTUP_MAIN, STARTUP_FIRST, startup_idle_thread, NULL);
+STARTUP_ITEM(main, STARTUP_MAIN, STARTUP_FIRST, startup_main_thread, NULL);

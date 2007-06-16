@@ -22,7 +22,7 @@ struct thread;
 struct pcpu {
 	struct frame pc_frame;
 	struct thread *pc_thread;
-	struct thread *pc_idletd;
+	struct thread *pc_maintd;
 	struct cpuinfo pc_cpuinfo;
 	struct pcpu *pc_physaddr;
 	struct device *pc_device;

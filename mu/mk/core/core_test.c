@@ -7,7 +7,13 @@
 
 #include <io/device/console/console.h>
 
-#define	NTHREADS	10
+/*
+ * XXX/MIPS
+ * Having NTHREADS=10 is our goal, but for now we do this so there are fewer
+ * TLB entries in use as we clearly run into some problem with kstack being
+ * pushed out at some point - we really need to wire the kernel stack.
+ */
+#define	NTHREADS	3
 
 static struct test_private {
 	struct task *task;

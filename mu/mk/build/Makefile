@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.22 2007-06-12 06:59:35 juli Exp $
+# $Id: Makefile,v 1.23 2007-06-17 23:56:48 juli Exp $
 
 KERNEL?=	mu-mk
 
@@ -23,6 +23,9 @@ CPU_ROOT=	${KERNEL_ROOT}/cpu/${CPU}
 KERNEL_CPPFLAGS=-I${KERNEL_ROOT} -I${PLATFORM_ROOT} -I${CPU_ROOT}
 .if defined(NO_ASSERT)
 KERNEL_CPPFLAGS+=-DNO_ASSERT
+.endif
+.if defined(VERBOSE)
+KERNEL_CPPFLAGS+=-DVERBOSE
 .endif
 
 KERNEL_CFLAGS+=	${KERNEL_ABI} ${KERNEL_CPU} -nostdinc

@@ -41,7 +41,7 @@ pmap_bootstrap(void)
 {
 	int error;
 
-#if 0
+#ifdef	VERBOSE
 	kcprintf("PMAP: %u level 0 pointers in each pmap.\n", NL0PMAP);
 	kcprintf("PMAP: %lu level 1 pointers in each level 0 page.\n", NL1PL0);
 	kcprintf("PMAP: %lu level 2 pointers in each level 1 page.\n", NL2PL1);
@@ -402,7 +402,9 @@ pmap_update(struct pmap *pm, vaddr_t vaddr, struct vm_page *page, pt_entry_t fla
 static void
 pmap_startup(void *arg)
 {
+#ifdef	VERBOSE
 	kcprintf("PMAP: initialization complete.\n");
+#endif
 	PCPU_SET(asidnext, PMAP_ASID_FIRST);
 }
 STARTUP_ITEM(pmap, STARTUP_PMAP, STARTUP_FIRST, pmap_startup, NULL);

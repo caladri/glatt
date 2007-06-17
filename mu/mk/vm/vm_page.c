@@ -34,8 +34,10 @@ page_init(void)
 {
 	TAILQ_INIT(&page_free_queue);
 	TAILQ_INIT(&page_use_queue);
+#ifdef	VERBOSE
 	kcprintf("PAGE: page size is %uK, %lu pages per page array.\n",
 		 PAGE_SIZE / 1024, VM_PAGE_ARRAY_ENTRIES);
+#endif
 }
 
 paddr_t
@@ -185,11 +187,13 @@ page_insert_pages(paddr_t base, size_t pages)
 			break;
 	}
 
+#ifdef	VERBOSE
 	kcprintf("PAGE: inserted %lu pages (%luM)\n", inserted,
 		 (inserted * PAGE_SIZE) / (1024 * 1024));
 	kcprintf("PAGE: using %u arrays (%u, %u)\n", page_array_count,
 		 page_array_count / VM_PAGE_ARRAY_COUNT,
 		 page_array_count % VM_PAGE_ARRAY_COUNT);
+#endif
 	return (0);
 }
 

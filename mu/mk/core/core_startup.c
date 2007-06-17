@@ -89,7 +89,9 @@ startup_boot_thread(void *arg)
 	struct startup_item **itemp, *item, *ip;
 	static TAILQ_HEAD(, struct startup_item) sorted_items;
 
-	kcprintf("The system is coming up.\n");
+#ifdef	VERBOSE
+	kcprintf("STARTUP: The system is coming up.\n");
+#endif
 
 	for (itemp = SET_BEGIN(startup_items); itemp < SET_END(startup_items);
 	     itemp++) {
@@ -120,7 +122,9 @@ next:		continue;
 static void
 startup_main_thread(void *arg)
 {
+#ifdef	VERBOSE
 	kcprintf("STARTUP: cpu%u starting main thread.\n", mp_whoami());
+#endif
 	ipc_process();
 }
 STARTUP_ITEM(main, STARTUP_MAIN, STARTUP_FIRST, startup_main_thread, NULL);

@@ -27,6 +27,7 @@
 
 	/* CP0_PRID_COMPANY_MIPS */
 #define	CP0_PRID_TYPE_5KC		(0x81)
+#define	CP0_PRID_TYPE_5KE		(0x89)
 
 	/* Coprocessor 0 revision major/minor.  */
 
@@ -98,6 +99,10 @@ cpu_identify(void)
 		switch (CP0_PRID_TYPE(prid)) {
 		case CP0_PRID_TYPE_5KC:
 			cpu.cpu_type = "5Kc";
+			cpu.cpu_ntlbs = 48;
+			break;
+		case CP0_PRID_TYPE_5KE:
+			cpu.cpu_type = "5Ke";
 			cpu.cpu_ntlbs = 48;
 			break;
 		default:

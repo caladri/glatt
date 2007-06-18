@@ -27,9 +27,6 @@ spinlock_lock(struct spinlock *lock)
 	critical_section_t crit;
 	clock_ticks_t ticks;
 
-	if (startup_early)
-		return;
-
 	ticks = clock();
 
 	crit = critical_enter();
@@ -54,9 +51,6 @@ spinlock_unlock(struct spinlock *lock)
 {
 	critical_section_t crit;
 	critical_section_t saved;
-
-	if (startup_early)
-		return;
 
 	crit = critical_enter();
 	if (atomic_load_64(&lock->s_owner) == (uint64_t)mp_whoami()) {

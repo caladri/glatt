@@ -121,7 +121,7 @@ cpu_interrupt_restore(register_t r)
 				  ~CP0_STATUS_INTERRUPT_MASK) |
 				 PCPU_GET(interrupt_mask));
 		cpu_write_status(cpu_read_status() | r);
-		PCPU_SET(interrupt_enable, CP0_STATUS_IE);
+		PCPU_SET(interrupt_enable, 1);
 	}
 }
 

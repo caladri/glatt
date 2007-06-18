@@ -9,6 +9,8 @@
 #include <vm/page.h>
 #include <vm/vm.h>
 
+bool startup_early = true;
+
 COMPILE_TIME_ASSERT(sizeof (struct pcpu) <= PAGE_SIZE);
 
 void
@@ -53,15 +55,17 @@ cpu_startup(void)
 
 	/* Identify the CPU.  */
 	pcpu->pc_cpuinfo = cpu_identify();
-	pcpu->pc_flags = PCPU_FLAG_RUNNING;
-
-	/* Setup the scheduler.  */
-	scheduler_cpu_setup(&pcpu->pc_scheduler);
+	pcpu->pc_cpuid = mp_whoami();
 
 	/* Clear the TLB and add a wired mapping for my per-CPU data.  */
 	tlb_init(kernel_vm.vm_pmap, pcpu_addr);
 
 	/* Now we can take VM-related exceptions appropriately.  */
+	pcpu->pc_flags = PCPU_FLAG_RUNNING;
+	startup_early = false;
+
+	/* Setup the scheduler.  */
+	scheduler_cpu_setup(&pcpu->pc_scheduler);
 
 	/* Return to the platform code.  */
 }

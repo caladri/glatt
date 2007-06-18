@@ -9,18 +9,9 @@ mp_ncpus(void)
 	return (cpu_mp_ncpus());
 }
 
-/*
- * XXX
- * Once a CPU is up and running, should use its PCPU data as a much faster
- * whoami.
- */
-static inline cpu_id_t
-mp_whoami(void)
-{
-	return (cpu_mp_whoami());
-}
-
 typedef	void (mp_ipi_handler_t)(void *, enum ipi_type);
+
+cpu_id_t mp_whoami(void);
 
 void mp_cpu_present(cpu_id_t);
 void mp_cpu_running(cpu_id_t);

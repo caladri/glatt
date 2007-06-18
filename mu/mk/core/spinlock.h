@@ -4,7 +4,6 @@
 #include <core/clock.h>
 #include <core/critical.h>
 #include <core/mp.h>
-#include <core/startup.h>
 #include <cpu/atomic.h>
 #include <db/db.h>
 

@@ -115,8 +115,14 @@ startup_boot_thread(void *arg)
 #undef LESS_THAN
 next:		continue;
 	}
+
+	/*
+	 * Don't let other threads run until we're done starting up.
+	 */
+	spinlock_lock(&startup_spinlock);
 	TAILQ_FOREACH(item, &sorted_items, si_link)
 		item->si_function(item->si_arg);
+	spinlock_unlock(&startup_spinlock);
 }
 
 static void

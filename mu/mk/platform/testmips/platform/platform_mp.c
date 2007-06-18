@@ -3,6 +3,7 @@
 #include <core/spinlock.h>
 #include <core/startup.h>
 #include <core/string.h>
+#include <cpu/cpu.h>
 #include <cpu/cpuinfo.h>
 #include <cpu/interrupt.h>
 #include <cpu/memory.h>
@@ -158,9 +159,18 @@ platform_mp_start_one(cpu_id_t cpu, void (*startup)(void))
 	error = page_alloc_direct(&kernel_vm, PAGE_FLAG_DEFAULT, &stack);
 	if (error != 0)
 		panic("%s: page_alloc_direct failed: %m", __func__, error);
+
+	startup_early = true;
+
 	TEST_MP_DEV_WRITE(TEST_MP_DEV_STARTADDR, (uintptr_t)startup);
 	TEST_MP_DEV_WRITE(TEST_MP_DEV_STACK, stack + PAGE_SIZE);
 	TEST_MP_DEV_WRITE(TEST_MP_DEV_START, cpu);
+
+	/*
+	 * Loop until startup_early is false again and this CPU is up.
+	 */
+	while (startup_early)
+		continue;
 }
 
 static void

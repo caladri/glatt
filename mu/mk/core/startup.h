@@ -39,7 +39,7 @@ struct startup_item {
 	};								\
 	SET_ADD(startup_items, startup_item_ ## name)
 
-extern bool startup_early;	/* true if PCPU, etc., aren't usable.  */
+extern volatile bool startup_early;	/* true if PCPU isn't usable.  */
 
 void startup_init(void);
 void startup_main(void);

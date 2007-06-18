@@ -9,7 +9,7 @@
 #include <vm/page.h>
 #include <vm/vm.h>
 
-bool startup_early = true;
+volatile bool startup_early = true;
 
 COMPILE_TIME_ASSERT(sizeof (struct pcpu) <= PAGE_SIZE);
 

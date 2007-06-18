@@ -122,15 +122,26 @@ next:		continue;
 	spinlock_lock(&startup_spinlock);
 	TAILQ_FOREACH(item, &sorted_items, si_link)
 		item->si_function(item->si_arg);
-	spinlock_unlock(&startup_spinlock);
+	ASSERT(false, "Must not be reached.");
 }
 
 static void
 startup_main_thread(void *arg)
 {
+	struct spinlock *lock;
+
+	lock = arg;
+
+	/*
+	 * The boot thread will come here and need to unlock the startup
+	 * spinlock.
+	 */
+	if (lock != NULL)
+		spinlock_unlock(lock);
+
 #ifdef	VERBOSE
 	kcprintf("STARTUP: cpu%u starting main thread.\n", mp_whoami());
 #endif
 	ipc_process();
 }
-STARTUP_ITEM(main, STARTUP_MAIN, STARTUP_FIRST, startup_main_thread, NULL);
+STARTUP_ITEM(main, STARTUP_MAIN, STARTUP_FIRST, startup_main_thread, &startup_spinlock);

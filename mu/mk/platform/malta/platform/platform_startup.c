@@ -12,6 +12,11 @@ platform_startup(void)
 	startup_main();
 }
 
+void
+platform_startup_thread(void)
+{
+}
+
 static void
 platform_startup_cpu(void *arg)
 {

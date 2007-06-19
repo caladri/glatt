@@ -11,9 +11,10 @@
 void
 panic(const char *s, ...)
 {
-	static uint64_t magic;
 	static struct spinlock console_lock = SPINLOCK_INIT("panic");
 	va_list ap;
+#ifndef	UNIPROCESSOR
+	static uint64_t magic;
 	bool winner;
 
 	winner = true;
@@ -36,6 +37,7 @@ panic(const char *s, ...)
 		 */
 		mp_ipi_send_but(mp_whoami(), IPI_STOP);
 	}
+#endif
 
 	spinlock_lock(&console_lock);
 	kcprintf("panic: cpu%u: ", mp_whoami());
@@ -47,15 +49,20 @@ panic(const char *s, ...)
 
 	if ((PCPU_GET(flags) & PCPU_FLAG_PANICKED) != 0) {
 		kcprintf("cpu%u: double panic.\n", mp_whoami());
+#ifndef	UNIPROCESSOR
 		mp_ipi_send(mp_whoami(), IPI_STOP);
+#endif
 	}
 	PCPU_SET(flags, PCPU_GET(flags) | PCPU_FLAG_PANICKED);
 
+#ifndef	UNIPROCESSOR
 	if (winner) {
+#endif
 		/*
 		 * We get to go to the debugger!
 		 */
 		cpu_break();
+#ifndef	UNIPROCESSOR
 	} else {
 		spinlock_lock(&console_lock);
 		kcprintf("cpu%u: secondary panic, halting.\n", mp_whoami());
@@ -66,6 +73,7 @@ panic(const char *s, ...)
 		 */
 		cpu_halt();
 	}
+#endif
 }
 
 #if 0

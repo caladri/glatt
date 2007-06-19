@@ -24,10 +24,12 @@ db_enter(void)
 {
 	kcprintf("DB: Entering debugger.\n");
 
+#ifndef	UNIPROCESSOR
 	/*
 	 * Ask other CPUs to stop.
 	 */
 	mp_ipi_send_but(mp_whoami(), IPI_STOP);
+#endif
 
 	for (;;) {
 		struct db_action **actionp;

@@ -25,10 +25,12 @@
 COMPILE_TIME_ASSERT(PAGE_SIZE == 8192);
 COMPILE_TIME_ASSERT(TLB_PAGE_SIZE == 4096);
 
+#ifndef	UNIPROCESSOR
 struct tlb_shootdown_arg {
 	struct pmap *pmap;
 	vaddr_t vaddr;
 };
+#endif
 
 static __inline void
 tlb_probe(void)
@@ -62,7 +64,9 @@ static void tlb_insert_wired(struct pmap *pm, vaddr_t, paddr_t);
 static void tlb_invalidate_addr(struct pmap *, vaddr_t);
 static void tlb_invalidate_all(void);
 static void tlb_invalidate_one(unsigned);
+#ifndef	UNIPROCESSOR
 static void tlb_shootdown(void *);
+#endif
 
 void
 tlb_init(struct pmap *pm, paddr_t pcpu_addr)
@@ -99,6 +103,7 @@ tlb_invalidate(struct pmap *pm, vaddr_t vaddr)
 {
 	tlb_invalidate_addr(pm, vaddr);
 
+#ifndef	UNIPROCESSOR
 	/*
 	 * XXX
 	 * Check if this VA is active on any other CPUs.
@@ -112,6 +117,7 @@ tlb_invalidate(struct pmap *pm, vaddr_t vaddr)
 		mp_hokusai_master(NULL, NULL,
 				  tlb_shootdown, &shootdown);
 	}
+#endif
 }
 
 void
@@ -241,6 +247,7 @@ tlb_invalidate_one(unsigned i)
 	tlb_write_indexed();
 }
 
+#ifndef	UNIPROCESSOR
 static void
 tlb_shootdown(void *arg)
 {
@@ -249,6 +256,7 @@ tlb_shootdown(void *arg)
 	tsa = arg;
 	tlb_invalidate_addr(tsa->pmap, tsa->vaddr);
 }
+#endif
 
 #if 0
 static void

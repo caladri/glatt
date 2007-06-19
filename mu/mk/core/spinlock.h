@@ -23,6 +23,7 @@ struct spinlock {
 static inline void
 spinlock_lock(struct spinlock *lock)
 {
+#ifndef	UNIPROCESSOR
 	critical_section_t crit;
 	clock_ticks_t ticks;
 
@@ -43,11 +44,24 @@ spinlock_lock(struct spinlock *lock)
 		crit = critical_enter();
 	}
 	lock->s_crit = crit;
+#else
+	critical_section_t crit;
+
+	crit = critical_enter();
+	if (lock->s_owner == mp_whoami()) {
+		lock->s_nest++;
+		critical_exit(crit);
+	} else {
+		lock->s_crit = crit;
+		lock->s_owner = mp_whoami();
+	}
+#endif
 }
 
 static inline void
 spinlock_unlock(struct spinlock *lock)
 {
+#ifndef	UNIPROCESSOR
 	critical_section_t crit;
 	critical_section_t saved;
 
@@ -70,6 +84,17 @@ spinlock_unlock(struct spinlock *lock)
 	}
 	critical_exit(crit);
 	panic("%s: not my lock to unlock (%s)", __func__, lock->s_name);
+#else
+	if (lock->s_owner != mp_whoami())
+		panic("%s: cannot lock %s (owner=%lx)", __func__,
+		      lock->s_name, lock->s_owner);
+
+	if (lock->s_nest == 0) {
+		critical_exit(lock->s_crit);
+		lock->s_owner = CPU_ID_INVALID;
+	} else
+		lock->s_nest--;
+#endif
 }
 
 #define	SPINLOCK_ASSERT_HELD(lock)					\

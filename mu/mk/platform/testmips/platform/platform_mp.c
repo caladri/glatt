@@ -160,6 +160,10 @@ platform_mp_start_one(cpu_id_t cpu, void (*startup)(void))
 	if (error != 0)
 		panic("%s: page_alloc_direct failed: %m", __func__, error);
 
+#ifdef	VERBOSE
+	device_printf(platform_mp_bus, "launching cpu%u...", cpu);
+#endif
+
 	startup_early = true;
 
 	TEST_MP_DEV_WRITE(TEST_MP_DEV_STARTADDR, (uintptr_t)startup);
@@ -171,6 +175,10 @@ platform_mp_start_one(cpu_id_t cpu, void (*startup)(void))
 	 */
 	while (startup_early)
 		continue;
+
+#ifdef	VERBOSE
+	device_printf(platform_mp_bus, "launched cpu%u.", cpu);
+#endif
 }
 
 static void

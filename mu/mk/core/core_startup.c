@@ -23,6 +23,10 @@ static struct task *main_task;
 void
 startup_init(void)
 {
+#ifdef	UNIPROCESSOR
+	kcprintf("STARTUP: Uniprocessor kernel, only the boot CPU will be used.\n");
+#endif
+
 	/*
 	 * Turn on the virtual memory subsystem.
 	 */

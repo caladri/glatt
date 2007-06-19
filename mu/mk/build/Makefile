@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.23 2007-06-17 23:56:48 juli Exp $
+# $Id: Makefile,v 1.24 2007-06-19 02:19:42 juli Exp $
 
 KERNEL?=	mu-mk
 
@@ -7,8 +7,6 @@ simulate: simulate-${KERNEL}
 
 KERNEL_ROOT?=	${.CURDIR}/..
 BUILD_ROOT?=	${KERNEL_ROOT}/build
-
-.include "${BUILD_ROOT}/build.mk"
 
 .include "${BUILD_ROOT}/config.mk"
 
@@ -19,6 +17,8 @@ PLATFORM_ROOT=	${KERNEL_ROOT}/platform/${PLATFORM}
 CPU_ROOT=	${KERNEL_ROOT}/cpu/${CPU}
 
 .include "${CPU_ROOT}/cpu.mk"
+
+.include "${BUILD_ROOT}/build.mk"
 
 KERNEL_CPPFLAGS=-I${KERNEL_ROOT} -I${PLATFORM_ROOT} -I${CPU_ROOT}
 .if defined(NO_ASSERT)

@@ -9,8 +9,6 @@
 #include <vm/page.h>
 #include <vm/vm.h>
 
-#include <io/device/console/console.h>
-
 volatile bool startup_early = true;
 
 COMPILE_TIME_ASSERT(sizeof (struct pcpu) <= PAGE_SIZE);

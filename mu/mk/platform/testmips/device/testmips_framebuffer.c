@@ -24,7 +24,11 @@ tmfb_probe(struct device *device)
 {
 	if (device->d_unit != 0)
 		return (ERROR_NOT_FOUND);
+#ifdef	FRAMEBUFFER
+	return (0);
+#else
 	return (ERROR_NOT_IMPLEMENTED);
+#endif
 }
 
 static int

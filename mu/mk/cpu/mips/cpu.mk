@@ -1,4 +1,4 @@
-# $Id: cpu.mk,v 1.27 2007-06-19 02:19:43 juli Exp $
+# $Id: cpu.mk,v 1.28 2007-06-22 00:56:21 juli Exp $
 
 .PATH: ${CPU_ROOT}/cpu
 .PATH: ${CPU_ROOT}/page
@@ -31,7 +31,14 @@ KERNEL_SIM=	gxemul
 KERNEL_ABI=	-mabi=64
 KERNEL_ENTRY=	start
 KERNEL_CPU=	-mips3
+.if defined(LITTLE_ENDIAN)
+KERNEL_FORMAT=	elf64-littlemips
+KERNEL_CC+=	-EL
+KERNEL_AS+=	-EL
+KERNEL_LD+=	-EL
+.else
 KERNEL_FORMAT=	elf64-bigmips
+.endif
 
 # Ask GCC to not use the GP, we may well end up with too much GP-relative
 # data to address.  In reality, though, we shouldn't have enough global data

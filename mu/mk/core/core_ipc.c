@@ -5,7 +5,6 @@
 #include <core/pool.h>
 #include <core/sleepq.h>
 #include <core/thread.h>
-#include <core/vdae.h>
 
 static TAILQ_HEAD(, struct ipc_port) ipc_ports;
 static struct mutex ipc_ports_lock;
@@ -219,7 +218,6 @@ ipc_port_alloc(ipc_port_t port)
 	ipcp = pool_allocate(&ipc_port_pool);
 	mutex_init(&ipcp->ipcp_mutex, "IPC Port");
 	ipcp->ipcp_port = port;
-	ipcp->ipcp_vdae = NULL;
 	TAILQ_INIT(&ipcp->ipcp_msgs);
 
 	IPC_PORTS_LOCK();
@@ -263,13 +261,6 @@ ipc_port_deliver(struct ipc_message *ipcmsg)
 	ASSERT(ipcmsg->ipcmsg_header.ipchdr_dst == ipcp->ipcp_port,
 	       "Destination must be the same as the port we are inserting into.");
 	TAILQ_INSERT_TAIL(&ipcp->ipcp_msgs, ipcmsg, ipcmsg_link);
-	/*
-	 * XXX
-	 * We don't yet have a VDAE list associated with each port.
-	 */
-#if 0
-	vdae_list_wakeup(ipcp->ipcp_vdae);
-#endif
 	sleepq_signal_one(ipcp);
 	IPC_PORT_UNLOCK(ipcp);
 }

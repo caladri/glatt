@@ -17,7 +17,6 @@ typedef	uint64_t	ipc_size_t;
 struct ipc_port {
 	struct mutex ipcp_mutex;
 	ipc_port_t ipcp_port;
-	struct vdae_list *ipcp_vdae;
 	TAILQ_HEAD(, struct ipc_message) ipcp_msgs;
 	TAILQ_ENTRY(struct ipc_port) ipcp_link;
 };

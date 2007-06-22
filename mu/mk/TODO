@@ -1,3 +1,7 @@
+This single-image thing seems kind of problematic.  Next up needs to be an
+asymmetric rewrite, I think, with each CPU having its own data structures and
+them having to do inter-host IPC.
+
 Urgent:
 
 Rewrite exception and TLB code.  Don't frob status unless we're task switching

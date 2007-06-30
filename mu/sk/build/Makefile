@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.1 2007-06-30 02:19:50 juli Exp $
+# $Id: Makefile,v 1.2 2007-06-30 02:57:28 juli Exp $
 
 KERNEL?=	sk
 
@@ -12,9 +12,23 @@ BUILD_ROOT?=	$S/build
 
 PLATFORM_ROOT=	$S/platform/${PLATFORM}
 
+platform:
+	rm -f $@
+	ln -s ${PLATFORM_ROOT} $@
+
+.PHONY: platform
+symlinks:: platform
+
 .include "${PLATFORM_ROOT}/platform.mk"
 
 CPU_ROOT=	$S/cpu/${CPU}
+
+cpu:
+	rm -f $@
+	ln -s ${CPU_ROOT} $@
+
+.PHONY: cpu
+symlinks:: cpu
 
 .include "${CPU_ROOT}/cpu.mk"
 
@@ -26,7 +40,7 @@ SUPERVISOR_ROOT=$S/supervisor
 
 .include "${SUPERVISOR_ROOT}/supervisor.mk"
 
-KERNEL_CPPFLAGS=-I$S -I$S/include -I${PLATFORM_ROOT} -I${CPU_ROOT}
+KERNEL_CPPFLAGS=-I$S -I${BUILD_ROOT}
 .if defined(NO_ASSERT)
 KERNEL_CPPFLAGS+=-DNO_ASSERT
 .endif
@@ -61,16 +75,18 @@ KERNEL_OBJECTS=	${KERNEL_SOURCES:R:S/$/.o/g}
 KERNEL_FORMAT:=--oformat=${KERNEL_FORMAT}
 .endif
 
-${KERNEL}: ${KERNEL_OBJECTS}
+${KERNEL}: symlinks ${KERNEL_OBJECTS}
 	${KERNEL_LD} ${KERNEL_LDFLAGS} start.o ${KERNEL_OBJECTS:Nstart.o} \
 		${KERNEL_FORMAT} -o $@
 
 clean:
+	-rm cpu
+	-rm platform
 	-rm _as.h _as.h.S
 	-rm ${KERNEL_OBJECTS}
 	-rm ${KERNEL}
 
-_as.h: ${PLATFORM_ROOT}/platform/_as.sym
+_as.h: ${PLATFORM_ROOT}/sk/_as.sym
 	${KERNEL_CC} -S -x c ${KERNEL_CPPFLAGS} ${KERNEL_CFLAGS} -c -o $@.S $>
 	grep '@assym@' $@.S | sed 's/.*@assym@ /#/' > $@
 

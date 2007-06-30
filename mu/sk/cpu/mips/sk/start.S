@@ -11,6 +11,11 @@ SYMBOL(bootstack)
 	.text
 ENTRY(start)
 	/*
+	 * Zero the cause.
+	 */
+	mtc0	zero, CP0_CAUSE
+
+	/*
 	 * Enter 64-bit kernel mode with boot exception vectors.
 	 */
 	li	t0, CP0_STATUS_BEV | CP0_STATUS_KX
@@ -22,10 +27,8 @@ ENTRY(start)
 	dla	sp, bootstack
 
 	/*
-	 * Zero the cause register and set the gp to 0 (since we are not using
-	 * it.)
+	 * Set the gp to 0 (since we are not using it.)
 	 */
-	mtc0	zero, CP0_CAUSE
 	move	gp, zero
 
 	/*

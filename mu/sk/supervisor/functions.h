@@ -7,14 +7,9 @@
 
 enum FunctionIndex {
 	Exit_Index,
-	PutString_Index,
 };
 
 struct Exit_Parameters {
-};
-
-struct PutString_Parameters {
-	const char *arg0;
 };
 
 #endif /* !_SUPERVISOR_FUNCTIONS_H_ */

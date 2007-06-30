@@ -3,6 +3,8 @@
 	NOREORDER
 
 	.data
+
+	.p2align 3
 	.space 1024
 SYMBOL(bootstack)
 

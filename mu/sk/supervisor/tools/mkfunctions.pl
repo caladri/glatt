@@ -34,13 +34,15 @@ close($table_fh);
 
 open($header_fh, '>' . $header) || die "$!";
 
+# XXX auto-generated blurb.
+
 print $header_fh '#ifndef _SUPERVISOR_FUNCTIONS_H_' . "\n";
 print $header_fh '#define _SUPERVISOR_FUNCTIONS_H_' . "\n";
 print $header_fh "\n";
 
-print $header_fh 'enum FunctionNumber {' . "\n";
+print $header_fh 'enum FunctionIndex {' . "\n";
 foreach my $function (sort keys %functions) {
-	print $header_fh "\t" . $function . ',' . "\n";
+	print $header_fh "\t" . $function . '_Index' . ',' . "\n";
 }
 print $header_fh '};' . "\n";
 

@@ -7,9 +7,19 @@
 
 enum FunctionIndex {
 	Exit_Index,
+	Install_Index,
 };
 
 struct Exit_Parameters {
 };
+#ifdef	SUPERVISOR_FUNCTIONS
+void Exit(void);
+#endif /* SUPERVISOR_FUNCTIONS */
+
+struct Install_Parameters {
+};
+#ifdef	SUPERVISOR_FUNCTIONS
+void Install(void);
+#endif /* SUPERVISOR_FUNCTIONS */
 
 #endif /* !_SUPERVISOR_FUNCTIONS_H_ */

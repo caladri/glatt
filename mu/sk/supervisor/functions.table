@@ -3,4 +3,5 @@
 # Each line contains a function declaration.
 #
 
+Install();
 Exit();

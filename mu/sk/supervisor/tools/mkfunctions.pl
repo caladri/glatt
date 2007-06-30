@@ -73,6 +73,16 @@ foreach my $function (sort keys %functions) {
 		}
 	}
 	print $header_fh '};' . "\n";
+
+	print $header_fh '#ifdef	SUPERVISOR_FUNCTIONS' . "\n";
+	print $header_fh 'void ' . $function . '(';
+	if ($functions{$function}) {
+		print $header_fh $functions{$function};
+	} else {
+		print $header_fh 'void';
+	}
+	print $header_fh ');' . "\n";
+	print $header_fh '#endif /* SUPERVISOR_FUNCTIONS */' . "\n";
 }
 
 print $header_fh "\n";
@@ -84,7 +94,8 @@ open($stub_fh, '>' . $stub) || die "$!";
 
 Blurb($stub_fh);
 
-print $stub_fh '#include <supervisor/functions.h>' . "\n";
+print $stub_fh '#include <sk/types.h>' . "\n";
+print $stub_fh '#include <sk/supervisor.h>' . "\n";
 
 print $stub_fh "\n";
 

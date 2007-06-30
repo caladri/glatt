@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.2 2007-06-30 02:57:28 juli Exp $
+# $Id: Makefile,v 1.3 2007-06-30 08:52:41 juli Exp $
 
 KERNEL?=	sk
 
@@ -40,6 +40,10 @@ SUPERVISOR_ROOT=$S/supervisor
 
 .include "${SUPERVISOR_ROOT}/supervisor.mk"
 
+COMMON_ROOT=	$S/sk
+
+.include "${COMMON_ROOT}/sk.mk"
+
 KERNEL_CPPFLAGS=-I$S -I${BUILD_ROOT}
 .if defined(NO_ASSERT)
 KERNEL_CPPFLAGS+=-DNO_ASSERT
@@ -49,7 +53,7 @@ KERNEL_CPPFLAGS+=-DVERBOSE
 .endif
 
 KERNEL_CFLAGS+=	${KERNEL_ABI} ${KERNEL_CPU} -nostdinc
-KERNEL_CFLAGS+=	-std=c99 -pedantic
+KERNEL_CFLAGS+=	-std=c99
 KERNEL_CFLAGS+=	-Werror -W -Wall -Wno-unused -Wformat
 KERNEL_CFLAGS+=	-Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wshadow
 KERNEL_CFLAGS+=	-Wcast-align -Winline -Wnested-externs -Wredundant-decls

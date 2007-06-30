@@ -1,0 +1,6 @@
+build		Build system and tools.
+cpu		CPU-specific source and headers.
+kernel		Kernel-level source code.
+platform	Platform-specific source code and headers.
+sk		Shared code between kernel and supervisor (or interfaces between.)
+supervisor	Supervisor-level source code.

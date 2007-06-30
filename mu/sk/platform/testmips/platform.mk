@@ -1,4 +1,9 @@
-# $Id: platform.mk,v 1.1 2007-06-30 02:21:29 juli Exp $
+# $Id: platform.mk,v 1.2 2007-06-30 09:11:35 juli Exp $
+
+.PATH: ${PLATFORM_ROOT}/sk
+.PATH: ${PLATFORM_ROOT}/supervisor
+
+KERNEL_SOURCES+=platform_sk_init.c
 
 CPU=		mips
 

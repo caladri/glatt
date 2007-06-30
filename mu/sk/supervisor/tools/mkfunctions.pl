@@ -10,7 +10,7 @@ my $supervisor = $ENV{'S'} . '/supervisor';
 
 # Paths to the input table, the stub file and the headers.
 my $table = $supervisor . '/functions.table';
-my $stub = $supervisor . '/functions.c';
+my $stub = $supervisor . '/supervisor_functions.c';
 my $header = $supervisor . '/functions.h';
 
 # File handles.

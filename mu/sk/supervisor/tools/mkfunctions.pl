@@ -25,16 +25,30 @@ while (<$table_fh>) {
 
 	next if /^$/ or /^#/;
 
-	my ($function, $args) = m/^([A-Za-z_]+)\([^)]*\);/g;
+	my ($function, $args) = m/^([A-Za-z_]+)\(([^)]*)\);/g;
 
 	$functions{$function} = $args;
 }
 
 close($table_fh);
 
+sub Blurb($) {
+	my ($fh) = @_;
+	my ($base, $src) = ($ENV{'S'}, $table);
+
+	$src =~ s@^${base}/@@g;
+
+	print $fh <<_EOF_
+/*
+ * This file is auto-generated from ${src}.  Do not edit it directly.
+ */
+
+_EOF_
+}
+
 open($header_fh, '>' . $header) || die "$!";
 
-# XXX auto-generated blurb.
+Blurb($header_fh);
 
 print $header_fh '#ifndef _SUPERVISOR_FUNCTIONS_H_' . "\n";
 print $header_fh '#define _SUPERVISOR_FUNCTIONS_H_' . "\n";
@@ -46,14 +60,74 @@ foreach my $function (sort keys %functions) {
 }
 print $header_fh '};' . "\n";
 
-print $header_fh "\n";
+foreach my $function (sort keys %functions) {
+	print $header_fh "\n";
 
-# Function parameters;  XXX
+	print $header_fh 'struct ' . $function . '_Parameters' . ' {' . "\n";
+	if ($functions{$function}) {
+		my @args = split /,/, $functions{$function};
+		my $acnt = 0;
+
+		foreach my $arg (@args) {
+			print $header_fh "\t" . $arg . 'arg' . $acnt++ . ';' . "\n";
+		}
+	}
+	print $header_fh '};' . "\n";
+}
 
 print $header_fh "\n";
-print $header_fh '#endif /* ! _SUPERVISOR_FUNCTIONS_H_ */' . "\n";
+print $header_fh '#endif /* !_SUPERVISOR_FUNCTIONS_H_ */' . "\n";
 
 close($header_fh);
 
 open($stub_fh, '>' . $stub) || die "$!";
+
+Blurb($stub_fh);
+
+print $stub_fh '#include <supervisor/functions.h>' . "\n";
+
+print $stub_fh "\n";
+
+foreach my $function (sort keys %functions) {
+	print $stub_fh 'static void' . "\n";
+	print $stub_fh $function . '_Stub(void *argp)' . "\n";
+	print $stub_fh '{' . "\n";
+	print $stub_fh "\t" . 'struct ' . $function . '_Parameters *args = argp;' . "\n";
+	print $stub_fh "\n";
+	if ($functions{$function}) {
+		my @args = split /,/, $functions{$function};
+		my $acnt = 0;
+
+		print $stub_fh "\t" . $function . '(';
+		foreach my $arg (@args) {
+			print $stub_fh ',' unless $acnt == 0;
+			print $stub_fh 'args->' . 'arg' . $acnt++;
+		}
+		print $stub_fh ');' . "\n";
+	} else {
+		print $stub_fh "\t" . '(void)args;' . "\n";
+		print $stub_fh "\t" . $function . '();' . "\n";
+	}
+
+	print $stub_fh '}' . "\n";
+
+	print $stub_fh "\n";
+}
+
+print $stub_fh 'bool' . "\n";
+print $stub_fh 'supervisor_invoke(enum FunctionIndex f, void *arg, size_t argsize)' . "\n";
+print $stub_fh '{' . "\n";
+print $stub_fh "\t" . 'switch (f) {' . "\n";
+foreach my $function (sort keys %functions) {
+	print $stub_fh "\t" . 'case ' . $function . '_Index' . ':' . "\n";
+	print $stub_fh "\t\t" . 'if (sizeof (struct ' . $function . '_Parameters) != argsize)' . "\n";
+	print $stub_fh "\t\t\t" . 'return (false);' . "\n";
+	print $stub_fh "\t\t" . $function . '_Stub' . '(arg);' . "\n";
+	print $stub_fh "\t\t" . 'return (true);' . "\n";
+}
+print $stub_fh "\t" . 'default:' . "\n";
+print $stub_fh "\t\t" . 'return (false);' . "\n";
+print $stub_fh "\t" . '}' . "\n";
+print $stub_fh '}' . "\n";
+
 close($stub_fh);

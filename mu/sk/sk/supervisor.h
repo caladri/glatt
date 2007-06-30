@@ -1,7 +1,6 @@
 #ifndef	_SK_SUPERVISOR_H_
 #define	_SK_SUPERVISOR_H_
 
-#include <cpu/sk/supervisor.h>
 #include <supervisor/functions.h>
 
 #define	Supervisor(Function, Args...)					\

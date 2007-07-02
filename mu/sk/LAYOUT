@@ -4,3 +4,12 @@ kernel		Kernel-level source code.
 platform	Platform-specific source code and headers.
 sk		Shared code between kernel and supervisor (or interfaces between.)
 supervisor	Supervisor-level source code.
+
+The system starts running sk initialization code.  This installs the supervisor
+and the kernel and starts them each running.  This means telling the supervisor
+what memory and CPUs are available, from the bootstrap CPU, and then setting up
+the supervisor -- on MIPS this means installing exception handlers that point to
+the supervisor.  Each CPU is started by the sk layer, and from there the
+supervisor allocates them a chunk of available physical memory and per-CPU
+data.  Then, sk tells the kernel to set up its virtual memory system and do
+the rest of its startup.

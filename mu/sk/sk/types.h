@@ -3,6 +3,9 @@
 
 #include <cpu/sk/types.h>
 
+/*
+ * Standard types.
+ */
 typedef enum {
 	true	= 1 == 1,
 	false	= !true
@@ -10,6 +13,11 @@ typedef enum {
 
 typedef	uint64_t	size_t;
 typedef	int64_t		ssize_t;
+
+/*
+ * Standard definitions.
+ */
+#define	NULL	((void *)(uintptr_t)0)
 
 /*
  * Macro helpers.

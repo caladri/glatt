@@ -15,3 +15,9 @@ sk_init(void)
 	 */
 	Supervisor(Install);
 }
+
+void
+sk_supervisor_install(void)
+{
+	sk_platform_supervisor_install();
+}

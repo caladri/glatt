@@ -1,1 +1,2 @@
 PLATFORM=	testmips
+KERNEL_SIMCPUS=	4

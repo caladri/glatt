@@ -1,7 +1,7 @@
 #ifndef	_SK_TYPES_H_
 #define	_SK_TYPES_H_
 
-#include <cpu/sk/types.h>
+#include <platform/sk/types.h>
 
 /*
  * Standard types.

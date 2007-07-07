@@ -25,4 +25,16 @@ typedef	int64_t		ssize_t;
 #define	MACRO_BLOCK_BEGIN	do
 #define	MACRO_BLOCK_END		while (0)
 
+/*
+ * Bitmask helpers.
+ */
+#define	POPCNT(x)							\
+	(((PX_(x) + (PX_(x) >> 4)) & 0x0F0F0F0F) % 255)
+#define	PX_(x)								\
+	((x) - (((x) >> 1) & 0x77777777)				\
+	     - (((x) >> 2) & 0x33333333)				\
+	     - (((x) >> 3) & 0x11111111))
+#define	LOG2(x)								\
+	(POPCNT((x) - 1))
+
 #endif /* !_SK_TYPES_H_ */

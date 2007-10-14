@@ -25,6 +25,9 @@ typedef	int64_t		ssize_t;
 #define	MACRO_BLOCK_BEGIN	do
 #define	MACRO_BLOCK_END		while (0)
 
+#define	_CONCAT(x, y)		x ## y
+#define	CONCAT(x, y)		_CONCAT(x, y)
+
 /*
  * Bitmask helpers.
  */
@@ -36,5 +39,11 @@ typedef	int64_t		ssize_t;
 	     - (((x) >> 3) & 0x11111111))
 #define	LOG2(x)								\
 	(POPCNT((x) - 1))
+
+/*
+ * Compile-time assertions.
+ */
+#define COMPILE_TIME_ASSERT(p)						\
+	typedef int CONCAT(ctassert_, __LINE__) [(!(p) * -1) + (p)]
 
 #endif /* !_SK_TYPES_H_ */

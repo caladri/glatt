@@ -1,13 +1,16 @@
 #include <sk/types.h>
 #include <sk/page.h>
+#include <sk/queue.h>
 #include <cpu/supervisor/memory.h>
 #include <supervisor/memory.h>
 
 struct pageinfo_header {
 	paddr_t ph_base;
 	size_t ph_bytes;
-	struct pageinfo_header *ph_link;
+	STAILQ_ENTRY(struct pageinfo_header) ph_link;
 };
+static STAILQ_HEAD(, struct pageinfo_header) supervisor_memory_global = 
+	STAILQ_HEAD_INITIALIZER(supervisor_memory_global);
 
 struct pageinfo_page {
 	void *pp_dummy;
@@ -55,11 +58,15 @@ supervisor_memory_insert(paddr_t base, size_t bytes,
 	pi->pi_header.ph_bytes = bytes - PAGE_SIZE;
 	if (pi->pi_header.ph_bytes > PAGES_PER_PAGEINFO * PAGE_SIZE)
 		pi->pi_header.ph_bytes = PAGES_PER_PAGEINFO * PAGE_SIZE;
-	/*
-	 * XXX
-	 * pi->pi_header.ph_link = ???;
-	 * Depends whether it's global or local memory!
-	 */
+	switch (type) {
+	case MEMORY_GLOBAL:
+		STAILQ_INSERT_TAIL(&supervisor_memory_global,
+				   &pi->pi_header, ph_link);
+		break;
+	case MEMORY_LOCAL:
+		/* XXX Find a proper local queue.  */
+		return;
+	}
 
 	for (i = 0; i < PAGES_PER_PAGEINFO; i++) {
 		struct pageinfo_page *pp;

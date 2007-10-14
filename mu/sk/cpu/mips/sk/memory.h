@@ -13,7 +13,7 @@
 #define	XKPHYS_BASE_C(cache)						\
 	((0x2ULL << 62) | ((uintptr_t)(cache) << 59))
 #define	XKPHYS_MAP_C(cache, addr)					\
-	((void *)(XKPHYS_BASE_C(cache) | ((uintptr_t)(addr))))
+	(XKPHYS_BASE_C(cache) | ((uintptr_t)(addr)))
 #define	XKPHYS_MAP_DEV(addr)	XKPHYS_MAP_C(XKPHYS_CACHE_UC, (addr))
 #define	XKPHYS_MAP_RAM(addr)	XKPHYS_MAP_C(XKPHYS_CACHE_CCEW, (addr))
 

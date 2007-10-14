@@ -41,7 +41,7 @@ sk_cpu_supervisor_install(void)
 		if (length == 0)
 			continue;
 		if (length <= vec->ev_limit) {
-			memcpy(XKPHYS_MAP_RAM(vec->ev_vector),
+			memcpy((void *)XKPHYS_MAP_RAM(vec->ev_vector),
 			       vec->ev_handler->eh_begin, length);
 		} else {
 			/* XXX panic.  */

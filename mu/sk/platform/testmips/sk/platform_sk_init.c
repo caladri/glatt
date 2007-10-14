@@ -13,7 +13,7 @@ static void sk_platform_console_putchar(void *, char);
 static struct sk_console sk_platform_console = {
 	.skc_name	= "platform",
 	.skc_putchar	= sk_platform_console_putchar,
-	.skc_private	= XKPHYS_MAP_DEV(0x10000000),
+	.skc_private	= (void *)XKPHYS_MAP_DEV(0x10000000),
 };
 
 #define	MP_READ64(offset)						\

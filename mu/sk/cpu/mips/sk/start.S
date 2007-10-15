@@ -16,9 +16,10 @@ ENTRY(start)
 	mtc0	zero, CP0_CAUSE
 
 	/*
-	 * Enter 64-bit kernel mode with boot exception vectors.
+	 * Enter 64-bit kernel mode.
+	 * XXX With boot exception vectors, once we have a good way to switch.
 	 */
-	li	t0, CP0_STATUS_BEV | CP0_STATUS_KX
+	li	t0, /*CP0_STATUS_BEV | */CP0_STATUS_KX
 	mtc0	t0, CP0_STATUS
 
 	/*

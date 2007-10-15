@@ -1,6 +1,7 @@
 #include <sk/types.h>
 #include <sk/sk.h>
 #include <sk/string.h>
+#include <cpu/sk/exception.h>
 #include <cpu/sk/memory.h>
 
 struct cpu_exception_handler {
@@ -8,10 +9,17 @@ struct cpu_exception_handler {
 	char *eh_end;
 };
 
-static struct cpu_exception_handler GenericExceptionHandler = {
-	NULL, NULL
-//	GenericExceptionVector, GenericExceptionVectorEnd
-};
+#define	EXCEPTION_VECTOR_EXTERN(name)					\
+	extern char __VECTOR_ENTRY(name)[];				\
+	extern char __VECTOR_END(name)[];				\
+									\
+	static struct cpu_exception_handler name ## ExceptionHandler = {\
+		__VECTOR_ENTRY(name), __VECTOR_END(name)		\
+	}
+
+#define	EXCEPTION_HANDLER(name)		(name ## ExceptionHandler)
+
+EXCEPTION_VECTOR_EXTERN(Generic);
 
 struct cpu_exception_vector {
 	paddr_t ev_vector;
@@ -23,7 +31,7 @@ static struct cpu_exception_vector cpu_exception_vectors[] = {
 	{
 		0x00000180,
 		0x80,
-		&GenericExceptionHandler
+		&EXCEPTION_HANDLER(Generic)
 	},
 };
 

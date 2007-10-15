@@ -1,4 +1,4 @@
-# $Id: cpu.mk,v 1.5 2007-10-14 12:43:45 juli Exp $
+# $Id: cpu.mk,v 1.6 2007-10-15 13:18:14 juli Exp $
 
 .PATH: ${CPU_ROOT}/sk
 .PATH: ${CPU_ROOT}/supervisor
@@ -6,6 +6,7 @@
 KERNEL_SOURCES+=start.S
 KERNEL_SOURCES+=cpu_sk_init.c
 KERNEL_SOURCES+=cpu_sk_supervisor.S
+KERNEL_SOURCES+=cpu_sk_exception_vectors.S
 KERNEL_SOURCES+=cpu_supervisor_memory.c
 
 KERNEL_CC=	mips64-gxemul-elf-gcc

@@ -62,10 +62,10 @@ sk_platform_init(void)
 	whoami = MP_READ64(0x00);
 	ncpus = MP_READ64(0x10);
 
-	supervisor_cpu_add(whoami);
+	supervisor_cpu_add(whoami, CPU_RUNNING);
 	for (cpu = 0; cpu < ncpus; cpu++) {
 		if (cpu != whoami)
-			supervisor_cpu_add_child(whoami, cpu);
+			supervisor_cpu_add_child(whoami, cpu, CPU_PRESENT);
 	}
 
 	/*

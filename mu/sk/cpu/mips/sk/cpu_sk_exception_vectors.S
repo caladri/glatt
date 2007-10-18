@@ -15,7 +15,7 @@ VECTOR_ENTRY(Generic)
 	mfc0	ra, CP0_EXCPC
 	sd	ra, 0(sp)
 
-	li	k0, CP0_STATUS_KX
+	li	k0, CP0_STATUS_KX | CP0_STATUS_EXL
 	mtc0	k0, CP0_STATUS
 
 	jal	supervisor_invoke

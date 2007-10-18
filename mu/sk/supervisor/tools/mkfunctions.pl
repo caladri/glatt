@@ -69,7 +69,7 @@ foreach my $function (sort keys %functions) {
 		my $acnt = 0;
 
 		foreach my $arg (@args) {
-			print $header_fh "\t" . $arg . 'arg' . $acnt++ . ';' . "\n";
+			print $header_fh "\t" . $arg . "\t" . 'arg' . $acnt++ . ';' . "\n";
 		}
 	}
 	print $header_fh '};' . "\n";
@@ -95,7 +95,7 @@ open($stub_fh, '>' . $stub) || die "$!";
 Blurb($stub_fh);
 
 print $stub_fh '#include <sk/types.h>' . "\n";
-print $stub_fh '#include <sk/supervisor.h>' . "\n";
+print $stub_fh '#include <supervisor/internal.h>' . "\n";
 
 print $stub_fh "\n";
 

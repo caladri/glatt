@@ -3,5 +3,5 @@
 # Each line contains a function declaration.
 #
 
-Install();
+Install(cpu_id_t);
 Exit();

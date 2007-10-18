@@ -5,6 +5,10 @@
 
 struct cpu {
 	cpu_id_t cpu_id;
+	enum cpu_state {
+		CPU_PRESENT,
+		CPU_INSTALLED,
+	} cpu_state;
 	STAILQ_ENTRY(struct cpu) cpu_link;
 	STAILQ_ENTRY(struct cpu) cpu_peers;
 	STAILQ_HEAD(, struct cpu) cpu_children;
@@ -43,6 +47,26 @@ supervisor_cpu_add_child(cpu_id_t parentid, cpu_id_t cpuid)
 	supervisor_cpu_add_topology(parent, cpu);
 }
 
+void
+supervisor_cpu_installed(cpu_id_t cpuid)
+{
+	struct cpu *cpu;
+
+	cpu = supervisor_cpu_lookup(cpuid);
+	if (cpu == NULL) {
+		/* XXX panic */
+		return;
+	}
+	switch (cpu->cpu_state) {
+	case CPU_PRESENT:
+		cpu->cpu_state = CPU_INSTALLED;
+		break;
+	default:
+		/* XXX panic */
+		break;
+	}
+}
+
 static void
 supervisor_cpu_add_topology(struct cpu *parent, struct cpu *cpu)
 {
@@ -60,6 +84,7 @@ supervisor_cpu_alloc(cpu_id_t id)
 
 	cpu = supervisor_memory_alloc(sizeof *cpu);
 	cpu->cpu_id = id;
+	cpu->cpu_state = CPU_PRESENT;
 	STAILQ_INIT(&cpu->cpu_children);
 	STAILQ_INSERT_TAIL(&supervisor_cpu_queue, cpu, cpu_link);
 	return (cpu);

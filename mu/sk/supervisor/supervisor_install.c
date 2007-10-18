@@ -1,9 +1,9 @@
 #include <sk/types.h>
+#include <supervisor/cpu.h>
 #include <supervisor/internal.h>
 
-#include<sk/console.h>
 void
-Install(void)
+Install(cpu_id_t me)
 {
-	sk_puts("Install called!\n");
+	supervisor_cpu_installed(me);
 }

@@ -17,9 +17,10 @@ void Exit(void);
 #endif /* SUPERVISOR_FUNCTIONS */
 
 struct Install_Parameters {
+	cpu_id_t	arg0;
 };
 #ifdef	SUPERVISOR_FUNCTIONS
-void Install(void);
+void Install(cpu_id_t);
 #endif /* SUPERVISOR_FUNCTIONS */
 
 #endif /* !_SUPERVISOR_FUNCTIONS_H_ */

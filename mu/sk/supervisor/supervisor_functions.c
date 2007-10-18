@@ -19,8 +19,7 @@ Install_Stub(void *argp)
 {
 	struct Install_Parameters *args = argp;
 
-	(void)args;
-	Install();
+	Install(args->arg0);
 }
 
 bool

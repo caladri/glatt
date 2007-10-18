@@ -2,6 +2,7 @@
 #include <sk/console.h>
 #include <sk/sk.h>
 #include <sk/string.h>
+#include <sk/supervisor.h>
 #include <supervisor/cpu.h>
 #include <supervisor/memory.h>
 #include <cpu/sk/memory.h>
@@ -71,6 +72,11 @@ sk_platform_init(void)
 	 * Install the supervisor on this CPU as normal.
 	 */
 	sk_supervisor_install();
+
+	/*
+	 * Now enter the supervisor and let it initialize itself.
+	 */
+	Supervisor(Install, whoami);
 }
 
 static void

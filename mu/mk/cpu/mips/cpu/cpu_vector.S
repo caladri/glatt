@@ -2,46 +2,6 @@
 #include <cpu/asm.h>
 
 	/* Vectors for exception, interrupt and TLB miss handling.  */
-
-	/*
-	 * XXX TODO
-	 * We have to allow for:
-	 *
-	 * 	(1) Exception nesting.
-	 *	(2) TLB refills for the kernel stack.
-	 *	(3) TLB refills for kernel address space in exception handlers.
-	 *
-	 * (2) and (3) mean that we must avoid touching virtual addresses in
-	 * the TLB refill (XTLB) handler.  This is pretty easy to do here.
-	 * Access violations will be handled elsewhere.  We can do a simple
-	 * range check and panic if the address isn't in the kernel range for
-	 * XTLB refill.
-	 *
-	 * (1) and (2) and (3) mean that we have to be able to handle nested
-	 * exceptions.  In practice, this just means that until we have
-	 * disabled exceptions and interrupts, we must not assume any state
-	 * will be consistent unless we know it is.  Traps from user code, for
-	 * example, will always require us to switch to a kstack, which is to
-	 * be expected.  Kernel exception handlers could rely on growing the
-	 * kernel stack downward, but that doesn't do us any favors if we start
-	 * having recursive exceptions (we can underrun the stack allocation,
-	 * which we want to be relatively small), and if sp gets invalidated,
-	 * we will get into a very nasty state.
-	 *
-	 * Eventually we should be careful with k0 and k1 and have exceptions
-	 * return with them in the same state as any previous exception handler
-	 * would have expected.  For now, it's probably best we just take the
-	 * easy route of growing the stack down.  In time, it would be a lot
-	 * better to have a per-CPU exception stack which we switch to, and to
-	 * catch recursion.
-	 *
-	 * There is a problem where we can be trying to service TLBMod for the
-	 * kernel stack, and then we will end up trying to write to the stack
-	 * to save the frame, which will recursively fault until we grow the
-	 * stack down below where it's good to.  We will zero the kstack to make
-	 * sure it's all dirty before we start running on it.
-	 */
-
 	.data
 exception_table:
 	.dword	generic_exception	/* Int */

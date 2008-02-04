@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.24 2007-06-19 02:19:42 juli Exp $
+# $Id: Makefile,v 1.25 2008-02-04 21:51:15 juli Exp $
 
 KERNEL?=	mu-mk
 
@@ -26,6 +26,9 @@ KERNEL_CPPFLAGS+=-DNO_ASSERT
 .endif
 .if defined(VERBOSE)
 KERNEL_CPPFLAGS+=-DVERBOSE
+.endif
+.if defined(UNIPROCESSOR)
+KERNEL_CPPFLAGS+=-DUNIPROCESSOR
 .endif
 
 KERNEL_CFLAGS+=	${KERNEL_ABI} ${KERNEL_CPU} -nostdinc

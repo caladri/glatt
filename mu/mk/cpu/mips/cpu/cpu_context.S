@@ -10,10 +10,13 @@
 	 * t2 = pcpu.
 	 */
 ENTRY(cpu_context_restore)
-	jal	cpu_tlb_wired_load
+	move	s0, a0
+	dla	a0, TD_CPUTHREAD(a0)
+	dla	a0, TD_TLBWIRED(a0)
+	jal	tlb_wired_load
 	nop
 
-	move	t0, a0
+	move	t0, s0
 	dla	t1, TD_CONTEXT(t0)
 	ld	s0, CONTEXT_S0(t1)
 	ld	s1, CONTEXT_S1(t1)
@@ -82,38 +85,3 @@ ENTRY(cpu_context_save)
 	jr	ra
 	li	v0, FALSE
 END(cpu_context_save)
-
-ENTRY(cpu_tlb_wired_load)
-	dla	t0, TD_CPUTHREAD(a0)
-	dla	t0, TD_TLBWIRED(t0)
-	dla	t0, TWC_ENTRIES(t0)
-
-	move	t1, zero
-	move	t2, t0
-next:	ld	t3, TWE_ENTRYHI(t2)
-	beqz	t3, skip
-	nop
-	dmtc0	t3, CP0_TLBENTRYHI
-	ld	t3, TWE_ENTRYLO0(t2)
-	dmtc0	t3, CP0_TLBENTRYLO0
-	ld	t3, TWE_ENTRYLO1(t2)
-	dmtc0	t3, CP0_TLBENTRYLO1
-	move	t3, t1
-	daddu	t3, TLB_WIRED_BASE
-	dmtc0	t3, CP0_TLBINDEX
-	tlbwi
-	
-	move	t3, t1
-	daddu	t3, TLB_WIRED_BASE
-	daddu	t3, 1
-	mtc0	t3, CP0_TLBWIRED
-
-skip:	daddu	t1, 1
-	daddu	t2, (8 * 3) /* Next entry.  */
-	dli	t3, TLB_WIRED_COUNT
-	blt	t1, t3, next
-	nop
-
-	jr	ra
-	nop
-END(cpu_tlb_wired_load)

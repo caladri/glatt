@@ -45,6 +45,7 @@ void tlb_update(struct pmap *, vaddr_t);
 
 	/* An interface for managing wired TLB entries.  */
 void tlb_wired_init(struct tlb_wired_context *);
+void tlb_wired_load(struct tlb_wired_context *);
 void tlb_wired_wire(struct tlb_wired_context *, struct pmap *, vaddr_t);
 
 #endif /* !_CPU_TLB_H_ */

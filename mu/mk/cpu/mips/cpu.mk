@@ -1,4 +1,4 @@
-# $Id: cpu.mk,v 1.28 2007-06-22 00:56:21 juli Exp $
+# $Id: cpu.mk,v 1.29 2008-02-04 21:58:35 juli Exp $
 
 .PATH: ${CPU_ROOT}/cpu
 .PATH: ${CPU_ROOT}/page
@@ -18,6 +18,7 @@ KERNEL_SOURCES+=cpu_startup.c
 KERNEL_SOURCES+=cpu_task.c
 KERNEL_SOURCES+=cpu_thread.c
 KERNEL_SOURCES+=cpu_tlb.c
+KERNEL_SOURCES+=cpu_tlb_wired.S
 KERNEL_SOURCES+=cpu_vector.S
 KERNEL_SOURCES+=page_map.c
 KERNEL_SOURCES+=start.S

@@ -15,7 +15,6 @@
 #include <vm/page.h>
 #include <vm/vm.h>
 
-
 /*
  * Right now this code (and hopefully only this code) assumes that we are using
  * 8K pages in VM.  If we are, then we can use the default TLB pagesize (4K)
@@ -60,17 +59,20 @@ tlb_write_random(void)
 	cpu_barrier();
 }
 
-static void tlb_insert_wired(struct pmap *pm, vaddr_t, paddr_t);
 static void tlb_invalidate_addr(struct pmap *, vaddr_t);
 static void tlb_invalidate_all(void);
 static void tlb_invalidate_one(unsigned);
 #ifndef	UNIPROCESSOR
 static void tlb_shootdown(void *);
 #endif
+static void tlb_wired_entry(struct tlb_wired_entry *, vaddr_t, unsigned, pt_entry_t);
+static void tlb_wired_insert(unsigned, struct tlb_wired_entry *);
 
 void
 tlb_init(struct pmap *pm, paddr_t pcpu_addr)
 {
+	struct tlb_wired_entry twe;
+
 	critical_section_t crit;
 
 	crit = critical_enter();
@@ -90,7 +92,10 @@ tlb_init(struct pmap *pm, paddr_t pcpu_addr)
 	 * PCPU data to get the number of TLB entries, which needs to be
 	 * mapped to work.
 	 */
-	tlb_insert_wired(pm, PCPU_VIRTUAL, pcpu_addr);
+	tlb_wired_entry(&twe, PCPU_VIRTUAL, pmap_asid(pm),
+			TLBLO_PA_TO_PFN(pcpu_addr) | PG_V | PG_D | PG_G);
+	tlb_invalidate_addr(pm, PCPU_VIRTUAL);
+	tlb_wired_insert(TLB_WIRED_PCPU, &twe);
 
 	/* Invalidate all entries (except wired ones.)  */
 	tlb_invalidate_all();
@@ -181,24 +186,42 @@ tlb_update(struct pmap *pm, vaddr_t vaddr)
 	critical_exit(crit);
 }
 
-static void
-tlb_insert_wired(struct pmap *pm, vaddr_t vaddr, paddr_t paddr)
+void
+tlb_wired_init(struct tlb_wired_context *wired)
 {
-	critical_section_t crit;
+	struct tlb_wired_entry *twe;
+	unsigned i;
+
+	for (i = 0; i < TLB_WIRED_COUNT; i++) {
+		twe = &wired->twc_entries[i];
+		twe->twe_entryhi = 0;
+	}
+}
+
+void
+tlb_wired_wire(struct tlb_wired_context *wired, struct pmap *pm, vaddr_t vaddr)
+{
+	struct tlb_wired_entry *twe;
+	pt_entry_t *pte;
+	unsigned i;
 
 	vaddr &= ~PAGE_MASK;
-	paddr &= ~PAGE_MASK;
 
-	crit = critical_enter();
-	cpu_write_tlb_entryhi(TLBHI_ENTRY(vaddr, pmap_asid(pm)));
-	cpu_write_tlb_entrylo0(TLBLO_PA_TO_PFN(paddr) |
-			       PG_V | PG_D | PG_G | PG_C_CNC);
-	cpu_write_tlb_entrylo1(TLBLO_PA_TO_PFN(paddr + TLB_PAGE_SIZE) |
-			       PG_V | PG_D | PG_G | PG_C_CNC);
-	cpu_write_tlb_index(cpu_read_tlb_wired());
-	tlb_write_indexed();
-	cpu_write_tlb_wired(cpu_read_tlb_wired() + 1);
-	critical_exit(crit);
+	for (i = 0; i < TLB_WIRED_COUNT; i++) {
+		twe = &wired->twc_entries[i];
+		if (twe->twe_entryhi == 0)
+			break;
+		twe = NULL;
+	}
+	if (twe == NULL)
+		panic("%s: no free wired slots.", __func__);
+
+	pte = pmap_find(pm, vaddr); /* XXX lock.  */
+	if (pte == NULL)
+		panic("%s: pmap_find returned NULL.", __func__);
+	pte_set(pte, PG_D);	/* XXX Mark page dirty.  */
+	tlb_invalidate_addr(pm, vaddr);
+	tlb_wired_entry(twe, vaddr, pmap_asid(pm), *pte);
 }
 
 static void
@@ -240,7 +263,7 @@ static void
 tlb_invalidate_one(unsigned i)
 {
 	/* XXX an invalid ASID? */
-	cpu_write_tlb_entryhi(TLBHI_ENTRY(XKPHYS_BASE + (i * PAGE_SIZE), 0));
+	cpu_write_tlb_entryhi(TLBHI_ENTRY(KSEG2_BASE + (i * PAGE_SIZE), 0));
 	cpu_write_tlb_entrylo0(0);
 	cpu_write_tlb_entrylo1(0);
 	cpu_write_tlb_index(i);
@@ -258,9 +281,33 @@ tlb_shootdown(void *arg)
 }
 #endif
 
-#if 0
 static void
-tlb_db_dump(void)
+tlb_wired_entry(struct tlb_wired_entry *twe, vaddr_t vaddr, unsigned asid,
+		pt_entry_t pte)
+{
+	twe->twe_entryhi = TLBHI_ENTRY(vaddr, asid);
+	twe->twe_entrylo0 = pte;
+	twe->twe_entrylo1 = pte + TLBLO_PA_TO_PFN(TLB_PAGE_SIZE);
+}
+
+static void
+tlb_wired_insert(unsigned index, struct tlb_wired_entry *twe)
+{
+	critical_section_t crit;
+
+	crit = critical_enter();
+	cpu_write_tlb_entryhi(twe->twe_entryhi);
+	cpu_write_tlb_entrylo0(twe->twe_entrylo0);
+	cpu_write_tlb_entrylo1(twe->twe_entrylo1);
+	cpu_write_tlb_index(index);
+	tlb_write_indexed();
+	if (index + 1 > cpu_read_tlb_wired())
+		cpu_write_tlb_wired(index + 1);
+	critical_exit(crit);
+}
+
+static void
+db_cpu_dump_tlb(void)
 {
 	register_t ehi, elo0, elo1;
 	unsigned i;
@@ -289,5 +336,4 @@ tlb_db_dump(void)
 	}
 	kcprintf("Finished.\n");
 }
-DB_COMMAND(tlb_dump, tlb_db_dump, "Dump contents of the TLB.");
-#endif
+DB_SHOW_VALUE_VOIDF(tlb, cpu, db_cpu_dump_tlb);

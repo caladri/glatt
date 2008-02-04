@@ -91,3 +91,12 @@ DEFINE_CONSTANT(PAGE_SIZE);
 
 	/* THREAD-related constants we might want.  */
 DEFINE_CONSTANT(KSTACK_SIZE);
+DEFINE(TD_TLBWIRED,	offsetof(struct cpu_thread, td_tlbwired));
+
+	/* TLB wired entry constants.  */
+DEFINE_CONSTANT(TLB_WIRED_BASE);
+DEFINE_CONSTANT(TLB_WIRED_COUNT);
+DEFINE(TWC_ENTRIES,	offsetof(struct tlb_wired_context,	twc_entries));
+DEFINE(TWE_ENTRYHI,	offsetof(struct tlb_wired_entry,	twe_entryhi));
+DEFINE(TWE_ENTRYLO0,	offsetof(struct tlb_wired_entry,	twe_entrylo0));
+DEFINE(TWE_ENTRYLO1,	offsetof(struct tlb_wired_entry,	twe_entrylo1));

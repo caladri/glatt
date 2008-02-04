@@ -1,10 +1,13 @@
 #include <core/types.h>
+#include <cpu/cpu.h>
 #include <cpu/cpuinfo.h>
 #include <cpu/interrupt.h>
 #include <cpu/pcpu.h>
 #include <io/device/console/console.h>
 #include <io/device/device.h>
 #include <io/device/driver.h>
+
+DB_SHOW_TREE(cpu, cpu, true);
 
 static int
 cpu_probe(struct device *device)

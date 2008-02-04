@@ -2,6 +2,7 @@
 #define	_CPU_CPU_H_
 
 #include <cpu/register.h>
+#include <db/db_show.h>
 
 static inline void
 cpu_barrier(void)
@@ -81,5 +82,7 @@ CP0_RW32(tlb_wired, CP0_TLBWIRED);
 CP0_RW32(prid, CP0_PRID);
 
 #undef CP0_RW32
+
+DB_SHOW_TREE_DECLARE(cpu);
 
 #endif /* !_CPU_CPU_H_ */

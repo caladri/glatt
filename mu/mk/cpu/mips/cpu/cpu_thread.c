@@ -21,26 +21,17 @@ int
 cpu_thread_setup(struct thread *td)
 {
 	vaddr_t kstack;
+	unsigned off;
 	int error;
 
 	error = vm_alloc(&kernel_vm, KSTACK_SIZE, &kstack);
 	if (error != 0)
 		return (error);
 	td->td_kstack = (void *)kstack;
-	/*
-	 * Zero all of the kstack so that it's all already dirty, otherwise
-	 * when we first try to write to it, we will end up triple faulting
-	 * ad absurdum.  Trying to not use the kstack when servicing TLBMod
-	 * for the kstack would be ideal.
-	 *
-	 * XXX What do we do if the kstack goes out of the TLB?  Seems like the
-	 * access pattern should prevent that, but hey.
-	 *
-	 * XXX Just touch each page.
-	 *
-	 * XXX Maybe put kstack in wired entries.
-	 */
-	memset(td->td_kstack, 0x00, KSTACK_SIZE);
+	tlb_wired_init(&td->td_cputhread.td_tlbwired);
+	for (off = 0; off < KSTACK_SIZE; off += PAGE_SIZE)
+		tlb_wired_wire(&td->td_cputhread.td_tlbwired, kernel_vm.vm_pmap,
+			       kstack + off);
 	td->td_context.c_regs[CONTEXT_SP] = kstack + KSTACK_SIZE;
 	cpu_thread_set_upcall(td, cpu_thread_exception, td);
 	return (0);

@@ -21,6 +21,7 @@ struct thread {
 	struct frame td_frame;		/* Frame for interrupts and such.  */
 	struct context td_context;	/* State for context switching.  */
 	void *td_kstack;
+	struct cpu_thread td_cputhread;
 };
 
 int thread_create(struct thread **, struct task *, const char *, uint32_t);

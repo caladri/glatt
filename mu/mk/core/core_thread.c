@@ -1,6 +1,7 @@
 #include <core/types.h>
 #include <core/error.h>
 #include <core/pool.h>
+#include <core/spinlock.h>
 #include <core/string.h>
 #include <core/task.h>
 #include <core/thread.h>
@@ -14,6 +15,8 @@
 COMPILE_TIME_ASSERT(sizeof (struct thread) <= PAGE_SIZE);
 
 static struct pool thread_pool = POOL_INIT("THREAD", struct thread, POOL_VIRTUAL);
+
+static struct spinlock thread_lock = SPINLOCK_INIT("THREAD");
 
 int
 thread_create(struct thread **tdp, struct task *parent, const char *name,
@@ -66,18 +69,21 @@ thread_switch(struct thread *otd, struct thread *td)
 	ASSERT(otd != td, "cannot switch from a thread to itself.");
 	if (otd != NULL) {
 		if (cpu_context_save(otd)) {
+			spinlock_unlock(&thread_lock);
 			/*
 			 * We've been restored by something, return.
 			 */
 			return;
 		}
 	}
+	spinlock_lock(&thread_lock);
 	cpu_context_restore(td);
 }
 
 void
 thread_trampoline(struct thread *td, void (*function)(void *), void *arg)
 {
+	spinlock_unlock(&thread_lock);
 	ASSERT(td == current_thread(), "Thread must be current thread.");
 	function(arg);
 	panic("%s: function returned!", __func__);

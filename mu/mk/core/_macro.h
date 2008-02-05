@@ -30,6 +30,17 @@
 #define	__unused		__attribute__ ((__unused__))
 #define	__used			__attribute__ ((__used__))
 
+	/* Bitmask helpers.  */
+
+#define	POPCNT(x)							\
+	(((PX_(x) + (PX_(x) >> 4)) & 0x0F0F0F0F) % 255)
+#define	PX_(x)								\
+	((x) - (((x) >> 1) & 0x77777777)				\
+	     - (((x) >> 2) & 0x33333333)				\
+	     - (((x) >> 3) & 0x11111111))
+#define	LOG2(x)								\
+	(POPCNT((x) - 1))
+
 	/* Compile-time assertions.  */
 
 #ifndef	ASSEMBLER

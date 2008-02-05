@@ -94,10 +94,6 @@ ENTRY(generic_exception)
 	.set at
 END(generic_exception)
 
-/*
- * XXX until we export SHIFT instead of DIV for each level, we are stuck
- * with all these silly shifts and hard-coding to 10.
- */
 ENTRY(tlb_exception)
 	.set noat
 	mtc0	zero, CP0_STATUS
@@ -110,14 +106,18 @@ ENTRY(tlb_exception)
 	dli	k1, KERNEL_BASE
 	tltu	k0, k1
 
+	dla	k1, kernel_vm
+	ld	k1, VM_PMAP(k1)
+	daddu	k1, PM_LEVEL0
+
 	/*
 	 * PMAP -> L0.
 	 */
 	dmfc0	k0, CP0_BADVADDR
-	dla	k1, kernel_vm
-	ld	k1, VM_PMAP(k1)
-	daddu	k1, PM_LEVEL0
-	/* For now we just have 1 Level0.  */
+	dsrl	k0, PMAPL0SHIFT
+	andi	k0, 0x3ff		/* We just want the low 10 bits.  */
+	dsll	k0, 3			/* Get an 8-byte offset.  */
+	daddu	k1, k0
 	ld	k1, 0(k1)
 	teq	zero, k1		/* L0 pointer can't be NULL.  */
 
@@ -125,9 +125,7 @@ ENTRY(tlb_exception)
 	 * L0 -> L1.
 	 */
 	dmfc0	k0, CP0_BADVADDR
-	dsrl	k0, PAGE_SHIFT		/* Get a page number.  */
-	dsrl	k0, 10			/* Skip L2 -> PTE index.  */
-	dsrl	k0, 10			/* Skip L1 -> L2  index.  */
+	dsrl	k0, L1L0SHIFT
 	andi	k0, 0x3ff		/* We just want the low 10 bits.  */
 	dsll	k0, 3			/* Get an 8-byte offset.  */
 	daddu	k1, k0
@@ -138,8 +136,7 @@ ENTRY(tlb_exception)
 	 * L1 -> L2.
 	 */
 	dmfc0	k0, CP0_BADVADDR
-	dsrl	k0, PAGE_SHIFT		/* Get a page number.  */
-	dsrl	k0, 10			/* Skip L2 -> PTE index.  */
+	dsrl	k0, L2L1SHIFT
 	andi	k0, 0x3ff		/* We just want the low 10 bits.  */
 	dsll	k0, 3			/* Get an 8-byte offset.  */
 	daddu	k1, k0
@@ -150,7 +147,7 @@ ENTRY(tlb_exception)
 	 * L2 -> PTE.
 	 */
 	dmfc0	k0, CP0_BADVADDR
-	dsrl	k0, PAGE_SHIFT		/* Get a page number.  */
+	dsrl	k0, PTEL2SHIFT
 	andi	k0, 0x3ff		/* We just want the low 10 bits.  */
 	dsll	k0, 3			/* Get an 8-byte offset.  */
 	daddu	k1, k0

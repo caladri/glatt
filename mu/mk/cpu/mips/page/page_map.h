@@ -32,19 +32,19 @@
 
 	/* Number of PTEs in Level 2.  */
 #define	NPTEL2		(PAGE_SIZE / sizeof (pt_entry_t))
-#define	PTEL2DIV	(PAGE_SIZE)
+#define	PTEL2SHIFT	(LOG2(PAGE_SIZE))
 
 	/* Number of Level 2 pointers in Level 1.  */
 #define	NL2PL1		(PAGE_SIZE / sizeof (struct pmap_lev2 *))
-#define	L2L1DIV		(PTEL2DIV * NPTEL2)
+#define	L2L1SHIFT	(PTEL2SHIFT + LOG2(NPTEL2))
 
 	/* Number of Level 1 pointers in Level 0.  */
 #define	NL1PL0		(PAGE_SIZE / sizeof (struct pmap_lev1 *))
-#define	L1L0DIV		(L2L1DIV * NL2PL1)
+#define	L1L0SHIFT	(L2L1SHIFT + LOG2(NL2PL1))
 
 	/* Number of Level 0 pages required to map an entire address space.  */
 #define	NL0PMAP		(1) 
-#define	PMAPL0DIV	(L1L0DIV * NL1PL0)
+#define	PMAPL0SHIFT	(L1L0SHIFT + LOG2(NL1PL0))
 
 struct pmap_lev2 {
 	pt_entry_t pml2_entries[NPTEL2];
@@ -81,25 +81,25 @@ COMPILE_TIME_ASSERT(sizeof (struct pmap) <= PAGE_SIZE);
 static __inline vaddr_t
 pmap_index_pte(vaddr_t vaddr)
 {
-	return ((vaddr / PTEL2DIV) % NPTEL2);
+	return ((vaddr >> PTEL2SHIFT) % NPTEL2);
 }
 
 static __inline vaddr_t
 pmap_index2(vaddr_t vaddr)
 {
-	return ((vaddr / L2L1DIV) % NL2PL1);
+	return ((vaddr >> L2L1SHIFT) % NL2PL1);
 }
 
 static __inline vaddr_t
 pmap_index1(vaddr_t vaddr)
 {
-	return ((vaddr / L1L0DIV) % NL1PL0);
+	return ((vaddr >> L1L0SHIFT) % NL1PL0);
 }
 
 static __inline vaddr_t
 pmap_index0(vaddr_t vaddr)
 {
-	return ((vaddr / PMAPL0DIV) % NL0PMAP);
+	return ((vaddr >> PMAPL0SHIFT) % NL0PMAP);
 }
 
 	/* Specifics of the MIPS PMAP.  */

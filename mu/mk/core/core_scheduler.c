@@ -15,8 +15,8 @@ static struct spinlock scheduler_lock = SPINLOCK_INIT("SCHEDULER");
 #define	SCHEDULER_LOCK()	spinlock_lock(&scheduler_lock)
 #define	SCHEDULER_UNLOCK()	spinlock_unlock(&scheduler_lock);
 
-#define	SQ_LOCK(sq)	spinlock_lock(&(sq)->sq_lock)
-#define	SQ_UNLOCK(sq)	spinlock_unlock(&(sq)->sq_lock)
+#define	SQ_LOCK(sq)	spinlock_lock((sq)->sq_lock)
+#define	SQ_UNLOCK(sq)	spinlock_unlock((sq)->sq_lock)
 
 static struct scheduler_entry *scheduler_pick_entry(struct scheduler_queue *);
 static struct thread *scheduler_pick_thread(void);
@@ -171,6 +171,14 @@ scheduler_pick_thread(void)
 {
 	struct scheduler_entry *se;
 
+	/*
+	 * The first thread run on a CPU must be the main thread.
+	 */
+	if (current_thread() == NULL) {
+		ASSERT(PCPU_GET(maintd) != NULL, "Must have a main thread.");
+		return (PCPU_GET(maintd));
+	}
+
 	se = scheduler_pick_entry(&PCPU_GET(scheduler));
 	if (se == NULL)
 		return (NULL);
@@ -245,7 +253,7 @@ scheduler_queue(struct scheduler_queue *sq, struct scheduler_entry *se)
 static void
 scheduler_queue_setup(struct scheduler_queue *sq, const char *lk, cpu_id_t cpu)
 {
-	spinlock_init(&sq->sq_lock, lk);
+	sq->sq_lock = spinlock_allocate(lk);
 	SQ_LOCK(sq);
 	sq->sq_cpu = cpu;
 	TAILQ_INIT(&sq->sq_queue);

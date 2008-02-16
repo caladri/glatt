@@ -11,6 +11,7 @@ struct mutex {
 	unsigned mtx_nested;
 };
 
+struct mutex *mutex_allocate(const char *);
 void mutex_init(struct mutex *, const char *);
 void mutex_lock(struct mutex *);
 bool mutex_try_lock(struct mutex *);

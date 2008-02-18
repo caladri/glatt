@@ -10,13 +10,8 @@ static void cflush(struct console *);
 static void cputc_noflush(void *, char);
 static void cputs_noflush(struct console *, const char *);
 
-#if 0
 #define	CONSOLE_LOCK(c)		spinlock_lock(&(c)->c_lock)
 #define	CONSOLE_UNLOCK(c)	spinlock_unlock(&(c)->c_lock)
-#else
-#define	CONSOLE_LOCK(c)		((void)(c))
-#define	CONSOLE_UNLOCK(c)	((void)(c))
-#endif
 
 void
 console_init(struct console *console)
@@ -75,7 +70,7 @@ kcvprintf(const char *s, va_list ap)
 	CONSOLE_LOCK(kernel_console);
 	kfvprintf(cputc_noflush, kernel_console, s, ap);
 	cflush(kernel_console);
-	CONSOLE_LOCK(kernel_console);
+	CONSOLE_UNLOCK(kernel_console);
 }
 
 static void

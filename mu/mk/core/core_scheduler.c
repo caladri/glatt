@@ -309,7 +309,8 @@ scheduler_switch(struct thread *td)
 	se->se_flags |= SCHEDULER_RUNNING;
 	se->se_oncpu = mp_whoami();
 	SCHEDULER_UNLOCK();
-	thread_switch(otd, td);
+	if (otd != td)
+		thread_switch(otd, td);
 }
 
 static void

@@ -3,23 +3,22 @@
 #include <core/spinlock.h>
 #include <core/startup.h>
 
+#include <io/device/console/console.h>
+
 static struct spinlock mp_hokusai_lock = SPINLOCK_INIT("HOKUSAI");
 static bool mp_hokusai_ipi_registered;
 static void (*mp_hokusai_callback)(void *);
 static void *mp_hokusai_arg;
 
 static volatile cpu_bitmask_t mp_hokusai_ready_bitmask;
+static volatile cpu_bitmask_t mp_hokusai_done_bitmask;
 
 static void mp_hokusai(void (*)(void *), void *);
 static void mp_hokusai_clear(void);
-static void mp_hokusai_done(void);
 static void mp_hokusai_enter(void);
 static void mp_hokusai_exit(void);
-static void mp_hokusai_finish(void);
 static void mp_hokusai_ipi(void *, enum ipi_type);
 static void mp_hokusai_ipi_send(void);
-static void mp_hokusai_ready(void);
-static void mp_hokusai_wait(void);
 
 void
 mp_hokusai_master(void (*masterf)(void *), void *masterp,
@@ -50,43 +49,56 @@ mp_hokusai_synchronize(void (*callback)(void *), void *p)
 static void
 mp_hokusai(void (*callback)(void *), void *p)
 {
+	kcprintf("cpu%u: %s enter (%p, %p)\n", mp_whoami(), __func__, callback, p);
 	mp_hokusai_enter();
 	if (callback != NULL)
 		callback(p);
 	mp_hokusai_exit();
+	kcprintf("cpu%u: %s exit (%p, %p)\n", mp_whoami(), __func__, callback, p);
 }
 
 static void
 mp_hokusai_clear(void)
 {
 	mp_hokusai_ready_bitmask = 0;
-}
-
-static void
-mp_hokusai_done(void)
-{
-	cpu_bitmask_clear(&mp_hokusai_ready_bitmask, mp_whoami());
+	mp_hokusai_done_bitmask = 0;
 }
 
 static void
 mp_hokusai_enter(void)
 {
-	mp_hokusai_ready();
-	mp_hokusai_wait();
+	cpu_bitmask_t mask;
+
+	mask = mp_cpu_running_mask();
+
+	cpu_bitmask_set(&mp_hokusai_ready_bitmask, mp_whoami());
+
+	while (mp_hokusai_ready_bitmask != mask)
+		continue;
 }
 
 static void
 mp_hokusai_exit(void)
 {
-	mp_hokusai_done();
-	mp_hokusai_finish();
-}
+	cpu_bitmask_t mask;
 
-static void
-mp_hokusai_finish(void)
-{
-	while (mp_hokusai_ready_bitmask != 0)
-		continue;
+	/*
+	 * If I'm the last hold-out, then don't spin.
+	 */
+	mask = mp_cpu_running_mask();
+
+	cpu_bitmask_clear(&mask, mp_whoami());
+	
+	if (mp_hokusai_done_bitmask == mask) {
+		cpu_bitmask_set(&mp_hokusai_done_bitmask, mp_whoami());
+	} else {
+		cpu_bitmask_set(&mp_hokusai_done_bitmask, mp_whoami());
+
+		mask = mp_cpu_running_mask();
+
+		while (mp_hokusai_done_bitmask != mask)
+			continue;
+	}
 }
 
 static void
@@ -99,27 +111,6 @@ static void
 mp_hokusai_ipi_send(void)
 {
 	mp_ipi_send_but(mp_whoami(), IPI_HOKUSAI);
-}
-
-static void
-mp_hokusai_ready(void)
-{
-	cpu_bitmask_set(&mp_hokusai_ready_bitmask, mp_whoami());
-}
-
-static void
-mp_hokusai_wait(void)
-{
-	cpu_bitmask_t mask;
-
-	mask = mp_cpu_running_mask();
-
-	/*
-	 * XXX
-	 * Spin more gracefully.
-	 */
-	while (mp_hokusai_ready_bitmask != mask)
-		continue;
 }
 
 static void

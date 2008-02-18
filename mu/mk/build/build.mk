@@ -1,4 +1,4 @@
-# $Id: build.mk,v 1.34 2007-06-19 02:19:42 juli Exp $
+# $Id: build.mk,v 1.35 2008-02-18 23:20:12 juli Exp $
 
 .PATH: ${KERNEL_ROOT}/core
 .PATH: ${KERNEL_ROOT}/db
@@ -10,6 +10,7 @@
 KERNEL_SOURCES+=core_clock.c
 KERNEL_SOURCES+=core_ipc.c
 KERNEL_SOURCES+=core_malloc.c
+KERNEL_SOURCES+=core_morder.c
 .if !defined(UNIPROCESSOR)
 KERNEL_SOURCES+=core_mp.c
 KERNEL_SOURCES+=core_mp_cpu.c

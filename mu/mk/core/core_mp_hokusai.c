@@ -3,8 +3,6 @@
 #include <core/spinlock.h>
 #include <core/startup.h>
 
-#include <io/device/console/console.h>
-
 static struct spinlock mp_hokusai_lock = SPINLOCK_INIT("HOKUSAI");
 static bool mp_hokusai_ipi_registered;
 static void (*mp_hokusai_callback)(void *);
@@ -49,12 +47,10 @@ mp_hokusai_synchronize(void (*callback)(void *), void *p)
 static void
 mp_hokusai(void (*callback)(void *), void *p)
 {
-	kcprintf("cpu%u: %s enter (%p, %p)\n", mp_whoami(), __func__, callback, p);
 	mp_hokusai_enter();
 	if (callback != NULL)
 		callback(p);
 	mp_hokusai_exit();
-	kcprintf("cpu%u: %s exit (%p, %p)\n", mp_whoami(), __func__, callback, p);
 }
 
 static void

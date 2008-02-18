@@ -99,8 +99,6 @@ scheduler_schedule(void)
 	 * switch to the main thread.
 	 */
 	td = scheduler_pick_thread();
-	if (td == current_thread())
-		td = NULL;
 	if (td == NULL) {
 		if (PCPU_GET(maintd) == current_thread()) {
 			SCHEDULER_UNLOCK();
@@ -117,8 +115,10 @@ scheduler_thread_runnable(struct thread *td)
 {
 	struct scheduler_entry *se;
 
+	SCHEDULER_LOCK();
 	se = &td->td_sched;
 	scheduler_queue(NULL, se);
+	SCHEDULER_UNLOCK();
 }
 
 void
@@ -142,10 +142,12 @@ scheduler_thread_sleeping(struct thread *td)
 {
 	struct scheduler_entry *se;
 
+	SCHEDULER_LOCK();
 	se = &td->td_sched;
 	SQ_LOCK(&scheduler_sleep_queue);
 	scheduler_queue(&scheduler_sleep_queue, se);
 	SQ_UNLOCK(&scheduler_sleep_queue);
+	SCHEDULER_UNLOCK();
 }
 
 static struct scheduler_entry *

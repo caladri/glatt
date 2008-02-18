@@ -14,6 +14,8 @@
  */
 #define	MTX_CHANNEL(mtx)	((const void *)((uintptr_t)(mtx) | 1))
 
+static bool mutex_try_wait(struct mutex *, bool);
+
 void
 mutex_init(struct mutex *mtx, const char *name)
 {
@@ -30,14 +32,37 @@ mutex_lock(struct mutex *mtx)
 	ASSERT(current_thread() != NULL, "Must have a thread.");
 
 	for (;;) {
-		if (mutex_try_lock(mtx))
+		if (mutex_try_wait(mtx, true))
 			return;
-		sleepq_wait(MTX_CHANNEL(mtx));
 	}
 }
 
 bool
 mutex_try_lock(struct mutex *mtx)
+{
+	return (mutex_try_wait(mtx, false));
+}
+
+void
+mutex_unlock(struct mutex *mtx)
+{
+	struct thread *td;
+
+	td = current_thread();
+
+	ASSERT(td != NULL, "Must have a thread.");
+
+	MTX_SPINLOCK(mtx);
+	ASSERT(mtx->mtx_owner == td, "Not my lock to unlock.");
+	if (mtx->mtx_nested-- == 1) {
+		mtx->mtx_owner = NULL;
+		sleepq_signal_one(MTX_CHANNEL(mtx));
+	}
+	MTX_SPINUNLOCK(mtx);
+}
+
+static bool
+mutex_try_wait(struct mutex *mtx, bool wait)
 {
 	struct thread *td;
 
@@ -59,24 +84,13 @@ mutex_try_lock(struct mutex *mtx)
 		MTX_SPINUNLOCK(mtx);
 		return (true);
 	}
-	MTX_SPINUNLOCK(mtx);
-	return (false);
-}
-
-void
-mutex_unlock(struct mutex *mtx)
-{
-	struct thread *td;
-
-	td = current_thread();
-
-	ASSERT(td != NULL, "Must have a thread.");
-
-	MTX_SPINLOCK(mtx);
-	ASSERT(mtx->mtx_owner == td, "Not my lock to unlock.");
-	if (mtx->mtx_nested-- == 1) {
-		mtx->mtx_owner = NULL;
-		sleepq_signal_one(MTX_CHANNEL(mtx));
+	if (!wait) {
+		MTX_SPINUNLOCK(mtx);
+		return (false);
+	} else {
+		sleepq_enter(MTX_CHANNEL(mtx));
+		MTX_SPINUNLOCK(mtx);
+		sleepq_wait();
+		return (false);
 	}
-	MTX_SPINUNLOCK(mtx);
 }

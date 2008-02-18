@@ -35,6 +35,23 @@ static struct sleepq *sleepq_lookup(const void *, bool);
 static void sleepq_signal_first(struct sleepq *);
 
 void
+sleepq_enter(const void *cookie)
+{
+	struct sleepq *sq;
+	struct sleepq_entry *se;
+	struct thread *td;
+
+	td = current_thread();
+
+	sq = sleepq_lookup(cookie, true);
+	se = pool_allocate(&sleepq_entry_pool);
+	se->se_thread = td;
+	TAILQ_INSERT_TAIL(&sq->sq_entries, se, se_link);
+	SQ_UNLOCK(sq);
+	scheduler_thread_sleeping(td);
+}
+
+void
 sleepq_signal(const void *cookie)
 {
 	struct sleepq *sq;
@@ -61,20 +78,8 @@ sleepq_signal_one(const void *cookie)
 }
 
 void
-sleepq_wait(const void *cookie)
+sleepq_wait(void)
 {
-	struct sleepq *sq;
-	struct sleepq_entry *se;
-	struct thread *td;
-
-	td = current_thread();
-
-	sq = sleepq_lookup(cookie, true);
-	se = pool_allocate(&sleepq_entry_pool);
-	se->se_thread = td;
-	TAILQ_INSERT_TAIL(&sq->sq_entries, se, se_link);
-	SQ_UNLOCK(sq);
-	scheduler_thread_sleeping(td);
 	scheduler_schedule();
 }
 

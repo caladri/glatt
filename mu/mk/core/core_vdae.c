@@ -111,8 +111,8 @@ vdae_list_wakeup(struct vdae_list *vlist)
 			v->v_flags |= VDAE_FLAG_WAKEUP;
 		VDAE_UNLOCK(v);
 	}
-	VDAE_LIST_UNLOCK(vlist);
 	sleepq_signal(vlist);
+	VDAE_LIST_UNLOCK(vlist);
 }
 
 static void
@@ -131,8 +131,9 @@ vdae_thread_loop(void *arg)
 		 * wakeups from the sleepq.
 		 */
 		while ((v->v_flags & VDAE_FLAG_WAKEUP) == 0) {
+			sleepq_enter(v->v_list);
 			VDAE_UNLOCK(v);
-			sleepq_wait(v->v_list);
+			sleepq_wait();
 			VDAE_LOCK(v);
 		}
 		v->v_flags |= VDAE_FLAG_RUNNING;

@@ -334,6 +334,8 @@ page_lookup(paddr_t paddr, struct vm_page **pagep)
 		vmpa = &page_array_pages[i];
 		for (j = 0; j < VM_PAGE_ARRAY_ENTRIES; j++) {
 			page = &vmpa->vmpa_pages[j];
+			if (page->pg_refcnt == 0)
+				continue;
 			if (page_address(page) == paddr) {
 				*pagep = page;
 				PAGE_UNLOCK();
@@ -353,6 +355,8 @@ page_lookup(paddr_t paddr, struct vm_page **pagep)
 			vmpa2 = (struct vm_page_array *)va;
 			for (k = 0; k < VM_PAGE_ARRAY_ENTRIES; k++) {
 				page2 = &vmpa2->vmpa_pages[k];
+				if (page2->pg_refcnt == 0)
+					continue;
 				if (page_address(page2) == paddr) {
 					*pagep = page2;
 					PAGE_UNLOCK();

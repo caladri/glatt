@@ -4,7 +4,7 @@
 	/* Dummy atomic functions!  */
 
 static inline uint64_t
-atomic_load_64(volatile uint64_t *p)
+atomic_load_64(const volatile uint64_t *p)
 {
 	return (*p);
 }

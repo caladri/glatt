@@ -21,7 +21,7 @@ struct scheduler_entry {
 };
 
 struct scheduler_queue {
-	struct spinlock *sq_lock;
+	struct spinlock sq_lock;
 	cpu_id_t sq_cpu;
 	TAILQ_HEAD(, struct scheduler_entry) sq_queue;
 	unsigned sq_length;
@@ -30,7 +30,7 @@ struct scheduler_queue {
 
 void scheduler_cpu_main(struct thread *);
 void scheduler_cpu_pin(struct thread *);
-void scheduler_cpu_setup(struct scheduler_queue *);
+struct scheduler_queue *scheduler_cpu_setup(void);
 void scheduler_init(void);
 void scheduler_schedule(void);
 void scheduler_thread_runnable(struct thread *);

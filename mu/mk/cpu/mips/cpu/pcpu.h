@@ -28,9 +28,9 @@ struct pcpu {
 	unsigned pc_flags;
 	STAILQ_HEAD(, struct interrupt_handler) pc_interrupt_table[CPU_INTERRUPT_COUNT];
 	register_t pc_interrupt_mask;
-	struct scheduler_queue pc_scheduler;
+	struct scheduler_queue *pc_scheduler;
+	struct ipc_queue *pc_ipc_queue;
 	unsigned pc_asidnext;
-	struct ipc_queue pc_ipc_queue;
 	clock_ticks_t pc_clock;
 	register_t pc_interrupt_enable;
 };

@@ -39,7 +39,7 @@ struct ipc_message {
 };
 
 struct ipc_queue {
-	struct mutex *ipcq_mutex;
+	struct mutex ipcq_mutex;
 	TAILQ_ENTRY(struct ipc_queue) ipcq_link;
 	TAILQ_HEAD(, struct ipc_message) ipcq_msgs;
 };

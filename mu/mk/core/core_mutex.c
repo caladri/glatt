@@ -1,6 +1,5 @@
 #include <core/types.h>
 #include <core/mutex.h>
-#include <core/pool.h>
 #include <core/sleepq.h>
 #include <core/thread.h>
 
@@ -14,18 +13,6 @@
  * sleeping on something internal to the mutex (and misaligned.)
  */
 #define	MTX_CHANNEL(mtx)	((const void *)((uintptr_t)(mtx) | 1))
-
-static struct pool mutex_pool = POOL_INIT("MUTEX", struct mutex, POOL_DEFAULT);
-
-struct mutex *
-mutex_allocate(const char *name)
-{
-	struct mutex *mtx;
-
-	mtx = pool_allocate(&mutex_pool);
-	mutex_init(mtx, name);
-	return (mtx);
-}
 
 void
 mutex_init(struct mutex *mtx, const char *name)

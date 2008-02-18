@@ -101,7 +101,6 @@ spinlock_unlock(struct spinlock *lock)
 	ASSERT(atomic_load_64(&(lock)->s_owner) == (uint64_t)mp_whoami(),\
 	       "Lock must be held.")
 
-struct spinlock *spinlock_allocate(const char *);
 void spinlock_init(struct spinlock *, const char *);
 
 #endif /* !_CORE_SPINLOCK_H_ */

@@ -21,17 +21,10 @@ static struct mutex ipc_queues_lock;
 
 #define	IPC_QUEUES_LOCK()	mutex_lock(&ipc_queues_lock)
 #define	IPC_QUEUES_UNLOCK()	mutex_unlock(&ipc_queues_lock)
-#define	IPC_QUEUE_LOCK(q)	mutex_lock((q)->ipcq_mutex)
-#define	IPC_QUEUE_UNLOCK(q)	mutex_unlock((q)->ipcq_mutex)
+#define	IPC_QUEUE_LOCK(q)	mutex_lock(&(q)->ipcq_mutex)
+#define	IPC_QUEUE_UNLOCK(q)	mutex_unlock(&(q)->ipcq_mutex)
 
-/*
- * Because the queue structure is embedded in the per-CPU data, we need to pick
- * a global address to use for the wait channel.  XXX This would be so much
- * better with CVs.
- */
-#define	IPC_QUEUE_CHANNEL(q)	((q)->ipcq_mutex)
-
-#define	current_ipcq()		(&PCPU_GET(ipc_queue))
+#define	current_ipcq()		(PCPU_GET(ipc_queue))
 
 static struct ipc_port *ipc_port_alloc(ipc_port_t);
 static void ipc_port_deliver(struct ipc_message *);
@@ -63,9 +56,12 @@ ipc_process(void)
 {
 	struct ipc_queue *ipcq;
 
+	ipcq = malloc(sizeof *ipcq);
+	mutex_init(&ipcq->ipcq_mutex, "IPC Queue");
+	PCPU_SET(ipc_queue, ipcq);
+
 	ipcq = current_ipcq();
 
-	ipcq->ipcq_mutex = mutex_allocate("IPC Queue");
 	TAILQ_INIT(&ipcq->ipcq_msgs);
 	IPC_QUEUES_LOCK();
 	IPC_QUEUE_LOCK(ipcq);
@@ -79,7 +75,7 @@ ipc_process(void)
 		IPC_QUEUE_LOCK(ipcq);
 		if (TAILQ_EMPTY(&ipcq->ipcq_msgs)) {
 			IPC_QUEUE_UNLOCK(ipcq);
-			sleepq_wait(IPC_QUEUE_CHANNEL(ipcq));
+			sleepq_wait(ipcq);
 			continue;
 		}
 		ipcmsg = TAILQ_FIRST(&ipcq->ipcq_msgs);
@@ -188,10 +184,10 @@ ipc_port_send(struct ipc_header *ipch, struct ipc_data *ipcd)
 	 * This should be in ipc_queue_msg or something.
 	 */
 	ipcq = current_ipcq();
-	ASSERT(ipcq->ipcq_mutex != NULL, "Queue must be initialized.");
+	ASSERT(ipcq != NULL, "Queue must exist.");
 	IPC_QUEUE_LOCK(ipcq);
 	TAILQ_INSERT_TAIL(&ipcq->ipcq_msgs, ipcmsg, ipcmsg_link);
-	sleepq_signal_one(IPC_QUEUE_CHANNEL(ipcq));
+	sleepq_signal_one(ipcq);
 	IPC_QUEUE_UNLOCK(ipcq);
 	return (0);
 }

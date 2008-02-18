@@ -65,7 +65,7 @@ cpu_startup(void)
 	startup_early = false;
 
 	/* Setup the scheduler.  */
-	scheduler_cpu_setup(&pcpu->pc_scheduler);
+	pcpu->pc_scheduler = scheduler_cpu_setup();
 
 	/* Return to the platform code.  */
 }

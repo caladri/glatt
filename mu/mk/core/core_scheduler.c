@@ -1,4 +1,5 @@
 #include <core/types.h>
+#include <core/pool.h>
 #include <core/scheduler.h>
 #include <core/thread.h>
 #include <cpu/scheduler.h>
@@ -12,11 +13,15 @@ static TAILQ_HEAD(, struct scheduler_queue) scheduler_queue_list;
 static struct scheduler_queue scheduler_sleep_queue;
 static struct spinlock scheduler_lock = SPINLOCK_INIT("SCHEDULER");
 
+static struct pool scheduler_queue_pool = POOL_INIT("SCHEDULER QUEUE",
+						    struct scheduler_queue,
+						    POOL_VIRTUAL);
+
 #define	SCHEDULER_LOCK()	spinlock_lock(&scheduler_lock)
 #define	SCHEDULER_UNLOCK()	spinlock_unlock(&scheduler_lock);
 
-#define	SQ_LOCK(sq)	spinlock_lock((sq)->sq_lock)
-#define	SQ_UNLOCK(sq)	spinlock_unlock((sq)->sq_lock)
+#define	SQ_LOCK(sq)	spinlock_lock(&(sq)->sq_lock)
+#define	SQ_UNLOCK(sq)	spinlock_unlock(&(sq)->sq_lock)
 
 static struct scheduler_entry *scheduler_pick_entry(struct scheduler_queue *);
 static struct thread *scheduler_pick_thread(void);
@@ -64,10 +69,14 @@ scheduler_cpu_pin(struct thread *td)
 	SCHEDULER_UNLOCK();
 }
 
-void
-scheduler_cpu_setup(struct scheduler_queue *sq)
+struct scheduler_queue *
+scheduler_cpu_setup(void)
 {
+	struct scheduler_queue *sq;
+
+	sq = pool_allocate(&scheduler_queue_pool);
 	scheduler_queue_setup(sq, "CPU RUN QUEUE", mp_whoami());
+	return (sq);
 }
 
 void
@@ -179,7 +188,7 @@ scheduler_pick_thread(void)
 		return (PCPU_GET(maintd));
 	}
 
-	se = scheduler_pick_entry(&PCPU_GET(scheduler));
+	se = scheduler_pick_entry(PCPU_GET(scheduler));
 	if (se == NULL)
 		return (NULL);
 	return (se->se_thread);
@@ -253,7 +262,7 @@ scheduler_queue(struct scheduler_queue *sq, struct scheduler_entry *se)
 static void
 scheduler_queue_setup(struct scheduler_queue *sq, const char *lk, cpu_id_t cpu)
 {
-	sq->sq_lock = spinlock_allocate(lk);
+	spinlock_init(&sq->sq_lock, lk);
 	SQ_LOCK(sq);
 	sq->sq_cpu = cpu;
 	TAILQ_INIT(&sq->sq_queue);

@@ -10,8 +10,13 @@ static void cflush(struct console *);
 static void cputc_noflush(void *, char);
 static void cputs_noflush(struct console *, const char *);
 
+#if 0
 #define	CONSOLE_LOCK(c)		spinlock_lock(&(c)->c_lock)
 #define	CONSOLE_UNLOCK(c)	spinlock_unlock(&(c)->c_lock)
+#else
+#define	CONSOLE_LOCK(c)		((void)(c))
+#define	CONSOLE_UNLOCK(c)	((void)(c))
+#endif
 
 void
 console_init(struct console *console)
@@ -27,9 +32,9 @@ kcgetc(char *chp)
 	char ch;
 	int error;
 
-	//CONSOLE_LOCK(kernel_console);
+	CONSOLE_LOCK(kernel_console);
 	error = kernel_console->c_getc(kernel_console->c_softc, &ch);
-	//CONSOLE_UNLOCK(kernel_console);
+	CONSOLE_UNLOCK(kernel_console);
 	if (error != 0)
 		return (error);
 	*chp = ch;
@@ -39,19 +44,19 @@ kcgetc(char *chp)
 void
 kcputc(char ch)
 {
-	//CONSOLE_LOCK(kernel_console);
+	CONSOLE_LOCK(kernel_console);
 	cputc_noflush(kernel_console, ch);
 	cflush(kernel_console);
-	//CONSOLE_UNLOCK(kernel_console);
+	CONSOLE_UNLOCK(kernel_console);
 }
 
 void
 kcputs(const char *s)
 {
-	//CONSOLE_LOCK(kernel_console);
+	CONSOLE_LOCK(kernel_console);
 	cputs_noflush(kernel_console, s);
 	cflush(kernel_console);
-	//CONSOLE_UNLOCK(kernel_console);
+	CONSOLE_UNLOCK(kernel_console);
 }
 
 void
@@ -67,10 +72,10 @@ kcprintf(const char *s, ...)
 void
 kcvprintf(const char *s, va_list ap) 
 {
-	//CONSOLE_LOCK(kernel_console);
+	CONSOLE_LOCK(kernel_console);
 	kfvprintf(cputc_noflush, kernel_console, s, ap);
 	cflush(kernel_console);
-	//CONSOLE_LOCK(kernel_console);
+	CONSOLE_LOCK(kernel_console);
 }
 
 static void

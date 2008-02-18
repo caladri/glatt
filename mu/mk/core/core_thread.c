@@ -35,6 +35,7 @@ thread_create(struct thread **tdp, struct task *parent, const char *name,
 	STAILQ_INSERT_TAIL(&parent->t_threads, td, td_link);
 	td->td_flags = flags;
 
+	morder_thread_setup(td);
 	scheduler_thread_setup(td);
 
 	error = cpu_thread_setup(td);

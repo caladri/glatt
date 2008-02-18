@@ -4,7 +4,6 @@
 #include <core/queue.h>
 #include <core/scheduler.h>
 #include <cpu/context.h>
-#include <cpu/frame.h>
 #include <cpu/pcpu.h>
 #include <cpu/thread.h>
 
@@ -18,7 +17,6 @@ struct thread {
 	char td_name[THREAD_NAME_SIZE];
 	uint32_t td_flags;
 	struct scheduler_entry td_sched;
-	struct frame td_frame;		/* Frame for interrupts and such.  */
 	struct context td_context;	/* State for context switching.  */
 	void *td_kstack;
 	struct cpu_thread td_cputhread;

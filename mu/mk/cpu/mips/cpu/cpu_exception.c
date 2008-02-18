@@ -75,7 +75,6 @@ void
 exception(struct frame *frame)
 {
 	struct thread *td;
-	struct frame *fp;
 	unsigned cause;
 	unsigned code;
 
@@ -83,20 +82,6 @@ exception(struct frame *frame)
 
 	cause = cpu_read_cause();
 	code = (cause & CP0_CAUSE_EXCEPTION) >> CP0_CAUSE_EXCEPTION_SHIFT;
-
-	/*
-	 * We will use fp to refer to the frame below, and may make changes
-	 * to it, or context switch away, so save the frame to the thread,
-	 * and then restore from it later, so that when we return to the
-	 * exception vector code, it will restore registers to what we want
-	 * them to be.
-	 */
-	if (td != NULL)
-		fp = &td->td_frame;
-	else
-		fp = frame;
-	if (fp != frame)
-		memcpy(fp, frame, sizeof *fp);
 
 	switch (code) {
 	case EXCEPTION_INT:
@@ -106,14 +91,10 @@ exception(struct frame *frame)
 		goto debugger;
 	}
 
-	/* Restore frame with any modifications we made.  */
-	if (fp != frame)
-		memcpy(frame, fp, sizeof *frame);
 	return;
-
 debugger:
 	kcputs("\n\n");
-	cpu_exception_frame_dump(td, fp);
+	cpu_exception_frame_dump(td, frame);
 	db_enter();
 }
 

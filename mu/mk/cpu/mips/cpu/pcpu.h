@@ -6,7 +6,6 @@
 #include <core/scheduler.h>
 #include <core/queue.h>
 #include <cpu/cpuinfo.h>
-#include <cpu/frame.h>
 #include <cpu/interrupt.h>
 #include <cpu/memory.h>
 
@@ -20,7 +19,6 @@ struct thread;
 
 	/* Per-CPU data.  */
 struct pcpu {
-	struct frame pc_frame;
 	struct thread *pc_thread;
 	struct thread *pc_maintd;
 	cpu_id_t pc_cpuid;

@@ -37,12 +37,6 @@ thread_create(struct thread **tdp, struct task *parent, const char *name,
 
 	scheduler_thread_setup(td);
 
-	/*
-	 * CPU thread setup takes care of:
-	 * 	frame
-	 * 	context
-	 * 	kstack
-	 */
 	error = cpu_thread_setup(td);
 	if (error != 0) {
 		panic("%s: need to destroy thread, cpu_thread_setup failed: %m",

@@ -69,6 +69,11 @@ ipc_process(void)
 	IPC_QUEUE_UNLOCK(ipcq);
 	IPC_QUEUES_UNLOCK();
 
+	 /* XXX move previous to ipc_init_queue() and move the next bit to
+	  *     core_startup.
+	  */
+	scheduler_cpu_switchable();
+
 	for (;;) {
 		struct ipc_message *ipcmsg;
 

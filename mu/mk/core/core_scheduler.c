@@ -80,6 +80,19 @@ scheduler_cpu_setup(void)
 }
 
 void
+scheduler_cpu_switchable(void)
+{
+	struct scheduler_queue *sq = PCPU_GET(scheduler);
+
+	SCHEDULER_LOCK();
+	SQ_LOCK(sq);
+	ASSERT(!sq->sq_switchable, "Queue can only be marked switchable once.");
+	sq->sq_switchable = true;
+	SQ_UNLOCK(sq);
+	SCHEDULER_UNLOCK();
+}
+
+void
 scheduler_init(void)
 {
 	TAILQ_INIT(&scheduler_queue_list);
@@ -156,6 +169,16 @@ scheduler_pick_entry(struct scheduler_queue *sq)
 	struct scheduler_entry *se;
 
 	SQ_LOCK(sq);
+	
+	/*
+	 * If this queue can not yet be used to switch threads, return the
+	 * main thread.
+	 */
+	if (!sq->sq_switchable) {
+		ASSERT(PCPU_GET(maintd) != NULL, "Need a main thread.");
+		return (&PCPU_GET(maintd)->td_sched);
+	}
+
 	TAILQ_FOREACH(se, &sq->sq_queue, se_link) {
 		if (se->se_oncpu == CPU_ID_INVALID ||
 		    se->se_oncpu == mp_whoami())
@@ -181,14 +204,6 @@ static struct thread *
 scheduler_pick_thread(void)
 {
 	struct scheduler_entry *se;
-
-	/*
-	 * The first thread run on a CPU must be the main thread.
-	 */
-	if (current_thread() == NULL) {
-		ASSERT(PCPU_GET(maintd) != NULL, "Must have a main thread.");
-		return (PCPU_GET(maintd));
-	}
 
 	se = scheduler_pick_entry(PCPU_GET(scheduler));
 	if (se == NULL)
@@ -269,6 +284,7 @@ scheduler_queue_setup(struct scheduler_queue *sq, const char *lk, cpu_id_t cpu)
 	sq->sq_cpu = cpu;
 	TAILQ_INIT(&sq->sq_queue);
 	sq->sq_length = 0;
+	sq->sq_switchable = false;
 	if (sq != &scheduler_sleep_queue) {
 		SCHEDULER_LOCK();
 		TAILQ_INSERT_HEAD(&scheduler_queue_list, sq, sq_link);
@@ -316,7 +332,7 @@ scheduler_switch(struct thread *td)
 static void
 scheduler_yield(void)
 {
-	cpu_scheduler_yield();
+	//cpu_scheduler_yield();
 }
 
 static void

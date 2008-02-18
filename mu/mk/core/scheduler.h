@@ -26,11 +26,13 @@ struct scheduler_queue {
 	TAILQ_HEAD(, struct scheduler_entry) sq_queue;
 	unsigned sq_length;
 	TAILQ_ENTRY(struct scheduler_queue) sq_link;
+	bool sq_switchable;
 };
 
 void scheduler_cpu_main(struct thread *);
 void scheduler_cpu_pin(struct thread *);
 struct scheduler_queue *scheduler_cpu_setup(void);
+void scheduler_cpu_switchable(void);
 void scheduler_init(void);
 void scheduler_schedule(void);
 void scheduler_thread_runnable(struct thread *);

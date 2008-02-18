@@ -138,11 +138,15 @@ ipc_port_receive(ipc_port_t port, struct ipc_header *ipch, struct ipc_data *ipcd
 
 	ASSERT(ipch != NULL, "Must be able to copy out header.");
 
+	IPC_PORTS_LOCK();
 	ipcp = ipc_port_lookup(port);
-	if (ipcp == NULL)
+	if (ipcp == NULL) {
+		IPC_PORTS_UNLOCK();
 		return (ERROR_NOT_FOUND);
+	}
 	if (TAILQ_EMPTY(&ipcp->ipcp_msgs)) {
 		IPC_PORT_UNLOCK(ipcp);
+		IPC_PORTS_UNLOCK();
 		return (ERROR_AGAIN);
 	}
 	ipcmsg = TAILQ_FIRST(&ipcp->ipcp_msgs);
@@ -151,6 +155,7 @@ ipc_port_receive(ipc_port_t port, struct ipc_header *ipch, struct ipc_data *ipcd
 	       "Destination must be this port.");
 	TAILQ_REMOVE(&ipcp->ipcp_msgs, ipcmsg, ipcmsg_link);
 	IPC_PORT_UNLOCK(ipcp);
+	IPC_PORTS_UNLOCK();
 
 	*ipch = ipcmsg->ipcmsg_header;
 	if (ipcd != NULL) {
@@ -171,15 +176,21 @@ ipc_port_send(struct ipc_header *ipch, struct ipc_data *ipcd)
 	ASSERT(ipch->ipchdr_len == 0 || ipcd != NULL,
 	       "Must have data or no size.");
 
+	IPC_PORTS_LOCK();
 	ipcp = ipc_port_lookup(ipch->ipchdr_src);
-	if (ipcp == NULL)
+	if (ipcp == NULL) {
+		IPC_PORTS_UNLOCK();
 		return (ERROR_INVALID);
+	}
 	IPC_PORT_UNLOCK(ipcp);
 
 	ipcp = ipc_port_lookup(ipch->ipchdr_dst);
-	if (ipcp == NULL)
+	if (ipcp == NULL) {
+		IPC_PORTS_UNLOCK();
 		return (ERROR_NOT_FOUND);
+	}
 	IPC_PORT_UNLOCK(ipcp);
+	IPC_PORTS_UNLOCK();
 
 	ipcmsg = malloc(sizeof *ipcmsg);
 	ipcmsg->ipcmsg_header = *ipch;
@@ -204,15 +215,18 @@ ipc_port_wait(ipc_port_t port)
 {
 	struct ipc_port *ipcp;
 
+	IPC_PORTS_LOCK();
 	ipcp = ipc_port_lookup(port);
 	ASSERT(ipcp != NULL, "Must have a port to wait on.");
 	if (!TAILQ_EMPTY(&ipcp->ipcp_msgs)) {
 		IPC_PORT_UNLOCK(ipcp);
+		IPC_PORTS_UNLOCK();
 		return;
 	}
 	/* XXX refcount.  */
 	sleepq_enter(ipcp);
 	IPC_PORT_UNLOCK(ipcp);
+	IPC_PORTS_UNLOCK();
 	sleepq_wait();
 }
 
@@ -221,9 +235,11 @@ ipc_port_alloc(ipc_port_t port)
 {
 	struct ipc_port *ipcp, *old;
 
+	IPC_PORTS_LOCK();
 	old = ipc_port_lookup(port);
 	if (old != NULL) {
 		IPC_PORT_UNLOCK(old);
+		IPC_PORTS_UNLOCK();
 		return (NULL);
 	}
 
@@ -232,7 +248,6 @@ ipc_port_alloc(ipc_port_t port)
 	ipcp->ipcp_port = port;
 	TAILQ_INIT(&ipcp->ipcp_msgs);
 
-	IPC_PORTS_LOCK();
 	IPC_PORT_LOCK(ipcp);
 	/*
 	 * Check to see if we lost a race for this port.
@@ -241,6 +256,7 @@ ipc_port_alloc(ipc_port_t port)
 	if (old != NULL) {
 		IPC_PORT_UNLOCK(old);
 		pool_free(ipcp);
+		IPC_PORTS_UNLOCK();
 		return (NULL);
 	}
 
@@ -250,12 +266,13 @@ ipc_port_alloc(ipc_port_t port)
 	TAILQ_INSERT_TAIL(&ipc_ports, ipcp, ipcp_link);
 
 	IPC_PORT_UNLOCK(ipcp);
-	IPC_PORTS_UNLOCK();
 
+	/* XXX */
 	old = ipc_port_lookup(port);
 	if (old != ipcp)
 		panic("%s: port we just allocated is duplicate.\n", __func__);
 	IPC_PORT_UNLOCK(old);
+	IPC_PORTS_UNLOCK();
 
 	return (ipcp);
 }
@@ -265,8 +282,10 @@ ipc_port_deliver(struct ipc_message *ipcmsg)
 {
 	struct ipc_port *ipcp;
 
+	IPC_PORTS_LOCK();
 	ipcp = ipc_port_lookup(ipcmsg->ipcmsg_header.ipchdr_dst);
 	if (ipcp == NULL) {
+		IPC_PORTS_UNLOCK();
 		free(ipcmsg);
 		return;
 	}
@@ -275,6 +294,7 @@ ipc_port_deliver(struct ipc_message *ipcmsg)
 	TAILQ_INSERT_TAIL(&ipcp->ipcp_msgs, ipcmsg, ipcmsg_link);
 	sleepq_signal_one(ipcp);
 	IPC_PORT_UNLOCK(ipcp);
+	IPC_PORTS_UNLOCK();
 }
 
 static struct ipc_port *
@@ -291,15 +311,12 @@ ipc_port_lookup(ipc_port_t port)
 	 * array.
 	 */
 
-	IPC_PORTS_LOCK();
 	TAILQ_FOREACH(ipcp, &ipc_ports, ipcp_link) {
 		IPC_PORT_LOCK(ipcp);
 		if (ipcp->ipcp_port == port) {
-			IPC_PORTS_UNLOCK();
 			return (ipcp);
 		}
 		IPC_PORT_UNLOCK(ipcp);
 	}
-	IPC_PORTS_UNLOCK();
 	return (NULL);
 }

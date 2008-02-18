@@ -392,8 +392,6 @@ pmap_update(struct pmap *pm, vaddr_t vaddr, struct vm_page *page, pt_entry_t fla
 			panic("%s: mapping stayed the same.", __func__);
 			return;
 		}
-		/* XXX flush TLB, clear cache.  */
-		/* XXX shootdown remote TLB entries.  */
 		tlb_invalidate(pm, vaddr);
 	}
 	atomic_store_64(pte, TLBLO_PA_TO_PFN(paddr) | flags);

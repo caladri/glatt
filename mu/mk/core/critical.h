@@ -15,4 +15,10 @@ critical_exit(critical_section_t crit)
 	cpu_critical_exit(crit);
 }
 
+static inline bool
+critical_section(void)
+{
+	return (cpu_critical_section());
+}
+
 #endif /* !_CORE_CRITICAL_H_ */

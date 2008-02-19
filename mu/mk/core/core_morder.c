@@ -60,6 +60,10 @@ morder_thread_setup(struct thread *td)
 void
 morder_lock(struct mutex *mtx)
 {
+	if (critical_section()) {
+		panic("%s: Cannot lock mutex (%s) with spinlocks held.",
+		      __func__, mtx->mtx_lock.s_name);
+	}
 	spinlock_lock(&morder_spinlock);
 	morder_enter(mtx->mtx_lock.s_name, mtx);
 	spinlock_unlock(&morder_spinlock);

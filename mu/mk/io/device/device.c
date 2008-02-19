@@ -46,7 +46,7 @@ device_init(struct device *device, struct device *parent, struct driver *driver)
 	ASSERT(device != NULL, "need a device allocated to initialize");
 	ASSERT(driver != NULL, "need a driver for a device");
 
-	mutex_init(&device->d_mtx, driver->d_name);
+	spinlock_init(&device->d_lock, driver->d_name);
 	if ((driver->d_flags & DRIVER_FLAG_PROBE_UNIT) == 0)
 		device->d_unit = driver->d_nextunit++;
 	else

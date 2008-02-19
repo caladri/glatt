@@ -133,7 +133,7 @@ page_free_direct(struct vm *vm, vaddr_t vaddr)
 	if (error != 0)
 		return (error);
 
-	error = page_unmap_direct(vm, vaddr);
+	error = page_unmap_direct(vm, page, vaddr);
 	if (error != 0)
 		return (error);
 
@@ -274,18 +274,15 @@ page_unmap(struct vm *vm, vaddr_t vaddr)
 }
 
 int
-page_unmap_direct(struct vm *vm, vaddr_t vaddr)
+page_unmap_direct(struct vm *vm, struct vm_page *page, vaddr_t vaddr)
 {
-	struct vm_page *page;
 	int error;
 
 	ASSERT(PAGE_ALIGNED(vaddr), "must be a page address");
 	PAGE_LOCK();
-	error = page_extract_direct(vm, vaddr, &page);
-	if (error == 0) {
-		error = pmap_unmap_direct(vm, vaddr);
+	error = pmap_unmap_direct(vm, vaddr);
+	if (error == 0)
 		page_ref_drop(page);
-	}
 	PAGE_UNLOCK();
 	return (error);
 }
@@ -348,17 +345,10 @@ page_lookup(paddr_t paddr, struct vm_page **pagep)
 				return (0);
 			}
 
-			/*
-			 * XXX
-			 * Don't use direct mappings here, as direct mappings
-			 * will always use page_lookup from page_extract, which
-			 * means we can end up recursing indefinitely.  Use
-			 * virtual mappings, even though they make less sense.
-			 */
-			error = vm_page_map(&kernel_vm, page, &va);
+			error = page_map_direct(&kernel_vm, page, &va);
 			if (error != 0)
-				panic("%s: vm_page_map failed: %m", __func__,
-				      error);
+				panic("%s: page_map_direct failed: %m",
+				      __func__, error);
 			vmpa2 = (struct vm_page_array *)va;
 			for (k = 0; k < VM_PAGE_ARRAY_ENTRIES; k++) {
 				page2 = &vmpa2->vmpa_pages[k];
@@ -370,9 +360,9 @@ page_lookup(paddr_t paddr, struct vm_page **pagep)
 					return (0);
 				}
 			}
-			error = vm_page_unmap(&kernel_vm, va);
+			error = page_unmap_direct(&kernel_vm, page, va);
 			if (error != 0)
-				panic("%s: vm_page_unmap failed: %m",
+				panic("%s: page_unmap_direct failed: %m",
 				      __func__, error);
 		}
 	}

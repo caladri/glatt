@@ -39,7 +39,7 @@ int page_map(struct vm *, vaddr_t, struct vm_page *);
 int page_map_direct(struct vm *, struct vm_page *, vaddr_t *);
 int page_release(struct vm *, struct vm_page *);
 int page_unmap(struct vm *, vaddr_t);
-int page_unmap_direct(struct vm *, vaddr_t);
+int page_unmap_direct(struct vm *, struct vm_page *, vaddr_t);
 void page_zero(struct vm_page *);
 
 #endif /* !_VM_PAGE_H_ */

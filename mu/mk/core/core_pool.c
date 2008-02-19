@@ -127,7 +127,7 @@ pool_free(void *m)
 	if ((pool->pool_flags & POOL_VIRTUAL) != 0) {
 		error = vm_page_unmap(&kernel_vm, vaddr);
 	} else {
-		error = page_unmap_direct(&kernel_vm, vaddr);
+		error = page_unmap_direct(&kernel_vm, backing, vaddr);
 	}
 	if (error != 0)
 		panic("%s: can't unmap page: %m", __func__, error);

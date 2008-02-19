@@ -146,6 +146,19 @@ startup_main_thread(void *arg)
 #ifdef	VERBOSE
 	kcprintf("STARTUP: cpu%u starting main thread.\n", mp_whoami());
 #endif
+
+	/* Initialize per-CPU structures, XXX STARTUP_ITEM?  */
+	ipc_init_queue();
+
+	/*
+	 * Threaded initialialization complete, the scheduler may run other
+	 * threads now.
+	 */
+	scheduler_cpu_switchable();
+
+	/*
+	 * Process IPC ad absurdum.
+	 */
 	ipc_process();
 }
 STARTUP_ITEM(main, STARTUP_MAIN, STARTUP_FIRST, startup_main_thread, &startup_spinlock);

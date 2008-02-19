@@ -45,6 +45,7 @@ struct ipc_queue {
 };
 
 void ipc_init(void);
+void ipc_init_queue(void);
 void ipc_process(void);
 
 int ipc_port_allocate(ipc_port_t *);

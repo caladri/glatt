@@ -187,6 +187,10 @@ scheduler_pick_entry(struct scheduler_queue *sq)
 	}
 
 	se = TAILQ_FIRST(&sq->sq_queue);
+	struct thread *td2 = (struct thread *)((uintptr_t)se -
+			      (uintptr_t)&(((struct thread *)NULL)->td_sched));
+	ASSERT(td2 == se->se_thread,
+	       "Scheduler entry must point to its own thread.");
 	ASSERT(se->se_oncpu == CPU_ID_INVALID || se->se_oncpu == mp_whoami(),
 	       "Thread must be pinned to me or no one at all.");
 

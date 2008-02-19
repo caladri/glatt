@@ -48,11 +48,8 @@ ipc_init(void)
 	TAILQ_INIT(&ipc_queues);
 }
 
-/*
- * Set up a queue for this CPU and process everything in it ad absurdum.
- */
 void
-ipc_process(void)
+ipc_init_queue(void)
 {
 	struct ipc_queue *ipcq;
 
@@ -63,16 +60,20 @@ ipc_process(void)
 	ipcq = current_ipcq();
 
 	TAILQ_INIT(&ipcq->ipcq_msgs);
+
 	IPC_QUEUES_LOCK();
 	IPC_QUEUE_LOCK(ipcq);
 	TAILQ_INSERT_TAIL(&ipc_queues, ipcq, ipcq_link);
 	IPC_QUEUE_UNLOCK(ipcq);
 	IPC_QUEUES_UNLOCK();
+}
 
-	 /* XXX move previous to ipc_init_queue() and move the next bit to
-	  *     core_startup.
-	  */
-	scheduler_cpu_switchable();
+void
+ipc_process(void)
+{
+	struct ipc_queue *ipcq;
+
+	ipcq = current_ipcq();
 
 	for (;;) {
 		struct ipc_message *ipcmsg;

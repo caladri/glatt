@@ -349,6 +349,7 @@ page_lookup(paddr_t paddr, struct vm_page **pagep)
 			}
 
 			/*
+			 * XXX
 			 * Don't use direct mappings here, as direct mappings
 			 * will always use page_lookup from page_extract, which
 			 * means we can end up recursing indefinitely.  Use

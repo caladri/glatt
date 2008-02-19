@@ -169,13 +169,14 @@ scheduler_pick_entry(struct scheduler_queue *sq)
 	struct scheduler_entry *se;
 
 	SQ_LOCK(sq);
-	
+
 	/*
 	 * If this queue can not yet be used to switch threads, return the
 	 * main thread.
 	 */
 	if (!sq->sq_switchable) {
 		ASSERT(PCPU_GET(maintd) != NULL, "Need a main thread.");
+		SQ_UNLOCK(sq);
 		return (&PCPU_GET(maintd)->td_sched);
 	}
 

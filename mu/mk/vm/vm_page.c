@@ -91,10 +91,6 @@ page_alloc_direct(struct vm *vm, unsigned flags, vaddr_t *vaddrp)
 }
 
 /*
- * Only works for non-direct-mapped addresses.  Need to have a fast way to go
- * from a physical address to a page pointer.  When we do that, we can stop
- * going through the vm_map code (and maybe eliminate it altogether?)
- *
  * XXX
  * Doesn't hold a reference on the page it returns, which is no good.
  */
@@ -104,14 +100,24 @@ page_extract(struct vm *vm, vaddr_t vaddr, struct vm_page **pagep)
 	int error;
 
 	error = vm_map_extract(vm, vaddr, pagep);
-	if (error != 0) {
-		paddr_t paddr;
+	return (error);
+}
 
-		error = pmap_extract(vm, vaddr, &paddr);
-		if (error != 0)
-			return (error);
-		error = page_lookup(paddr, pagep);
-	}
+/*
+ * XXX
+ * Doesn't hold a reference on the page it returns, which is no good.
+ */
+int
+page_extract_direct(struct vm *vm, vaddr_t vaddr, struct vm_page **pagep)
+{
+	int error;
+
+	paddr_t paddr;
+
+	error = pmap_extract(vm, vaddr, &paddr);
+	if (error != 0)
+		return (error);
+	error = page_lookup(paddr, pagep);
 	return (error);
 }
 
@@ -123,7 +129,7 @@ page_free_direct(struct vm *vm, vaddr_t vaddr)
 
 	ASSERT(PAGE_ALIGNED(vaddr), "must be a page address");
 
-	error = page_extract(vm, vaddr, &page);
+	error = page_extract_direct(vm, vaddr, &page);
 	if (error != 0)
 		return (error);
 
@@ -275,7 +281,7 @@ page_unmap_direct(struct vm *vm, vaddr_t vaddr)
 
 	ASSERT(PAGE_ALIGNED(vaddr), "must be a page address");
 	PAGE_LOCK();
-	error = page_extract(vm, vaddr, &page);
+	error = page_extract_direct(vm, vaddr, &page);
 	if (error == 0) {
 		error = pmap_unmap_direct(vm, vaddr);
 		page_ref_drop(page);

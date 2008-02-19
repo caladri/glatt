@@ -80,6 +80,14 @@ sleepq_signal_one(const void *cookie)
 void
 sleepq_wait(void)
 {
+	struct thread *td;
+
+	td = current_thread();
+
+	if (critical_section()) {
+		panic("%s: thread (%s) tried to wait on a sleepq while in a critical section.", __func__, td->td_name);
+	}
+
 	scheduler_schedule();
 }
 

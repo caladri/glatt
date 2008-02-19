@@ -24,7 +24,7 @@ struct morder {
 
 struct morder_lock {
 	struct morder_entry *ml_order;
-	struct mutex *ml_mutex;
+	const void *ml_lock;
 	unsigned ml_count;
 	SLIST_ENTRY(struct morder_lock) ml_link;
 };
@@ -43,13 +43,13 @@ static struct morder morder_bottom = {
 };
 static SLIST_HEAD(, struct morder_entry) morder_allentries;
 
-static struct morder_lock *morder_create(struct morder_thread *, struct mutex *);
+static struct morder_lock *morder_create(struct morder_thread *, const char *, const void *);
 static void morder_dispose(struct morder_thread *, struct morder_lock *);
-static void morder_enter(struct mutex *);
+static void morder_enter(const char *, const void *);
 static struct morder_entry *morder_insert(struct morder *, const char *);
-static struct morder_lock *morder_lookup(struct morder_thread *, struct mutex *);
-static struct morder_entry *morder_order(struct morder_thread *, struct mutex *);
-static void morder_remove(struct mutex *);
+static struct morder_lock *morder_lookup(struct morder_thread *, const void *);
+static struct morder_entry *morder_order(struct morder_thread *, const char *);
+static void morder_remove(const char *, const void *);
 
 void
 morder_thread_setup(struct thread *td)
@@ -61,7 +61,7 @@ void
 morder_lock(struct mutex *mtx)
 {
 	spinlock_lock(&morder_spinlock);
-	morder_enter(mtx);
+	morder_enter(mtx->mtx_lock.s_name, mtx);
 	spinlock_unlock(&morder_spinlock);
 }
 
@@ -69,18 +69,18 @@ void
 morder_unlock(struct mutex *mtx)
 {
 	spinlock_lock(&morder_spinlock);
-	morder_remove(mtx);
+	morder_remove(mtx->mtx_lock.s_name, mtx);
 	spinlock_unlock(&morder_spinlock);
 }
 
 static struct morder_lock *
-morder_create(struct morder_thread *mt, struct mutex *mtx)
+morder_create(struct morder_thread *mt, const char *class, const void *lock)
 {
 	struct morder_lock *ml;
 
 	ml = pool_allocate(&morder_lock_pool);
-	ml->ml_order = morder_order(mt, mtx);
-	ml->ml_mutex = mtx;
+	ml->ml_order = morder_order(mt, class);
+	ml->ml_lock = lock;
 	ml->ml_count = 0;
 	return (ml);
 }
@@ -93,18 +93,18 @@ morder_dispose(struct morder_thread *mt, struct morder_lock *ml)
 }
 
 static void
-morder_enter(struct mutex *mtx)
+morder_enter(const char *class, const void *lock)
 {
 	struct morder_lock *ml, *mm;
 	struct thread *td;
 
 	td = current_thread();
-	ml = morder_lookup(&td->td_morder, mtx);
+	ml = morder_lookup(&td->td_morder, lock);
 	if (ml != NULL) {
 		ml->ml_count++;
 		return;
 	}
-	ml = morder_create(&td->td_morder, mtx);
+	ml = morder_create(&td->td_morder, class, lock);
 	SLIST_FOREACH(mm, &td->td_morder.mt_locks, ml_link) {
 		if (ml->ml_order->m_order->m_level <
 		    mm->ml_order->m_order->m_level) {
@@ -131,26 +131,27 @@ morder_insert(struct morder *mo, const char *class)
 }
 
 static struct morder_lock *
-morder_lookup(struct morder_thread *mt, struct mutex *mtx)
+morder_lookup(struct morder_thread *mt, const void *lock)
 {
 	struct morder_lock *ml;
 
+	/*
+	 * XXX Verify the correct class?
+	 */
 	SLIST_FOREACH(ml, &mt->mt_locks, ml_link) {
-		if (ml->ml_mutex == mtx)
+		if (ml->ml_lock == lock)
 			return (ml);
 	}
 	return (NULL);
 }
 
 static struct morder_entry *
-morder_order(struct morder_thread *mt, struct mutex *mtx)
+morder_order(struct morder_thread *mt, const char *class)
 {
 	struct morder_entry *me;
 	struct morder_lock *ml;
 	struct morder *mo, *mp;
-	const char *class;
 
-	class = mtx->mtx_lock.s_name;
 	SLIST_FOREACH(me, &morder_allentries, m_alllink) {
 		if (strcmp(class, me->m_class) == 0) {
 			return (me);
@@ -185,16 +186,15 @@ morder_order(struct morder_thread *mt, struct mutex *mtx)
 }
 
 static void
-morder_remove(struct mutex *mtx)
+morder_remove(const char *class, const void *lock)
 {
 	struct morder_lock *ml;
 	struct thread *td;
 
 	td = current_thread();
-	ml = morder_lookup(&td->td_morder, mtx);
+	ml = morder_lookup(&td->td_morder, lock);
 	if (ml == NULL) {
-		panic("%s: lock (%s) not held.", __func__,
-		      mtx->mtx_lock.s_name);
+		panic("%s: lock (%s) not held.", __func__, class);
 	}
 	ml->ml_count--;
 	if (ml->ml_count == 0)

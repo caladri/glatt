@@ -60,7 +60,6 @@ morder_thread_setup(struct thread *td)
 void
 morder_lock(struct mutex *mtx)
 {
-	kcprintf("%s(%s)\n", __func__, mtx->mtx_lock.s_name);
 	spinlock_lock(&morder_spinlock);
 	morder_enter(mtx);
 	spinlock_unlock(&morder_spinlock);
@@ -69,7 +68,6 @@ morder_lock(struct mutex *mtx)
 void
 morder_unlock(struct mutex *mtx)
 {
-	kcprintf("%s(%s)\n", __func__, mtx->mtx_lock.s_name);
 	spinlock_lock(&morder_spinlock);
 	morder_remove(mtx);
 	spinlock_unlock(&morder_spinlock);

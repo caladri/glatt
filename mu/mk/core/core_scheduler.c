@@ -180,19 +180,18 @@ scheduler_pick_entry(struct scheduler_queue *sq)
 		return (&PCPU_GET(maintd)->td_sched);
 	}
 
-	TAILQ_FOREACH(se, &sq->sq_queue, se_link) {
-		if (se->se_oncpu == CPU_ID_INVALID ||
-		    se->se_oncpu == mp_whoami())
-			break;
-		
-	}
-	if (se == NULL) {
+	if (TAILQ_EMPTY(&sq->sq_queue)) {
+		/* XXX migrate? */
 		SQ_UNLOCK(sq);
 		return (NULL);
 	}
 
+	se = TAILQ_FIRST(&sq->sq_queue);
+	ASSERT(se->se_oncpu == CPU_ID_INVALID || se->se_oncpu == mp_whoami(),
+	       "Thread must be pinned to me or no one at all.");
+
 	/*
-	 * Push to tail of list.
+	 * Push to tail of queue.
 	 */
 	scheduler_queue(sq, se);
 
@@ -257,6 +256,12 @@ scheduler_queue(struct scheduler_queue *sq, struct scheduler_entry *se)
 
 	if (sq == NULL)
 		sq = scheduler_pick_queue(se);
+
+	/*
+	 * Clear the on CPU field if the thread is not pinned.
+	 */
+	if ((se->se_flags & SCHEDULER_PINNED) == 0)
+		se->se_oncpu = CPU_ID_INVALID;
 
 	/*
 	 * We allow for se->se_queue == sq.  In that case, the se will be
@@ -333,7 +338,7 @@ scheduler_switch(struct thread *td)
 static void
 scheduler_yield(void)
 {
-	//cpu_scheduler_yield();
+	cpu_scheduler_yield();
 }
 
 static void

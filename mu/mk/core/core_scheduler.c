@@ -180,12 +180,6 @@ scheduler_pick_entry(struct scheduler_queue *sq)
 		return (&PCPU_GET(maintd)->td_sched);
 	}
 
-	if (TAILQ_EMPTY(&sq->sq_queue)) {
-		/* XXX migrate? */
-		SQ_UNLOCK(sq);
-		return (NULL);
-	}
-
 	winner = NULL;
 	TAILQ_FOREACH(se, &sq->sq_queue, se_link) {
 		if ((se->se_flags & SCHEDULER_RUNNING) != 0)

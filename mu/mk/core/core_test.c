@@ -117,6 +117,8 @@ test_ipc_startup_thread(void *arg)
 		thread_set_upcall(*tdp, test_ipc_thread, &test_privates[i]);
 		scheduler_thread_runnable(*tdp);
 	}
+	scheduler_thread_sleeping(current_thread());
+	scheduler_schedule();
 }
 
 static void

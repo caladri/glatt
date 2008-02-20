@@ -23,8 +23,12 @@ cpu_critical_section(void)
 {
 	ASSERT(!startup_early,
 	       "Cannot check critical section during early startup.");
-#if 0
-	return ((cpu_read_status() & CP0_STATUS_IE) == 0);
-#endif
-	return (PCPU_GET(interrupt_enable) == 0);
+	if ((cpu_read_status() & CP0_STATUS_IE) == 0) {
+		ASSERT(PCPU_GET(interrupt_enable) == 0,
+		       "Interrupt enable bit not set but flag is.");
+		return (true);
+	}
+	ASSERT(PCPU_GET(interrupt_enable) == 1,
+	       "Interrupt enable bit set but flag is not.");
+	return (false);
 }

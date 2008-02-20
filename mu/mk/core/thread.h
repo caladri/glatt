@@ -1,7 +1,9 @@
 #ifndef	_CORE_THREAD_H_
 #define	_CORE_THREAD_H_
 
+#ifndef	NO_MORDER
 #include <core/morder.h>
+#endif
 #include <core/queue.h>
 #include <core/scheduler.h>
 #include <cpu/context.h>
@@ -17,7 +19,9 @@ struct thread {
 	STAILQ_ENTRY(struct thread) td_link;
 	char td_name[THREAD_NAME_SIZE];
 	uint32_t td_flags;
+#ifndef	NO_MORDER
 	struct morder_thread td_morder;
+#endif
 	struct scheduler_entry td_sched;
 	struct context td_context;	/* State for context switching.  */
 	void *td_kstack;

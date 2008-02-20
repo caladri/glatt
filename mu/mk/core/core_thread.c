@@ -18,6 +18,8 @@ static struct pool thread_pool = POOL_INIT("THREAD", struct thread, POOL_VIRTUAL
 
 static struct spinlock thread_lock = SPINLOCK_INIT("THREAD");
 
+static void thread_error(void *);
+
 int
 thread_create(struct thread **tdp, struct task *parent, const char *name,
 	      uint32_t flags)
@@ -35,7 +37,9 @@ thread_create(struct thread **tdp, struct task *parent, const char *name,
 	STAILQ_INSERT_TAIL(&parent->t_threads, td, td_link);
 	td->td_flags = flags;
 
+#ifndef	NO_MORDER
 	morder_thread_setup(td);
+#endif
 	scheduler_thread_setup(td);
 
 	error = cpu_thread_setup(td);
@@ -64,6 +68,7 @@ thread_switch(struct thread *otd, struct thread *td)
 	ASSERT(otd != td, "cannot switch from a thread to itself.");
 	if (otd != NULL) {
 		if (cpu_context_save(otd)) {
+			thread_set_upcall(otd, thread_error, otd);
 			spinlock_unlock(&thread_lock);
 			/*
 			 * We've been restored by something, return.
@@ -82,4 +87,13 @@ thread_trampoline(struct thread *td, void (*function)(void *), void *arg)
 	ASSERT(td == current_thread(), "Thread must be current thread.");
 	function(arg);
 	panic("%s: function returned!", __func__);
+}
+
+static void
+thread_error(void *arg)
+{
+	struct thread *td = arg;
+
+	panic("%s: context re-used for thread %p (%s)", __func__, td,
+	      td->td_name);
 }

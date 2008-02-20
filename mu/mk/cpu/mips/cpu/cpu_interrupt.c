@@ -117,11 +117,10 @@ cpu_interrupt_restore(register_t r)
 	       "Cannot re-enable interrupts twice!");
 	if (r == CP0_STATUS_IE &&
 	    (cpu_read_status() & CP0_STATUS_IE) == 0) {
+		PCPU_SET(interrupt_enable, 1);
 		cpu_write_status((cpu_read_status() &
 				  ~CP0_STATUS_INTERRUPT_MASK) |
-				 PCPU_GET(interrupt_mask));
-		cpu_write_status(cpu_read_status() | r);
-		PCPU_SET(interrupt_enable, 1);
+				 PCPU_GET(interrupt_mask) | r);
 	}
 }
 

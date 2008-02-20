@@ -81,8 +81,9 @@ test_ipc_thread(void *arg)
 }
 
 static void
-test_ipc_startup(void *arg)
+test_ipc_startup_thread(void *arg)
 {
+	struct task *parent = arg;
 	unsigned i;
 	int error;
 
@@ -104,7 +105,7 @@ test_ipc_startup(void *arg)
 		struct task **taskp = &test_privates[i].task;
 		struct thread **tdp = &test_privates[i].td;
 
-		error = task_create(taskp, NULL, "test i",
+		error = task_create(taskp, parent, "test i",
 				    TASK_DEFAULT | TASK_KERNEL);
 		if (error != 0)
 			panic("%s: task_create failed: %m", __func__, error);
@@ -116,5 +117,24 @@ test_ipc_startup(void *arg)
 		thread_set_upcall(*tdp, test_ipc_thread, &test_privates[i]);
 		scheduler_thread_runnable(*tdp);
 	}
+}
+
+static void
+test_ipc_startup(void *arg)
+{
+	struct thread *td;
+	struct task *task;
+	int error;
+
+	error = task_create(&task, NULL, "test startup",
+			    TASK_DEFAULT | TASK_KERNEL);
+	if (error != 0)
+		panic("%s: task_create failed: %m", __func__, error);
+
+	error = thread_create(&td, task, "test startup", THREAD_DEFAULT);
+	if (error != 0)
+		panic("%s: thread_create failed: %m", __func__, error);
+	thread_set_upcall(td, test_ipc_startup_thread, task);
+	scheduler_thread_runnable(td);
 }
 STARTUP_ITEM(test_ipc, STARTUP_MAIN, STARTUP_BEFORE, test_ipc_startup, NULL);

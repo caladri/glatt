@@ -45,11 +45,6 @@ cpu_startup(void)
 	pcpu_addr = page_address(pcpu_page);
 	pcpu = (struct pcpu *)XKPHYS_MAP(XKPHYS_CNC, pcpu_addr);
 
-	/*
-	 * Dirty the whole PCPU area.
-	 */
-	memset(pcpu, 0, sizeof *pcpu);
-
 	/* Keep our original physical address in the PCPU data, too.  */
 	pcpu->pc_physaddr = pcpu;
 

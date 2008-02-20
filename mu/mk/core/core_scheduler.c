@@ -166,7 +166,7 @@ scheduler_thread_sleeping(struct thread *td)
 static struct scheduler_entry *
 scheduler_pick_entry(struct scheduler_queue *sq)
 {
-	struct scheduler_entry *se;
+	struct scheduler_entry *se, *winner;
 
 	SQ_LOCK(sq);
 
@@ -186,9 +186,24 @@ scheduler_pick_entry(struct scheduler_queue *sq)
 		return (NULL);
 	}
 
-	se = TAILQ_FIRST(&sq->sq_queue);
+	winner = NULL;
+	TAILQ_FOREACH(se, &sq->sq_queue, se_link) {
+		if ((se->se_flags & SCHEDULER_RUNNING) != 0)
+			continue;
+		winner = se;
+		break;
+	}
+	if (winner == NULL) {
+		/* XXX migrate? */
+		SQ_UNLOCK(sq);
+		return (NULL);
+	}
+	se = winner;
+
+#ifndef	NO_ASSERT
 	struct thread *td2 = (struct thread *)((uintptr_t)se -
 			      (uintptr_t)&(((struct thread *)NULL)->td_sched));
+#endif
 	ASSERT(td2 == se->se_thread,
 	       "Scheduler entry must point to its own thread.");
 	ASSERT(se->se_oncpu == CPU_ID_INVALID || se->se_oncpu == mp_whoami(),

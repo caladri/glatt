@@ -1,6 +1,7 @@
 #include <core/types.h>
 #include <core/critical.h>
 #include <core/startup.h>
+#include <cpu/cpu.h>
 #include <cpu/interrupt.h>
 #include <cpu/pcpu.h>
 #include <db/db.h>
@@ -22,5 +23,8 @@ cpu_critical_section(void)
 {
 	ASSERT(!startup_early,
 	       "Cannot check critical section during early startup.");
+#if 0
+	return ((cpu_read_status() & CP0_STATUS_IE) == 0);
+#endif
 	return (PCPU_GET(interrupt_enable) == 0);
 }

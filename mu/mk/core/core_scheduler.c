@@ -354,6 +354,13 @@ scheduler_switch(struct thread *td)
 		thread_switch(otd, td);
 }
 
+/*
+ * XXX
+ * This gives an unfair advantage to the last thread to call scheduler_schedule
+ * and that's very undesirable.  Ideally we would switch to an idle thread,
+ * which called __asm__ ("wait") [for example.] in a loop, in addition to
+ * other housekeeping.
+ */
 static void
 scheduler_yield(void)
 {

@@ -50,14 +50,12 @@ ENTRY(cpu_context_restore)
 	 */
 	li	v0, TRUE
 	/*
-	 * Set status register (including enabling interrupts if needed.)
+	 * Set status register to kernel with interrupt mask, but don't set the
+	 * interrupts-enabled bit, spinlocks will take care of that.
 	 */
-	ld	t1, PC_INTERRUPT_ENABLE(t3)
-	beqz	t1, 1f
-	li	t2, KERNEL_STATUS
-	ld	t1, PC_INTERRUPT_MASK(t3)
-	or	t1, CP0_STATUS_IE
-1:	jr	ra
+	ld	t2, PC_INTERRUPT_MASK(t3)
+	ori	t2, KERNEL_STATUS
+	jr	ra
 	mtc0	t2, CP0_STATUS
 END(cpu_context_restore)
 

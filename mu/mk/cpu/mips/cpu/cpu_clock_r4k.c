@@ -21,7 +21,7 @@ clock_r4k_interrupt(void *arg, int interrupt)
 {
 	struct device *device;
 	struct clock_r4k_softc *csc;
-	unsigned count;
+	unsigned count, cycles;
 
 	ASSERT(interrupt == CLOCK_INTERRUPT, "stray interrupt");
 
@@ -29,17 +29,17 @@ clock_r4k_interrupt(void *arg, int interrupt)
 	ASSERT(device->d_parent->d_unit == mp_whoami(), "on wrong CPU");
 	csc = device->d_softc;
 
-	/*
-	 * XXX
-	 * Preempt?
-	 */
-
 	count = cpu_read_count();
-	if (count < csc->csc_last_count)
-		panic("%s: need to implement clock wrapping.", __func__);
+	if (count < csc->csc_last_count) {
+		unsigned clock_max = ~0;
+
+		cycles = (clock_max - csc->csc_last_count) + count;
+	} else {
+		cycles = count - csc->csc_last_count;
+	}
 
 	cpu_write_compare(count + csc->csc_cycles_per_hz);
-	clock_ticks((count - csc->csc_last_count) / csc->csc_cycles_per_hz);
+	clock_ticks(cycles / csc->csc_cycles_per_hz);
 	csc->csc_last_count = count;
 }
 

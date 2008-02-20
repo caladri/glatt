@@ -342,6 +342,7 @@ scheduler_switch(struct thread *td)
 static void
 scheduler_yield(void)
 {
+	ASSERT(!critical_section(), "Cannot yield with interrupts disabled.");
 	cpu_scheduler_yield();
 }
 

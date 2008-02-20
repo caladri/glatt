@@ -327,9 +327,15 @@ exception_return_fixup:
 	dla	k1, PCPU_VIRTUAL
 	ld	k1, PC_INTERRUPT_MASK(k1)
 	or	k1, CP0_STATUS_IE
-	/* Fallthrough.  */
+	b	2f
+	nop
 
 1:	/* Interrupts disabled.  */
+	dla	k1, PCPU_VIRTUAL
+	ld	k1, PC_INTERRUPT_MASK(k1)
+	/* Fallthrough.  */
+
+2:	/* Set the final bits and return from interrupt.  */
 	or	k1, KERNEL_STATUS
 	j	k0
 	mtc0	k1, CP0_STATUS

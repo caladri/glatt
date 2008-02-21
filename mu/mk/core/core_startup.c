@@ -1,5 +1,4 @@
 #include <core/types.h>
-#include <core/idle.h>
 #include <core/ipc.h>
 #include <core/pool.h>
 #include <core/scheduler.h>
@@ -101,6 +100,8 @@ startup_boot_thread(void *arg)
 	for (itemp = SET_BEGIN(startup_items); itemp < SET_END(startup_items);
 	     itemp++) {
 		item = *itemp;
+		if (item->si_order == STARTUP_CPU)
+			continue;
 #define	LESS_THAN(a, b)							\
 		(((a)->si_component < (b)->si_component) ||		\
 		 (((a)->si_component == (b)->si_component) &&		\
@@ -133,6 +134,8 @@ next:		continue;
 static void
 startup_main_thread(void *arg)
 {
+	struct startup_item **itemp, *item, *ip;
+	static TAILQ_HEAD(, struct startup_item) sorted_items;
 	struct spinlock *lock;
 
 	lock = arg;
@@ -148,9 +151,34 @@ startup_main_thread(void *arg)
 	kcprintf("STARTUP: cpu%u starting main thread.\n", mp_whoami());
 #endif
 
-	/* Initialize per-CPU structures, XXX STARTUP_ITEM?  */
-	idle_thread_init();
-	ipc_init_queue();
+	for (itemp = SET_BEGIN(startup_items); itemp < SET_END(startup_items);
+	     itemp++) {
+		item = *itemp;
+		if (item->si_order != STARTUP_CPU)
+			continue;
+#define	LESS_THAN(a, b)							\
+		(((a)->si_component < (b)->si_component) ||		\
+		 (((a)->si_component == (b)->si_component) &&		\
+		  ((a)->si_order < (b)->si_order)))
+		if (TAILQ_EMPTY(&sorted_items) ||
+		    LESS_THAN(item, TAILQ_FIRST(&sorted_items))) {
+			TAILQ_INSERT_HEAD(&sorted_items, item, si_link);
+		} else {
+			TAILQ_FOREACH(ip, &sorted_items, si_link) {
+				if (LESS_THAN(item, ip)) {
+					TAILQ_INSERT_BEFORE(ip, item, si_link);
+					goto next;
+				}
+			}
+			TAILQ_INSERT_TAIL(&sorted_items, item, si_link);
+		}
+#undef LESS_THAN
+next:		continue;
+	}
+
+	/* Initialize per-CPU structures.  */
+	TAILQ_FOREACH(item, &sorted_items, si_link)
+		item->si_function(item->si_arg);
 
 	/*
 	 * Threaded initialialization complete, the scheduler may run other

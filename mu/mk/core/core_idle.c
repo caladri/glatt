@@ -1,16 +1,21 @@
 #include <core/types.h>
 #include <core/error.h>
-#include <core/idle.h>
 #include <core/startup.h>
 #include <core/task.h>
 #include <core/thread.h>
 
 #include <io/device/console/console.h>
 
-static void idle_thread(void *);
+static void
+idle_thread(void *arg)
+{
+	for (;;) {
+		scheduler_schedule();
+	}
+}
 
-void
-idle_thread_init(void)
+static void
+idle_thread_startup(void *arg)
 {
 	struct thread *td;
 	struct task *task;
@@ -27,11 +32,4 @@ idle_thread_init(void)
 	thread_set_upcall(td, idle_thread, NULL);
 	scheduler_thread_runnable(td);
 }
-
-static void
-idle_thread(void *arg)
-{
-	for (;;) {
-		scheduler_schedule();
-	}
-}
+STARTUP_ITEM(idle_thread, STARTUP_IDLE, STARTUP_CPU, idle_thread_startup, NULL);

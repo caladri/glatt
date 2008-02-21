@@ -4,6 +4,7 @@
 #include <core/malloc.h>
 #include <core/pool.h>
 #include <core/sleepq.h>
+#include <core/startup.h>
 #include <core/thread.h>
 
 static TAILQ_HEAD(, struct ipc_port) ipc_ports;
@@ -46,23 +47,6 @@ ipc_init(void)
 
 	mutex_init(&ipc_queues_lock, "IPC Queues");
 	TAILQ_INIT(&ipc_queues);
-}
-
-void
-ipc_init_queue(void)
-{
-	struct ipc_queue *ipcq;
-
-	/*
-	 * Must not block.
-	 */
-	ipcq = malloc(sizeof *ipcq);
-	mutex_init(&ipcq->ipcq_mutex, "IPC Queue");
-	PCPU_SET(ipc_queue, ipcq);
-
-	ipcq = current_ipcq();
-
-	TAILQ_INIT(&ipcq->ipcq_msgs);
 }
 
 void
@@ -324,3 +308,21 @@ ipc_port_lookup(ipc_port_t port)
 	}
 	return (NULL);
 }
+
+static void
+ipc_queue_startup(void *arg)
+{
+	struct ipc_queue *ipcq;
+
+	/*
+	 * Must not block.
+	 */
+	ipcq = malloc(sizeof *ipcq);
+	mutex_init(&ipcq->ipcq_mutex, "IPC Queue");
+	PCPU_SET(ipc_queue, ipcq);
+
+	ipcq = current_ipcq();
+
+	TAILQ_INIT(&ipcq->ipcq_msgs);
+}
+STARTUP_ITEM(ipc_queue, STARTUP_IPCQ, STARTUP_CPU, ipc_queue_startup, NULL);

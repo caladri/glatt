@@ -19,7 +19,7 @@
 #define	TEST_RTC_DEV_WRITE(f, v)					\
 	*TEST_RTC_DEV_FUNCTION(f) = (v)
 
-#define	CLOCK_CALIBRATION_RUNS	(5)
+#define	CLOCK_CALIBRATION_RUNS	(3)
 
 static struct spinlock platform_clock_calibrate_lock =
 	SPINLOCK_INIT("testmips clock calibration");
@@ -47,16 +47,18 @@ platform_clock_calibrate(void)
 		 */
 restart:	count[0] = cpu_read_count();
 		second[0] = platform_clock_second();
-		while (platform_clock_second() == second[0])
-			continue;
 
-		count[1] = cpu_read_count();
-		second[1] = platform_clock_second();
-		while (platform_clock_second() == second[1])
-			continue;
+		for (;;) {
+			count[1] = cpu_read_count();
+			if ((second[1] = platform_clock_second()) != second[0])
+				break;
+		}
 
-		count[2] = cpu_read_count();
-		second[2] = platform_clock_second();
+		for (;;) {
+			count[2] = cpu_read_count();
+			if ((second[2] = platform_clock_second()) != second[1])
+				break;
+		}
 
 		/*
 		 * If we have more than a second interval between samples,
@@ -76,8 +78,6 @@ restart:	count[0] = cpu_read_count();
 		 * entire second.
 		 */
 		sum += count[2] - count[1];
-		kcprintf("cpu%u: clock calibration run #%u: %u cycles/second.\n",
-			 mp_whoami(), run, count[2] - count[1]);
 	}
 	spinlock_unlock(&platform_clock_calibrate_lock);
 

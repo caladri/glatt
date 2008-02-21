@@ -10,7 +10,7 @@
 #define	TEST_RTC_DEV_BASE	(0x15000000)
 
 #define	TEST_RTC_DEV_TRIGGER	(0x0000)
-#define	TEST_RTC_DEV_SECONDS	(0x0010)
+#define	TEST_RTC_DEV_USECONDS	(0x0020)
 
 #define	TEST_RTC_DEV_FUNCTION(f)					\
 	(volatile uint64_t *)XKPHYS_MAP(XKPHYS_UC, TEST_RTC_DEV_BASE + (f))
@@ -24,7 +24,7 @@
 static struct spinlock platform_clock_calibrate_lock =
 	SPINLOCK_INIT("testmips clock calibration");
 
-static unsigned platform_clock_second(void);
+static unsigned platform_clock_msecond(void);
 
 /*
  * Calibrate R4K clock subsystem -- return the number of cycles in one second.
@@ -39,32 +39,32 @@ platform_clock_calibrate(void)
 
 	spinlock_lock(&platform_clock_calibrate_lock);
 	for (run = 0; run < CLOCK_CALIBRATION_RUNS; run++) {
-		unsigned count[3], second[3];
+		unsigned count[3], ms[3];
 
 		/*
 		 * XXX
 		 * Switch to useconds.
 		 */
 restart:	count[0] = cpu_read_count();
-		second[0] = platform_clock_second();
+		ms[0] = platform_clock_msecond();
 
 		for (;;) {
 			count[1] = cpu_read_count();
-			if ((second[1] = platform_clock_second()) != second[0])
+			if ((ms[1] = platform_clock_msecond()) != ms[0])
 				break;
 		}
 
 		for (;;) {
 			count[2] = cpu_read_count();
-			if ((second[2] = platform_clock_second()) != second[1])
+			if ((ms[2] = platform_clock_msecond()) != ms[1])
 				break;
 		}
 
 		/*
-		 * If we have more than a second interval between samples,
+		 * If we have more than a millisecond interval between samples,
 		 * start over.
 		 */
-		if (second[1] != second[0] + 1 || second[2] != second[1] + 1)
+		if (ms[1] != ms[0] + 1 || ms[2] != ms[1] + 1)
 			goto restart;
 
 		/*
@@ -82,14 +82,14 @@ restart:	count[0] = cpu_read_count();
 	spinlock_unlock(&platform_clock_calibrate_lock);
 
 	/*
-	 * Take mean.
+	 * Take mean, and multiply by 1000 to get seconds rather than ms.
 	 */
-	return (sum / CLOCK_CALIBRATION_RUNS);
+	return ((sum / CLOCK_CALIBRATION_RUNS) * 1000);
 }
 
 static unsigned
-platform_clock_second(void)
+platform_clock_msecond(void)
 {
 	TEST_RTC_DEV_WRITE(TEST_RTC_DEV_TRIGGER, 0);
-	return (TEST_RTC_DEV_READ(TEST_RTC_DEV_SECONDS));
+	return (TEST_RTC_DEV_READ(TEST_RTC_DEV_USECONDS) / 1000);
 }

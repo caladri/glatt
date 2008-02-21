@@ -19,7 +19,7 @@
 #define	TEST_RTC_DEV_WRITE(f, v)					\
 	*TEST_RTC_DEV_FUNCTION(f) = (v)
 
-#define	CLOCK_CALIBRATION_RUNS	(3)
+#define	CLOCK_CALIBRATION_RUNS	(10)
 
 static struct spinlock platform_clock_calibrate_lock =
 	SPINLOCK_INIT("testmips clock calibration");

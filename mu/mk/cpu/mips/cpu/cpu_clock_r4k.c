@@ -8,6 +8,7 @@
 #include <io/device/console/console.h>
 #include <io/device/device.h>
 #include <io/device/driver.h>
+#include <platform/clock.h>
 
 #define	CLOCK_INTERRUPT	(7)
 
@@ -56,9 +57,14 @@ static int
 clock_r4k_attach(struct device *device)
 {
 	struct clock_r4k_softc *csc;
+	unsigned cycles;
+
+	cycles = platform_clock_calibrate();
+	if (cycles == 0)
+		return (ERROR_NOT_IMPLEMENTED);
 
 	csc = malloc(sizeof *csc);
-	csc->csc_cycles_per_hz = 1000000;
+	csc->csc_cycles_per_hz = platform_clock_calibrate();
 	csc->csc_last_count = cpu_read_count();
 
 	device->d_softc = csc;

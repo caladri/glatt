@@ -59,6 +59,7 @@ test_ipc_thread(void *arg)
 		error = ipc_port_receive(priv->receive, &rx, NULL);
 		if (error == ERROR_AGAIN) {
 			send = false;
+			kcprintf("%s->ipc_port_wait (%d)\n", __func__, priv->i);
 			ipc_port_wait(priv->receive);
 			continue;
 		}

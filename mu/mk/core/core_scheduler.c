@@ -91,8 +91,14 @@ scheduler_schedule(void)
 	/*
 	 * Make sure this thread is bumped to the tail of its queue.
 	 */
-	if (current_thread() != NULL)
-		scheduler_queue(current_runq(), &current_thread()->td_sched);
+	if (current_thread() != NULL) {
+		struct scheduler_entry *se = &current_thread()->td_sched;
+		ASSERT(se->se_queue == current_runq() ||
+		       se->se_queue == &scheduler_sleep_queue,
+		       "Current thread must be running or sleeping.");
+		if (se->se_queue != &scheduler_sleep_queue)
+			scheduler_queue(current_runq(), se);
+	}
 
 	/*
 	 * Find a thread to run.  There should always be something on the run

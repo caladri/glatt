@@ -87,12 +87,21 @@ scheduler_schedule(void)
 	SCHEDULER_LOCK();
 	ASSERT(current_thread() == NULL || current_runq()->sq_switchable,
 	       "Must be starting first thread or done with initialization.");
+
+	/*
+	 * Make sure this thread is bumped to the tail of its queue.
+	 */
+	if (current_thread() != NULL)
+		scheduler_queue(current_runq(), &current_thread()->td_sched);
+
 	/*
 	 * Find a thread to run.  There should always be something on the run
 	 * queue (the idle thread should always be runnable.)
 	 */
 	td = scheduler_pick_thread();
 	if (td == NULL) {
+		ASSERT(current_thread() != NULL,
+		       "Must have a thread to return to in idle system.");
 		/* XXX
 		 * This should only happen if we are the idle thread and
 		 * the system is staying idle!

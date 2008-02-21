@@ -22,6 +22,8 @@ static struct pool scheduler_queue_pool = POOL_INIT("SCHEDULER QUEUE",
 #define	SQ_LOCK(sq)	spinlock_lock(&(sq)->sq_lock)
 #define	SQ_UNLOCK(sq)	spinlock_unlock(&(sq)->sq_lock)
 
+#define	current_runq()	PCPU_GET(runq)
+
 static struct scheduler_entry *scheduler_pick_entry(struct scheduler_queue *);
 static struct thread *scheduler_pick_thread(void);
 static struct scheduler_queue *scheduler_pick_queue(struct scheduler_entry *);
@@ -43,7 +45,7 @@ scheduler_cpu_pin(struct thread *td)
 	       "Can't pin thread twice.");
 	se->se_flags |= SCHEDULER_PINNED;
 	se->se_oncpu = mp_whoami();
-	scheduler_queue_insert(PCPU_GET(scheduler), se);
+	scheduler_queue_insert(current_runq(), se);
 	SCHEDULER_UNLOCK();
 }
 
@@ -60,7 +62,7 @@ scheduler_cpu_setup(void)
 void
 scheduler_cpu_switchable(void)
 {
-	struct scheduler_queue *sq = PCPU_GET(scheduler);
+	struct scheduler_queue *sq = current_runq();
 
 	SCHEDULER_LOCK();
 	SQ_LOCK(sq);
@@ -83,7 +85,7 @@ scheduler_schedule(void)
 	struct thread *td;
 
 	SCHEDULER_LOCK();
-	ASSERT(current_thread() == NULL || PCPU_GET(scheduler)->sq_switchable,
+	ASSERT(current_thread() == NULL || current_runq()->sq_switchable,
 	       "Must be starting first thread or done with initialization.");
 	/*
 	 * Find a thread to run.  There should always be something on the run
@@ -186,7 +188,7 @@ scheduler_pick_thread(void)
 {
 	struct scheduler_entry *se;
 
-	se = scheduler_pick_entry(PCPU_GET(scheduler));
+	se = scheduler_pick_entry(current_runq());
 	if (se == NULL)
 		return (NULL);
 	return (se->se_thread);

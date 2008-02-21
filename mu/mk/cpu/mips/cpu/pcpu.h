@@ -19,19 +19,31 @@ struct thread;
 
 	/* Per-CPU data.  */
 struct pcpu {
+	/* Current running thread.  */
 	struct thread *pc_thread;
+
+	/* Information about this CPU (and its device in the tree.)  */
+	struct pcpu *pc_physaddr;
 	cpu_id_t pc_cpuid;
 	struct cpuinfo pc_cpuinfo;
-	struct pcpu *pc_physaddr;
 	struct device *pc_device;
 	unsigned pc_flags;
-	STAILQ_HEAD(, struct interrupt_handler) pc_interrupt_table[CPU_INTERRUPT_COUNT];
+
+	/* Interrupt data.  */
+	STAILQ_HEAD(, struct interrupt_handler)
+		pc_interrupt_table[CPU_INTERRUPT_COUNT];
 	register_t pc_interrupt_mask;
-	struct scheduler_queue *pc_scheduler;
-	struct ipc_queue *pc_ipc_queue;
-	unsigned pc_asidnext;
-	clock_ticks_t pc_clock;
 	register_t pc_interrupt_enable;
+
+	/* For ASID allocator in page mapping code.  */
+	unsigned pc_asidnext;
+
+	/* Per-CPU data structures for various MI code.  */
+	struct scheduler_queue *pc_runq;
+	struct ipc_queue *pc_ipc_queue;
+
+	/* This CPU's timecounter.  */
+	clock_ticks_t pc_clock;
 };
 
 #define	PCPU_PTR()							\

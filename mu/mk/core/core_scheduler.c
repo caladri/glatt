@@ -216,10 +216,13 @@ scheduler_pick_queue(struct scheduler_entry *se)
 
 	SCHEDULER_LOCK();
 	if ((se->se_flags & SCHEDULER_PINNED) != 0) {
-		sq = se->se_queue;
-		ASSERT(sq != NULL, "Pinned thread must be on a queue.");
-		SCHEDULER_UNLOCK();
-		return (sq);
+		TAILQ_FOREACH(sq, &scheduler_queue_list, sq_link) {
+			if (sq->sq_cpu == se->se_oncpu) {
+				SCHEDULER_UNLOCK();
+				return (sq);
+			}
+		}
+		panic("%s: thread must be pinned to a real queue.", __func__);
 	}
 	winner = NULL;
 	TAILQ_FOREACH(sq, &scheduler_queue_list, sq_link) {

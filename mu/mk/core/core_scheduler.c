@@ -2,7 +2,6 @@
 #include <core/pool.h>
 #include <core/scheduler.h>
 #include <core/thread.h>
-#include <cpu/scheduler.h>
 #include <db/db.h>
 #include <db/db_show.h>
 #include <io/device/console/console.h>

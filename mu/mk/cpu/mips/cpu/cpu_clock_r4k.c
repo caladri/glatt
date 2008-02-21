@@ -64,7 +64,7 @@ clock_r4k_attach(struct device *device)
 		return (ERROR_NOT_IMPLEMENTED);
 
 	csc = malloc(sizeof *csc);
-	csc->csc_cycles_per_hz = platform_clock_calibrate();
+	csc->csc_cycles_per_hz = cycles;
 	csc->csc_last_count = cpu_read_count();
 
 	device->d_softc = csc;

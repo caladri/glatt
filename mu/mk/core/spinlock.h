@@ -1,7 +1,6 @@
 #ifndef	_CORE_SPINLOCK_H_
 #define	_CORE_SPINLOCK_H_
 
-#include <core/clock.h>
 #include <core/critical.h>
 #include <core/mp.h>
 #include <cpu/atomic.h>
@@ -25,9 +24,6 @@ spinlock_lock(struct spinlock *lock)
 {
 #ifndef	UNIPROCESSOR
 	critical_section_t crit;
-	clock_ticks_t ticks;
-
-	ticks = clock();
 
 	crit = critical_enter();
 	while (!atomic_compare_and_set_64(&lock->s_owner, CPU_ID_INVALID,
@@ -38,9 +34,10 @@ spinlock_lock(struct spinlock *lock)
 			return;
 		}
 		critical_exit(crit);
-		if (clock() - ticks > 100)
-			panic("Spinlock \"%s\" spun for 100 ticks.\n",
-			      lock->s_name);
+		/*
+		 * If we are not already in a critical section, allow interrupts
+		 * to fire while we spin.
+		 */
 		crit = critical_enter();
 	}
 	lock->s_crit = crit;

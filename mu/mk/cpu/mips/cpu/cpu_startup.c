@@ -1,4 +1,5 @@
 #include <core/types.h>
+#include <core/scheduler.h>
 #include <core/startup.h>
 #include <core/string.h>
 #include <cpu/cpu.h>

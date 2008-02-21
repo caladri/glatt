@@ -1,15 +1,14 @@
 #ifndef	_CPU_PCPU_H_
 #define	_CPU_PCPU_H_
 
-#include <core/clock.h> /* XXX clock_ticks_t in types.h? */
-#include <core/ipc.h>
-#include <core/scheduler.h>
 #include <core/queue.h>
 #include <cpu/cpuinfo.h>
 #include <cpu/interrupt.h>
 #include <cpu/memory.h>
 
 struct device;
+struct ipc_queue;
+struct scheduler_queue;
 struct thread;
 
 #define	PCPU_VIRTUAL	(KERNEL_BASE)
@@ -41,9 +40,6 @@ struct pcpu {
 	/* Per-CPU data structures for various MI code.  */
 	struct scheduler_queue *pc_runq;
 	struct ipc_queue *pc_ipc_queue;
-
-	/* This CPU's timecounter.  */
-	clock_ticks_t pc_clock;
 };
 
 #define	PCPU_PTR()							\

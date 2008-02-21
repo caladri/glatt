@@ -20,7 +20,6 @@ struct thread;
 	/* Per-CPU data.  */
 struct pcpu {
 	struct thread *pc_thread;
-	struct thread *pc_maintd;
 	cpu_id_t pc_cpuid;
 	struct cpuinfo pc_cpuinfo;
 	struct pcpu *pc_physaddr;

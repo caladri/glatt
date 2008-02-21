@@ -1,4 +1,5 @@
 #include <core/types.h>
+#include <core/idle.h>
 #include <core/ipc.h>
 #include <core/pool.h>
 #include <core/scheduler.h>
@@ -61,7 +62,7 @@ startup_main(void)
 			      THREAD_DEFAULT);
 	if (error != 0)
 		panic("%s: thread_create failed: %m", __func__, error);
-	scheduler_cpu_main(td);
+	scheduler_cpu_pin(td);
 
 	spinlock_unlock(&startup_spinlock);
 
@@ -148,6 +149,7 @@ startup_main_thread(void *arg)
 #endif
 
 	/* Initialize per-CPU structures, XXX STARTUP_ITEM?  */
+	idle_thread_init();
 	ipc_init_queue();
 
 	/*

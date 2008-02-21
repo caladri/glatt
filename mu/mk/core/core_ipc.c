@@ -53,6 +53,9 @@ ipc_init_queue(void)
 {
 	struct ipc_queue *ipcq;
 
+	/*
+	 * Must not block.
+	 */
 	ipcq = malloc(sizeof *ipcq);
 	mutex_init(&ipcq->ipcq_mutex, "IPC Queue");
 	PCPU_SET(ipc_queue, ipcq);
@@ -60,12 +63,6 @@ ipc_init_queue(void)
 	ipcq = current_ipcq();
 
 	TAILQ_INIT(&ipcq->ipcq_msgs);
-
-	IPC_QUEUES_LOCK();
-	IPC_QUEUE_LOCK(ipcq);
-	TAILQ_INSERT_TAIL(&ipc_queues, ipcq, ipcq_link);
-	IPC_QUEUE_UNLOCK(ipcq);
-	IPC_QUEUES_UNLOCK();
 }
 
 void
@@ -74,6 +71,12 @@ ipc_process(void)
 	struct ipc_queue *ipcq;
 
 	ipcq = current_ipcq();
+
+	IPC_QUEUES_LOCK();
+	IPC_QUEUE_LOCK(ipcq);
+	TAILQ_INSERT_TAIL(&ipc_queues, ipcq, ipcq_link);
+	IPC_QUEUE_UNLOCK(ipcq);
+	IPC_QUEUES_UNLOCK();
 
 	for (;;) {
 		struct ipc_message *ipcmsg;

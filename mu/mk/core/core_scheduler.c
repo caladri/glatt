@@ -27,29 +27,9 @@ static struct scheduler_entry *scheduler_pick_entry(struct scheduler_queue *);
 static struct thread *scheduler_pick_thread(void);
 static struct scheduler_queue *scheduler_pick_queue(struct scheduler_entry *);
 static void scheduler_queue(struct scheduler_queue *, struct scheduler_entry *);
+static void scheduler_queue_insert(struct scheduler_queue *, struct scheduler_entry *);
 static void scheduler_queue_setup(struct scheduler_queue *, const char *, cpu_id_t);
 static void scheduler_switch(struct thread *);
-static void scheduler_yield(void);
-
-void
-scheduler_cpu_main(struct thread *td)
-{
-	struct scheduler_entry *se;
-
-	SCHEDULER_LOCK();
-	se = &td->td_sched;
-	se->se_flags |= SCHEDULER_MAIN;
-	ASSERT(se->se_queue == NULL, "main thread cannot be on a queue.");
-	ASSERT(PCPU_GET(maintd) == NULL,
-	       "Can only have one main thread per CPU.");
-	PCPU_SET(maintd, td);
-
-	/*
-	 * Make sure we are only ever on this CPU.
-	 */
-	scheduler_cpu_pin(td);
-	SCHEDULER_UNLOCK();
-}
 
 void
 scheduler_cpu_pin(struct thread *td)
@@ -64,8 +44,7 @@ scheduler_cpu_pin(struct thread *td)
 	       "Can't pin thread twice.");
 	se->se_flags |= SCHEDULER_PINNED;
 	se->se_oncpu = mp_whoami();
-
-	scheduler_queue(NULL, se);
+	scheduler_queue_insert(PCPU_GET(scheduler), se);
 	SCHEDULER_UNLOCK();
 }
 
@@ -105,20 +84,20 @@ scheduler_schedule(void)
 	struct thread *td;
 
 	SCHEDULER_LOCK();
+	ASSERT(current_thread() == NULL || PCPU_GET(scheduler)->sq_switchable,
+	       "Must be starting first thread or done with initialization.");
 	/*
-	 * Find a thread to run.  If there's nothing in the runqueue, check to
-	 * see if we're the main thread.  If we are the main thread, yield the
-	 * CPU until we get an interrupt.  Otherwise, without a thread to run,
-	 * switch to the main thread.
+	 * Find a thread to run.  There should always be something on the run
+	 * queue (the idle thread should always be runnable.)
 	 */
 	td = scheduler_pick_thread();
 	if (td == NULL) {
-		if (PCPU_GET(maintd) == current_thread()) {
-			SCHEDULER_UNLOCK();
-			scheduler_yield();
-			return;
-		}
-		td = PCPU_GET(maintd);
+		/* XXX
+		 * This should only happen if we are the idle thread and
+		 * the system is staying idle!
+		 */
+		SCHEDULER_UNLOCK();
+		return;
 	}
 	scheduler_switch(td);
 }
@@ -169,16 +148,6 @@ scheduler_pick_entry(struct scheduler_queue *sq)
 	struct scheduler_entry *se, *winner;
 
 	SQ_LOCK(sq);
-
-	/*
-	 * If this queue can not yet be used to switch threads, return the
-	 * main thread.
-	 */
-	if (!sq->sq_switchable) {
-		ASSERT(PCPU_GET(maintd) != NULL, "Need a main thread.");
-		SQ_UNLOCK(sq);
-		return (&PCPU_GET(maintd)->td_sched);
-	}
 
 	winner = NULL;
 	TAILQ_FOREACH(se, &sq->sq_queue, se_link) {
@@ -261,12 +230,6 @@ scheduler_queue(struct scheduler_queue *sq, struct scheduler_entry *se)
 {
 	struct scheduler_queue *osq;
 
-	/*
-	 * The main thread cannot go on a queue.
-	 */
-	if ((se->se_flags & SCHEDULER_MAIN) != 0)
-		return;
-
 	if (sq == NULL)
 		sq = scheduler_pick_queue(se);
 
@@ -288,6 +251,12 @@ scheduler_queue(struct scheduler_queue *sq, struct scheduler_entry *se)
 		osq->sq_length--;
 		SQ_UNLOCK(osq);
 	}
+	scheduler_queue_insert(sq, se);
+}
+
+static void
+scheduler_queue_insert(struct scheduler_queue *sq, struct scheduler_entry *se)
+{
 	SQ_LOCK(sq);
 	se->se_queue = sq;
 	TAILQ_INSERT_TAIL(&sq->sq_queue, se, se_link);
@@ -346,20 +315,6 @@ scheduler_switch(struct thread *td)
 	SCHEDULER_UNLOCK();
 	if (otd != td)
 		thread_switch(otd, td);
-}
-
-/*
- * XXX
- * This gives an unfair advantage to the last thread to call scheduler_schedule
- * and that's very undesirable.  Ideally we would switch to an idle thread,
- * which called __asm__ ("wait") [for example.] in a loop, in addition to
- * other housekeeping.
- */
-static void
-scheduler_yield(void)
-{
-	ASSERT(!critical_section(), "Cannot yield with interrupts disabled.");
-	cpu_scheduler_yield();
 }
 
 static void

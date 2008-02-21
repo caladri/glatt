@@ -59,7 +59,6 @@ test_ipc_thread(void *arg)
 		error = ipc_port_receive(priv->receive, &rx, NULL);
 		if (error == ERROR_AGAIN) {
 			send = false;
-			kcprintf("%s->ipc_port_wait (%d)\n", __func__, priv->i);
 			ipc_port_wait(priv->receive);
 			continue;
 		}
@@ -120,6 +119,7 @@ test_ipc_startup_thread(void *arg)
 	}
 	scheduler_thread_sleeping(current_thread());
 	scheduler_schedule();
+	panic("%s: scheduler_schedule returned!", __func__);
 }
 
 static void

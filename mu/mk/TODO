@@ -2,9 +2,6 @@ This single-image thing seems kind of problematic.  Next up needs to be an
 asymmetric rewrite, I think, with each CPU having its own data structures and
 them having to do inter-host IPC.
 
-core_test now deadlocks -- why?  That shouldn't happen, right?  Need to debug
-before anything else.
-
 Need to add a per-cpu startup_item system rather than doing it ad_hoc.
 
 Should just create an ipc_process thread at STARTUP_MAIN:STARTUP_BEFORE, rather

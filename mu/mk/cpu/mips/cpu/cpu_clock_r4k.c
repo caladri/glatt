@@ -10,6 +10,7 @@
 #include <io/device/driver.h>
 #include <platform/clock.h>
 
+#define	CLOCK_HZ	(100)
 #define	CLOCK_INTERRUPT	(7)
 
 struct clock_r4k_softc {
@@ -59,7 +60,7 @@ clock_r4k_attach(struct device *device)
 	struct clock_r4k_softc *csc;
 	unsigned cycles;
 
-	cycles = platform_clock_calibrate();
+	cycles = platform_clock_calibrate(CLOCK_HZ);
 	if (cycles == 0)
 		return (ERROR_NOT_IMPLEMENTED);
 
@@ -69,7 +70,8 @@ clock_r4k_attach(struct device *device)
 
 	device->d_softc = csc;
 
-	device_printf(device, "%u cycles/hz", csc->csc_cycles_per_hz);
+	device_printf(device, "%u cycles/second (running at %uhz)",
+		      csc->csc_cycles_per_hz * CLOCK_HZ, CLOCK_HZ);
 	cpu_interrupt_establish(CLOCK_INTERRUPT, clock_r4k_interrupt, device);
 	cpu_write_compare(csc->csc_last_count + csc->csc_cycles_per_hz);
 

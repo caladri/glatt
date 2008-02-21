@@ -27,10 +27,10 @@ static struct spinlock platform_clock_calibrate_lock =
 static unsigned platform_clock_msecond(void);
 
 /*
- * Calibrate R4K clock subsystem -- return the number of cycles in one second.
+ * Calibrate R4K clock subsystem -- return the number of cycles in 1/hz seconds.
  */
 unsigned
-platform_clock_calibrate(void)
+platform_clock_calibrate(unsigned hz)
 {
 	uint64_t sum;
 	unsigned run;
@@ -82,9 +82,9 @@ restart:	count[0] = cpu_read_count();
 	spinlock_unlock(&platform_clock_calibrate_lock);
 
 	/*
-	 * Take mean, and multiply by 1000 to get seconds rather than ms.
+	 * Take mean and convert to number of cycles in 1/hz seconds.
 	 */
-	return ((sum / CLOCK_CALIBRATION_RUNS) * 1000);
+	return (((sum / CLOCK_CALIBRATION_RUNS) * 1000) / hz);
 }
 
 static unsigned

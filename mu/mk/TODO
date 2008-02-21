@@ -2,6 +2,19 @@ This single-image thing seems kind of problematic.  Next up needs to be an
 asymmetric rewrite, I think, with each CPU having its own data structures and
 them having to do inter-host IPC.
 
+core_test now deadlocks -- why?  That shouldn't happen, right?  Need to debug
+before anything else.
+
+Need to add a per-cpu startup_item system rather than doing it ad_hoc.
+
+Should just create an ipc_process thread at STARTUP_MAIN:STARTUP_BEFORE, rather
+than having the startup thread become ipc_process, but that requires per-cpu
+startup items.
+
+Is there a problem with vm_map_page?  There was something like memory corruption
+when it was used in page_lookup, but was that all there was to it?  Is core_pool
+at risk (it uses it for POOL_VIRTUAL pools)!?
+
 Urgent:
 
 Rewrite exception and TLB code.  Don't frob status unless we're task switching

@@ -30,53 +30,62 @@ test_ipc_status(void)
 }
 
 static void
+test_ipc_send(struct test_private *priv, struct ipc_header *rx)
+{
+	struct ipc_header hdr;
+	int error;
+
+	hdr.ipchdr_src = priv->receive;
+	hdr.ipchdr_dst = priv->send;
+	hdr.ipchdr_type = rx == NULL ? priv->i : priv->last;
+	hdr.ipchdr_len = 0;
+
+	error = ipc_port_send(&hdr, NULL);
+	if (error != 0)
+		panic("%s: ipc_port_send failed: %m", __func__, error);
+}
+
+static void
+test_ipc_receive(struct test_private *priv, struct ipc_header *rx)
+{
+	int error;
+
+	for (;;) {
+		error = ipc_port_receive(priv->receive, rx, NULL);
+		if (error == 0)
+			break;
+		if (error != ERROR_AGAIN)
+			panic("%s: ipc_port_receive failed: %m",
+			      __func__, error);
+		ipc_port_wait(priv->receive);
+	}
+	if (rx->ipchdr_dst != priv->receive)
+		panic("%s: incorrect destination.", __func__);
+
+	priv->last = rx->ipchdr_type;
+}
+
+static void
 test_ipc_thread(void *arg)
 {
 	struct test_private *priv = arg;
-	struct ipc_header hdr, rx;
-	bool send;
-	int error;
+	struct ipc_header rx;
 
 	ASSERT(priv->td == current_thread(), "Must be on right thread.");
 
 	priv->last = -1;
 
-	hdr.ipchdr_src = priv->receive;
-	hdr.ipchdr_dst = priv->send;
-	hdr.ipchdr_type = priv->i;
-	hdr.ipchdr_len = 0;
-
-	send = true;
+	/*
+	 * XXX
+	 * Modify so there's one message in flight at a time.
+	 */
+	test_ipc_send(priv, NULL);
 
 	for (;;) {
-		if (send) {
-			error = ipc_port_send(&hdr, NULL);
-			if (error != 0)
-				panic("%s: ipc_port_send failed: %m", __func__,
-				      error);
-		}
-
-		error = ipc_port_receive(priv->receive, &rx, NULL);
-		if (error == ERROR_AGAIN) {
-			send = false;
-			ipc_port_wait(priv->receive);
-			continue;
-		}
-		if (error != 0)
-			panic("%s: ipc_port_receive failed: %m", __func__,
-			      error);
-
-		if (rx.ipchdr_dst != priv->receive)
-			panic("%s: incorrect destination.", __func__);
-
-		hdr.ipchdr_dst = priv->send;
-		hdr.ipchdr_type = rx.ipchdr_type;
-
-		send = true;
-
 		if (priv->i == 0)
 			test_ipc_status();
-		priv->last = rx.ipchdr_type;
+		test_ipc_receive(priv, &rx);
+		test_ipc_send(priv, &rx);
 	}
 }
 

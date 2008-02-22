@@ -105,16 +105,15 @@ scheduler_schedule(void)
 	 */
 	td = scheduler_pick_thread();
 	if (td == NULL) {
-		ASSERT(current_thread() != NULL,
+		td = current_thread();
+		ASSERT(td != NULL,
 		       "Must have a thread to return to in idle system.");
-		ASSERT((current_thread()->td_sched.se_flags & SCHEDULER_RUNNABLE) != 0,
+		ASSERT((td->td_sched.se_flags & SCHEDULER_RUNNABLE) != 0,
 		       "Thread must be runnable.");
 		/* XXX
 		 * This should only happen if we are the idle thread and
 		 * the system is staying idle!
 		 */
-		SCHEDULER_UNLOCK();
-		return;
 	}
 	scheduler_switch(td);
 }
@@ -366,13 +365,25 @@ scheduler_db_dump_queue(struct scheduler_queue *sq)
 {
 	struct scheduler_entry *se;
 
-	kcprintf("Q%p => cpu%u\n", sq, sq->sq_cpu);
+	kcprintf("queue %p cpu%u length %u %s\n",
+		 sq, sq->sq_cpu, sq->sq_length, (sq->sq_switchable ?
+						 "switchable" : "!switchable"));
 	TAILQ_FOREACH(se, &sq->sq_queue, se_link) {
 		struct thread *td;
 
 		td = se->se_thread;
 
-		kcprintf("E%p (flags %#x) => td=%p, %s\n", se, se->se_flags, td, td->td_name);
+		kcprintf("%p (thread %p, \"%s\")%s%s%s%s cpu%u\n",
+			 se, td, td->td_name,
+			 ((se->se_flags & SCHEDULER_RUNNING) ?
+			  " running" : ""),
+			 ((se->se_flags & SCHEDULER_PINNED) ?
+			  " pinned" : ""),
+			 ((se->se_flags & SCHEDULER_SLEEPING) ?
+			  " sleeping" : ""),
+			 ((se->se_flags & SCHEDULER_RUNNABLE) ?
+			  " runnable" : ""),
+			 se->se_oncpu);
 	}
 }
 

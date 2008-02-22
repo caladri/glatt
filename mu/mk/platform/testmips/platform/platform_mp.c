@@ -40,7 +40,7 @@
 static struct device *platform_mp_bus;
 
 static void platform_mp_attach_bus(void);
-static void platform_mp_attach_cpu(void);
+static void platform_mp_attach_cpu(bool);
 static void platform_mp_ipi_interrupt(void *, int);
 static void platform_mp_start_one(cpu_id_t, void (*)(void));
 
@@ -89,7 +89,7 @@ platform_mp_startup(void)
 	 * Attach a device for the CPU if the bus is set up already.
 	 */
 	if (platform_mp_bus != NULL)
-		platform_mp_attach_cpu();
+		platform_mp_attach_cpu(false);
 }
 
 cpu_id_t
@@ -139,12 +139,12 @@ platform_mp_start_all(void *arg)
 	if (ncpus != 1) {
 		for (cpu = 0; cpu < ncpus; cpu++) {
 			if (cpu == mp_whoami())
-				platform_mp_attach_cpu();
+				platform_mp_attach_cpu(true);
 			else
 				platform_mp_start_one(cpu, platform_startup);
 		}
 	} else {
-		platform_mp_attach_cpu();
+		platform_mp_attach_cpu(true);
 	}
 }
 STARTUP_ITEM(platform_mp, STARTUP_MP, STARTUP_FIRST,
@@ -196,13 +196,16 @@ platform_mp_attach_bus(void)
 }
 
 static void
-platform_mp_attach_cpu(void)
+platform_mp_attach_cpu(bool bootstrap)
 {
 	struct device *device;
 	struct driver *driver;
 	int error;
 
 	ASSERT(platform_mp_bus != NULL, "need mp bus to attach CPUs.");
+
+	if (bootstrap)
+		PCPU_SET(flags, PCPU_GET(flags) | PCPU_FLAG_BOOTSTRAP);
 
 	driver = driver_lookup("cpu");
 	error = device_create(&device, platform_mp_bus, driver);

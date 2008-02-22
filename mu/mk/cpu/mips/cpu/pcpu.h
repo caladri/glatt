@@ -15,6 +15,7 @@ struct thread;
 
 #define	PCPU_FLAG_RUNNING	(0x00000001)
 #define	PCPU_FLAG_PANICKED	(0x00000002)
+#define	PCPU_FLAG_BOOTSTRAP	(0x00000004)
 
 	/* Per-CPU data.  */
 struct pcpu {

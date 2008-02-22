@@ -34,12 +34,14 @@ cpu_attach(struct device *device)
 	pcpu = PCPU_GET(physaddr);
 	device->d_softc = pcpu;
 
-	device_printf(device, "%s %s revision %u.%u, %d TLB entries.",
+	device_printf(device, "%s %s revision %u.%u, %d TLB entries. (%s)",
 		      PCPU_GET(cpuinfo).cpu_company,
 		      PCPU_GET(cpuinfo).cpu_type,
 		      (unsigned)PCPU_GET(cpuinfo).cpu_revision_major,
 		      (unsigned)PCPU_GET(cpuinfo).cpu_revision_minor,
-		      (unsigned)PCPU_GET(cpuinfo).cpu_ntlbs);
+		      (unsigned)PCPU_GET(cpuinfo).cpu_ntlbs,
+		      ((PCPU_GET(flags) & PCPU_FLAG_BOOTSTRAP) == 0 ?
+		       "application processor" : "bootstrap processor"));
 
 	cpu_interrupt_setup();
 

@@ -8,6 +8,8 @@
 #include <io/device/device.h>
 #include <io/device/driver.h>
 
+#include <io/device/console/console.h>
+
 #define	TEST_ETHER_DEV_BASE	(0x14000000)
 #define	TEST_ETHER_DEV_IRQ	(3)
 
@@ -17,6 +19,13 @@
 #define	TEST_ETHER_DEV_STATUS	(0x4000)
 #define	TEST_ETHER_DEV_LENGTH	(0x4010)
 #define	TEST_ETHER_DEV_COMMAND	(0x4020)
+
+#define	TEST_ETHER_DEV_FUNCTION(f)					\
+	(volatile uint64_t *)XKPHYS_MAP(XKPHYS_UC, TEST_ETHER_DEV_BASE + (f))
+#define	TEST_ETHER_DEV_READ(f)						\
+	(volatile uint64_t)*TEST_ETHER_DEV_FUNCTION(f)
+#define	TEST_ETHER_DEV_WRITE(f, v)					\
+	*TEST_ETHER_DEV_FUNCTION(f) = (v)
 
 #define	TEST_ETHER_DEV_STATUS_RX_OK	(0x01)
 #define	TEST_ETHER_DEV_STATUS_RX_MORE	(0x02)
@@ -28,7 +37,11 @@ struct tmether_softc {
 	struct spinlock sc_lock;
 };
 
+#define	TMETHER_LOCK(sc)	spinlock_lock(&(sc)->sc_lock)
+#define	TMETHER_UNLOCK(sc)	spinlock_unlock(&(sc)->sc_lock)
+
 static int tmether_init(struct tmether_softc *);
+static void tmether_interrupt(void *, int);
 
 static int
 tmether_probe(struct device *device)
@@ -61,8 +74,31 @@ static int
 tmether_init(struct tmether_softc *sc)
 {
 	spinlock_init(&sc->sc_lock, "testmips ethernet");
+	TMETHER_LOCK(sc);
+	cpu_interrupt_establish(TEST_ETHER_DEV_IRQ, tmether_interrupt, sc);
+	TMETHER_UNLOCK(sc);
 	return (0);
 }
 
+static void
+tmether_interrupt(void *arg, int interrupt)
+{
+	struct tmether_softc *sc = arg;
+
+	TMETHER_LOCK(sc);
+	switch (TEST_ETHER_DEV_READ(TEST_ETHER_DEV_STATUS)) {
+	case TEST_ETHER_DEV_STATUS_RX_OK:
+		kcprintf("TEST_ETHER_DEV_STATUS_RX_OK\n");
+		break;
+	case TEST_ETHER_DEV_STATUS_RX_MORE:
+		kcprintf("TEST_ETHER_DEV_STATUS_RX_MORE\n");
+		break;
+	default:
+		panic("%s: unexpected status.", __func__);
+		break;
+	}
+	TMETHER_UNLOCK(sc);
+}
+
 DRIVER(tmether, "testmips ethernet", NULL, DRIVER_FLAG_DEFAULT, tmether_probe, tmether_attach);
-DRIVER_ATTACHMENT(tmether, "mp");
+DRIVER_ATTACHMENT(tmether, "mpbus");

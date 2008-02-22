@@ -1,4 +1,4 @@
-# $Id: platform.mk,v 1.12 2008-02-21 09:16:47 juli Exp $
+# $Id: platform.mk,v 1.13 2008-02-22 06:30:45 juli Exp $
 
 .PATH: ${PLATFORM_ROOT}/platform
 .PATH: ${PLATFORM_ROOT}/device
@@ -7,6 +7,7 @@
 KERNEL_SOURCES+=testmips_console.c
 KERNEL_SOURCES+=testmips_ether.c
 KERNEL_SOURCES+=testmips_framebuffer.c
+KERNEL_SOURCES+=testmips_mpbus.c
 
 # platform
 KERNEL_SOURCES+=platform_clock.c

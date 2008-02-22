@@ -128,6 +128,8 @@ scheduler_thread_runnable(struct thread *td)
 	se->se_flags |= SCHEDULER_RUNNABLE;
 	se->se_flags &= ~SCHEDULER_SLEEPING;
 	scheduler_queue(NULL, se);
+	ASSERT(se->se_queue != &scheduler_sleep_queue,
+	       "Queue should have changed!");
 	SCHEDULER_UNLOCK();
 }
 
@@ -166,6 +168,8 @@ static struct scheduler_entry *
 scheduler_pick_entry(struct scheduler_queue *sq)
 {
 	struct scheduler_entry *se, *winner;
+
+	SPINLOCK_ASSERT_HELD(&scheduler_lock);
 
 	SQ_LOCK(sq);
 
@@ -219,20 +223,39 @@ scheduler_pick_queue(struct scheduler_entry *se)
 {
 	struct scheduler_queue *sq, *winner;
 
-	SCHEDULER_LOCK();
+	SPINLOCK_ASSERT_HELD(&scheduler_lock);
+
+	ASSERT((se->se_flags & SCHEDULER_SLEEPING) == 0,
+	       "Cannot pick queue for sleeping thread.");
 	if ((se->se_flags & SCHEDULER_PINNED) != 0) {
 		TAILQ_FOREACH(sq, &scheduler_queue_list, sq_link) {
 			if (sq->sq_cpu == se->se_oncpu) {
-				SCHEDULER_UNLOCK();
 				return (sq);
 			}
 		}
 		panic("%s: thread must be pinned to a real queue.", __func__);
 	}
 	if ((se->se_flags & SCHEDULER_RUNNING) != 0) {
+		/*
+		 * Always return the current runq here.  A running thread may
+		 * have been put on the sleep queue, but this is never called
+		 * for a sleeping thread.  If a running thread is taken off the
+		 * sleep queue, this will be called, and we need to pick a run
+		 * queue to put it on.  Since a running thread cannot migrate,
+		 * we thus handle both cases by returning the current runq
+		 * here.
+		 *
+		 * (Note that since we may be doing this from another CPU, we
+		 * want the runq that the thread is currently on, not the
+		 * current_runq(), which is this CPU's.)
+		 */
 		ASSERT(se->se_queue != NULL, "Running thread needs a queue.");
-		SCHEDULER_UNLOCK();
-		return (se->se_queue);
+		TAILQ_FOREACH(sq, &scheduler_queue_list, sq_link) {
+			if (sq->sq_cpu == se->se_oncpu) {
+				return (sq);
+			}
+		}
+		ASSERT(false, "Should not be reached.");
 	}
 	winner = NULL;
 	TAILQ_FOREACH(sq, &scheduler_queue_list, sq_link) {
@@ -258,7 +281,6 @@ scheduler_pick_queue(struct scheduler_entry *se)
 	}
 	ASSERT(winner != NULL, "Must find a winner.");
 	SQ_UNLOCK(winner);
-	SCHEDULER_UNLOCK();
 	return (winner);
 }
 
@@ -267,14 +289,13 @@ scheduler_queue(struct scheduler_queue *sq, struct scheduler_entry *se)
 {
 	struct scheduler_queue *osq;
 
-	if (sq == NULL)
-		sq = scheduler_pick_queue(se);
+	SPINLOCK_ASSERT_HELD(&scheduler_lock);
 
-	/*
-	 * Clear the on CPU field if the thread is not pinned.
-	 */
-	if ((se->se_flags & SCHEDULER_PINNED) == 0)
-		se->se_oncpu = CPU_ID_INVALID;
+	if (sq == NULL) {
+		sq = scheduler_pick_queue(se);
+		ASSERT(sq != &scheduler_sleep_queue,
+		       "Sleep queue should never be picked.");
+	}
 
 	/*
 	 * We allow for se->se_queue == sq.  In that case, the se will be
@@ -294,6 +315,15 @@ scheduler_queue(struct scheduler_queue *sq, struct scheduler_entry *se)
 static void
 scheduler_queue_insert(struct scheduler_queue *sq, struct scheduler_entry *se)
 {
+	SPINLOCK_ASSERT_HELD(&scheduler_lock);
+
+	if (sq == &scheduler_sleep_queue) {
+		if ((se->se_flags & SCHEDULER_SLEEPING) == 0)
+			panic("%s: can't put %p on sleep queue.", __func__, se);
+	} else {
+		if ((se->se_flags & SCHEDULER_RUNNABLE) == 0)
+			panic("%s: can't put %p on run queue.", __func__, se);
+	}
 	SQ_LOCK(sq);
 	se->se_queue = sq;
 	TAILQ_INSERT_TAIL(&sq->sq_queue, se, se_link);
@@ -305,17 +335,16 @@ static void
 scheduler_queue_setup(struct scheduler_queue *sq, const char *lk, cpu_id_t cpu)
 {
 	spinlock_init(&sq->sq_lock, lk);
+	SCHEDULER_LOCK();
 	SQ_LOCK(sq);
 	sq->sq_cpu = cpu;
 	TAILQ_INIT(&sq->sq_queue);
 	sq->sq_length = 0;
 	sq->sq_switchable = false;
-	if (sq != &scheduler_sleep_queue) {
-		SCHEDULER_LOCK();
+	if (sq != &scheduler_sleep_queue)
 		TAILQ_INSERT_HEAD(&scheduler_queue_list, sq, sq_link);
-		SCHEDULER_UNLOCK();
-	}
 	SQ_UNLOCK(sq);
+	SCHEDULER_UNLOCK();
 }
 
 static void
@@ -338,6 +367,12 @@ scheduler_switch(struct thread *td)
 		struct scheduler_entry *ose;
 
 		ose = &otd->td_sched;
+
+		/*
+		 * Clear the on CPU field if the thread is not pinned.
+		 */
+		if ((ose->se_flags & SCHEDULER_PINNED) == 0)
+			ose->se_oncpu = CPU_ID_INVALID;
 
 		ose->se_flags &= ~SCHEDULER_RUNNING;
 		/*

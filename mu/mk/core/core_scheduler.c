@@ -107,6 +107,8 @@ scheduler_schedule(void)
 	if (td == NULL) {
 		ASSERT(current_thread() != NULL,
 		       "Must have a thread to return to in idle system.");
+		ASSERT((current_thread()->td_sched.se_flags & SCHEDULER_RUNNABLE) != 0,
+		       "Thread must be runnable.");
 		/* XXX
 		 * This should only happen if we are the idle thread and
 		 * the system is staying idle!
@@ -228,9 +230,22 @@ scheduler_pick_queue(struct scheduler_entry *se)
 		}
 		panic("%s: thread must be pinned to a real queue.", __func__);
 	}
+	if ((se->se_flags & SCHEDULER_RUNNING) != 0) {
+		ASSERT(se->se_queue != NULL, "Running thread needs a queue.");
+		SCHEDULER_UNLOCK();
+		return (se->se_queue);
+	}
 	winner = NULL;
 	TAILQ_FOREACH(sq, &scheduler_queue_list, sq_link) {
 		SQ_LOCK(sq);
+		/*
+		 * Don't use any queues other than this CPU's unless the CPU
+		 * has marked its queue as switchable.
+		 */
+		if (!sq->sq_switchable && sq != current_runq()) {
+			SQ_UNLOCK(sq);
+			continue;
+		}
 		if (winner == NULL) {
 			winner = sq;
 			continue;
@@ -357,7 +372,7 @@ scheduler_db_dump_queue(struct scheduler_queue *sq)
 
 		td = se->se_thread;
 
-		kcprintf("E%p => td=%p, %s\n", se, td, td->td_name);
+		kcprintf("E%p (flags %#x) => td=%p, %s\n", se, se->se_flags, td, td->td_name);
 	}
 }
 

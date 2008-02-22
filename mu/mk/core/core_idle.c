@@ -31,6 +31,7 @@ idle_thread_startup(void *arg)
 	if (error != 0)
 		panic("%s: thread_create failed: %m", __func__, error);
 	thread_set_upcall(td, idle_thread, NULL);
+	scheduler_cpu_pin(td);
 	scheduler_thread_runnable(td);
 }
 STARTUP_ITEM(idle_thread, STARTUP_IDLE, STARTUP_CPU, idle_thread_startup, NULL);

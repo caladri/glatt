@@ -2,10 +2,6 @@ This single-image thing seems kind of problematic.  Next up needs to be an
 asymmetric rewrite, I think, with each CPU having its own data structures and
 them having to do inter-host IPC.
 
-Without the main thread construct, the run queue of a CPU can get other threads
-on it before its startup thread, which is no good.  Need to figure out some
-better solution.
-
 Should just create an ipc_process thread at STARTUP_MAIN:STARTUP_BEFORE, rather
 than having the startup thread become ipc_process, but that requires per-cpu
 startup items.

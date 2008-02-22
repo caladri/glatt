@@ -45,7 +45,6 @@ scheduler_cpu_pin(struct thread *td)
 	       "Can't pin thread twice.");
 	se->se_flags |= SCHEDULER_PINNED;
 	se->se_oncpu = mp_whoami();
-	scheduler_queue_insert(current_runq(), se);
 	SCHEDULER_UNLOCK();
 }
 
@@ -125,6 +124,8 @@ scheduler_thread_runnable(struct thread *td)
 
 	SCHEDULER_LOCK();
 	se = &td->td_sched;
+	se->se_flags |= SCHEDULER_RUNNABLE;
+	se->se_flags &= ~SCHEDULER_SLEEPING;
 	scheduler_queue(NULL, se);
 	SCHEDULER_UNLOCK();
 }
@@ -152,6 +153,8 @@ scheduler_thread_sleeping(struct thread *td)
 
 	SCHEDULER_LOCK();
 	se = &td->td_sched;
+	se->se_flags &= ~SCHEDULER_RUNNABLE;
+	se->se_flags |= SCHEDULER_SLEEPING;
 	SQ_LOCK(&scheduler_sleep_queue);
 	scheduler_queue(&scheduler_sleep_queue, se);
 	SQ_UNLOCK(&scheduler_sleep_queue);
@@ -167,7 +170,8 @@ scheduler_pick_entry(struct scheduler_queue *sq)
 
 	winner = NULL;
 	TAILQ_FOREACH(se, &sq->sq_queue, se_link) {
-		if ((se->se_flags & SCHEDULER_RUNNING) != 0)
+		if ((se->se_flags & SCHEDULER_RUNNABLE) == 0 ||
+		    (se->se_flags & SCHEDULER_RUNNING) != 0)
 			continue;
 		winner = se;
 		break;
@@ -311,6 +315,11 @@ scheduler_switch(struct thread *td)
 	otd = current_thread();
 	se = &td->td_sched;
 
+	ASSERT((se->se_flags & SCHEDULER_SLEEPING) == 0,
+	       "Cannot switch to sleeping thread.");
+	ASSERT((se->se_flags & SCHEDULER_RUNNABLE) != 0,
+	       "Cannot switch to non-runnable thread.");
+
 	if (otd != NULL) {
 		struct scheduler_entry *ose;
 
@@ -330,6 +339,7 @@ scheduler_switch(struct thread *td)
 			panic("%s: cannot migrate pinned thread.", __func__);
 	}
 	se->se_flags |= SCHEDULER_RUNNING;
+	se->se_flags &= ~SCHEDULER_RUNNABLE;
 	se->se_oncpu = mp_whoami();
 	SCHEDULER_UNLOCK();
 	if (otd != td)

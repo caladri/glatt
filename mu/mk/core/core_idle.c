@@ -10,6 +10,7 @@ static void
 idle_thread(void *arg)
 {
 	for (;;) {
+		scheduler_thread_runnable(current_thread());
 		scheduler_schedule();
 	}
 }

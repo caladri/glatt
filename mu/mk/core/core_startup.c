@@ -61,16 +61,16 @@ startup_main(void)
 			      THREAD_DEFAULT);
 	if (error != 0)
 		panic("%s: thread_create failed: %m", __func__, error);
-	scheduler_cpu_pin(td);
-
-	spinlock_unlock(&startup_spinlock);
-
 	if (bootstrap)
 		thread_set_upcall(td, cpu_startup_thread,
 				  (void *)(uintptr_t)startup_boot_thread);
 	else
 		thread_set_upcall(td, cpu_startup_thread,
 				  (void *)(uintptr_t)startup_main_thread);
+	scheduler_cpu_pin(td);
+	scheduler_thread_runnable(td);
+	spinlock_unlock(&startup_spinlock);
+
 	scheduler_schedule();
 }
 

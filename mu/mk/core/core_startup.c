@@ -93,10 +93,13 @@ startup_boot_thread(void *arg)
 	struct startup_item **itemp, *item, *ip;
 	static TAILQ_HEAD(, struct startup_item) sorted_items;
 
+	TAILQ_INIT(&sorted_items);
+
 #ifdef	VERBOSE
 	kcprintf("STARTUP: The system is coming up.\n");
 #endif
 
+	spinlock_lock(&startup_spinlock);
 	for (itemp = SET_BEGIN(startup_items); itemp < SET_END(startup_items);
 	     itemp++) {
 		item = *itemp;
@@ -125,7 +128,6 @@ next:		continue;
 	/*
 	 * Don't let other threads run until we're done starting up.
 	 */
-	spinlock_lock(&startup_spinlock);
 	TAILQ_FOREACH(item, &sorted_items, si_link)
 		item->si_function(item->si_arg);
 	ASSERT(false, "Must not be reached.");
@@ -135,10 +137,12 @@ static void
 startup_main_thread(void *arg)
 {
 	struct startup_item **itemp, *item, *ip;
-	static TAILQ_HEAD(, struct startup_item) sorted_items;
+	TAILQ_HEAD(, struct startup_item) sorted_items;
 	struct spinlock *lock;
 
 	lock = arg;
+
+	TAILQ_INIT(&sorted_items);
 
 	/*
 	 * The boot thread will come here and need to unlock the startup
@@ -151,6 +155,7 @@ startup_main_thread(void *arg)
 	kcprintf("STARTUP: cpu%u starting main thread.\n", mp_whoami());
 #endif
 
+	spinlock_lock(&startup_spinlock);
 	for (itemp = SET_BEGIN(startup_items); itemp < SET_END(startup_items);
 	     itemp++) {
 		item = *itemp;
@@ -179,6 +184,7 @@ next:		continue;
 	/* Initialize per-CPU structures.  */
 	TAILQ_FOREACH(item, &sorted_items, si_link)
 		item->si_function(item->si_arg);
+	spinlock_unlock(&startup_spinlock);
 
 	/*
 	 * Threaded initialialization complete, the scheduler may run other

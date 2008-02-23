@@ -1,3 +1,12 @@
+Rewrite:
+	1) Driver/device system.  Perhaps a bus/device split is about due?
+		o) Device/bus methods for resource management.
+			o) Interrupt reservation.
+			o) DMA
+		o) Give the bus some control over child attachment.
+		o) Hints and static configuration sorts of things.
+	2) Scheduler.  The current stuff seems too convoluted?
+
 This single-image thing seems kind of problematic.  Next up needs to be an
 asymmetric rewrite, I think, with each CPU having its own data structures and
 them having to do inter-host IPC.

@@ -40,9 +40,9 @@ test_ipc_send(struct test_private *priv, struct ipc_header *rx)
 	hdr.ipchdr_type = rx == NULL ? priv->i : priv->last;
 	hdr.ipchdr_len = 0;
 
-	error = ipc_port_send(&hdr, NULL);
+	error = ipc_send(&hdr, NULL);
 	if (error != 0)
-		panic("%s: ipc_port_send failed: %m", __func__, error);
+		panic("%s: ipc_send failed: %m", __func__, error);
 }
 
 static void

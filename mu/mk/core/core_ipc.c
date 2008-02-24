@@ -7,6 +7,25 @@
 #include <core/startup.h>
 #include <core/thread.h>
 
+struct ipc_port {
+	struct mutex ipcp_mutex;
+	ipc_port_t ipcp_port;
+	TAILQ_HEAD(, struct ipc_message) ipcp_msgs;
+	TAILQ_ENTRY(struct ipc_port) ipcp_link;
+};
+
+struct ipc_message {
+	struct ipc_header ipcmsg_header;
+	struct ipc_data ipcmsg_data;
+	TAILQ_ENTRY(struct ipc_message) ipcmsg_link;
+};
+
+struct ipc_queue {
+	struct mutex ipcq_mutex;
+	TAILQ_ENTRY(struct ipc_queue) ipcq_link;
+	TAILQ_HEAD(, struct ipc_message) ipcq_msgs;
+};
+
 static TAILQ_HEAD(, struct ipc_port) ipc_ports;
 static struct mutex ipc_ports_lock;
 static struct pool ipc_port_pool;

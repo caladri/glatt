@@ -14,13 +14,6 @@ typedef	uint64_t	ipc_size_t;
 #define	IPC_PORT_UNRESERVED_START	(100)
 #define	IPC_PORT_UNRESERVED_END		((ipc_port_t)1 << ((8 * sizeof (ipc_port_t)) - 1))
 
-struct ipc_port {
-	struct mutex ipcp_mutex;
-	ipc_port_t ipcp_port;
-	TAILQ_HEAD(, struct ipc_message) ipcp_msgs;
-	TAILQ_ENTRY(struct ipc_port) ipcp_link;
-};
-
 struct ipc_header {
 	ipc_port_t ipchdr_src;
 	ipc_port_t ipchdr_dst;
@@ -30,18 +23,6 @@ struct ipc_header {
 
 struct ipc_data {
 	int dummy;
-};
-
-struct ipc_message {
-	struct ipc_header ipcmsg_header;
-	struct ipc_data ipcmsg_data;
-	TAILQ_ENTRY(struct ipc_message) ipcmsg_link;
-};
-
-struct ipc_queue {
-	struct mutex ipcq_mutex;
-	TAILQ_ENTRY(struct ipc_queue) ipcq_link;
-	TAILQ_HEAD(, struct ipc_message) ipcq_msgs;
 };
 
 void ipc_init(void);

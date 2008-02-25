@@ -30,14 +30,14 @@ test_ipc_status(void)
 }
 
 static void
-test_ipc_send(struct test_private *priv, struct ipc_header *rx)
+test_ipc_send(struct test_private *priv, int type)
 {
 	struct ipc_header hdr;
 	int error;
 
 	hdr.ipchdr_src = priv->receive;
 	hdr.ipchdr_dst = priv->send;
-	hdr.ipchdr_type = rx == NULL ? priv->i : priv->last;
+	hdr.ipchdr_type = type;
 	hdr.ipchdr_len = 0;
 
 	error = ipc_send(&hdr, NULL);
@@ -61,8 +61,6 @@ test_ipc_receive(struct test_private *priv, struct ipc_header *rx)
 	}
 	if (rx->ipchdr_dst != priv->receive)
 		panic("%s: incorrect destination.", __func__);
-
-	priv->last = rx->ipchdr_type;
 }
 
 static void
@@ -70,22 +68,27 @@ test_ipc_thread(void *arg)
 {
 	struct test_private *priv = arg;
 	struct ipc_header rx;
+	bool send;
 
 	ASSERT(priv->td == current_thread(), "Must be on right thread.");
 
-	priv->last = -1;
+	priv->last = priv->i;
 
-	/*
-	 * XXX
-	 * Modify so there's one message in flight at a time.
-	 */
-	test_ipc_send(priv, NULL);
-
+	if (priv->i == 0) {
+		test_ipc_send(priv, priv->i);
+		send = false;
+	}
 	for (;;) {
 		if (priv->i == 0)
 			test_ipc_status();
 		test_ipc_receive(priv, &rx);
-		test_ipc_send(priv, &rx);
+		if (priv->i == 0) {
+			priv->last = rx.ipchdr_type;
+			test_ipc_send(priv, priv->last);
+		} else {
+			test_ipc_send(priv, priv->last);
+			priv->last = rx.ipchdr_type;
+		}
 	}
 }
 

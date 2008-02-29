@@ -5,6 +5,7 @@
 #include <core/string.h>
 #include <db/db.h>
 #include <io/device/bus.h>
+#include <io/device/bus_internal.h>
 #include <io/device/console/console.h>
 
 struct bus_instance;
@@ -29,39 +30,14 @@ SET(bus_attachments, struct bus_attachment);
 static struct bus *bus_root;
 
 static int bus_create(struct bus **, struct bus_attachment *);
-static int bus_find(struct bus **, const char *);
 static int bus_link(struct bus_attachment *);
 
-static int bus_instance_create(struct bus_instance **, struct bus_instance *, struct bus_attachment *);
+static int bus_attachment_find(struct bus_attachment **, struct bus *, struct bus *);
 
-static int
-bus_create(struct bus **busp, struct bus_attachment *attachment)
-{
-	struct bus *bus;
-	int error;
+static void bus_instance_print(struct bus_instance *);
 
-	ASSERT(attachment->ba_bus == NULL,
-	       "An attachment can belong to only one bus.");
-
-	error = bus_find(&bus, attachment->ba_name);
-	if (error != 0) {
-		if (error != ERROR_NOT_FOUND)
-			return (error);
-		bus = pool_allocate(&bus_pool);
-		bus->bus_name = attachment->ba_name;
-		STAILQ_INIT(&bus->bus_attachments);
-		STAILQ_INIT(&bus->bus_instances);
-		STAILQ_INIT(&bus->bus_children);
-	}
-	attachment->ba_bus = bus;
-	STAILQ_INSERT_TAIL(&bus->bus_attachments, attachment, ba_link);
-	if (busp != NULL)
-		*busp = bus;
-	return (0);
-}
-
-static int
-bus_find(struct bus **busp, const char *name)
+int
+bus_lookup(struct bus **busp, const char *name)
 {
 	struct bus_attachment **attachmentp;
 
@@ -77,6 +53,100 @@ bus_find(struct bus **busp, const char *name)
 		return (0);
 	}
 	return (ERROR_NOT_FOUND);
+}
+
+int
+bus_instance_create(struct bus_instance **bip, struct bus_instance *parent,
+		    struct bus *bus)
+{
+	struct bus_attachment *attachment;
+	struct bus_instance *bi;
+	struct bus *parentbus;
+	int error;
+
+	parentbus = parent == NULL ? NULL : parent->bi_attachment->ba_bus;
+	error = bus_attachment_find(&attachment, parentbus, bus);
+	if (error != 0)
+		return (error);
+
+	ASSERT(parent != NULL || attachment->ba_parent == NULL,
+	       "Must have a parent unless this attachment doesn't.");
+
+	bi = pool_allocate(&bus_instance_pool);
+	bi->bi_parent = parent;
+	bi->bi_attachment = attachment;
+	STAILQ_INSERT_TAIL(&attachment->ba_bus->bus_instances, bi, bi_link);
+	if (bip != NULL)
+		*bip = bi;
+	return (0);
+}
+
+/*
+ * XXX Make sure there are no children.
+ */
+void
+bus_instance_destroy(struct bus_instance *bi)
+{
+	struct bus *bus;
+
+	bus = bi->bi_attachment->ba_bus;
+	STAILQ_REMOVE(&bus->bus_instances, bi, struct bus_instance, bi_link);
+	pool_free(bi);
+	panic("%s: should not be called yet.", __func__);
+}
+
+void
+bus_instance_printf(struct bus_instance *bi, const char *fmt, ...)
+{
+	va_list ap;
+
+	bus_instance_print(bi);
+	kcprintf(": ");
+	va_start(ap, fmt);
+	kcvprintf(fmt, ap);
+	va_end(ap);
+}
+
+int
+bus_instance_setup(struct bus_instance *bi, void *busdata)
+{
+	int error;
+
+	error = bi->bi_attachment->ba_interface->bus_setup(bi, busdata);
+	if (error != 0)
+		return (error);
+	bus_instance_printf(bi, "setup complete.\n");
+	error = bi->bi_attachment->ba_interface->bus_enumerate_children(bi);
+	if (error != 0) {
+		kcprintf("bus_enumerate_children: %m\n", error);
+	}
+	return (0);
+}
+
+static int
+bus_create(struct bus **busp, struct bus_attachment *attachment)
+{
+	struct bus *bus;
+	int error;
+
+	ASSERT(attachment->ba_bus == NULL,
+	       "An attachment can belong to only one bus.");
+
+	error = bus_lookup(&bus, attachment->ba_name);
+	if (error != 0) {
+		if (error != ERROR_NOT_FOUND)
+			return (error);
+		bus = pool_allocate(&bus_pool);
+		bus->bus_name = attachment->ba_name;
+		STAILQ_INIT(&bus->bus_attachments);
+		STAILQ_INIT(&bus->bus_instances);
+		STAILQ_INIT(&bus->bus_children);
+	}
+	attachment->ba_bus = bus;
+	STAILQ_INSERT_TAIL(&bus->bus_attachments, attachment, ba_link);
+	if (busp != NULL)
+		*busp = bus;
+	return (0);
 }
 
 static int
@@ -97,7 +167,7 @@ bus_link(struct bus_attachment *attachment)
 		return (0);
 	}
 
-	error = bus_find(&parent, attachment->ba_parent);
+	error = bus_lookup(&parent, attachment->ba_parent);
 	if (error != 0)
 		panic("%s: cannot find parent bus.", __func__);
 	kcprintf("bus attachment %s/%s will be able to connect to bus %s\n",
@@ -108,30 +178,46 @@ bus_link(struct bus_attachment *attachment)
 }
 
 static int
-bus_instance_create(struct bus_instance **bip, struct bus_instance *parent,
-		    struct bus_attachment *attachment)
+bus_attachment_find(struct bus_attachment **attachment2p, struct bus *parent,
+		    struct bus *child)
 {
-	struct bus_instance *bi;
-	int error;
+	struct bus_attachment **attachmentp;
 
-	ASSERT(parent != NULL || attachment->ba_parent == NULL,
-	       "Must have a parent unless this attachment doesn't.");
+	for (attachmentp = SET_BEGIN(bus_attachments);
+	     attachmentp < SET_END(bus_attachments); attachmentp++) {
+		struct bus_attachment *attachment = *attachmentp;
 
-	if (attachment->ba_parent != NULL) {
-		struct bus *parentbus;
+		if (attachment->ba_bus == NULL) {
+			if (strcmp(attachment->ba_name, child->bus_name) != 0)
+				continue;
+		} else {
+			if (attachment->ba_bus != child)
+				continue;
+		}
 
-		error = bus_find(&parentbus, attachment->ba_parent);
-		if (error != 0)
-			return (error);
-		if (parentbus != parent->bi_attachment->ba_bus)
-			return (ERROR_INVALID);
+		if (parent != NULL) {
+			if (strcmp(attachment->ba_parent, parent->bus_name) != 0)
+				continue;
+		} else {
+			if (attachment->ba_parent != NULL)
+				continue;
+		}
+
+		*attachment2p = attachment;
+		return (0);
 	}
+	return (ERROR_NOT_FOUND);
+}
 
-	bi = pool_allocate(&bus_instance_pool);
-	bi->bi_parent = parent;
-	bi->bi_attachment = attachment;
-	STAILQ_INSERT_TAIL(&attachment->ba_bus->bus_instances, bi, bi_link);
-	return (0);
+static void
+bus_instance_print(struct bus_instance *bi)
+{
+	/* XXX Unit numbers, or similar.  */
+	kcprintf("%s,%p", bi->bi_attachment->ba_bus->bus_name, bi);
+	if (bi->bi_parent != NULL) {
+		kcprintf("@");
+		bus_instance_print(bi->bi_parent);
+	}
 }
 
 static void
@@ -192,9 +278,12 @@ bus_enumerate(void *arg)
 
 	ASSERT(bus_root != NULL, "Must have a root bus!");
 
-	error = bus_instance_create(&bi, NULL,
-				    STAILQ_FIRST(&bus_root->bus_attachments));
+	error = bus_instance_create(&bi, NULL, bus_root);
 	if (error != 0)
 		panic("%s: bus_instance_create failed: %m", __func__, error);
+
+	error = bus_instance_setup(bi, NULL);
+	if (error != 0)
+		panic("%s: bus_instance_setup failed: %m", __func__, error);
 }
 STARTUP_ITEM(bus_enumerate, STARTUP_DRIVERS, STARTUP_FIRST, bus_enumerate, NULL);

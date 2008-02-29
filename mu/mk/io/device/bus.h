@@ -23,6 +23,7 @@ struct bus_resource {
 struct bus_interface {
 	int (*bus_enumerate_children)(struct bus_instance *);
 	int (*bus_resource_manage)(struct bus_instance *, struct bus_resource *, size_t);
+	int (*bus_setup)(struct bus_instance *, void *);
 };
 
 struct bus_attachment {
@@ -45,5 +46,7 @@ struct bus_attachment {
 		.ba_interface = &__bus_interface_ ## ifname,		\
 	};								\
 	SET_ADD(bus_attachments, __bus_attachment_ ## bus)
+
+int bus_enumerate_child(struct bus_instance *, const char *, void *);
 
 #endif /* !_IO_DEVICE_BUS_H_ */

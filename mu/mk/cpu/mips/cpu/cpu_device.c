@@ -7,8 +7,6 @@
 #include <io/device/device.h>
 #include <io/device/driver.h>
 
-DB_SHOW_TREE(cpu, cpu, true);
-
 static int
 cpu_probe(struct device *device)
 {

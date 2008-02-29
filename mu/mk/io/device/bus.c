@@ -19,6 +19,9 @@ bus_enumerate_child(struct bus_instance *bi, const char *class, void *busdata)
 	struct bus *bus;
 	int error;
 
+	if (strcmp("root", class) == 0)
+		return (ERROR_NOT_PERMITTED);
+
 	error = bus_lookup(&bus, class);
 	if (error != 0) {
 		/*

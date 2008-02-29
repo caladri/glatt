@@ -42,3 +42,14 @@ bus_enumerate_child(struct bus_instance *bi, const char *class, void *busdata)
 
 	return (0);
 }
+
+int
+bus_enumerate_children(struct bus_instance *bi)
+{
+	int error;
+
+	error = bus_instance_enumerate_children(bi);
+	if (error != 0)
+		return (error);
+	return (0);
+}

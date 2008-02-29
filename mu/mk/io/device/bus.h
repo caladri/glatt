@@ -48,5 +48,6 @@ struct bus_attachment {
 	SET_ADD(bus_attachments, __bus_attachment_ ## bus)
 
 int bus_enumerate_child(struct bus_instance *, const char *, void *);
+int bus_enumerate_children(struct bus_instance *);
 
 #endif /* !_IO_DEVICE_BUS_H_ */

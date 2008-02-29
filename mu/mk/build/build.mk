@@ -1,4 +1,4 @@
-# $Id: build.mk,v 1.41 2008-02-29 09:35:49 juli Exp $
+# $Id: build.mk,v 1.42 2008-02-29 20:57:52 juli Exp $
 
 .PATH: ${KERNEL_ROOT}/core
 .PATH: ${KERNEL_ROOT}/db
@@ -40,6 +40,7 @@ KERNEL_SOURCES+=db_show.c
 # io/device
 KERNEL_SOURCES+=bus.c
 KERNEL_SOURCES+=bus_internal.c
+KERNEL_SOURCES+=bus_leaf.c
 KERNEL_SOURCES+=bus_root.c
 .if defined(OLDDRIVER)
 KERNEL_SOURCES+=device.c

@@ -95,6 +95,25 @@ bus_instance_destroy(struct bus_instance *bi)
 	panic("%s: should not be called yet.", __func__);
 }
 
+int
+bus_instance_enumerate_children(struct bus_instance *bi)
+{
+	struct bus_attachment *attachment;
+	struct bus *bus;
+	int error;
+
+	bus = bi->bi_attachment->ba_bus;
+
+	STAILQ_FOREACH(attachment, &bus->bus_children, ba_peers) {
+		error = bus_enumerate_child(bi, attachment->ba_bus->bus_name,
+					    NULL);
+		if (error != 0) {
+			bus_instance_printf(bi, "bus_enumerate_child (%s) failed: %m", attachment->ba_bus->bus_name);
+		}
+	}
+	return (0);
+}
+
 void
 bus_instance_printf(struct bus_instance *bi, const char *fmt, ...)
 {
@@ -160,10 +179,13 @@ bus_link(struct bus_attachment *attachment)
 	bus = attachment->ba_bus;
 
 	if (attachment->ba_parent == NULL) {
-		ASSERT(bus == bus_root,
-		       "Only root bus may not have a parent.");
-		kcprintf("bus attachment %s/%s will be root bus\n",
-			 attachment->ba_parent, attachment->ba_name);
+		if (bus == bus_root) {
+			kcprintf("bus attachment %s/%s will be root bus\n",
+				 attachment->ba_parent, attachment->ba_name);
+		} else {
+			kcprintf("bus attachment %s/%s will be a wildcard\n",
+				 attachment->ba_parent, attachment->ba_name);
+		}
 		return (0);
 	}
 
@@ -196,6 +218,8 @@ bus_attachment_find(struct bus_attachment **attachment2p, struct bus *parent,
 		}
 
 		if (parent != NULL) {
+			if (attachment->ba_parent == NULL)
+				continue;
 			if (strcmp(attachment->ba_parent, parent->bus_name) != 0)
 				continue;
 		} else {
@@ -203,6 +227,30 @@ bus_attachment_find(struct bus_attachment **attachment2p, struct bus *parent,
 				continue;
 		}
 
+		*attachment2p = attachment;
+		return (0);
+	}
+
+	if (parent == NULL)
+		return (ERROR_NOT_FOUND);
+
+	/*
+	 * Now look for a wildcard match.
+	 */
+	for (attachmentp = SET_BEGIN(bus_attachments);
+	     attachmentp < SET_END(bus_attachments); attachmentp++) {
+		struct bus_attachment *attachment = *attachmentp;
+
+		if (attachment->ba_bus == NULL) {
+			if (strcmp(attachment->ba_name, child->bus_name) != 0)
+				continue;
+		} else {
+			if (attachment->ba_bus != child)
+				continue;
+		}
+
+		if (attachment->ba_parent != NULL)
+			continue;
 		*attachment2p = attachment;
 		return (0);
 	}
@@ -241,7 +289,8 @@ bus_compile(void *arg)
 	     attachmentp < SET_END(bus_attachments); attachmentp++) {
 		struct bus_attachment *attachment = *attachmentp;
 
-		if (attachment->ba_parent == NULL) {
+		if (attachment->ba_parent == NULL &&
+		    strcmp(attachment->ba_name, "root") == 0) {
 			if (bus_root != NULL)
 				panic("%s: redundant root bus attachment.",
 				      __func__);

@@ -6,6 +6,11 @@
 static int
 root_enumerate_children(struct bus_instance *bi)
 {
+	int error;
+
+	error = bus_enumerate_children(bi);
+	if (error != 0)
+		return (error);
 	return (0);
 }
 

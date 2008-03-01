@@ -1,7 +1,6 @@
 #include <core/types.h>
 #include <core/mp.h>
 #include <core/spinlock.h>
-#include <core/startup.h>
 #include <cpu/pcpu.h>
 #include <db/db.h>
 #include <io/device/console/console.h>
@@ -75,12 +74,3 @@ panic(const char *s, ...)
 	}
 #endif
 }
-
-#if 0
-static void
-db_startup_panic(void *arg)
-{
-	panic("%s: panicking at startup because you want me to", __func__);
-}
-STARTUP_ITEM(panic, STARTUP_MAIN, STARTUP_BEFORE, db_startup_panic, NULL);
-#endif

@@ -1,6 +1,7 @@
 #include <core/types.h>
 #include <core/mp.h>
 #include <core/spinlock.h>
+#include <core/startup.h>
 #include <cpu/pcpu.h>
 #include <db/db.h>
 #include <io/device/console/console.h>

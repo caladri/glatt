@@ -9,8 +9,6 @@
 #include <io/device/bus_internal.h>
 #include <io/device/console/console.h>
 
-struct bus_instance;
-
 struct bus {
 	const char *bus_name;
 	STAILQ_HEAD(, struct bus_attachment) bus_attachments;
@@ -36,7 +34,9 @@ static int bus_link(struct bus_attachment *);
 
 static int bus_attachment_find(struct bus_attachment **, struct bus *, struct bus *);
 
+static void bus_instance_describe(struct bus_instance *);
 static void bus_instance_print(struct bus_instance *);
+static void bus_instance_printf(struct bus_instance *, const char *, ...);
 
 int
 bus_lookup(struct bus **busp, const char *name)
@@ -131,18 +131,6 @@ bus_instance_parent(struct bus_instance *bi)
 	return (bi->bi_parent);
 }
 
-void
-bus_instance_printf(struct bus_instance *bi, const char *fmt, ...)
-{
-	va_list ap;
-
-	bus_instance_print(bi);
-	kcprintf(": ");
-	va_start(ap, fmt);
-	kcvprintf(fmt, ap);
-	va_end(ap);
-}
-
 int
 bus_instance_setup(struct bus_instance *bi, void *busdata)
 {
@@ -151,11 +139,11 @@ bus_instance_setup(struct bus_instance *bi, void *busdata)
 	error = bi->bi_attachment->ba_interface->bus_setup(bi, busdata);
 	if (error != 0)
 		return (error);
-	bus_instance_printf(bi, "setup complete.\n");
+	bus_instance_describe(bi);
 	if (bi->bi_attachment->ba_interface->bus_enumerate_children != NULL) {
 		error = bi->bi_attachment->ba_interface->bus_enumerate_children(bi);
 		if (error != 0) {
-			kcprintf("bus_enumerate_children: %m\n", error);
+			bus_instance_printf(bi, "bus_enumerate_children: %m\n", error);
 		}
 	}
 	return (0);
@@ -174,6 +162,15 @@ bus_instance_softc_allocate(struct bus_instance *bi, size_t size)
 	ASSERT(bi->bi_softc == NULL, "Can't create two softcs.");
 	bi->bi_softc = malloc(size);
 	return (bi->bi_softc);
+}
+
+void
+bus_instance_vprintf(struct bus_instance *bi, const char *fmt, va_list ap)
+{
+	bus_instance_print(bi);
+	kcprintf(": ");
+	kcvprintf(fmt, ap);
+	kcprintf("\n");
 }
 
 static int
@@ -213,22 +210,12 @@ bus_link(struct bus_attachment *attachment)
 	bus = attachment->ba_bus;
 
 	if (attachment->ba_parent == NULL) {
-		if (bus == bus_root) {
-			kcprintf("bus attachment %s/%s will be root bus\n",
-				 attachment->ba_parent, attachment->ba_name);
-		} else {
-			kcprintf("bus attachment %s/%s will be a wildcard\n",
-				 attachment->ba_parent, attachment->ba_name);
-		}
 		return (0);
 	}
 
 	error = bus_lookup(&parent, attachment->ba_parent);
 	if (error != 0)
 		panic("%s: cannot find parent bus.", __func__);
-	kcprintf("bus attachment %s/%s will be able to connect to bus %s\n",
-		 attachment->ba_parent, attachment->ba_name, parent->bus_name);
-
 	STAILQ_INSERT_TAIL(&parent->bus_children, attachment, ba_peers);
 	return (0);
 }
@@ -292,14 +279,34 @@ bus_attachment_find(struct bus_attachment **attachment2p, struct bus *parent,
 }
 
 static void
+bus_instance_describe(struct bus_instance *bi)
+{
+	if (bi->bi_attachment->ba_interface->bus_describe == NULL) {
+		bus_instance_printf(bi, "<%m>", ERROR_NOT_IMPLEMENTED);
+		return;
+	}
+	bi->bi_attachment->ba_interface->bus_describe(bi);
+}
+
+static void
 bus_instance_print(struct bus_instance *bi)
 {
 	/* XXX Unit numbers, or similar.  */
-	kcprintf("%s,%p", bi->bi_attachment->ba_bus->bus_name, bi);
+	kcprintf("%s", bi->bi_attachment->ba_bus->bus_name);
 	if (bi->bi_parent != NULL) {
 		kcprintf("@");
 		bus_instance_print(bi->bi_parent);
 	}
+}
+
+static void
+bus_instance_printf(struct bus_instance *bi, const char *fmt, ...)
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+	bus_instance_vprintf(bi, fmt, ap);
+	va_end(ap);
 }
 
 static void

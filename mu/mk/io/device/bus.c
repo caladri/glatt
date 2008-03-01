@@ -69,6 +69,16 @@ bus_parent(struct bus_instance *bi)
 	return (bus_instance_parent(bi));
 }
 
+void
+bus_printf(struct bus_instance *bi, const char *fmt, ...)
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+	bus_instance_vprintf(bi, fmt, ap);
+	va_end(ap);
+}
+
 void *
 bus_softc(struct bus_instance *bi)
 {

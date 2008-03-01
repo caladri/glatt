@@ -3,6 +3,11 @@
 #include <db/db.h>
 #include <io/device/bus.h>
 
+static void
+root_describe(struct bus_instance *bi)
+{
+}
+
 static int
 root_enumerate_children(struct bus_instance *bi)
 {
@@ -21,6 +26,7 @@ root_setup(struct bus_instance *bi, void *busdata)
 }
 
 BUS_INTERFACE(rootif) {
+	.bus_describe = root_describe,
 	.bus_enumerate_children = root_enumerate_children,
 	.bus_setup = root_setup,
 };

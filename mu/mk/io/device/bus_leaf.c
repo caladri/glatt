@@ -6,6 +6,12 @@
 #include <io/device/device_internal.h>
 #include <io/device/leaf.h>
 
+static void
+leaf_describe(struct bus_instance *bi)
+{
+	bus_printf(bi, "<leaf device>");
+}
+
 static int
 leaf_enumerate_children(struct bus_instance *bi)
 {
@@ -33,6 +39,7 @@ leaf_setup(struct bus_instance *bi, void *busdata)
 }
 
 BUS_INTERFACE(leafif) {
+	.bus_describe = leaf_describe,
 	.bus_enumerate_children = leaf_enumerate_children,
 	.bus_setup = leaf_setup,
 };

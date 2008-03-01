@@ -1,16 +1,12 @@
-# $Id: cpu.mk,v 1.32 2008-02-29 09:35:49 juli Exp $
+# $Id: cpu.mk,v 1.33 2008-03-01 07:00:00 juli Exp $
 
 .PATH: ${CPU_ROOT}/cpu
 .PATH: ${CPU_ROOT}/page
 
 KERNEL_SOURCES+=cpu_context.S
-.if defined(OLDDRIVER)
 KERNEL_SOURCES+=cpu_clock_r4k.c
-.endif
 KERNEL_SOURCES+=cpu_critical.c
-.if defined(OLDDRIVER)
 KERNEL_SOURCES+=cpu_device.c
-.endif
 KERNEL_SOURCES+=cpu_exception.c
 KERNEL_SOURCES+=cpu_identify.c
 KERNEL_SOURCES+=cpu_interrupt.c

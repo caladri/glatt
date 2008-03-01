@@ -8,8 +8,8 @@ enum startup_component {
 	STARTUP_PMAP,			/* Late-stage pmap setup.  */
 	STARTUP_POOL,			/* Setup pools for later startup.  */
 	STARTUP_ROOT,			/* Attach root device.  */
-	STARTUP_MP,			/* Start up multiprocessor.  */
 	STARTUP_DRIVERS,		/* Register device drivers.  */
+	STARTUP_MP,			/* Start up multiprocessor.  */
 	STARTUP_MAIN,			/* Enter main loop.  */
 
 	/* These are only used for per-CPU initialization.  */

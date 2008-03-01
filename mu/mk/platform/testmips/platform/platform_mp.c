@@ -10,9 +10,8 @@
 #include <cpu/pcpu.h>
 #include <cpu/tlb.h>
 #include <db/db.h>
+#include <io/device/bus.h>
 #include <io/device/console/console.h>
-#include <io/device/device.h>
-#include <io/device/driver.h>
 #include <vm/page.h>
 #include <vm/vm.h>
 
@@ -37,9 +36,8 @@
 
 #define	TEST_MP_DEV_IPI_INTERRUPT	(6)
 
-static struct device *platform_mp_bus;
+static struct bus_instance *platform_mp_bus;
 
-static void platform_mp_attach_bus(void);
 static void platform_mp_attach_cpu(bool);
 static void platform_mp_ipi_interrupt(void *, int);
 static void platform_mp_start_one(cpu_id_t, void (*)(void));
@@ -124,11 +122,11 @@ platform_mp_start_all(void *arg)
 	cpu_id_t cpu;
 	uint64_t ncpus;
 
-	platform_mp_attach_bus();
-
 	ncpus = mp_ncpus();
 	if (ncpus > MAXCPUS) {
+#if 0
 		device_printf(platform_mp_bus, "Warning: system limit is %u CPUs, but there are %u attached!\n", MAXCPUS, ncpus);
+#endif
 		ncpus = MAXCPUS;
 	}
 
@@ -182,24 +180,8 @@ platform_mp_start_one(cpu_id_t cpu, void (*startup)(void))
 }
 
 static void
-platform_mp_attach_bus(void)
-{
-	struct driver *driver;
-	int error;
-
-	ASSERT(platform_mp_bus == NULL, "can only attach mp bus once.");
-
-	driver = driver_lookup("mp");
-	error = device_create(&platform_mp_bus, NULL, driver);
-	if (error != 0)
-		panic("%s: device create failed: %m", __func__, error);
-}
-
-static void
 platform_mp_attach_cpu(bool bootstrap)
 {
-	struct device *device;
-	struct driver *driver;
 	int error;
 
 	ASSERT(platform_mp_bus != NULL, "need mp bus to attach CPUs.");
@@ -207,10 +189,9 @@ platform_mp_attach_cpu(bool bootstrap)
 	if (bootstrap)
 		PCPU_SET(flags, PCPU_GET(flags) | PCPU_FLAG_BOOTSTRAP);
 
-	driver = driver_lookup("cpu");
-	error = device_create(&device, platform_mp_bus, driver);
+	error = bus_enumerate_child(platform_mp_bus, "cpu", NULL);
 	if (error != 0)
-		panic("%s: device create failed: %m", __func__, error);
+		panic("%s: bus_enumerate_child failed: %m", __func__, error);
 
 	/* Install an IPI interrupt handler.  */
 	cpu_interrupt_establish(TEST_MP_DEV_IPI_INTERRUPT,
@@ -218,17 +199,27 @@ platform_mp_attach_cpu(bool bootstrap)
 }
 
 static int
-platform_mp_attach(struct device *device)
+platform_mp_setup(struct bus_instance *bi, void *busdata)
 {
 	uint64_t ncpus;
 
+	ASSERT(platform_mp_bus == NULL,
+	       "Can only have one mp instance.");
 	ncpus = TEST_MP_DEV_READ(TEST_MP_DEV_NCPUS);
+#if 0
 	if (ncpus == 1)
-		device_printf(device, "uniprocessor system.");
+		bus_printf(device, "uniprocessor system.");
 	else
-		device_printf(device, "multiprocessor system with %lu CPUs.",
-			      ncpus);
+		bus_printf(device, "multiprocessor system with %lu CPUs.",
+			   ncpus);
+#else
+	kcprintf("%lu CPUs.\n", ncpus);
+#endif
+	platform_mp_bus = bi;
 	return (0);
 }
 
-DRIVER(mp, "GXemul testmips multiprocessor bus", NULL, DRIVER_FLAG_DEFAULT, NULL, platform_mp_attach);
+BUS_INTERFACE(mpif) {
+	.bus_setup = platform_mp_setup,
+};
+BUS_ATTACHMENT(mp, "root", mpif);

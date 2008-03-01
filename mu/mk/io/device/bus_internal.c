@@ -114,6 +114,18 @@ bus_instance_enumerate_children(struct bus_instance *bi)
 	return (0);
 }
 
+const char *
+bus_instance_name(struct bus_instance *bi)
+{
+	return (bi->bi_attachment->ba_name);
+}
+
+struct bus_instance *
+bus_instance_parent(struct bus_instance *bi)
+{
+	return (bi->bi_parent);
+}
+
 void
 bus_instance_printf(struct bus_instance *bi, const char *fmt, ...)
 {
@@ -135,9 +147,11 @@ bus_instance_setup(struct bus_instance *bi, void *busdata)
 	if (error != 0)
 		return (error);
 	bus_instance_printf(bi, "setup complete.\n");
-	error = bi->bi_attachment->ba_interface->bus_enumerate_children(bi);
-	if (error != 0) {
-		kcprintf("bus_enumerate_children: %m\n", error);
+	if (bi->bi_attachment->ba_interface->bus_enumerate_children != NULL) {
+		error = bi->bi_attachment->ba_interface->bus_enumerate_children(bi);
+		if (error != 0) {
+			kcprintf("bus_enumerate_children: %m\n", error);
+		}
 	}
 	return (0);
 }

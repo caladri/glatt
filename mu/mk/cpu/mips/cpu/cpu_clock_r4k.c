@@ -4,9 +4,9 @@
 #include <cpu/cpu.h>
 #include <cpu/interrupt.h>
 #include <cpu/pcpu.h>
+#include <db/db.h>
 #include <io/device/console/console.h>
 #include <io/device/device.h>
-#include <io/device/driver.h>
 #include <platform/clock.h>
 
 #define	CLOCK_HZ	(100)
@@ -27,8 +27,11 @@ clock_r4k_interrupt(void *arg, int interrupt)
 	ASSERT(interrupt == CLOCK_INTERRUPT, "stray interrupt");
 
 	device = arg;
-	ASSERT(device->d_parent->d_unit == mp_whoami(), "on wrong CPU");
+#if 0
 	csc = device->d_softc;
+#else
+	csc = NULL;
+#endif
 
 	count = cpu_read_count();
 	if (count < csc->csc_last_count) {
@@ -45,16 +48,7 @@ clock_r4k_interrupt(void *arg, int interrupt)
 }
 
 static int
-clock_r4k_probe(struct device *device)
-{
-	ASSERT(device->d_unit == -1, "Must not have a unit number.");
-	device->d_unit = device->d_parent->d_unit;
-
-	return (0);
-}
-
-static int
-clock_r4k_attach(struct device *device)
+clock_r4k_setup(struct device *device, void *busdata)
 {
 	struct clock_r4k_softc *csc;
 	unsigned cycles;
@@ -67,9 +61,15 @@ clock_r4k_attach(struct device *device)
 	csc->csc_cycles_per_hz = cycles;
 	csc->csc_last_count = cpu_read_count();
 
+#if 0
 	device->d_softc = csc;
+#endif
 
+#if 0
 	device_printf(device, "%u cycles/second (running at %uhz)",
+#else
+	kcprintf("%u cycles/second (running at %uhz)\n",
+#endif
 		      csc->csc_cycles_per_hz * CLOCK_HZ, CLOCK_HZ);
 	cpu_interrupt_establish(CLOCK_INTERRUPT, clock_r4k_interrupt, device);
 	cpu_write_compare(csc->csc_last_count + csc->csc_cycles_per_hz);
@@ -77,5 +77,7 @@ clock_r4k_attach(struct device *device)
 	return (0);
 }
 
-DRIVER(clock_r4k, "MIPS R4000-style clock", NULL, DRIVER_FLAG_DEFAULT | DRIVER_FLAG_PROBE_UNIT, clock_r4k_probe, clock_r4k_attach);
-DRIVER_ATTACHMENT(clock_r4k, "cpu");
+DEVICE_INTERFACE(clockif) {
+	.device_setup = clock_r4k_setup,
+};
+DEVICE_ATTACHMENT(clock_r4k, "cpu", clockif);

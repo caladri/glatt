@@ -56,3 +56,15 @@ bus_enumerate_children(struct bus_instance *bi)
 		return (error);
 	return (0);
 }
+
+const char *
+bus_name(struct bus_instance *bi)
+{
+	return (bus_instance_name(bi));
+}
+
+struct bus_instance *
+bus_parent(struct bus_instance *bi)
+{
+	return (bus_instance_parent(bi));
+}

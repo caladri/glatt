@@ -6,7 +6,6 @@
 #include <cpu/interrupt.h>
 #include <cpu/memory.h>
 #include <io/device/device.h>
-#include <io/device/driver.h>
 
 #include <io/device/console/console.h>
 
@@ -40,39 +39,14 @@ struct tmether_softc {
 #define	TMETHER_LOCK(sc)	spinlock_lock(&(sc)->sc_lock)
 #define	TMETHER_UNLOCK(sc)	spinlock_unlock(&(sc)->sc_lock)
 
-static int tmether_init(struct tmether_softc *);
 static void tmether_interrupt(void *, int);
 
 static int
-tmether_probe(struct device *device)
-{
-	if (device->d_unit != 0)
-		return (ERROR_NOT_FOUND);
-	return (0);
-}
-
-static int
-tmether_attach(struct device *device)
+tmether_setup(struct device *device, void *busdata)
 {
 	struct tmether_softc *sc;
-	int error;
 
-	sc = malloc(sizeof *sc);
-
-	device->d_softc = sc;
-
-	error = tmether_init(sc);
-	if (error != 0) {
-		free(sc);
-		return (error);
-	}
-
-	return (0);
-}
-
-static int
-tmether_init(struct tmether_softc *sc)
-{
+	sc = device_softc_allocate(device, sizeof *sc);
 	spinlock_init(&sc->sc_lock, "testmips ethernet");
 	TMETHER_LOCK(sc);
 	cpu_interrupt_establish(TEST_ETHER_DEV_IRQ, tmether_interrupt, sc);
@@ -100,5 +74,7 @@ tmether_interrupt(void *arg, int interrupt)
 	TMETHER_UNLOCK(sc);
 }
 
-DRIVER(tmether, "testmips ethernet", NULL, DRIVER_FLAG_DEFAULT, tmether_probe, tmether_attach);
-DRIVER_ATTACHMENT(tmether, "mpbus");
+DEVICE_INTERFACE(tmetherif) {
+	.device_setup = tmether_setup,
+};
+DEVICE_ATTACHMENT(tmether, "mpbus", tmetherif);

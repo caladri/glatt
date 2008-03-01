@@ -17,6 +17,9 @@ cpu_enumerate_children(struct bus_instance *bi)
 	if (error != 0)
 		return (error);
 
+	if ((PCPU_GET(flags) & PCPU_FLAG_BOOTSTRAP) == 0) {
+		bus_enumerate_child(bi, "cpu_bp", NULL);
+	}
 	return (0);
 }
 

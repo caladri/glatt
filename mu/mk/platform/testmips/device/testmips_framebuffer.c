@@ -4,7 +4,6 @@
 #include <core/string.h>
 #include <cpu/memory.h>
 #include <io/device/device.h>
-#include <io/device/driver.h>
 #include <io/device/console/framebuffer.h>
 
 static void
@@ -20,23 +19,17 @@ static struct framebuffer tmfb_softc = {
 };
 
 static int
-tmfb_probe(struct device *device)
+tmfb_setup(struct device *device, void *busdata)
 {
-	if (device->d_unit != 0)
-		return (ERROR_NOT_FOUND);
-#ifdef	FRAMEBUFFER
-	return (0);
-#else
-	return (ERROR_NOT_IMPLEMENTED);
+	struct framebuffer *fb;
+
+#ifndef	FRAMEBUFFER
+	if (true)
+		return (ERROR_NOT_IMPLEMENTED);
 #endif
-}
 
-static int
-tmfb_attach(struct device *device)
-{
-	struct framebuffer *fb = &tmfb_softc;
-
-	device->d_softc = fb;
+	fb = device_softc_allocate(device, sizeof *fb);
+	memcpy(fb, &tmfb_softc, sizeof *fb);
 	/*
 	 * XXX probe for resolution.
 	 */
@@ -45,5 +38,7 @@ tmfb_attach(struct device *device)
 	return (0);
 }
 
-DRIVER(tmfb, "testmips framebuffer", NULL, DRIVER_FLAG_DEFAULT, tmfb_probe, tmfb_attach);
-DRIVER_ATTACHMENT(tmfb, "mp");
+DEVICE_INTERFACE(tmfbif) {
+	.device_setup = tmfb_setup,
+};
+DEVICE_ATTACHMENT(tmfb, "mpbus", tmfbif);

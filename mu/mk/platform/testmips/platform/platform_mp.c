@@ -222,4 +222,4 @@ platform_mp_setup(struct bus_instance *bi, void *busdata)
 BUS_INTERFACE(mpif) {
 	.bus_setup = platform_mp_setup,
 };
-BUS_ATTACHMENT(mp, "root", mpif);
+BUS_ATTACHMENT(mp, "mainbus", mpif);

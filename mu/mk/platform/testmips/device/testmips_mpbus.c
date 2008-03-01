@@ -4,22 +4,22 @@
 #include <core/spinlock.h>
 #include <core/startup.h>
 #include <cpu/pcpu.h>
-#include <io/device/device.h>
-#include <io/device/driver.h>
+#include <io/device/bus.h>
 
 static int
-mpbus_probe(struct device *device)
+mpbus_enumerate_children(struct bus_instance *bi)
 {
-	if ((PCPU_GET(flags) & PCPU_FLAG_BOOTSTRAP) == 0)
-		return (ERROR_NOT_FOUND);
-	return (0);
+	return (bus_enumerate_children(bi));
 }
 
 static int
-mpbus_attach(struct device *device)
+mpbus_setup(struct bus_instance *bi, void *busdata)
 {
 	return (0);
 }
 
-DRIVER(mpbus, "mp bus attachment", NULL, DRIVER_FLAG_DEFAULT, mpbus_probe, mpbus_attach);
-DRIVER_ATTACHMENT(mpbus, "cpu");
+BUS_INTERFACE(mpbusif) {
+	.bus_enumerate_children = mpbus_enumerate_children,
+	.bus_setup = mpbus_setup,
+};
+BUS_ATTACHMENT(mpbus, "cpu", mpbusif);

@@ -13,12 +13,6 @@ leaf_enumerate_children(struct bus_instance *bi)
 }
 
 static int
-leaf_resource_manage(struct bus_instance *bi, struct bus_resource *req, size_t nreq)
-{
-	return (ERROR_NOT_IMPLEMENTED);
-}
-
-static int
 leaf_setup(struct bus_instance *bi, void *busdata)
 {
 	struct leaf_device *ld = busdata;
@@ -40,7 +34,6 @@ leaf_setup(struct bus_instance *bi, void *busdata)
 
 BUS_INTERFACE(leafif) {
 	.bus_enumerate_children = leaf_enumerate_children,
-	.bus_resource_manage = leaf_resource_manage,
 	.bus_setup = leaf_setup,
 };
 BUS_ATTACHMENT(leaf, NULL, leafif);

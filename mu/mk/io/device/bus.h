@@ -6,23 +6,8 @@
 struct bus;
 struct bus_instance;
 
-enum bus_resource_method {
-	BUS_RESOURCE_ALLOCATE,
-	BUS_RESOURCE_DEALLOCARE,
-};
-
-enum bus_resource_type {
-	BUS_RESOURCE_INTERRUPT,
-};
-
-struct bus_resource {
-	enum bus_resource_method br_method;
-	enum bus_resource_type br_type;
-};
-
 struct bus_interface {
 	int (*bus_enumerate_children)(struct bus_instance *);
-	int (*bus_resource_manage)(struct bus_instance *, struct bus_resource *, size_t);
 	int (*bus_setup)(struct bus_instance *, void *);
 };
 

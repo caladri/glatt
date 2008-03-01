@@ -68,3 +68,21 @@ bus_parent(struct bus_instance *bi)
 {
 	return (bus_instance_parent(bi));
 }
+
+void *
+bus_softc(struct bus_instance *bi)
+{
+	void *sc;
+
+	sc = bus_instance_softc(bi);
+	return (sc);
+}
+
+void *
+bus_softc_allocate(struct bus_instance *bi, size_t size)
+{
+	void *sc;
+
+	sc = bus_instance_softc_allocate(bi, size);
+	return (sc);
+}

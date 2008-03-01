@@ -51,5 +51,7 @@ int bus_enumerate_child(struct bus_instance *, const char *, void *);
 int bus_enumerate_children(struct bus_instance *);
 const char *bus_name(struct bus_instance *);
 struct bus_instance *bus_parent(struct bus_instance *);
+void *bus_softc(struct bus_instance *);
+void *bus_softc_allocate(struct bus_instance *, size_t);
 
 #endif /* !_IO_DEVICE_BUS_H_ */

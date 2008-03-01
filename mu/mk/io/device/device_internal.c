@@ -43,6 +43,12 @@ device_destroy(struct device *device)
 	pool_free(device);
 }
 
+struct bus_instance *
+device_parent(struct device *device)
+{
+	return (device->d_instance);
+}
+
 int
 device_setup(struct device *device, void *busdata)
 {

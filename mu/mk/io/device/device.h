@@ -26,5 +26,7 @@ struct device_attachment {
 	SET_ADD(device_attachments, __device_attachment_ ## dev)
 
 int device_enumerate(struct bus_instance *, const char *, void *);
+void *device_softc(struct device *);
+void *device_softc_allocate(struct device *, size_t);
 
 #endif /* !_IO_DEVICE_DEVICE_H_ */

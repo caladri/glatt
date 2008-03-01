@@ -27,11 +27,7 @@ clock_r4k_interrupt(void *arg, int interrupt)
 	ASSERT(interrupt == CLOCK_INTERRUPT, "stray interrupt");
 
 	device = arg;
-#if 0
-	csc = device->d_softc;
-#else
-	csc = NULL;
-#endif
+	csc = device_softc(device);
 
 	count = cpu_read_count();
 	if (count < csc->csc_last_count) {
@@ -57,13 +53,9 @@ clock_r4k_setup(struct device *device, void *busdata)
 	if (cycles == 0)
 		return (ERROR_NOT_IMPLEMENTED);
 
-	csc = malloc(sizeof *csc);
+	csc = device_softc_allocate(device, sizeof *csc);
 	csc->csc_cycles_per_hz = cycles;
 	csc->csc_last_count = cpu_read_count();
-
-#if 0
-	device->d_softc = csc;
-#endif
 
 #if 0
 	device_printf(device, "%u cycles/second (running at %uhz)",

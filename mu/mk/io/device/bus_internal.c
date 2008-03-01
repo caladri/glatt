@@ -1,5 +1,6 @@
 #include <core/types.h>
 #include <core/error.h>
+#include <core/malloc.h>
 #include <core/pool.h>
 #include <core/startup.h>
 #include <core/string.h>
@@ -21,6 +22,7 @@ static struct pool bus_pool;
 struct bus_instance {
 	struct bus_instance *bi_parent;
 	struct bus_attachment *bi_attachment;
+	void *bi_softc;
 	STAILQ_ENTRY(struct bus_instance) bi_link;
 };
 static struct pool bus_instance_pool;
@@ -75,6 +77,7 @@ bus_instance_create(struct bus_instance **bip, struct bus_instance *parent,
 	bi = pool_allocate(&bus_instance_pool);
 	bi->bi_parent = parent;
 	bi->bi_attachment = attachment;
+	bi->bi_softc = NULL;
 	STAILQ_INSERT_TAIL(&attachment->ba_bus->bus_instances, bi, bi_link);
 	if (bip != NULL)
 		*bip = bi;
@@ -91,6 +94,8 @@ bus_instance_destroy(struct bus_instance *bi)
 
 	bus = bi->bi_attachment->ba_bus;
 	STAILQ_REMOVE(&bus->bus_instances, bi, struct bus_instance, bi_link);
+	if (bi->bi_softc == NULL)
+		free(bi->bi_softc);
 	pool_free(bi);
 	panic("%s: should not be called yet.", __func__);
 }
@@ -154,6 +159,21 @@ bus_instance_setup(struct bus_instance *bi, void *busdata)
 		}
 	}
 	return (0);
+}
+
+void *
+bus_instance_softc(struct bus_instance *bi)
+{
+	ASSERT(bi->bi_softc != NULL, "Don't ask for what you haven't created.");
+	return (bi->bi_softc);
+}
+
+void *
+bus_instance_softc_allocate(struct bus_instance *bi, size_t size)
+{
+	ASSERT(bi->bi_softc == NULL, "Can't create two softcs.");
+	bi->bi_softc = malloc(size);
+	return (bi->bi_softc);
 }
 
 static int

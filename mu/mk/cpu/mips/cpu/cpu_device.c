@@ -52,4 +52,4 @@ BUS_INTERFACE(cpuif) {
 	.bus_enumerate_children = cpu_enumerate_children,
 	.bus_setup = cpu_setup,
 };
-BUS_ATTACHMENT(cpu, "mp", cpuif);
+BUS_ATTACHMENT(cpu, NULL, cpuif);

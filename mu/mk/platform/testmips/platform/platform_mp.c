@@ -124,9 +124,7 @@ platform_mp_start_all(void *arg)
 
 	ncpus = mp_ncpus();
 	if (ncpus > MAXCPUS) {
-#if 0
-		device_printf(platform_mp_bus, "Warning: system limit is %u CPUs, but there are %u attached!\n", MAXCPUS, ncpus);
-#endif
+		bus_printf(platform_mp_bus, "Warning: system limit is %u CPUs, but there are %u attached!\n", MAXCPUS, ncpus);
 		ncpus = MAXCPUS;
 	}
 
@@ -198,28 +196,29 @@ platform_mp_attach_cpu(bool bootstrap)
 				platform_mp_ipi_interrupt, NULL);
 }
 
-static int
-platform_mp_setup(struct bus_instance *bi, void *busdata)
+static void
+platform_mp_describe(struct bus_instance *bi)
 {
 	uint64_t ncpus;
 
+	ncpus = TEST_MP_DEV_READ(TEST_MP_DEV_NCPUS);
+	if (ncpus == 1)
+		bus_printf(bi, "uniprocessor system");
+	else
+		bus_printf(bi, "multiprocessor system with %lu CPUs", ncpus);
+}
+
+static int
+platform_mp_setup(struct bus_instance *bi, void *busdata)
+{
 	ASSERT(platform_mp_bus == NULL,
 	       "Can only have one mp instance.");
-	ncpus = TEST_MP_DEV_READ(TEST_MP_DEV_NCPUS);
-#if 0
-	if (ncpus == 1)
-		bus_printf(device, "uniprocessor system.");
-	else
-		bus_printf(device, "multiprocessor system with %lu CPUs.",
-			   ncpus);
-#else
-	kcprintf("%lu CPUs.\n", ncpus);
-#endif
 	platform_mp_bus = bi;
 	return (0);
 }
 
 BUS_INTERFACE(mpif) {
+	.bus_describe = platform_mp_describe,
 	.bus_setup = platform_mp_setup,
 };
 BUS_ATTACHMENT(mp, "mainbus", mpif);

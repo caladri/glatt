@@ -44,14 +44,6 @@ mutex_lock(struct mutex *mtx)
 	}
 }
 
-#if 0
-bool
-mutex_try_lock(struct mutex *mtx)
-{
-	return (mutex_try_wait(mtx, false));
-}
-#endif
-
 void
 mutex_unlock(struct mutex *mtx)
 {

@@ -43,6 +43,15 @@ clock_r4k_interrupt(void *arg, int interrupt)
 	csc->csc_last_count = count;
 }
 
+static void
+clock_r4k_describe(struct device *device)
+{
+	struct clock_r4k_softc *csc = device_softc(device);
+
+	device_printf(device, "%u cycles/second (running at %uhz)",
+		      csc->csc_cycles_per_hz * CLOCK_HZ, CLOCK_HZ);
+}
+
 static int
 clock_r4k_setup(struct device *device, void *busdata)
 {
@@ -57,12 +66,6 @@ clock_r4k_setup(struct device *device, void *busdata)
 	csc->csc_cycles_per_hz = cycles;
 	csc->csc_last_count = cpu_read_count();
 
-#if 0
-	device_printf(device, "%u cycles/second (running at %uhz)",
-#else
-	kcprintf("%u cycles/second (running at %uhz)\n",
-#endif
-		      csc->csc_cycles_per_hz * CLOCK_HZ, CLOCK_HZ);
 	cpu_interrupt_establish(CLOCK_INTERRUPT, clock_r4k_interrupt, device);
 	cpu_write_compare(csc->csc_last_count + csc->csc_cycles_per_hz);
 
@@ -70,6 +73,7 @@ clock_r4k_setup(struct device *device, void *busdata)
 }
 
 DEVICE_INTERFACE(clockif) {
+	.device_describe = clock_r4k_describe,
 	.device_setup = clock_r4k_setup,
 };
 DEVICE_ATTACHMENT(clock_r4k, "cpu", clockif);

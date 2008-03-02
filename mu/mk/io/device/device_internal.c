@@ -41,6 +41,16 @@ device_create(struct device **devicep, struct bus_instance *bi, const char *clas
 }
 
 void
+device_describe(struct device *device)
+{
+	if (device->d_attachment->da_interface->device_describe == NULL) {
+		device_printf(device, "<%m>", ERROR_NOT_IMPLEMENTED);
+		return;
+	}
+	device->d_attachment->da_interface->device_describe(device);
+}
+
+void
 device_destroy(struct device *device)
 {
 	if (device->d_softc != NULL)

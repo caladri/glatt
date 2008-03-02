@@ -15,7 +15,7 @@ leaf_describe(struct bus_instance *bi)
 {
 	struct leaf_softc *ls = bus_softc(bi);
 
-	device_printf(ls->ls_device, "<leaf device>");
+	device_describe(ls->ls_device);
 }
 
 static int

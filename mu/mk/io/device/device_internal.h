@@ -5,6 +5,7 @@ struct bus_instance;
 
 int device_create(struct device **, struct bus_instance *, const char *);
 void device_destroy(struct device *);
+const char *device_name(struct device *);
 struct bus_instance *device_parent(struct device *);
 int device_setup(struct device *, void *);
 

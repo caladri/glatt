@@ -1,6 +1,11 @@
 #ifndef	_IO_DEVICE_DEVICE_H_
 #define	_IO_DEVICE_DEVICE_H_
 
+/*
+ * Public device interface.  Those that can be in device.c are, others are in
+ * device_internal.c XXX.
+ */
+
 struct bus_instance;
 struct device;
 
@@ -26,6 +31,7 @@ struct device_attachment {
 	SET_ADD(device_attachments, __device_attachment_ ## dev)
 
 int device_enumerate(struct bus_instance *, const char *, void *);
+void device_printf(struct device *, const char *, ...);
 void *device_softc(struct device *);
 void *device_softc_allocate(struct device *, size_t);
 

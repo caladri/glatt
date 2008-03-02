@@ -75,7 +75,7 @@ bus_printf(struct bus_instance *bi, const char *fmt, ...)
 	va_list ap;
 
 	va_start(ap, fmt);
-	bus_instance_vprintf(bi, fmt, ap);
+	bus_vprintf(bi, fmt, ap);
 	va_end(ap);
 }
 
@@ -95,4 +95,10 @@ bus_softc_allocate(struct bus_instance *bi, size_t size)
 
 	sc = bus_instance_softc_allocate(bi, size);
 	return (sc);
+}
+
+void
+bus_vprintf(struct bus_instance *bi, const char *fmt, va_list ap)
+{
+	bus_instance_vprintf(bi, fmt, ap);
 }

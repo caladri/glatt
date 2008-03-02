@@ -6,10 +6,16 @@
 #include <io/device/device_internal.h>
 #include <io/device/leaf.h>
 
+struct leaf_softc {
+	struct device *ls_device;
+};
+
 static void
 leaf_describe(struct bus_instance *bi)
 {
-	bus_printf(bi, "<leaf device>");
+	struct leaf_softc *ls = bus_softc(bi);
+
+	device_printf(ls->ls_device, "<leaf device>");
 }
 
 static int
@@ -22,12 +28,16 @@ static int
 leaf_setup(struct bus_instance *bi, void *busdata)
 {
 	struct leaf_device *ld = busdata;
+	struct leaf_softc *ls;
 	struct device *device;
 	int error;
 
 	error = device_create(&device, bi, ld->ld_class);
 	if (error != 0)
 		return (error);
+
+	ls = bus_softc_allocate(bi, sizeof *ls);
+	ls->ls_device = device;
 
 	error = device_setup(device, ld->ld_busdata);
 	if (error != 0) {

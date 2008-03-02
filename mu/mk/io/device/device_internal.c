@@ -1,5 +1,6 @@
 #include <core/types.h>
 #include <core/error.h>
+#include <core/malloc.h>
 #include <core/pool.h>
 #include <core/startup.h>
 #include <core/string.h>
@@ -12,6 +13,7 @@
 struct device {
 	struct bus_instance *d_instance;
 	struct device_attachment *d_attachment;
+	void *d_softc;
 };
 static struct pool device_pool;
 
@@ -32,6 +34,7 @@ device_create(struct device **devicep, struct bus_instance *bi, const char *clas
 	device = pool_allocate(&device_pool);
 	device->d_instance = bi;
 	device->d_attachment = attachment;
+	device->d_softc = NULL;
 	if (devicep != NULL)
 		*devicep = device;
 	return (0);
@@ -40,7 +43,15 @@ device_create(struct device **devicep, struct bus_instance *bi, const char *clas
 void
 device_destroy(struct device *device)
 {
+	if (device->d_softc != NULL)
+		free(device->d_softc);
 	pool_free(device);
+}
+
+const char *
+device_name(struct device *device)
+{
+	return (device->d_attachment->da_name);
 }
 
 struct bus_instance *
@@ -58,6 +69,21 @@ device_setup(struct device *device, void *busdata)
 	if (error != 0)
 		return (error);
 	return (0);
+}
+
+void *
+device_softc(struct device *device)
+{
+	ASSERT(device->d_softc != NULL, "Don't ask for what isn't there.");
+	return (device->d_softc);
+}
+
+void *
+device_softc_allocate(struct device *device, size_t size)
+{
+	ASSERT(device->d_softc == NULL, "Can't create two softcs.");
+	device->d_softc = malloc(size);
+	return (device->d_softc);
 }
 
 static int

@@ -40,5 +40,6 @@ struct bus_instance *bus_parent(struct bus_instance *);
 void bus_printf(struct bus_instance *, const char *, ...);
 void *bus_softc(struct bus_instance *);
 void *bus_softc_allocate(struct bus_instance *, size_t);
+void bus_vprintf(struct bus_instance *, const char *, va_list);
 
 #endif /* !_IO_DEVICE_BUS_H_ */

@@ -38,13 +38,6 @@ cpu_enumerate_children(struct bus_instance *bi)
 static int
 cpu_setup(struct bus_instance *bi, void *busdata)
 {
-#if 0
-	struct pcpu *pcpu;
-
-	pcpu = PCPU_GET(physaddr);
-	device->d_softc = pcpu;
-#endif
-
 	cpu_interrupt_setup();
 
 	return (0);

@@ -146,18 +146,3 @@ cpu_exception_frame_dump(struct thread *td, struct frame *fp)
 		kcprintf("[Frame unavailable.]\n");
 	kcprintf("badvaddr            = %p\n", (void *)cpu_read_badvaddr());
 }
-
-#if 0
-static void
-cpu_exception_db_frame(void)
-{
-	struct thread *td;
-
-	td = current_thread();
-	if (td == NULL)
-		cpu_exception_frame_dump(NULL, NULL);
-	else
-		cpu_exception_frame_dump(td, &td->td_frame);
-}
-DB_COMMAND(frame, cpu_exception_db_frame, "Show the exception frame.");
-#endif

@@ -42,9 +42,6 @@ task_create(struct task **taskp, struct task *parent, const char *name,
 	if (error != 0) {
 		panic("%s: need to destroy task, cpu_task_setup failed: %m",
 		      __func__, error);
-#if 0
-		return (error);
-#endif
 	}
 	*taskp = task;
 	return (0);

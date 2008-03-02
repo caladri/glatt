@@ -124,20 +124,3 @@ mp_ipi_handler(void *arg, enum ipi_type ipi)
 		panic("%s: unhandled ipi %u", __func__, (unsigned)ipi);
 	}
 }
-
-#if 0
-static void
-mp_db_ipi_list(void)
-{
-	struct ipi_handler *ih;
-	enum ipi_type ipi;
-
-	kcprintf("IPI\tUSECNT\tHANDLER(ARG)\n");
-	for (ipi = IPI_FIRST; ipi <= IPI_LAST; ipi++) {
-		ih = &ipi_handlers[ipi];
-		kcprintf("%u\t%u\t%p(%p)\n", ipi, ih->ih_usecnt,
-			 (void *)(uintptr_t)ih->ih_handler, ih->ih_arg);
-	}
-}
-DB_COMMAND(ipi_list, mp_db_ipi_list, "List IPI handlers.");
-#endif

@@ -158,9 +158,6 @@ int
 pool_destroy(struct pool *pool)
 {
 	panic("%s: can't destroy pools yet.", __func__);
-#if 0
-	return (ERROR_NOT_IMPLEMENTED);
-#endif
 }
 
 static struct pool_item *

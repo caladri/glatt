@@ -40,12 +40,3 @@ mp_cpu_stopped(cpu_id_t cpu)
 		panic("%s: cpu%u is already stopped!", __func__, cpu);
 	cpu_bitmask_clear(&mp_cpu_running_bitmask, cpu);
 }
-
-#if 0
-static void
-mp_db_whoami(void)
-{
-	kcprintf("cpu%u\n", mp_whoami());
-}
-DB_COMMAND(whoami, mp_db_whoami, "Show which CPU the debugger is on.");
-#endif

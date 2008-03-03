@@ -1,4 +1,4 @@
-# $Id: build.mk,v 1.43 2008-03-01 05:26:59 juli Exp $
+# $Id: build.mk,v 1.44 2008-03-03 20:20:58 juli Exp $
 
 .PATH: ${KERNEL_ROOT}/core
 .PATH: ${KERNEL_ROOT}/db
@@ -42,7 +42,6 @@ KERNEL_SOURCES+=bus.c
 KERNEL_SOURCES+=bus_internal.c
 KERNEL_SOURCES+=bus_leaf.c
 KERNEL_SOURCES+=bus_root.c
-KERNEL_SOURCES+=device.c
 KERNEL_SOURCES+=device_internal.c
 
 # io/device/console

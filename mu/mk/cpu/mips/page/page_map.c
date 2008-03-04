@@ -162,8 +162,7 @@ pmap_map(struct vm *vm, vaddr_t vaddr, struct vm_page *page)
 	flags = PG_V;
 	if (vm == &kernel_vm)
 		flags |= PG_G;
-	/* Cache? */
-	flags |= PG_C_CCEOW;
+	flags |= PG_C_CNC;
 	pmap_update(pm, vaddr, page, flags);
 	return (0);
 }

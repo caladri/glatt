@@ -76,9 +76,6 @@ typedef	uint64_t	pt_entry_t;
 #define	PG_C(attr)	((attr & 0x07) << 3)
 #define	PG_C_UNCACHED	(PG_C(0x02))
 #define	PG_C_CNC	(PG_C(0x03))
-#define	PG_C_CCE	(PG_C(0x04))
-#define	PG_C_CCEOW	(PG_C(0x05))
-#define	PG_C_CCUOW	(PG_C(0x06))
 #define	PG_D		0x04
 #define	PG_V		0x02
 #define	PG_G		0x01

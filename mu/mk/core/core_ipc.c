@@ -89,7 +89,7 @@ ipc_process(void)
 			ASSERT(TAILQ_EMPTY(&ipcq->ipcq_msgs), "Consistency is all I ask.");
 			sleepq_enter(ipcq);
 			IPC_QUEUE_UNLOCK(ipcq);
-			sleepq_wait();
+			sleepq_wait(ipcq);
 			continue;
 		}
 		ipcmsg = TAILQ_FIRST(&ipcq->ipcq_msgs);
@@ -234,7 +234,7 @@ ipc_port_wait(ipc_port_t port)
 	sleepq_enter(ipcp);
 	IPC_PORT_UNLOCK(ipcp);
 	IPC_PORTS_UNLOCK();
-	sleepq_wait();
+	sleepq_wait(ipcp);
 }
 
 static struct ipc_port *

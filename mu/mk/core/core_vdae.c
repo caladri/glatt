@@ -133,7 +133,7 @@ vdae_thread_loop(void *arg)
 		while ((v->v_flags & VDAE_FLAG_WAKEUP) == 0) {
 			sleepq_enter(v->v_list);
 			VDAE_UNLOCK(v);
-			sleepq_wait();
+			sleepq_wait(v->v_list);
 			VDAE_LOCK(v);
 		}
 		v->v_flags |= VDAE_FLAG_RUNNING;

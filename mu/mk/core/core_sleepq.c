@@ -12,6 +12,7 @@ static struct spinlock sleepq_lock;
 
 struct sleepq_entry {
 	struct thread *se_thread;
+	bool se_sleeping;
 	TAILQ_ENTRY(struct sleepq_entry) se_link;
 };
 
@@ -34,6 +35,8 @@ static TAILQ_HEAD(, struct sleepq) sleepq_queue_list;
 static struct sleepq *sleepq_lookup(const void *, bool);
 static void sleepq_signal_first(struct sleepq *);
 
+static struct sleepq_entry *sleepq_entry_lookup(struct sleepq *, struct thread *);
+
 void
 sleepq_enter(const void *cookie)
 {
@@ -46,9 +49,10 @@ sleepq_enter(const void *cookie)
 	sq = sleepq_lookup(cookie, true);
 	se = pool_allocate(&sleepq_entry_pool);
 	se->se_thread = td;
+	se->se_sleeping = true;
 	TAILQ_INSERT_TAIL(&sq->sq_entries, se, se_link);
-	SQ_UNLOCK(sq);
 	scheduler_thread_sleeping(td);
+	SQ_UNLOCK(sq);
 }
 
 void
@@ -78,8 +82,10 @@ sleepq_signal_one(const void *cookie)
 }
 
 void
-sleepq_wait(void)
+sleepq_wait(const void *cookie)
 {
+	struct sleepq *sq;
+	struct sleepq_entry *se;
 	struct thread *td;
 
 	td = current_thread();
@@ -88,7 +94,19 @@ sleepq_wait(void)
 		panic("%s: thread (%s) tried to wait on a sleepq while in a critical section.", __func__, td->td_name);
 	}
 
-	scheduler_schedule();
+	sq = sleepq_lookup(cookie, false);
+
+	ASSERT(sq != NULL, "Can't find an entry for a non-existant queue.");
+
+	se = sleepq_entry_lookup(sq, td);
+	if (se->se_sleeping) {
+		SQ_UNLOCK(sq);
+		scheduler_schedule();
+	} else {
+		SQ_UNLOCK(sq);
+	}
+	ASSERT(!se->se_sleeping, "Thread woken up must be awake.");
+	pool_free(se);
 }
 
 /* RETURNS SQ LOCKED.  */
@@ -130,8 +148,21 @@ sleepq_signal_first(struct sleepq *sq)
 	se = TAILQ_FIRST(&sq->sq_entries);
 	TAILQ_REMOVE(&sq->sq_entries, se, se_link);
 	td = se->se_thread;
-	pool_free(se);
+	se->se_sleeping = false;
 	scheduler_thread_runnable(td);
+}
+
+static struct sleepq_entry *
+sleepq_entry_lookup(struct sleepq *sq, struct thread *td)
+{
+	struct sleepq_entry *se;
+
+	TAILQ_FOREACH(se, &sq->sq_entries, se_link) {
+		if (se->se_thread != td)
+			continue;
+		return (se);
+	}
+	ASSERT(false, "Must have an entry.");
 }
 
 static void

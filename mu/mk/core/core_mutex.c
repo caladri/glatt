@@ -95,7 +95,7 @@ mutex_try_wait(struct mutex *mtx, bool wait)
 	} else {
 		sleepq_enter(MTX_CHANNEL(mtx));
 		MTX_SPINUNLOCK(mtx);
-		sleepq_wait();
+		sleepq_wait(MTX_CHANNEL(mtx));
 		return (false);
 	}
 }

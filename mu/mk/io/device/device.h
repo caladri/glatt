@@ -31,7 +31,6 @@ struct device_attachment {
 	};								\
 	SET_ADD(device_attachments, __device_attachment_ ## dev)
 
-void device_describe(struct device *);
 int device_enumerate(struct bus_instance *, const char *, void *);
 void device_printf(struct device *, const char *, ...);
 void *device_softc(struct device *);

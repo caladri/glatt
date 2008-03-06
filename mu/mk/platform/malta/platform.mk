@@ -1,10 +1,11 @@
-# $Id: platform.mk,v 1.5 2008-03-01 10:46:07 juli Exp $
+# $Id: platform.mk,v 1.6 2008-03-06 00:46:44 juli Exp $
 
 .PATH: ${PLATFORM_ROOT}/platform
 .PATH: ${PLATFORM_ROOT}/device
 
 # device
 KERNEL_SOURCES+=malta_console.c
+KERNEL_SOURCES+=malta_gt.c
 
 # platform
 KERNEL_SOURCES+=platform_mainbus.c

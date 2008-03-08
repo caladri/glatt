@@ -84,16 +84,8 @@ typedef	uint64_t	pt_entry_t;
  * VM flags managed in software:
  * 	RO:	Read only.  Never set PG_D on this page, and don't
  * 		listen to requests to write to it.
- * 	W:	Wired.
  */
 #define	PG_RO	(0x01 << TLBLO_SWBITS_SHIFT)
-#define	PG_W	(0x02 << TLBLO_SWBITS_SHIFT)
-
-/*
- * Amalgamations of flags in software:
- * 	PROT:	Protection related software flags.
- */
-#define	PG_PROT	(PG_RO)
 
 /*
  * PTE management functions for bits defined above.

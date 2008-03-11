@@ -82,6 +82,7 @@ vm_alloc_address(struct vm *vm, vaddr_t *vaddrp, size_t pages)
 	}
 	if (vmi == NULL) {
 		/* XXX Collapse tree and rebalance if possible.  */
+		kcprintf("%s: need to collapse tree.\n", __func__);
 		VM_UNLOCK(vm);
 		return (ERROR_NOT_IMPLEMENTED);
 	}

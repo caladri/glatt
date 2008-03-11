@@ -44,14 +44,15 @@ vm_setup(struct vm **vmp, vaddr_t base, vaddr_t end)
 	spinlock_init(&vm->vm_lock, "VM lock");
 	VM_LOCK(vm);
 	vm->vm_pmap = NULL;
+	vm->vm_index = NULL;
+	TAILQ_INIT(&vm->vm_index_free);
 	error = pmap_init(vm, base, end);
 	if (error != 0) {
 		VM_UNLOCK(vm);
 		pool_free(vm);
 		return (error);
 	}
-	vm->vm_index = NULL;
-	TAILQ_INIT(&vm->vm_index_free);
+	*vmp = vm;
 	VM_UNLOCK(vm);
 	return (0);
 }

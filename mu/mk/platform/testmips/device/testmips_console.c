@@ -18,6 +18,9 @@ testmips_console_getc(void *sc, char *chp)
 	case '\r':
 		*chp = '\n';
 		break;
+	case '\177':
+		*chp = '\010';
+		break;
 	default:
 		*chp = ch;
 		break;

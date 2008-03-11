@@ -131,12 +131,37 @@ db_show_change_current(struct db_show_tree **currentp, const char *name)
 		return (true);
 	}
 	if (*currentp == NULL) {
+		bool ambiguous;
+
+		ambiguous = false;
+
 		SLIST_FOREACH(tree, &db_show_root, st_link) {
-			if (strcmp(tree->st_name, name) == 0) {
-				*currentp = tree;
-				db_show_listing(*currentp);
-				return (true);
+			if (strlen(name) <= strlen(tree->st_name)) {
+				if (strcmp(tree->st_name, name) == 0) {
+					*currentp = tree;
+					db_show_listing(*currentp);
+					return (true);
+				}
+
+				if (strlen(name) == strlen(tree->st_name))
+					continue;
+				if (strncmp(name, tree->st_name,
+					    strlen(name)) == 0) {
+					if (*currentp != NULL) {
+						ambiguous = true;
+						continue;
+					}
+					*currentp = tree;
+				}
 			}
+		}
+		if (ambiguous) {
+			kcprintf("XXX generalize db_show_value_ambiguous\n");
+			return (false);
+		}
+		if (*currentp != NULL) {
+			db_show_listing(*currentp);
+			return (true);
 		}
 		return (false);
 	}
@@ -165,13 +190,22 @@ db_show_input(void)
 	db_show_argv[0] = db_show_buffer;
 
 	for (c = 0; c < sizeof db_show_buffer; c++) {
-		do {
+again:		do {
 			error = kcgetc(&db_show_buffer[c]);
 		} while (error == ERROR_AGAIN);
 		if (error != 0)
 			return (-1);
 		switch (db_show_buffer[c]) {
-		case '\r':
+		case '\010':
+			if (c != 0) {
+				db_show_buffer[c--] = '\0';
+				if (db_show_buffer[c] == '\0')
+					argc--;
+				kcputc('\010');
+				kcputc(' ');
+				kcputc('\010');
+			}
+			goto again;
 		case '\n':
 			db_show_buffer[c] = '\0';
 			argc++;

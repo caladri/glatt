@@ -1,12 +1,14 @@
 #include <core/types.h>
 #include <core/error.h>
 #include <core/pool.h>
+#include <core/task.h>
+#include <core/thread.h>
 #include <db/db.h>
 #include <io/device/console/console.h>
 #include <vm/page.h>
 #include <vm/vm.h>
 
-DB_SHOW_TREE(vm_index, index, false);
+DB_SHOW_TREE(vm_index, index);
 DB_SHOW_VALUE_TREE(index, vm, DB_SHOW_TREE_POINTER(vm_index));
 
 struct vm_index_page {
@@ -370,6 +372,17 @@ db_vm_index_dump_vm(struct vm *vm, const char *name)
 static void
 db_vm_index_dump_kvm(void)
 {
+	struct vm *vm;
+
 	db_vm_index_dump_vm(&kernel_vm, "Kernel");
+
+	if (current_thread() != NULL) {
+		vm = current_thread()->td_parent->t_vm;
+		if (vm != &kernel_vm) {
+			db_vm_index_dump_vm(vm, "Thread");
+		} else {
+			kcprintf("Thread has kernel vm index.\n");
+		}
+	}
 }
 DB_SHOW_VALUE_VOIDF(kvm, vm_index, db_vm_index_dump_kvm);

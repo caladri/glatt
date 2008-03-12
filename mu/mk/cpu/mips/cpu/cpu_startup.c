@@ -10,7 +10,8 @@
 #include <vm/page.h>
 #include <vm/vm.h>
 
-DB_SHOW_TREE(cpu, cpu, true);
+DB_SHOW_TREE(cpu, cpu);
+DB_SHOW_VALUE_TREE(cpu, root, DB_SHOW_TREE_POINTER(cpu));
 
 volatile bool startup_early = true;
 

@@ -8,15 +8,13 @@ struct db_show_value;
 struct db_show_tree {
 	const char *st_name;
 	struct db_show_tree *st_parent;
-	bool st_root;
 	SLIST_HEAD(, struct db_show_value) st_values;
 	SLIST_ENTRY(struct db_show_tree) st_link;
 };
 
-#define	DB_SHOW_TREE(symbol, name, root)				\
+#define	DB_SHOW_TREE(symbol, name)					\
 	struct db_show_tree db_show_tree_ ## symbol = 	{		\
 		.st_name = #name,					\
-		.st_root = root,					\
 	};								\
 	SET_ADD(db_show_trees, db_show_tree_ ## symbol)
 
@@ -25,6 +23,8 @@ struct db_show_tree {
 
 #define	DB_SHOW_TREE_POINTER(symbol)					\
 	(&_CONCAT(db_show_tree_, symbol))
+
+DB_SHOW_TREE_DECLARE(root);
 
 enum db_show_type {
 	DB_SHOW_TYPE_TREE,

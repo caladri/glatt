@@ -12,12 +12,12 @@
 SET(db_show_trees, struct db_show_tree);
 SET(db_show_values, struct db_show_value);
 
+DB_SHOW_TREE(root, root);
+
 static const char *db_show_argv[DB_SHOW_ARG_MAX];
 static char db_show_buffer[DB_SHOW_ARG_MAX * DB_SHOW_ARG_LIKELY_SIZE];
-static SLIST_HEAD(, struct db_show_tree) db_show_root;
 
 static void db_show_all(struct db_show_tree *);
-static bool db_show_change_current(struct db_show_tree **, const char *);
 static int db_show_input(void);
 static void db_show_listing(struct db_show_tree *);
 static void db_show_listing_value(struct db_show_value *);
@@ -37,8 +37,6 @@ db_show_init(void)
 	for (treep = SET_BEGIN(db_show_trees);
 	     treep != SET_END(db_show_trees); treep++) {
 		tree = *treep;
-		if (tree->st_root)
-			SLIST_INSERT_HEAD(&db_show_root, tree, st_link);
 		SLIST_INIT(&tree->st_values);
 	}
 	for (valuep = SET_BEGIN(db_show_values);
@@ -56,7 +54,7 @@ db_show(void)
 	struct db_show_tree *current;
 	int argc, i;
 
-	current = NULL;
+	current = &db_show_tree_root;;
 
 	for (;;) {
 		kcprintf("(db show ");
@@ -67,9 +65,10 @@ db_show(void)
 			return;
 		for (i = 0; i < argc; i++) {
 			if (strcmp(db_show_argv[i], "..") == 0) {
-				if (!db_show_change_current(&current,
-							    db_show_argv[i]))
+				if (current == &db_show_tree_root) {
 					return;
+				}
+				current = current->st_parent;
 				continue;
 			}
 			if (strcmp(db_show_argv[i], "") == 0 ||
@@ -115,67 +114,6 @@ db_show_all(struct db_show_tree *tree)
 		kcprintf("%s:\n", value->sv_name);
 		db_show_value(value);
 	}
-}
-
-static bool
-db_show_change_current(struct db_show_tree **currentp, const char *name)
-{
-	struct db_show_tree *tree;
-	struct db_show_value *value;
-
-	if (strcmp(name, "..") == 0) {
-		if (*currentp == NULL)
-			return (false);
-		*currentp = (*currentp)->st_parent;
-		db_show_listing(*currentp);
-		return (true);
-	}
-	if (*currentp == NULL) {
-		bool ambiguous;
-
-		ambiguous = false;
-
-		SLIST_FOREACH(tree, &db_show_root, st_link) {
-			if (strlen(name) <= strlen(tree->st_name)) {
-				if (strcmp(tree->st_name, name) == 0) {
-					*currentp = tree;
-					db_show_listing(*currentp);
-					return (true);
-				}
-
-				if (strlen(name) == strlen(tree->st_name))
-					continue;
-				if (strncmp(name, tree->st_name,
-					    strlen(name)) == 0) {
-					if (*currentp != NULL) {
-						ambiguous = true;
-						continue;
-					}
-					*currentp = tree;
-				}
-			}
-		}
-		if (ambiguous) {
-			kcprintf("XXX generalize db_show_value_ambiguous\n");
-			return (false);
-		}
-		if (*currentp != NULL) {
-			db_show_listing(*currentp);
-			return (true);
-		}
-		return (false);
-	}
-	value = db_show_value_lookup(*currentp, name);
-	if (value == NULL)
-		return (false);
-	if (value->sv_type != DB_SHOW_TYPE_TREE) {
-		kcprintf("DB: cannot change current to non-tree %s!\n",
-			 value->sv_name);
-		return (false);
-	}
-	*currentp = value->sv_value.sv_tree;
-	db_show_listing(*currentp);
-	return (true);
 }
 
 static int
@@ -232,13 +170,6 @@ db_show_listing(struct db_show_tree *tree)
 {
 	struct db_show_value *value;
 
-	if (tree == NULL) {
-		kcprintf("Available trees:");
-		SLIST_FOREACH(tree, &db_show_root, st_link)
-			kcprintf(" %s", tree->st_name);
-		kcprintf("\n");
-		return;
-	}
 	kcprintf("Available values:");
 	SLIST_FOREACH(value, &tree->st_values, sv_link) {
 		kcprintf(" ");
@@ -267,12 +198,13 @@ db_show_listing_value(struct db_show_value *value)
 static void
 db_show_path(struct db_show_tree *current)
 {
-	if (current == NULL) {
+	if (current == &db_show_tree_root) {
 		kcprintf("/");
 		return;
+	} else {
+		db_show_path(current->st_parent);
+		kcprintf("%s/", current->st_name);
 	}
-	db_show_path(current->st_parent);
-	kcprintf("/%s", current->st_name);
 }
 
 static bool
@@ -280,13 +212,13 @@ db_show_one(struct db_show_tree **currentp, const char *name)
 {
 	struct db_show_value *value;
 
-	if (*currentp == NULL)
-		return (db_show_change_current(currentp, name));
 	value = db_show_value_lookup(*currentp, name);
 	if (value == NULL)
 		return (false);
-	if (value->sv_type == DB_SHOW_TYPE_TREE)
-		return (db_show_change_current(currentp, name));
+	if (value->sv_type == DB_SHOW_TYPE_TREE) {
+		*currentp = value->sv_value.sv_tree;
+		return (true);
+	}
 	db_show_value(value);
 	return (true);
 }

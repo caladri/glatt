@@ -102,9 +102,10 @@ sleepq_wait(const void *cookie)
 	if (se->se_sleeping) {
 		SQ_UNLOCK(sq);
 		scheduler_schedule();
-	} else {
-		SQ_UNLOCK(sq);
+		SQ_LOCK(sq);
 	}
+	TAILQ_REMOVE(&sq->sq_entries, se, se_link);
+	SQ_UNLOCK(sq);
 	ASSERT(!se->se_sleeping, "Thread woken up must be awake.");
 	pool_free(se);
 }
@@ -146,10 +147,11 @@ sleepq_signal_first(struct sleepq *sq)
 	SPINLOCK_ASSERT_HELD(&sq->sq_lock);
 
 	se = TAILQ_FIRST(&sq->sq_entries);
-	TAILQ_REMOVE(&sq->sq_entries, se, se_link);
 	td = se->se_thread;
-	se->se_sleeping = false;
-	scheduler_thread_runnable(td);
+	if (se->se_sleeping) {
+		se->se_sleeping = false;
+		scheduler_thread_runnable(td);
+	}
 }
 
 static struct sleepq_entry *

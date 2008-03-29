@@ -33,7 +33,7 @@ static struct pool sleepq_pool;
 static TAILQ_HEAD(, struct sleepq) sleepq_queue_list;
 
 static struct sleepq *sleepq_lookup(const void *, bool);
-static void sleepq_signal_first(struct sleepq *);
+static void sleepq_signal_entry(struct sleepq *, struct sleepq_entry *);
 
 static struct sleepq_entry *sleepq_entry_lookup(struct sleepq *, struct thread *);
 
@@ -58,13 +58,15 @@ sleepq_enter(const void *cookie)
 void
 sleepq_signal(const void *cookie)
 {
+	struct sleepq_entry *se;
 	struct sleepq *sq;
 
 	sq = sleepq_lookup(cookie, false);
 	if (sq == NULL)
 		return;
-	while (!TAILQ_EMPTY(&sq->sq_entries))
-		sleepq_signal_first(sq);
+	TAILQ_FOREACH(se, &sq->sq_entries, se_link) {
+		sleepq_signal_entry(sq, se);
+	}
 	SQ_UNLOCK(sq);
 }
 
@@ -76,8 +78,9 @@ sleepq_signal_one(const void *cookie)
 	sq = sleepq_lookup(cookie, false);
 	if (sq == NULL)
 		return;
-	if (!TAILQ_EMPTY(&sq->sq_entries))
-		sleepq_signal_first(sq);
+	if (!TAILQ_EMPTY(&sq->sq_entries)) {
+		sleepq_signal_entry(sq, TAILQ_FIRST(&sq->sq_entries));
+	}
 	SQ_UNLOCK(sq);
 }
 
@@ -139,14 +142,12 @@ sleepq_lookup(const void *cookie, bool create)
 }
 
 static void
-sleepq_signal_first(struct sleepq *sq)
+sleepq_signal_entry(struct sleepq *sq, struct sleepq_entry *se)
 {
-	struct sleepq_entry *se;
 	struct thread *td;
 
 	SPINLOCK_ASSERT_HELD(&sq->sq_lock);
 
-	se = TAILQ_FIRST(&sq->sq_entries);
 	td = se->se_thread;
 	if (se->se_sleeping) {
 		se->se_sleeping = false;

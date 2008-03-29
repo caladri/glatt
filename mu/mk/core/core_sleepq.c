@@ -12,6 +12,7 @@ static struct spinlock sleepq_lock;
 
 struct sleepq_entry {
 	struct thread *se_thread;
+	bool se_needwakeup;
 	bool se_sleeping;
 	TAILQ_ENTRY(struct sleepq_entry) se_link;
 };
@@ -49,7 +50,8 @@ sleepq_enter(const void *cookie)
 	sq = sleepq_lookup(cookie, true);
 	se = pool_allocate(&sleepq_entry_pool);
 	se->se_thread = td;
-	se->se_sleeping = true;
+	se->se_needwakeup = true;
+	se->se_sleeping = false;
 	TAILQ_INSERT_TAIL(&sq->sq_entries, se, se_link);
 	SQ_UNLOCK(sq);
 }
@@ -101,15 +103,18 @@ sleepq_wait(const void *cookie)
 	ASSERT(sq != NULL, "Can't find an entry for a non-existant queue.");
 
 	se = sleepq_entry_lookup(sq, td);
-	if (se->se_sleeping) {
+	if (se->se_needwakeup) {
+		se->se_sleeping = true;
 		scheduler_thread_sleeping(td);
 		SQ_UNLOCK(sq);
 		scheduler_schedule();
 		SQ_LOCK(sq);
+		se->se_sleeping = false;
 	}
 	TAILQ_REMOVE(&sq->sq_entries, se, se_link);
 	SQ_UNLOCK(sq);
 	ASSERT(!se->se_sleeping, "Thread woken up must be awake.");
+	ASSERT(!se->se_needwakeup, "Thread woken up must not need it again.");
 	pool_free(se);
 }
 
@@ -141,6 +146,7 @@ sleepq_lookup(const void *cookie, bool create)
 	return (sq);
 }
 
+#include<io/device/console/console.h>
 static void
 sleepq_signal_entry(struct sleepq *sq, struct sleepq_entry *se)
 {
@@ -149,9 +155,14 @@ sleepq_signal_entry(struct sleepq *sq, struct sleepq_entry *se)
 	SPINLOCK_ASSERT_HELD(&sq->sq_lock);
 
 	td = se->se_thread;
-	if (se->se_sleeping) {
-		se->se_sleeping = false;
-		scheduler_thread_runnable(td);
+	if (se->se_needwakeup) {
+		se->se_needwakeup = false;
+		if (se->se_sleeping)
+			scheduler_thread_runnable(td);
+	} else {
+		if (se->se_sleeping)
+			kcprintf("%s: thread woken up twice for %p\n", __func__,
+				 sq->sq_cookie);
 	}
 }
 

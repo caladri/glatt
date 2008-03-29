@@ -51,7 +51,6 @@ sleepq_enter(const void *cookie)
 	se->se_thread = td;
 	se->se_sleeping = true;
 	TAILQ_INSERT_TAIL(&sq->sq_entries, se, se_link);
-	scheduler_thread_sleeping(td);
 	SQ_UNLOCK(sq);
 }
 
@@ -103,6 +102,7 @@ sleepq_wait(const void *cookie)
 
 	se = sleepq_entry_lookup(sq, td);
 	if (se->se_sleeping) {
+		scheduler_thread_sleeping(td);
 		SQ_UNLOCK(sq);
 		scheduler_schedule();
 		SQ_LOCK(sq);

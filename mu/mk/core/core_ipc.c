@@ -89,7 +89,7 @@ ipc_process(void)
 		IPC_QUEUE_LOCK(ipcq);
 		if (TAILQ_EMPTY(&ipcq->ipcq_msgs)) {
 			ASSERT(TAILQ_EMPTY(&ipcq->ipcq_msgs), "Consistency is all I ask.");
-			cv_wait(ipcq->ipcq_cv, &ipcq->ipcq_mutex);
+			cv_wait(ipcq->ipcq_cv);
 			continue;
 		}
 		ipcmsg = TAILQ_FIRST(&ipcq->ipcq_msgs);
@@ -232,7 +232,7 @@ ipc_port_wait(ipc_port_t port)
 	}
 	/* XXX refcount.  */
 	IPC_PORTS_UNLOCK();
-	cv_wait(ipcp->ipcp_cv, &ipcp->ipcp_mutex);
+	cv_wait(ipcp->ipcp_cv);
 }
 
 static struct ipc_port *
@@ -250,7 +250,7 @@ ipc_port_alloc(ipc_port_t port)
 
 	ipcp = pool_allocate(&ipc_port_pool);
 	mutex_init(&ipcp->ipcp_mutex, "IPC Port");
-	ipcp->ipcp_cv = cv_create();
+	ipcp->ipcp_cv = cv_create(&ipcp->ipcp_mutex);
 	ipcp->ipcp_port = port;
 	TAILQ_INIT(&ipcp->ipcp_msgs);
 
@@ -337,7 +337,7 @@ ipc_queue_startup(void *arg)
 	 */
 	ipcq = malloc(sizeof *ipcq);
 	mutex_init(&ipcq->ipcq_mutex, "IPC Queue");
-	ipcq->ipcq_cv = cv_create();
+	ipcq->ipcq_cv = cv_create(&ipcq->ipcq_mutex);
 	PCPU_SET(ipc_queue, ipcq);
 
 	ipcq = current_ipcq();

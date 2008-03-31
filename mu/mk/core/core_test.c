@@ -130,7 +130,7 @@ test_ipc_startup_thread(void *arg)
 		scheduler_thread_runnable(*tdp);
 	}
 	scheduler_thread_sleeping(current_thread());
-	scheduler_schedule();
+	scheduler_schedule(NULL);
 	panic("%s: scheduler_schedule returned!", __func__);
 }
 

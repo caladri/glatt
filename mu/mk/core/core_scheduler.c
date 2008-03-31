@@ -80,11 +80,14 @@ scheduler_init(void)
 }
 
 void
-scheduler_schedule(void)
+scheduler_schedule(struct spinlock *lock)
 {
 	struct thread *td;
 
 	SCHEDULER_LOCK();
+	if (lock != NULL)
+		spinlock_unlock(lock);
+
 	ASSERT(current_thread() == NULL || current_runq()->sq_switchable,
 	       "Must be starting first thread or done with initialization.");
 

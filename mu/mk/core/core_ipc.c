@@ -1,14 +1,15 @@
 #include <core/types.h>
+#include <core/cv.h>
 #include <core/error.h>
 #include <core/ipc.h>
 #include <core/malloc.h>
 #include <core/pool.h>
-#include <core/sleepq.h>
 #include <core/startup.h>
 #include <core/thread.h>
 
 struct ipc_port {
 	struct mutex ipcp_mutex;
+	struct cv *ipcp_cv;
 	ipc_port_t ipcp_port;
 	TAILQ_HEAD(, struct ipc_message) ipcp_msgs;
 	TAILQ_ENTRY(struct ipc_port) ipcp_link;
@@ -22,6 +23,7 @@ struct ipc_message {
 
 struct ipc_queue {
 	struct mutex ipcq_mutex;
+	struct cv *ipcq_cv;
 	TAILQ_ENTRY(struct ipc_queue) ipcq_link;
 	TAILQ_HEAD(, struct ipc_message) ipcq_msgs;
 };
@@ -87,9 +89,7 @@ ipc_process(void)
 		IPC_QUEUE_LOCK(ipcq);
 		if (TAILQ_EMPTY(&ipcq->ipcq_msgs)) {
 			ASSERT(TAILQ_EMPTY(&ipcq->ipcq_msgs), "Consistency is all I ask.");
-			sleepq_enter(ipcq);
-			IPC_QUEUE_UNLOCK(ipcq);
-			sleepq_wait(ipcq);
+			cv_wait(ipcq->ipcq_cv, &ipcq->ipcq_mutex);
 			continue;
 		}
 		ipcmsg = TAILQ_FIRST(&ipcq->ipcq_msgs);
@@ -141,7 +141,7 @@ ipc_send(struct ipc_header *ipch, struct ipc_data *ipcd)
 	ASSERT(ipcq != NULL, "Queue must exist.");
 	IPC_QUEUE_LOCK(ipcq);
 	TAILQ_INSERT_TAIL(&ipcq->ipcq_msgs, ipcmsg, ipcmsg_link);
-	sleepq_signal_one(ipcq);
+	cv_signal(ipcq->ipcq_cv);
 	IPC_QUEUE_UNLOCK(ipcq);
 	return (0);
 }
@@ -231,10 +231,8 @@ ipc_port_wait(ipc_port_t port)
 		return;
 	}
 	/* XXX refcount.  */
-	sleepq_enter(ipcp);
-	IPC_PORT_UNLOCK(ipcp);
 	IPC_PORTS_UNLOCK();
-	sleepq_wait(ipcp);
+	cv_wait(ipcp->ipcp_cv, &ipcp->ipcp_mutex);
 }
 
 static struct ipc_port *
@@ -252,6 +250,7 @@ ipc_port_alloc(ipc_port_t port)
 
 	ipcp = pool_allocate(&ipc_port_pool);
 	mutex_init(&ipcp->ipcp_mutex, "IPC Port");
+	ipcp->ipcp_cv = cv_create();
 	ipcp->ipcp_port = port;
 	TAILQ_INIT(&ipcp->ipcp_msgs);
 
@@ -299,7 +298,7 @@ ipc_port_deliver(struct ipc_message *ipcmsg)
 	ASSERT(ipcmsg->ipcmsg_header.ipchdr_dst == ipcp->ipcp_port,
 	       "Destination must be the same as the port we are inserting into.");
 	TAILQ_INSERT_TAIL(&ipcp->ipcp_msgs, ipcmsg, ipcmsg_link);
-	sleepq_signal_one(ipcp);
+	cv_signal(ipcp->ipcp_cv);
 	IPC_PORT_UNLOCK(ipcp);
 	IPC_PORTS_UNLOCK();
 }
@@ -338,6 +337,7 @@ ipc_queue_startup(void *arg)
 	 */
 	ipcq = malloc(sizeof *ipcq);
 	mutex_init(&ipcq->ipcq_mutex, "IPC Queue");
+	ipcq->ipcq_cv = cv_create();
 	PCPU_SET(ipc_queue, ipcq);
 
 	ipcq = current_ipcq();

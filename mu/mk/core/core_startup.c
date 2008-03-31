@@ -69,9 +69,7 @@ startup_main(void)
 				  (void *)(uintptr_t)startup_main_thread);
 	scheduler_cpu_pin(td);
 	scheduler_thread_runnable(td);
-	spinlock_unlock(&startup_spinlock);
-
-	scheduler_schedule();
+	scheduler_schedule(&startup_spinlock);
 }
 
 static void

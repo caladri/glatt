@@ -34,7 +34,7 @@ void scheduler_cpu_pin(struct thread *);
 struct scheduler_queue *scheduler_cpu_setup(void);
 void scheduler_cpu_switchable(void);
 void scheduler_init(void);
-void scheduler_schedule(void);
+void scheduler_schedule(struct spinlock *);
 void scheduler_thread_runnable(struct thread *);
 void scheduler_thread_setup(struct thread *);
 void scheduler_thread_sleeping(struct thread *);

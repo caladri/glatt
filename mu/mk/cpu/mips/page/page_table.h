@@ -19,6 +19,15 @@ typedef	uint64_t	pt_entry_t;
  * which in turn are 8K.  This corresponds well to the fact that each TLB
  * entry maps 2 TLB pages (one even, one odd.)
  */
+#define	TLB_PAGE_SHIFT	(PAGE_SHIFT - 1)
+#define	TLB_PAGE_SIZE	(1 << TLB_PAGE_SHIFT)
+#define	TLB_PAGE_MASK	(TLB_PAGE_SIZE - 1)
+
+/*
+ * TLB PageMask register.  Has mask bits set above the default, 4K, page mask.
+ */
+#define	TLBMASK_SHIFT	(13)
+#define	TLBMASK_MASK	((PAGE_MASK >> TLBMASK_SHIFT) << TLBMASK_SHIFT)
 
 /*
  * PFN for EntryLo register.  Upper bits are 0, which is to say that

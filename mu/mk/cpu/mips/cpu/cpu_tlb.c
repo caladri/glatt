@@ -16,13 +16,9 @@
 #include <vm/vm.h>
 
 /*
- * Right now this code (and hopefully only this code) assumes that we are using
- * 8K pages in VM.  If we are, then we can use the default TLB pagesize (4K)
- * and just map the first and the second consecutive 4K pages.  If anything
- * outside of here breaks, that's bad.
+ * PageMask must increment in steps of 2 bits.
  */
-COMPILE_TIME_ASSERT(PAGE_SIZE == 8192);
-COMPILE_TIME_ASSERT(TLB_PAGE_SIZE == 4096);
+COMPILE_TIME_ASSERT(POPCNT(TLBMASK_MASK) % 2 == 0);
 
 #ifndef	UNIPROCESSOR
 struct tlb_shootdown_arg {
@@ -84,7 +80,7 @@ tlb_init(struct pmap *pm, paddr_t pcpu_addr)
 	cpu_write_tlb_wired(0);
 
 	/* Set the pagemask.  */
-	cpu_write_tlb_pagemask(0);	/* XXX depends on TLB_PAGE_SIZE.  */
+	cpu_write_tlb_pagemask(TLBMASK_MASK);
 
 	/*
 	 * Insert a wired mapping for the per-CPU data at the start of the

@@ -6,19 +6,6 @@
 struct pmap;
 
 /*
- * XXX since we are using 4K TLB pages and 8K VM pages (2 for the price of 1!),
- * we must always make sure to mask off the PAGE_MASK bits on pages that come
- * from VM, as we have to manage the highest bit set in PAGE_MASK, and if it
- * has it set with random garbage, we're screwed.
- *
- * So when a TLB refill routine is written, we should double-check that, or the
- * code which manages the PTEs must be really careful (which it should be in
- * any event.)
- */
-
-#define	TLB_PAGE_SIZE	(PAGE_SIZE / 2)
-
-/*
  * Wired entries in TLB context start at entry 1 and there can be at most 8 of
  * them.  Entry 0 is reserved for PCPU.
  */

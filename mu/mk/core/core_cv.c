@@ -26,6 +26,7 @@ cv_create(struct mutex *mtx)
 {
 	struct cv *cv;
 
+	ASSERT(mtx != NULL, "Condition variable must be protected by a mutex.");
 	cv = pool_allocate(&cv_pool);
 	spinlock_init(&cv->cv_spinlock, "CV");
 	cv->cv_mutex = mtx;
@@ -58,8 +59,7 @@ cv_wait(struct cv *cv)
 	CV_ASSERT_MUTEX_HELD(cv);
 
 	CV_LOCK(cv);
-	if (cv->cv_mutex != NULL)
-		mutex_unlock(cv->cv_mutex);
+	mutex_unlock(cv->cv_mutex);
 	sleepq_enter(cv, &cv->cv_spinlock);
 }
 

@@ -39,7 +39,7 @@ typedef	uint64_t	pt_entry_t;
  * other 0 fields.
  */
 #define	TLBLO_SWBITS_SHIFT	(30)
-#define	TLBLO_PFN_SHIFT		(6)
+#define	TLBLO_PFN_SHIFT		(6 + (PAGE_SHIFT - TLBMASK_SHIFT))
 #define	TLBLO_PFN_MASK		(0x03FFFFFC0)
 #define	TLBLO_PA_TO_PFN(pa)	((((pa) >> (PAGE_SHIFT - 1)) << TLBLO_PFN_SHIFT) & TLBLO_PFN_MASK)
 #define	TLBLO_PFN_TO_PA(pfn)	(((pfn) >> TLBLO_PFN_SHIFT) << (PAGE_SHIFT - 1))

@@ -18,7 +18,7 @@ static struct pool cv_pool;
 #define	CV_UNLOCK(cv)	spinlock_unlock(&(cv)->cv_spinlock)
 
 #define	CV_ASSERT_MUTEX_HELD(cv)					\
-	ASSERT((cv)->cv_mutex == NULL || MTX_HELD((cv)->cv_mutex),	\
+	ASSERT(MTX_HELD((cv)->cv_mutex),				\
 	       "Mutex must protect condition variable operations.")
 
 struct cv *

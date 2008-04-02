@@ -5,10 +5,27 @@
 #include <core/startup.h>
 #include <cpu/pcpu.h>
 #include <io/device/bus.h>
+#include <io/device/device.h>
+
+static const char *mpbus_children[] = {
+	"tmether",
+	"tmfb",
+	NULL,
+};
 
 static int
 mpbus_enumerate_children(struct bus_instance *bi)
 {
+	const char **childp;
+	int error;
+
+	for (childp = mpbus_children; *childp != NULL; childp++) {
+		error = device_enumerate(bi, *childp, NULL);
+		if (error != 0)
+			bus_printf(bi, "%s not present or enabled: %m", *childp,
+				   error);
+	}
+
 	return (bus_enumerate_children(bi));
 }
 

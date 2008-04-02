@@ -18,9 +18,11 @@ struct bus {
 static struct pool bus_pool;
 
 struct bus_instance {
+	STAILQ_HEAD(, struct bus_instance) bi_children;
 	struct bus_instance *bi_parent;
 	struct bus_attachment *bi_attachment;
 	void *bi_softc;
+	STAILQ_ENTRY(struct bus_instance) bi_peer;
 	STAILQ_ENTRY(struct bus_instance) bi_link;
 };
 static struct pool bus_instance_pool;
@@ -75,9 +77,12 @@ bus_instance_create(struct bus_instance **bip, struct bus_instance *parent,
 	       "Must have a parent unless this attachment doesn't.");
 
 	bi = pool_allocate(&bus_instance_pool);
+	STAILQ_INIT(&bi->bi_children);
 	bi->bi_parent = parent;
 	bi->bi_attachment = attachment;
 	bi->bi_softc = NULL;
+	if (parent != NULL)
+		STAILQ_INSERT_TAIL(&parent->bi_children, bi, bi_peer);
 	STAILQ_INSERT_TAIL(&attachment->ba_bus->bus_instances, bi, bi_link);
 	if (bip != NULL)
 		*bip = bi;
@@ -90,14 +95,19 @@ bus_instance_create(struct bus_instance **bip, struct bus_instance *parent,
 void
 bus_instance_destroy(struct bus_instance *bi)
 {
+	struct bus_instance *parent;
 	struct bus *bus;
 
 	bus = bi->bi_attachment->ba_bus;
+	parent = bi->bi_parent;
 	STAILQ_REMOVE(&bus->bus_instances, bi, struct bus_instance, bi_link);
+	if (parent != NULL)
+		STAILQ_REMOVE(&parent->bi_children, bi, struct bus_instance, bi_peer);
 	if (bi->bi_softc == NULL)
 		free(bi->bi_softc);
+	if (!STAILQ_EMPTY(&bi->bi_children))
+		panic("%s: should not be called yet.", __func__);
 	pool_free(bi);
-	panic("%s: should not be called yet.", __func__);
 }
 
 int
@@ -137,13 +147,17 @@ bus_instance_setup(struct bus_instance *bi, void *busdata)
 	int error;
 
 	error = bi->bi_attachment->ba_interface->bus_setup(bi, busdata);
-	if (error != 0)
+	if (error != 0) {
+#ifdef VERBOSE
+		bus_instance_printf(bi, "bus_setup: %m", error);
+#endif
 		return (error);
+	}
 	bus_instance_describe(bi);
 	if (bi->bi_attachment->ba_interface->bus_enumerate_children != NULL) {
 		error = bi->bi_attachment->ba_interface->bus_enumerate_children(bi);
 		if (error != 0) {
-			bus_instance_printf(bi, "bus_enumerate_children: %m\n", error);
+			bus_instance_printf(bi, "bus_enumerate_children: %m", error);
 		}
 	}
 	return (0);

@@ -1,9 +1,10 @@
-# $Id: build.mk,v 1.46 2008-03-31 21:53:32 juli Exp $
+# $Id: build.mk,v 1.47 2008-04-02 02:14:32 juli Exp $
 
 .PATH: ${KERNEL_ROOT}/core
 .PATH: ${KERNEL_ROOT}/db
 .PATH: ${KERNEL_ROOT}/io/device
 .PATH: ${KERNEL_ROOT}/io/device/console
+.PATH: ${KERNEL_ROOT}/io/network
 .PATH: ${KERNEL_ROOT}/io/pci
 .PATH: ${KERNEL_ROOT}/vm
 
@@ -50,6 +51,9 @@ KERNEL_SOURCES+=device_internal.c
 KERNEL_SOURCES+=console.c
 KERNEL_SOURCES+=framebuffer.c
 KERNEL_SOURCES+=framebuffer_font.c
+
+# io/network
+KERNEL_SOURCES+=network_interface.c
 
 # io/pci
 KERNEL_SOURCES+=pci.c

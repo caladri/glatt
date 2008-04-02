@@ -100,8 +100,12 @@ device_setup(struct device *device, void *busdata)
 	int error;
 
 	error = device->d_attachment->da_interface->device_setup(device, busdata);
-	if (error != 0)
+	if (error != 0) {
+#ifdef VERBOSE
+		device_printf(device, "device_setup: %m", error);
+#endif
 		return (error);
+	}
 	return (0);
 }
 

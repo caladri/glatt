@@ -6,6 +6,7 @@
 #include <cpu/interrupt.h>
 #include <cpu/memory.h>
 #include <io/device/device.h>
+#include <io/network/interface.h>
 
 #include <io/device/console/console.h>
 
@@ -34,6 +35,7 @@
 
 struct tmether_softc {
 	struct spinlock sc_lock;
+	struct network_interface sc_netif;
 };
 
 #define	TMETHER_LOCK(sc)	spinlock_lock(&(sc)->sc_lock)
@@ -45,10 +47,17 @@ static int
 tmether_setup(struct device *device, void *busdata)
 {
 	struct tmether_softc *sc;
+	int error;
 
 	sc = device_softc_allocate(device, sizeof *sc);
 	spinlock_init(&sc->sc_lock, "testmips ethernet");
 	TMETHER_LOCK(sc);
+	error = network_interface_attach(&sc->sc_netif,
+					 NETWORK_INTERFACE_ETHERNET, device);
+	if (error != 0) {
+		TMETHER_UNLOCK(sc);
+		return (error);
+	}
 	cpu_interrupt_establish(TEST_ETHER_DEV_IRQ, tmether_interrupt, sc);
 	TMETHER_UNLOCK(sc);
 	return (0);

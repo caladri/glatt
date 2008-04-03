@@ -143,7 +143,7 @@ platform_mp_start_all(void *arg)
 		platform_mp_attach_cpu(true);
 	}
 }
-STARTUP_ITEM(platform_mp, STARTUP_MP, STARTUP_FIRST,
+STARTUP_ITEM(platform_mp, STARTUP_MP, STARTUP_SECOND,
 	     platform_mp_start_all, NULL);
 
 static void
@@ -196,14 +196,12 @@ platform_mp_attach_cpu(bool bootstrap)
 	cpu_interrupt_establish(TEST_MP_DEV_IPI_INTERRUPT,
 				platform_mp_ipi_interrupt, NULL);
 
-#if 0
 	if (bootstrap) {
 		error = bus_enumerate_child(platform_mp_bus, "mpbus", NULL);
 		if (error != 0)
 			panic("%s: bus_enumerate_child failed: %m", __func__,
 			      error);
 	}
-#endif
 }
 
 static void

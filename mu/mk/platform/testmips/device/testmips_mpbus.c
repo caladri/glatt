@@ -32,6 +32,10 @@ mpbus_enumerate_children(struct bus_instance *bi)
 static int
 mpbus_setup(struct bus_instance *bi, void *busdata)
 {
+	if ((PCPU_GET(flags) & PCPU_FLAG_BOOTSTRAP) == 0) {
+		panic("%s: shouldn't be enumerating on application processor.",
+		      __func__);
+	}
 	return (0);
 }
 
@@ -39,4 +43,4 @@ BUS_INTERFACE(mpbusif) {
 	.bus_enumerate_children = mpbus_enumerate_children,
 	.bus_setup = mpbus_setup,
 };
-BUS_ATTACHMENT(mpbus, "cpu", mpbusif);
+BUS_ATTACHMENT(mpbus, "mp", mpbusif);

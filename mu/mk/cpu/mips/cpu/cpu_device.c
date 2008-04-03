@@ -28,12 +28,7 @@ cpu_enumerate_children(struct bus_instance *bi)
 	error = device_enumerate(bi, "clock_r4k", NULL/*XXX*/);
 	if (error != 0)
 		return (error);
-
-	if ((PCPU_GET(flags) & PCPU_FLAG_BOOTSTRAP) == 0) {
-		/* XXX */
-		bus_enumerate_child(bi, "mpbus", NULL);
-	}
-	return (0);
+	return (bus_enumerate_children(bi));
 }
 
 static int

@@ -187,6 +187,7 @@ platform_mp_attach_cpu(bool bootstrap)
 	if (bootstrap)
 		PCPU_SET(flags, PCPU_GET(flags) | PCPU_FLAG_BOOTSTRAP);
 
+	/* Add CPU device.  This also sets up interrupts.  */
 	error = bus_enumerate_child(platform_mp_bus, "cpu", NULL);
 	if (error != 0)
 		panic("%s: bus_enumerate_child failed: %m", __func__, error);
@@ -194,6 +195,15 @@ platform_mp_attach_cpu(bool bootstrap)
 	/* Install an IPI interrupt handler.  */
 	cpu_interrupt_establish(TEST_MP_DEV_IPI_INTERRUPT,
 				platform_mp_ipi_interrupt, NULL);
+
+#if 0
+	if (bootstrap) {
+		error = bus_enumerate_child(platform_mp_bus, "mpbus", NULL);
+		if (error != 0)
+			panic("%s: bus_enumerate_child failed: %m", __func__,
+			      error);
+	}
+#endif
 }
 
 static void

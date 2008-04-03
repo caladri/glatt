@@ -1,3 +1,13 @@
+root
+`->mainbus
+   `->mp
+      `->mpcpu
+         |->mpbus
+	 |  |->tmfb
+	 |  `->tmether
+         `->cpu
+            `->clock_r4k
+
 Rewrite:
 	2) Scheduler.  The current stuff seems too convoluted?
 

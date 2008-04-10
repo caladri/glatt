@@ -39,9 +39,12 @@
 static struct bus_instance *platform_mp_bus;
 
 static void platform_mp_attach_cpu(bool);
+#ifndef	UNIPROCESSOR
 static void platform_mp_ipi_interrupt(void *, int);
+#endif
 static void platform_mp_start_one(cpu_id_t, void (*)(void));
 
+#ifndef	UNIPROCESSOR
 void
 platform_mp_ipi_send(cpu_id_t cpu, enum ipi_type ipi)
 {
@@ -53,6 +56,7 @@ platform_mp_ipi_send_but(cpu_id_t cpu, enum ipi_type ipi)
 {
 	TEST_MP_DEV_WRITE(TEST_MP_DEV_IPI_MANY, (ipi << 16) | cpu);
 }
+#endif
 
 size_t
 platform_mp_memory(void)
@@ -60,6 +64,7 @@ platform_mp_memory(void)
 	return ((size_t)TEST_MP_DEV_READ(TEST_MP_DEV_MEMORY));
 }
 
+#ifndef	UNIPROCESSOR
 unsigned
 platform_mp_ncpus(void)
 {
@@ -70,10 +75,12 @@ platform_mp_ncpus(void)
 		return (MAXCPUS);
 	return (ncpus);
 }
+#endif
 
 void
 platform_mp_startup(void)
 {
+#ifndef	UNIPROCESSOR
 	/*
 	 * If the MP bus is not set up then we are the boot CPU and must mark
 	 * ourselves both present and running.  The boot CPU will mark all other
@@ -82,6 +89,7 @@ platform_mp_startup(void)
 	if (platform_mp_bus == NULL)
 		mp_cpu_present(mp_whoami());
 	mp_cpu_running(mp_whoami());
+#endif
 
 	/*
 	 * Attach a device for the CPU if the bus is set up already.
@@ -101,6 +109,7 @@ platform_mp_whoami(void)
 	return (me);
 }
 
+#ifndef	UNIPROCESSOR
 static void
 platform_mp_ipi_interrupt(void *arg, int interrupt)
 {
@@ -115,6 +124,7 @@ platform_mp_ipi_interrupt(void *arg, int interrupt)
 	while ((ipi = *TEST_MP_DEV_FUNCTION(TEST_MP_DEV_IPI_READ)) != IPI_NONE)
 		mp_ipi_receive(ipi);
 }
+#endif
 
 static void
 platform_mp_start_all(void *arg)
@@ -128,9 +138,11 @@ platform_mp_start_all(void *arg)
 		ncpus = MAXCPUS;
 	}
 
+#ifndef	UNIPROCESSOR
 	for (cpu = 0; cpu < ncpus; cpu++)
 		if (cpu != mp_whoami())
 			mp_cpu_present(cpu);
+#endif
 
 	if (ncpus != 1) {
 		for (cpu = 0; cpu < ncpus; cpu++) {
@@ -192,9 +204,11 @@ platform_mp_attach_cpu(bool bootstrap)
 	if (error != 0)
 		panic("%s: bus_enumerate_child failed: %m", __func__, error);
 
+#ifndef	UNIPROCESSOR
 	/* Install an IPI interrupt handler.  */
 	cpu_interrupt_establish(TEST_MP_DEV_IPI_INTERRUPT,
 				platform_mp_ipi_interrupt, NULL);
+#endif
 
 	if (bootstrap) {
 		error = bus_enumerate_child(platform_mp_bus, "mpbus", NULL);

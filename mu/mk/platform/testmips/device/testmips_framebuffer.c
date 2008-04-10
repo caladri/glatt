@@ -7,10 +7,10 @@
 #include <io/device/console/framebuffer.h>
 
 static void
-tmfb_load(struct framebuffer *fb, struct bgr *bitmap)
+tmfb_load(struct framebuffer *fb, const uint8_t *buffer)
 {
-	memcpy(fb->fb_softc, bitmap,
-	       sizeof bitmap[0] * fb->fb_width * fb->fb_height);
+	memcpy(fb->fb_softc, buffer,
+	       3 * fb->fb_width * fb->fb_height);
 }
 
 static struct framebuffer tmfb_softc = {
@@ -23,9 +23,11 @@ tmfb_setup(struct device *device, void *busdata)
 {
 	struct framebuffer *fb;
 
+#if 0
 #ifndef	FRAMEBUFFER
 	if (true)
 		return (ERROR_NOT_IMPLEMENTED);
+#endif
 #endif
 
 	fb = device_softc_allocate(device, sizeof *fb);

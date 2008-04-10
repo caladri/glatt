@@ -4,7 +4,10 @@ root
       `->mpcpu
          |->mpbus
 	 |  |->tmfb
+	 |  |->tmdisk
+	 |  |  `-> disk
 	 |  `->tmether
+	 |     `-> netif
          `->cpu
             `->clock_r4k
 

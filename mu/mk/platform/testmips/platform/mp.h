@@ -6,7 +6,11 @@
 
 typedef	uint64_t	cpu_bitmask_t;
 
+#ifndef UNIPROCESSOR
 #define	MAXCPUS		(8 * sizeof (cpu_bitmask_t))
+#else
+#define	MAXCPUS		(1)
+#endif
 
 static __inline bool
 cpu_bitmask_is_set(const volatile cpu_bitmask_t *maskp, cpu_id_t cpu)

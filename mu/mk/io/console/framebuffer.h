@@ -10,26 +10,23 @@ struct font {
 	unsigned f_height;	/* Character height.  */
 };
 
-struct bgr {
-	uint8_t b;
-	uint8_t g;
-	uint8_t r;
-} __packed;
+struct rgb {
+	uint8_t red;
+	uint8_t green;
+	uint8_t blue;
+};
 
 struct framebuffer {
 	struct console fb_console;	/* Associated console.  */
 	struct spinlock fb_lock;	/* Protects data.  */
 	struct font *fb_font;		/* Current font.  */
-	struct bgr *fb_buffer;
-#if 0 /* XXX assuming 24-bit.  */
-	unsigned fb_bits;		/* How many bits is each pixel?  */
-#endif
+	uint8_t *fb_buffer;
 	unsigned fb_width;		/* How many pixels wide?  */
 	unsigned fb_height;		/* How many pixels high?  */
 	unsigned fb_column;		/* Current column.  */
 	unsigned fb_row;		/* Current row.  */
 	void *fb_softc;
-	void (*fb_load)(struct framebuffer *, struct bgr *);
+	void (*fb_load)(struct framebuffer *, const uint8_t *);
 };
 
 extern struct font framebuffer_font_miklic_bold8x16;

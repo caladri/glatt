@@ -6,11 +6,24 @@
 #include <vm/page.h>
 #include <vm/vm.h>
 
+#define	FB_BYTE_RED	0
+#define	FB_BYTE_GREEN	1
+#define	FB_BYTE_BLUE	2
+#define	FB_BYTES	3
 #define	FB_COLUMNS(fb)	((fb)->fb_width / (fb)->fb_font->f_width)
 #define	FB_ROWS(fb)	((fb)->fb_height / (fb)->fb_font->f_height)
 
-static struct bgr foreground = { 0x80, 0x00, 0x00 };
-static struct bgr background = { 0xff, 0xff, 0xff };
+static struct rgb foreground = {
+	.red = 0x00,
+	.green = 0x00,
+	.blue = 0x80,
+};
+
+static struct rgb background = {
+	.red = 0x00,
+	.green = 0x00,
+	.blue = 0xff,
+};
 
 static void framebuffer_clear(struct framebuffer *);
 static void framebuffer_flush(void *);
@@ -25,8 +38,7 @@ framebuffer_init(struct framebuffer *fb, unsigned width, unsigned height)
 	vaddr_t vaddr;
 	int error;
 
-	error = vm_alloc(&kernel_vm, width * height * sizeof *fb->fb_buffer,
-			 &vaddr);
+	error = vm_alloc(&kernel_vm, width * height * FB_BYTES, &vaddr);
 	if (error != 0)
 		panic("%s: vm_alloc failed: %m", __func__, error);
 
@@ -40,7 +52,7 @@ framebuffer_init(struct framebuffer *fb, unsigned width, unsigned height)
 
 	spinlock_lock(&fb->fb_lock);
 	fb->fb_font = &framebuffer_font_miklic_bold8x16;
-	fb->fb_buffer = (struct bgr *)vaddr;
+	fb->fb_buffer = (uint8_t *)vaddr;
 
 	fb->fb_width = width;
 	fb->fb_height = height;
@@ -116,21 +128,31 @@ framebuffer_putc(void *sc, char ch)
 static void
 framebuffer_putxy(struct framebuffer *fb, char ch, unsigned x, unsigned y)
 {
-	struct bgr *bit;
+	struct font *font;
 	uint8_t *glyph;
-	unsigned r, c, s;
+	unsigned r, c;
 
-	glyph = &fb->fb_font->f_charset[ch * fb->fb_font->f_height];
-	for (r = 0; r < fb->fb_font->f_height; r++) {
-		for (c = 0; c < fb->fb_font->f_width; c++) {
-			s = glyph[r] & (1 << (fb->fb_font->f_width - c));
-			bit = &fb->fb_buffer[((x * fb->fb_font->f_width) + c) +
-				(((y * fb->fb_font->f_height) + r) *
-				 fb->fb_width)];
+	font = fb->fb_font;
+	glyph = &font->f_charset[ch * fb->fb_font->f_height];
+
+	for (r = 0; r < font->f_height; r++) {
+		for (c = 0; c < font->f_width; c++) {
+			struct rgb *color;
+			uint8_t *pixel;
+			unsigned p, s;
+
+			p = (x * font->f_width + c) +
+				((y * font->f_height + r) * fb->fb_width);
+			pixel = &fb->fb_buffer[p * FB_BYTES];
+
+			s = glyph[r] & (1 << (font->f_width - c));
 			if (s == 0)
-				*bit = background;
+				color = &background;
 			else
-				*bit = foreground;
+				color = &foreground;
+			pixel[FB_BYTE_RED] = color->red;
+			pixel[FB_BYTE_GREEN] = color->green;
+			pixel[FB_BYTE_BLUE] = color->blue;
 		}
 	}
 }
@@ -147,8 +169,8 @@ framebuffer_scroll(struct framebuffer *fb)
 	 */
 	lh = fb->fb_font->f_height;
 	skip = lh * fb->fb_width;
-	memcpy(fb->fb_buffer, &fb->fb_buffer[skip],
-	       ((fb->fb_height - lh) * fb->fb_width) * sizeof (struct bgr));
+	memcpy(fb->fb_buffer, &fb->fb_buffer[skip * FB_BYTES],
+	       ((fb->fb_height - lh) * fb->fb_width) * FB_BYTES);
 	for (c = 0; c < FB_COLUMNS(fb); c++)
 		framebuffer_putxy(fb, ' ', c, FB_ROWS(fb) - 1);
 	spinlock_unlock(&fb->fb_lock);

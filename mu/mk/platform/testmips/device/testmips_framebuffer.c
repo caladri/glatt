@@ -23,11 +23,9 @@ tmfb_setup(struct device *device, void *busdata)
 {
 	struct framebuffer *fb;
 
-#if 0
 #ifndef	FRAMEBUFFER
 	if (true)
 		return (ERROR_NOT_IMPLEMENTED);
-#endif
 #endif
 
 	fb = device_softc_allocate(device, sizeof *fb);

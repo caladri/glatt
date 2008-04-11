@@ -115,7 +115,7 @@ sleepq_lookup(const void *cookie, bool create)
 	return (sq);
 }
 
-#include<io/device/console/console.h>
+#include<io/console/console.h>
 static void
 sleepq_signal_entry(struct sleepq *sq, struct sleepq_entry *se)
 {

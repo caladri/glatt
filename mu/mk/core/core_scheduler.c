@@ -4,7 +4,7 @@
 #include <core/thread.h>
 #include <db/db.h>
 #include <db/db_show.h>
-#include <io/device/console/console.h>
+#include <io/console/console.h>
 
 DB_SHOW_TREE(scheduler, scheduler);
 DB_SHOW_VALUE_TREE(scheduler, root, DB_SHOW_TREE_POINTER(scheduler));

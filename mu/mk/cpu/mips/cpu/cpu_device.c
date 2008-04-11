@@ -6,7 +6,7 @@
 #include <io/device/bus.h>
 #include <io/device/device.h>
 
-#include <io/device/console/console.h>
+#include <io/console/console.h>
 
 static void
 cpu_describe(struct bus_instance *bi)

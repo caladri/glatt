@@ -9,7 +9,7 @@
 #include <cpu/pcpu.h>
 #include <cpu/tlb.h>
 #include <db/db.h>
-#include <io/device/console/console.h>
+#include <io/console/console.h>
 #include <page/page_map.h>
 #include <page/page_table.h>
 #include <vm/page.h>

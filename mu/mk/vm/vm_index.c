@@ -4,7 +4,7 @@
 #include <core/task.h>
 #include <core/thread.h>
 #include <db/db.h>
-#include <io/device/console/console.h>
+#include <io/console/console.h>
 #include <vm/page.h>
 #include <vm/vm.h>
 

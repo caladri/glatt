@@ -4,7 +4,7 @@
 #include <cpu/cpu.h>
 #include <cpu/cpuinfo.h>
 #include <db/db.h>
-#include <io/device/console/console.h>
+#include <io/console/console.h>
 
 	/* Coprocessor 0 product ID fields.  */
 

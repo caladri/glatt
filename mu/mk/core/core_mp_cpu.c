@@ -2,7 +2,7 @@
 #include <core/mp.h>
 #include <core/spinlock.h>
 #include <core/startup.h>
-#include <io/device/console/console.h>
+#include <io/console/console.h>
 
 static cpu_bitmask_t mp_cpu_present_bitmask;
 static cpu_bitmask_t mp_cpu_running_bitmask;

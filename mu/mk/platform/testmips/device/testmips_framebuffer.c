@@ -4,7 +4,7 @@
 #include <core/string.h>
 #include <cpu/memory.h>
 #include <io/device/device.h>
-#include <io/device/console/framebuffer.h>
+#include <io/console/framebuffer.h>
 
 static void
 tmfb_load(struct framebuffer *fb, const uint8_t *buffer)

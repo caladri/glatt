@@ -4,7 +4,7 @@
 #include <db/db.h>
 #include <db/db_action.h>
 #include <db/db_show.h>
-#include <io/device/console/console.h>
+#include <io/console/console.h>
 
 #define	DB_SHOW_ARG_MAX		(16)
 #define	DB_SHOW_ARG_LIKELY_SIZE	(16)

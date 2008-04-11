@@ -2,7 +2,7 @@
 #include <core/startup.h>
 #include <db/db.h>
 #include <db/db_action.h>
-#include <io/device/console/console.h>
+#include <io/console/console.h>
 
 static void
 db_halt(void)

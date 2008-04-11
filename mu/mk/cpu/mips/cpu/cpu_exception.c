@@ -10,7 +10,7 @@
 #include <cpu/pcpu.h>
 #include <cpu/register.h>
 #include <db/db.h>
-#include <io/device/console/console.h>
+#include <io/console/console.h>
 
 #define	EXCEPTION_SPACE			(0x80)
 

@@ -11,7 +11,7 @@
 #include <cpu/tlb.h>
 #include <db/db.h>
 #include <io/device/bus.h>
-#include <io/device/console/console.h>
+#include <io/console/console.h>
 #include <vm/page.h>
 #include <vm/vm.h>
 

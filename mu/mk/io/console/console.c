@@ -1,8 +1,8 @@
 #include <core/types.h>
 #include <core/error.h>
 #include <core/string.h>
-#include <io/device/console/console.h>
-#include <io/device/console/consoledev.h>
+#include <io/console/console.h>
+#include <io/console/consoledev.h>
 
 static struct console *kernel_console;
 

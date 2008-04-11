@@ -7,7 +7,7 @@
 #include <db/db.h>
 #include <io/device/bus.h>
 #include <io/device/bus_internal.h>
-#include <io/device/console/console.h>
+#include <io/console/console.h>
 #include <io/device/device.h>
 #include <io/device/device_internal.h>
 #include <io/device/leaf.h>

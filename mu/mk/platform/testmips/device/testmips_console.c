@@ -2,8 +2,8 @@
 #include <core/error.h>
 #include <core/startup.h>
 #include <cpu/memory.h>
-#include <io/device/console/console.h>
-#include <io/device/console/consoledev.h>
+#include <io/console/console.h>
+#include <io/console/consoledev.h>
 
 static int
 testmips_console_getc(void *sc, char *chp)

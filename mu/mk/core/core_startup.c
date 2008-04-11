@@ -7,7 +7,7 @@
 #include <core/task.h>
 #include <core/thread.h>
 #include <db/db.h>
-#include <io/device/console/console.h>
+#include <io/console/console.h>
 #include <vm/vm.h>
 
 SET(startup_items, struct startup_item);

@@ -5,7 +5,7 @@
 #include <core/task.h>
 #include <core/thread.h>
 
-#include <io/device/console/console.h>
+#include <io/console/console.h>
 
 #define	NTHREADS	(13)
 

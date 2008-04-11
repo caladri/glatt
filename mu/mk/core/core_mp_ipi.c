@@ -2,7 +2,7 @@
 #include <core/mp.h>
 #include <core/spinlock.h>
 #include <core/startup.h>
-#include <io/device/console/console.h>
+#include <io/console/console.h>
 
 /*
  * XXX

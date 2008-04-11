@@ -4,7 +4,7 @@
 #include <core/startup.h>
 #include <cpu/pcpu.h>
 #include <db/db.h>
-#include <io/device/console/console.h>
+#include <io/console/console.h>
 
 #define	PANIC_MAGIC	(0xcafebabe)
 

@@ -6,7 +6,7 @@
 #include <db/db.h>
 #include <db/db_action.h>
 #include <db/db_show.h>
-#include <io/device/console/console.h>
+#include <io/console/console.h>
 
 SET(db_actions, struct db_action);
 

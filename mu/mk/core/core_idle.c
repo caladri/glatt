@@ -4,7 +4,7 @@
 #include <core/task.h>
 #include <core/thread.h>
 
-#include <io/device/console/console.h>
+#include <io/console/console.h>
 
 static void
 idle_thread(void *arg)

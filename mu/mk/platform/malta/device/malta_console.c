@@ -2,8 +2,8 @@
 #include <core/error.h>
 #include <core/startup.h>
 #include <cpu/memory.h>
-#include <io/device/console/console.h>
-#include <io/device/console/consoledev.h>
+#include <io/console/console.h>
+#include <io/console/consoledev.h>
 #include <vm/page.h>
 #include <vm/vm.h>
 

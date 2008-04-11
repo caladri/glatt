@@ -3,16 +3,13 @@
 #include <core/startup.h>
 #include <core/task.h>
 #include <core/thread.h>
-
-#include <io/console/console.h>
+#include <core/ttk.h>
 
 static void
 idle_thread(void *arg)
 {
-	for (;;) {
-		scheduler_thread_runnable(current_thread());
-		scheduler_schedule(NULL);
-	}
+	for (;;)
+		ttk_idle();
 }
 
 static void

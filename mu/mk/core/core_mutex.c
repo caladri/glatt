@@ -17,30 +17,56 @@
  */
 #define	MTX_CHANNEL(mtx)	((const void *)((uintptr_t)(mtx) | 1))
 
-static bool mutex_try_wait(struct mutex *, bool);
-
 void
-mutex_init(struct mutex *mtx, const char *name)
+mutex_init(struct mutex *mtx, const char *name, unsigned flags)
 {
 	spinlock_init(&mtx->mtx_lock, name);
 	MTX_SPINLOCK(mtx);
 	mtx->mtx_owner = NULL;
 	mtx->mtx_nested = 0;
+	mtx->mtx_flags = flags;
 	MTX_SPINUNLOCK(mtx);
 }
 
 void
 mutex_lock(struct mutex *mtx)
 {
-	ASSERT(current_thread() != NULL, "Must have a thread.");
+	unsigned int tries;
+	struct thread *td;
+
+	td = current_thread();
+	ASSERT(td != NULL, "Must have a thread.");
+	ASSERT(mtx != NULL, "Cannot lock NULL mutex.");
 
 #ifndef	NO_MORDER
 	morder_lock(mtx);
 #endif
 
+	tries = 0;
+
 	for (;;) {
-		if (mutex_try_wait(mtx, true))
+		MTX_SPINLOCK(mtx);
+		if (mtx->mtx_owner == td) {
+			if ((mtx->mtx_flags & MUTEX_FLAG_RECURSE) != 0) {
+				mtx->mtx_nested++;
+				MTX_SPINUNLOCK(mtx);
+				return;
+			}
+			panic("%s: cannot recurse on mutex %s", __func__,
+			      mtx->mtx_lock.s_name);
+		}
+		if (mtx->mtx_owner == NULL) {
+			mtx->mtx_nested++;
+			mtx->mtx_owner = td;
+			MTX_SPINUNLOCK(mtx);
 			return;
+		}
+		if (tries++ < 10) {
+			MTX_SPINUNLOCK(mtx);
+			/* Try spinning for a while.  */
+			continue;
+		}
+		sleepq_enter(MTX_CHANNEL(mtx), &mtx->mtx_lock);
 	}
 }
 
@@ -64,36 +90,4 @@ mutex_unlock(struct mutex *mtx)
 		sleepq_signal_one(MTX_CHANNEL(mtx));
 	}
 	MTX_SPINUNLOCK(mtx);
-}
-
-static bool
-mutex_try_wait(struct mutex *mtx, bool wait)
-{
-	struct thread *td;
-
-	td = current_thread();
-
-	ASSERT(td != NULL, "Must have a thread.");
-
-	ASSERT(mtx != NULL, "Cannot lock NULL mutex.");
-
-	MTX_SPINLOCK(mtx);
-	if (mtx->mtx_owner == td) {
-		mtx->mtx_nested++;
-		MTX_SPINUNLOCK(mtx);
-		return (true);
-	}
-	if (mtx->mtx_owner == NULL) {
-		mtx->mtx_nested++;
-		mtx->mtx_owner = td;
-		MTX_SPINUNLOCK(mtx);
-		return (true);
-	}
-	if (!wait) {
-		MTX_SPINUNLOCK(mtx);
-		return (false);
-	} else {
-		sleepq_enter(MTX_CHANNEL(mtx), &mtx->mtx_lock);
-		return (false);
-	}
 }

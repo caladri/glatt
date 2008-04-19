@@ -63,10 +63,10 @@ ipc_init(void)
 	if (error != 0)
 		panic("%s: pool_create failed: %m", __func__, error);
 
-	mutex_init(&ipc_ports_lock, "IPC Ports");
+	mutex_init(&ipc_ports_lock, "IPC Ports", MUTEX_FLAG_DEFAULT);
 	TAILQ_INIT(&ipc_ports);
 
-	mutex_init(&ipc_queues_lock, "IPC Queues");
+	mutex_init(&ipc_queues_lock, "IPC Queues", MUTEX_FLAG_DEFAULT);
 	TAILQ_INIT(&ipc_queues);
 }
 
@@ -249,7 +249,7 @@ ipc_port_alloc(ipc_port_t port)
 	}
 
 	ipcp = pool_allocate(&ipc_port_pool);
-	mutex_init(&ipcp->ipcp_mutex, "IPC Port");
+	mutex_init(&ipcp->ipcp_mutex, "IPC Port", MUTEX_FLAG_DEFAULT);
 	ipcp->ipcp_cv = cv_create(&ipcp->ipcp_mutex);
 	ipcp->ipcp_port = port;
 	TAILQ_INIT(&ipcp->ipcp_msgs);
@@ -336,7 +336,7 @@ ipc_queue_startup(void *arg)
 	 * Must not block.
 	 */
 	ipcq = malloc(sizeof *ipcq);
-	mutex_init(&ipcq->ipcq_mutex, "IPC Queue");
+	mutex_init(&ipcq->ipcq_mutex, "IPC Queue", MUTEX_FLAG_DEFAULT);
 	ipcq->ipcq_cv = cv_create(&ipcq->ipcq_mutex);
 	PCPU_SET(ipc_queue, ipcq);
 

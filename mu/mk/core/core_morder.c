@@ -29,13 +29,10 @@ struct morder_lock {
 	SLIST_ENTRY(struct morder_lock) ml_link;
 };
 
-static struct spinlock morder_spinlock = SPINLOCK_INIT("MORDER");
-static struct pool morder_pool =
-	POOL_INIT("MORDER", struct morder, POOL_DEFAULT);
-static struct pool morder_entry_pool =
-	POOL_INIT("MORDER ENTRY", struct morder_entry, POOL_DEFAULT);
-static struct pool morder_lock_pool =
-	POOL_INIT("MORDER LOCK", struct morder_lock, POOL_DEFAULT);
+static struct spinlock morder_spinlock;
+static struct pool morder_pool;
+static struct pool morder_entry_pool;
+static struct pool morder_lock_pool;
 
 static struct morder morder_bottom = {
 	.m_child = NULL,
@@ -50,6 +47,31 @@ static struct morder_entry *morder_insert(struct morder *, const char *);
 static struct morder_lock *morder_lookup(struct morder_thread *, const void *);
 static struct morder_entry *morder_order(struct morder_thread *, const char *);
 static void morder_remove(const char *, const void *);
+
+void
+morder_init(void)
+{
+	int error;
+
+	spinlock_init(&morder_spinlock, "MORDER");
+
+	error = pool_create(&morder_pool, "MORDER", sizeof (struct morder),
+			    POOL_DEFAULT);
+	if (error != 0)
+		panic("%s: pool_create failed: %m", __func__, error);
+
+	error = pool_create(&morder_entry_pool, "MORDER ENTRY",
+			    sizeof (struct morder_entry), POOL_DEFAULT);
+	if (error != 0)
+		panic("%s: pool_create failed: %m", __func__, error);
+
+	error = pool_create(&morder_lock_pool, "MORDER LOCK",
+			    sizeof (struct morder_lock), POOL_DEFAULT);
+	if (error != 0)
+		panic("%s: pool_create failed: %m", __func__, error);
+
+	SLIST_INIT(&morder_allentries);
+}
 
 void
 morder_thread_setup(struct thread *td)

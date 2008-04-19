@@ -11,6 +11,7 @@ struct morder_thread {
 	SLIST_HEAD(, struct morder_lock) mt_locks;
 };
 
+void morder_init(void);
 void morder_thread_setup(struct thread *);
 
 void morder_lock(struct mutex *);

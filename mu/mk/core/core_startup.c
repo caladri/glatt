@@ -20,7 +20,7 @@ static void startup_boot_thread(void *);
 static void startup_main_thread(void *);
 
 static bool startup_booting = false;
-static struct spinlock startup_spinlock = SPINLOCK_INIT("startup");
+static struct spinlock startup_lock;
 static struct task *main_task;
 
 void
@@ -29,6 +29,7 @@ startup_init(void)
 #ifdef	UNIPROCESSOR
 	kcprintf("STARTUP: Uniprocessor kernel, only the boot CPU will be used.\n");
 #endif
+	spinlock_init(&startup_lock, "STARTUP");
 
 	/*
 	 * Turn on the virtual memory subsystem.
@@ -66,7 +67,7 @@ startup_main(void)
 	bool bootstrap;
 	int error;
 
-	spinlock_lock(&startup_spinlock);
+	spinlock_lock(&startup_lock);
 	bootstrap = !startup_booting;
 	startup_booting = true;
 
@@ -85,7 +86,7 @@ startup_main(void)
 				  (void *)(uintptr_t)startup_main_thread);
 	scheduler_cpu_pin(td);
 	scheduler_thread_runnable(td);
-	scheduler_schedule(&startup_spinlock);
+	scheduler_schedule(&startup_lock);
 }
 
 static void
@@ -113,7 +114,7 @@ startup_boot_thread(void *arg)
 	kcprintf("STARTUP: The system is coming up.\n");
 #endif
 
-	spinlock_lock(&startup_spinlock);
+	spinlock_lock(&startup_lock);
 	for (itemp = SET_BEGIN(startup_items); itemp < SET_END(startup_items);
 	     itemp++) {
 		item = *itemp;
@@ -169,7 +170,7 @@ startup_main_thread(void *arg)
 	kcprintf("STARTUP: cpu%u starting main thread.\n", mp_whoami());
 #endif
 
-	spinlock_lock(&startup_spinlock);
+	spinlock_lock(&startup_lock);
 	for (itemp = SET_BEGIN(startup_items); itemp < SET_END(startup_items);
 	     itemp++) {
 		item = *itemp;
@@ -198,7 +199,7 @@ next:		continue;
 	/* Initialize per-CPU structures.  */
 	TAILQ_FOREACH(item, &sorted_items, si_link)
 		item->si_function(item->si_arg);
-	spinlock_unlock(&startup_spinlock);
+	spinlock_unlock(&startup_lock);
 
 	/*
 	 * Threaded initialialization complete, the scheduler may run other
@@ -211,4 +212,4 @@ next:		continue;
 	 */
 	ipc_process();
 }
-STARTUP_ITEM(main, STARTUP_MAIN, STARTUP_FIRST, startup_main_thread, &startup_spinlock);
+STARTUP_ITEM(main, STARTUP_MAIN, STARTUP_FIRST, startup_main_thread, &startup_lock);

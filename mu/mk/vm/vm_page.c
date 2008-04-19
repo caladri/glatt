@@ -18,7 +18,7 @@ COMPILE_TIME_ASSERT(sizeof (struct vm_page_array) == PAGE_SIZE);
 
 static TAILQ_HEAD(, struct vm_page) page_free_queue;
 static TAILQ_HEAD(, struct vm_page) page_use_queue;
-static struct spinlock page_lock = SPINLOCK_INIT("PAGE");
+static struct spinlock page_lock;
 
 static struct vm_page *page_array_get_page(void);
 static void page_insert(struct vm_page *, paddr_t, uint32_t);
@@ -32,8 +32,11 @@ static void page_ref_hold(struct vm_page *);
 void
 page_init(void)
 {
+	spinlock_init(&page_lock, "PAGE");
+
 	TAILQ_INIT(&page_free_queue);
 	TAILQ_INIT(&page_use_queue);
+
 #ifdef	VERBOSE
 	kcprintf("PAGE: page size is %uK, %lu pages per page array.\n",
 		 PAGE_SIZE / 1024, VM_PAGE_ARRAY_ENTRIES);

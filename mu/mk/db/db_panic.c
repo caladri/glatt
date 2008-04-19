@@ -11,7 +11,6 @@
 void
 panic(const char *s, ...)
 {
-	static struct spinlock console_lock = SPINLOCK_INIT("panic");
 	va_list ap;
 #ifndef	UNIPROCESSOR
 	static uint64_t magic;
@@ -39,13 +38,11 @@ panic(const char *s, ...)
 	}
 #endif
 
-	spinlock_lock(&console_lock);
 	kcprintf("panic: cpu%u: ", mp_whoami());
 	va_start(ap, s);
 	kcvprintf(s, ap);
 	va_end(ap);
 	kcputs("\n");
-	spinlock_unlock(&console_lock);
 
 	if ((PCPU_GET(flags) & PCPU_FLAG_PANICKED) != 0) {
 		kcprintf("cpu%u: double panic.\n", mp_whoami());
@@ -64,9 +61,7 @@ panic(const char *s, ...)
 		cpu_break();
 #ifndef	UNIPROCESSOR
 	} else {
-		spinlock_lock(&console_lock);
 		kcprintf("cpu%u: secondary panic, halting.\n", mp_whoami());
-		spinlock_unlock(&console_lock);
 		/*
 		 * Someone else is the primary panic, just stop ourselves.
 		 * All we can do is log and let them go to the debugger.

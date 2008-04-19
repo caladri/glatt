@@ -11,11 +11,9 @@ DB_SHOW_VALUE_TREE(scheduler, root, DB_SHOW_TREE_POINTER(scheduler));
 
 static TAILQ_HEAD(, struct scheduler_queue) scheduler_queue_list;
 static struct scheduler_queue scheduler_sleep_queue;
-static struct spinlock scheduler_lock = SPINLOCK_INIT("SCHEDULER");
+static struct spinlock scheduler_lock;
 
-static struct pool scheduler_queue_pool = POOL_INIT("SCHEDULER QUEUE",
-						    struct scheduler_queue,
-						    POOL_VIRTUAL);
+static struct pool scheduler_queue_pool;
 
 #define	SCHEDULER_LOCK()	spinlock_lock(&scheduler_lock)
 #define	SCHEDULER_UNLOCK()	spinlock_unlock(&scheduler_lock);
@@ -75,8 +73,16 @@ scheduler_cpu_switchable(void)
 void
 scheduler_init(void)
 {
+	int error;
+
+	error = pool_create(&scheduler_queue_pool, "SCHEDULER QUEUE",
+			    sizeof (struct scheduler_queue), POOL_VIRTUAL);
+	if (error != 0)
+		panic("%s: pool_created failed: %m", __func__, error);
+	spinlock_init(&scheduler_lock, "SCHEDULER");
 	TAILQ_INIT(&scheduler_queue_list);
-	scheduler_queue_setup(&scheduler_sleep_queue, "SCHEDULER SLEEP QUEUE", CPU_ID_INVALID);
+	scheduler_queue_setup(&scheduler_sleep_queue, "SCHEDULER SLEEP QUEUE",
+			      CPU_ID_INVALID);
 }
 
 void

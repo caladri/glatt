@@ -19,15 +19,6 @@ struct pool {
 	uint32_t pool_flags;
 };
 
-#define	POOL_INIT(name, type, flags)					\
-	{								\
-		.pool_lock = SPINLOCK_INIT(name " POOL"),		\
-		.pool_name = name,					\
-		.pool_size = sizeof (type),				\
-		.pool_flags = flags | POOL_VALID,			\
-		.pool_pages = SLIST_HEAD_INITIALIZER()			\
-	}
-
 extern size_t pool_max_alloc;
 
 void *pool_allocate(struct pool *);

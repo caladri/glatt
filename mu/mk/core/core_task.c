@@ -11,8 +11,20 @@
  */
 COMPILE_TIME_ASSERT(sizeof (struct task) <= PAGE_SIZE);
 
-static struct pool task_pool = POOL_INIT("TASK", struct task, POOL_VIRTUAL);
-static STAILQ_HEAD(, struct task) task_list = STAILQ_HEAD_INITIALIZER(task_list);
+static struct pool task_pool;
+static STAILQ_HEAD(, struct task) task_list;
+
+void
+task_init(void)
+{
+	int error;
+
+	error = pool_create(&task_pool, "TASK", sizeof (struct task),
+			    POOL_VIRTUAL);
+	if (error != 0)
+		panic("%s: pool_create failed: %m", __func__, error);
+	STAILQ_INIT(&task_list);
+}
 
 int
 task_create(struct task **taskp, struct task *parent, const char *name,

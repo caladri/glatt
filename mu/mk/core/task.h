@@ -21,6 +21,8 @@ struct task {
 	struct vm *t_vm;
 };
 
+void task_init(void);
+
 int task_create(struct task **, struct task *, const char *, uint32_t);
 
 #endif /* !_CORE_TASK_H_ */

@@ -45,6 +45,11 @@ startup_init(void)
 	 */
 	ipc_init();
 
+	/*
+	 * Initialize task data structures.
+	 */
+	task_init();
+
 #ifndef	NO_MORDER
 	/*
 	 * Initialize lock order checker if present.

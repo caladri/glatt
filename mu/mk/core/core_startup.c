@@ -46,9 +46,10 @@ startup_init(void)
 	ipc_init();
 
 	/*
-	 * Initialize task data structures.
+	 * Initialize task and thread data structures.
 	 */
 	task_init();
+	thread_init();
 
 #ifndef	NO_MORDER
 	/*

@@ -8,17 +8,23 @@
 #include <db/db.h>
 #include <vm/page.h>
 
-/*
- * Determines which allocator we use.  We can switch to vm_alloc if the thread
- * structure gets bigger than a PAGE.
- */
-COMPILE_TIME_ASSERT(sizeof (struct thread) <= PAGE_SIZE);
-
-static struct pool thread_pool = POOL_INIT("THREAD", struct thread, POOL_VIRTUAL);
-
-static struct spinlock thread_lock = SPINLOCK_INIT("THREAD");
+static struct pool thread_pool;
+static struct spinlock thread_lock;
 
 static void thread_error(void *);
+
+void
+thread_init(void)
+{
+	int error;
+
+	error = pool_create(&thread_pool, "THREAD", sizeof (struct thread),
+			    POOL_VIRTUAL);
+	if (error != 0)
+		panic("%s: pool_create failed: %m", __func__, error);
+
+	spinlock_init(&thread_lock, "THREAD");
+}
 
 int
 thread_create(struct thread **tdp, struct task *parent, const char *name,

@@ -5,12 +5,6 @@
 #include <core/task.h>
 #include <vm/page.h>
 
-/*
- * Determines which allocator we use.  We can switch to vm_alloc if the task
- * structure gets bigger than a PAGE.
- */
-COMPILE_TIME_ASSERT(sizeof (struct task) <= PAGE_SIZE);
-
 static struct pool task_pool;
 static STAILQ_HEAD(, struct task) task_list;
 

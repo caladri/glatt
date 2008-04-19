@@ -28,6 +28,8 @@ struct thread {
 	struct cpu_thread td_cputhread;
 };
 
+void thread_init(void);
+
 int thread_create(struct thread **, struct task *, const char *, uint32_t);
 void thread_set_upcall(struct thread *, void (*)(void *), void *);
 void thread_switch(struct thread *, struct thread *);

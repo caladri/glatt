@@ -1,6 +1,6 @@
 #include <core/types.h>
+#include <core/critical.h>
 #include <core/error.h>
-#include <core/spinlock.h>
 #include <cpu/cpu.h>
 #include <cpu/memory.h>
 #include <platform/clock.h>
@@ -21,9 +21,6 @@
 
 #define	CLOCK_CALIBRATION_RUNS	(10)
 
-static struct spinlock platform_clock_calibrate_lock =
-	SPINLOCK_INIT("testmips clock calibration");
-
 static unsigned platform_clock_msecond(void);
 
 /*
@@ -32,12 +29,16 @@ static unsigned platform_clock_msecond(void);
 unsigned
 platform_clock_calibrate(unsigned hz)
 {
+	critical_section_t crit;
 	uint64_t sum;
 	unsigned run;
 
 	sum = 0;
 
-	spinlock_lock(&platform_clock_calibrate_lock);
+	/*
+	 * The calibration must happen in a critical section.
+	 */
+	crit = critical_enter();
 	for (run = 0; run < CLOCK_CALIBRATION_RUNS; run++) {
 		unsigned count[3], ms[3];
 
@@ -79,7 +80,7 @@ restart:	count[0] = cpu_read_count();
 		 */
 		sum += count[2] - count[1];
 	}
-	spinlock_unlock(&platform_clock_calibrate_lock);
+	critical_exit(crit);
 
 	/*
 	 * Take mean and convert to number of cycles in 1/hz seconds.

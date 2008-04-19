@@ -3,7 +3,7 @@
 #include <core/spinlock.h>
 #include <core/startup.h>
 
-static struct spinlock mp_hokusai_lock = SPINLOCK_INIT("HOKUSAI");
+static struct spinlock mp_hokusai_lock;
 static bool mp_hokusai_ipi_registered;
 static void (*mp_hokusai_callback)(void *);
 static void *mp_hokusai_arg;
@@ -112,6 +112,11 @@ mp_hokusai_ipi_send(void)
 static void
 mp_hokusai_startup(void *arg)
 {
+	spinlock_init(&mp_hokusai_lock, "HOKUSAI");
+
+	/*
+	 * Keep lock locked to avoid getting spurious IPIs now.
+	 */
 	spinlock_lock(&mp_hokusai_lock);
 	mp_ipi_register(IPI_HOKUSAI, mp_hokusai_ipi, NULL);
 

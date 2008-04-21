@@ -3,9 +3,11 @@
 #include <core/malloc.h>
 #include <core/spinlock.h>
 #include <core/startup.h>
+#include <core/string.h>
 #include <cpu/interrupt.h>
 #include <cpu/memory.h>
 #include <io/device/device.h>
+#include <io/network/ethernet.h>
 #include <io/network/interface.h>
 
 #include <io/console/console.h>
@@ -19,6 +21,7 @@
 #define	TEST_ETHER_DEV_STATUS	(0x4000)
 #define	TEST_ETHER_DEV_LENGTH	(0x4010)
 #define	TEST_ETHER_DEV_COMMAND	(0x4020)
+#define	TEST_ETHER_DEV_MAC	(0x4040)
 
 #define	TEST_ETHER_DEV_FUNCTION(f)					\
 	(volatile uint64_t *)XKPHYS_MAP(XKPHYS_UC, TEST_ETHER_DEV_BASE + (f))
@@ -42,6 +45,13 @@ struct tmether_softc {
 #define	TMETHER_UNLOCK(sc)	spinlock_unlock(&(sc)->sc_lock)
 
 static void tmether_interrupt(void *, int);
+static network_interface_request_handler_t tmether_request;
+
+static void
+tmether_describe(struct device *device)
+{
+	device_printf(device, "testmips simulated ethernet device.");
+}
 
 static int
 tmether_setup(struct device *device, void *busdata)
@@ -53,7 +63,8 @@ tmether_setup(struct device *device, void *busdata)
 	spinlock_init(&sc->sc_lock, "testmips ethernet");
 	TMETHER_LOCK(sc);
 	error = network_interface_attach(&sc->sc_netif,
-					 NETWORK_INTERFACE_ETHERNET, device);
+					 NETWORK_INTERFACE_ETHERNET,
+					 tmether_request, device);
 	if (error != 0) {
 		TMETHER_UNLOCK(sc);
 		return (error);
@@ -83,7 +94,28 @@ tmether_interrupt(void *arg, int interrupt)
 	TMETHER_UNLOCK(sc);
 }
 
+static int
+tmether_request(void *softc, enum network_interface_request req,
+		void *data, size_t datalen)
+{
+	struct tmether_softc *sc = softc;
+
+	switch (req) {
+	case NETWORK_INTERFACE_GET_ADDRESS:
+		if (datalen != ETHERNET_MAC_LENGTH)
+			return (ERROR_INVALID);
+		TMETHER_LOCK(sc);
+		TEST_ETHER_DEV_WRITE(TEST_ETHER_DEV_MAC, (uintptr_t)data);
+		TMETHER_UNLOCK(sc);
+		return (0);
+	default:
+		return (ERROR_NOT_IMPLEMENTED);
+	}
+	panic("%s: should not be reached.", __func__);
+}
+
 DEVICE_INTERFACE(tmetherif) {
+	.device_describe = tmether_describe,
 	.device_setup = tmether_setup,
 };
 DEVICE_ATTACHMENT(tmether, "mpbus", tmetherif);

@@ -1,4 +1,5 @@
 #include <core/types.h>
+#include <core/btree.h>
 #include <core/error.h>
 #include <core/pool.h>
 #include <core/task.h>
@@ -20,8 +21,7 @@ struct vm_index_page {
 struct vm_index {
 	vaddr_t vmi_base;
 	size_t vmi_size;
-	struct vm_index *vmi_left;
-	struct vm_index *vmi_right;
+	BTREE(struct vm_index) vmi_tree;
 	TAILQ_ENTRY(struct vm_index) vmi_free_link;
 	TAILQ_HEAD(, struct vm_index_page) vmi_page_queue;
 };
@@ -127,8 +127,7 @@ vm_insert_range(struct vm *vm, vaddr_t begin, vaddr_t end)
 	VM_LOCK(vm);
 	vmi->vmi_base = begin;
 	vmi->vmi_size = ADDR_TO_PAGE(end - begin);
-	vmi->vmi_left = NULL;
-	vmi->vmi_right = NULL;
+	BTREE_INIT(&vmi->vmi_tree);
 	TAILQ_INIT(&vmi->vmi_page_queue);
 	vm_free_index(vm, vmi);
 	if (vm->vm_index == NULL) {
@@ -270,9 +269,9 @@ vm_find_index(struct vm *vm, vaddr_t vaddr)
 			return (vmi);
 		}
 		if (vaddr < vmi->vmi_base)
-			vmi = vmi->vmi_left;
+			vmi = BTREE_LEFT(&vmi->vmi_tree);
 		else
-			vmi = vmi->vmi_right;
+			vmi = BTREE_RIGHT(&vmi->vmi_tree);
 	}
 	VM_UNLOCK(vm);
 	return (NULL);
@@ -303,9 +302,9 @@ vm_insert_index(struct vm_index *t, struct vm_index *vmi)
 {
 	struct vm_index **n;
 	if (vmi->vmi_base < t->vmi_base)
-		n = &t->vmi_left;
+		n = &BTREE_LEFT(&t->vmi_tree);
 	else
-		n = &t->vmi_right;
+		n = &BTREE_RIGHT(&t->vmi_tree);
 	if (*n != NULL)
 		vm_insert_index(*n, vmi);
 	else
@@ -356,9 +355,9 @@ db_vm_index_dump(struct vm_index *vmi)
 {
 	if (vmi == NULL)
 		return;
-	db_vm_index_dump(vmi->vmi_left);
+	db_vm_index_dump(BTREE_LEFT(&vmi->vmi_tree));
 	db_vm_index_dump_one(vmi);
-	db_vm_index_dump(vmi->vmi_right);
+	db_vm_index_dump(BTREE_RIGHT(&vmi->vmi_tree));
 }
 
 

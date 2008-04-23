@@ -27,7 +27,6 @@ static struct scheduler_entry *scheduler_pick_entry(struct scheduler_queue *);
 static struct thread *scheduler_pick_thread(void);
 static struct scheduler_queue *scheduler_pick_queue(struct scheduler_entry *);
 static void scheduler_queue(struct scheduler_queue *, struct scheduler_entry *);
-static void scheduler_queue_insert(struct scheduler_queue *, struct scheduler_entry *);
 static void scheduler_queue_setup(struct scheduler_queue *, const char *, cpu_id_t);
 static void scheduler_switch(struct thread *);
 
@@ -168,9 +167,7 @@ scheduler_thread_sleeping(struct thread *td)
 	se = &td->td_sched;
 	se->se_flags &= ~SCHEDULER_RUNNABLE;
 	se->se_flags |= SCHEDULER_SLEEPING;
-	SQ_LOCK(&scheduler_sleep_queue);
 	scheduler_queue(&scheduler_sleep_queue, se);
-	SQ_UNLOCK(&scheduler_sleep_queue);
 	SCHEDULER_UNLOCK();
 }
 
@@ -197,13 +194,8 @@ scheduler_pick_entry(struct scheduler_queue *sq)
 		return (NULL);
 	}
 	se = winner;
+	SQ_UNLOCK(sq);
 
-#ifndef	NO_ASSERT
-	struct thread *td2 = (struct thread *)((uintptr_t)se -
-			      (uintptr_t)&(((struct thread *)NULL)->td_sched));
-#endif
-	ASSERT(td2 == se->se_thread,
-	       "Scheduler entry must point to its own thread.");
 	ASSERT(se->se_oncpu == CPU_ID_INVALID || se->se_oncpu == mp_whoami(),
 	       "Thread must be pinned to me or no one at all.");
 
@@ -211,8 +203,6 @@ scheduler_pick_entry(struct scheduler_queue *sq)
 	 * Push to tail of queue.
 	 */
 	scheduler_queue(sq, se);
-
-	SQ_UNLOCK(sq);
 
 	return (se);
 }
@@ -307,26 +297,18 @@ scheduler_queue(struct scheduler_queue *sq, struct scheduler_entry *se)
 		       "Sleep queue should never be picked.");
 	}
 
-	/*
-	 * We allow for se->se_queue == sq.  In that case, the se will be
-	 * pushed to the end of sq.
-	 */
-	if (se->se_queue != NULL) {
-		osq = se->se_queue;
+	if ((osq = se->se_queue) != NULL) {
 		SQ_LOCK(osq);
 		TAILQ_REMOVE(&osq->sq_queue, se, se_link);
+		if (osq == sq) {
+			TAILQ_INSERT_TAIL(&sq->sq_queue, se, se_link);
+			SQ_UNLOCK(osq);
+			return;
+		}
 		se->se_queue = NULL;
 		osq->sq_length--;
 		SQ_UNLOCK(osq);
 	}
-	scheduler_queue_insert(sq, se);
-}
-
-static void
-scheduler_queue_insert(struct scheduler_queue *sq, struct scheduler_entry *se)
-{
-	SPINLOCK_ASSERT_HELD(&scheduler_lock);
-
 	if (sq == &scheduler_sleep_queue) {
 		if ((se->se_flags & SCHEDULER_SLEEPING) == 0)
 			panic("%s: can't put %p on sleep queue.", __func__, se);
@@ -335,8 +317,8 @@ scheduler_queue_insert(struct scheduler_queue *sq, struct scheduler_entry *se)
 			panic("%s: can't put %p on run queue.", __func__, se);
 	}
 	SQ_LOCK(sq);
-	se->se_queue = sq;
 	TAILQ_INSERT_TAIL(&sq->sq_queue, se, se_link);
+	se->se_queue = sq;
 	sq->sq_length++;
 	SQ_UNLOCK(sq);
 }
@@ -344,8 +326,7 @@ scheduler_queue_insert(struct scheduler_queue *sq, struct scheduler_entry *se)
 static void
 scheduler_queue_setup(struct scheduler_queue *sq, const char *lk, cpu_id_t cpu)
 {
-	spinlock_init(&sq->sq_lock, lk,
-		      SPINLOCK_FLAG_DEFAULT | SPINLOCK_FLAG_RECURSE);
+	spinlock_init(&sq->sq_lock, lk, SPINLOCK_FLAG_DEFAULT);
 	SCHEDULER_LOCK();
 	SQ_LOCK(sq);
 	sq->sq_cpu = cpu;

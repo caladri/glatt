@@ -1,9 +1,9 @@
 #include <core/types.h>
+#include <core/cv.h>
 #include <core/mutex.h>
 #include <core/pool.h>
 #include <core/queue.h>
 #include <core/scheduler.h>
-#include <core/sleepq.h>
 #include <core/startup.h>
 #include <core/task.h>
 #include <core/thread.h>
@@ -37,6 +37,7 @@ struct vdae {
 struct vdae_list {
 	struct mutex vl_mutex;
 	const char *vl_name;
+	struct cv *vl_cv;
 	struct task *vl_task;
 	TAILQ_HEAD(, struct vdae) vl_list;
 };
@@ -58,7 +59,7 @@ vdae_create(struct vdae_list *vlist, vdae_callback_t *callback, void *arg)
 	ASSERT(vlist != NULL, "Cannot create VDAE for NULL list.");
 
 	v = pool_allocate(&vdae_pool);
-	mutex_init(&v->v_mutex, "VDAE");
+	mutex_init(&v->v_mutex, "VDAE", MUTEX_FLAG_DEFAULT);
 	VDAE_LIST_LOCK(vlist);
 	VDAE_LOCK(v);
 	v->v_flags = VDAE_FLAG_DEFAULT;
@@ -84,8 +85,9 @@ vdae_list_create(const char *name)
 	int error;
 
 	vlist = pool_allocate(&vdae_list_pool);
-	mutex_init(&vlist->vl_mutex, "VDAE LIST");
+	mutex_init(&vlist->vl_mutex, "VDAE LIST", MUTEX_FLAG_DEFAULT);
 	vlist->vl_name = name;
+	vlist->vl_cv = cv_create(&vlist->vl_mutex);
 	error = task_create(&vlist->vl_task, NULL, vlist->vl_name, TASK_KERNEL);
 	if (error != 0)
 		panic("%s: task_create failed: %m", __func__, error);
@@ -102,6 +104,7 @@ vdae_list_wakeup(struct vdae_list *vlist)
 
 	VDAE_LIST_LOCK(vlist);
 	/*
+	 * XXX?
 	 * Wake up every thread but ourselves.  If we are waking up ourselves,
 	 * and there is only one CPU, the other threads will be starved.
 	 */
@@ -111,7 +114,7 @@ vdae_list_wakeup(struct vdae_list *vlist)
 			v->v_flags |= VDAE_FLAG_WAKEUP;
 		VDAE_UNLOCK(v);
 	}
-	sleepq_signal(vlist);
+	cv_signal(vlist->vl_cv);
 	VDAE_LIST_UNLOCK(vlist);
 }
 
@@ -125,17 +128,14 @@ vdae_thread_loop(void *arg)
 	ASSERT(current_thread() == v->v_thread, "VDAE must be on its thread.");
 
 	for (;;) {
+		VDAE_LIST_LOCK(v->v_list);
 		VDAE_LOCK(v);
-		/*
-		 * Use a while loop rather than an if, in case we get spurious
-		 * wakeups from the sleepq.
-		 */
 		while ((v->v_flags & VDAE_FLAG_WAKEUP) == 0) {
-			sleepq_enter(v->v_list);
 			VDAE_UNLOCK(v);
-			sleepq_wait(v->v_list);
-			VDAE_LOCK(v);
+			cv_wait(v->v_list->vl_cv);
+			continue;
 		}
+		VDAE_LIST_UNLOCK(v->v_list);
 		v->v_flags |= VDAE_FLAG_RUNNING;
 		v->v_flags &= ~VDAE_FLAG_WAKEUP;
 		VDAE_UNLOCK(v);

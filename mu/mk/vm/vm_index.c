@@ -302,9 +302,8 @@ vm_use_index(struct vm *vm, struct vm_index *vmi, size_t pages)
 	}
 	return (0);
 }
-
 static void
-db_vm_index_dump_one(struct vm_index *vmi)
+db_vm_index_dump(struct vm_index *vmi)
 {
 	struct vm_index_page *vmip;
 
@@ -321,21 +320,12 @@ db_vm_index_dump_one(struct vm_index *vmi)
 }
 
 static void
-db_vm_index_dump(struct vm_index *vmi)
-{
-	if (vmi == NULL)
-		return;
-	db_vm_index_dump(BTREE_LEFT(&vmi->vmi_tree));
-	db_vm_index_dump_one(vmi);
-	db_vm_index_dump(BTREE_RIGHT(&vmi->vmi_tree));
-}
-
-
-static void
 db_vm_index_dump_vm(struct vm *vm, const char *name)
 {
+	struct vm_index *vmi;
+
 	kcprintf("Dumping %s VM Index...\n", name);
-	db_vm_index_dump(vm->vm_index);
+	BTREE_FOREACH(vmi, vm->vm_index, vmi_tree, db_vm_index_dump);
 }
 
 static void

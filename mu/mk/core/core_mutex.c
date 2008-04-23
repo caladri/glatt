@@ -20,7 +20,7 @@
 void
 mutex_init(struct mutex *mtx, const char *name, unsigned flags)
 {
-	spinlock_init(&mtx->mtx_lock, name);
+	spinlock_init(&mtx->mtx_lock, name, SPINLOCK_FLAG_DEFAULT);
 	MTX_SPINLOCK(mtx);
 	mtx->mtx_owner = NULL;
 	mtx->mtx_nested = 0;

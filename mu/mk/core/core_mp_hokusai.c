@@ -112,7 +112,7 @@ mp_hokusai_ipi_send(void)
 static void
 mp_hokusai_startup(void *arg)
 {
-	spinlock_init(&mp_hokusai_lock, "HOKUSAI");
+	spinlock_init(&mp_hokusai_lock, "HOKUSAI", SPINLOCK_FLAG_DEFAULT);
 
 	/*
 	 * Keep lock locked to avoid getting spurious IPIs now.

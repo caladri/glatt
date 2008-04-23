@@ -32,7 +32,8 @@ static void page_ref_hold(struct vm_page *);
 void
 page_init(void)
 {
-	spinlock_init(&page_lock, "PAGE");
+	spinlock_init(&page_lock, "PAGE",
+		      SPINLOCK_FLAG_DEFAULT | SPINLOCK_FLAG_RECURSE);
 
 	TAILQ_INIT(&page_free_queue);
 	TAILQ_INIT(&page_use_queue);

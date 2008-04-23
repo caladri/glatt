@@ -29,7 +29,7 @@ startup_init(void)
 #ifdef	UNIPROCESSOR
 	kcprintf("STARTUP: Uniprocessor kernel, only the boot CPU will be used.\n");
 #endif
-	spinlock_init(&startup_lock, "STARTUP");
+	spinlock_init(&startup_lock, "STARTUP", SPINLOCK_FLAG_DEFAULT);
 
 	/*
 	 * Turn on the virtual memory subsystem.

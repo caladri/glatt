@@ -16,7 +16,7 @@ static void cputs_noflush(struct console *, const char *);
 void
 console_init(struct console *console)
 {
-	spinlock_init(&console->c_lock, "console");
+	spinlock_init(&console->c_lock, "console", SPINLOCK_FLAG_DEFAULT);
 	kernel_console = console;
 	kcprintf("Switched to console: %s\n", console->c_name);
 }

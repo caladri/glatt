@@ -146,7 +146,7 @@ pool_create(struct pool *pool, const char *name, size_t size, unsigned flags)
 #ifdef	VERBOSE
 	kcprintf("POOL: Created dynamic pool \"%s\" of size %zu\n", name, size);
 #endif
-	spinlock_init(&pool->pool_lock, "DYNAMIC POOL");
+	spinlock_init(&pool->pool_lock, "DYNAMIC POOL", SPINLOCK_FLAG_DEFAULT);
 	pool->pool_name = name;
 	pool->pool_size = size;
 	SLIST_INIT(&pool->pool_pages);

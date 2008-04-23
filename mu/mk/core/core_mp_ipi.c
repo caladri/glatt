@@ -29,7 +29,7 @@ mp_ipi_handlers_init(void *arg)
 
 	for (ipi = IPI_FIRST; ipi <= IPI_LAST; ipi++) {
 		ih = &ipi_handlers[ipi];
-		spinlock_init(&ih->ih_lock, "ipi");
+		spinlock_init(&ih->ih_lock, "ipi", SPINLOCK_FLAG_DEFAULT);
 		ih->ih_usecnt = 0;
 		ih->ih_handler = NULL;
 		ih->ih_arg = NULL;

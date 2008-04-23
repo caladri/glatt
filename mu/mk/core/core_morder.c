@@ -53,7 +53,7 @@ morder_init(void)
 {
 	int error;
 
-	spinlock_init(&morder_spinlock, "MORDER");
+	spinlock_init(&morder_spinlock, "MORDER", SPINLOCK_FLAG_DEFAULT);
 
 	error = pool_create(&morder_pool, "MORDER", sizeof (struct morder),
 			    POOL_DEFAULT);

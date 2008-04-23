@@ -10,8 +10,12 @@ struct spinlock {
 	const char *s_name;
 	uint64_t s_owner;
 	uint64_t s_nest;
+	unsigned s_flags;
 	critical_section_t s_crit;
 };
+
+#define	SPINLOCK_FLAG_DEFAULT	(0x00000000)
+#define	SPINLOCK_FLAG_RECURSE	(0x00000001)
 
 static inline void
 spinlock_lock(struct spinlock *lock)
@@ -23,6 +27,8 @@ spinlock_lock(struct spinlock *lock)
 	while (!atomic_compare_and_set_64(&lock->s_owner, CPU_ID_INVALID,
 					  mp_whoami())) {
 		if (atomic_load_64(&lock->s_owner) == (uint64_t)mp_whoami()) {
+			if ((lock->s_flags & SPINLOCK_FLAG_RECURSE) == 0)
+				panic("%s: attempting to recurse on non-recursive lock (%s)", __func__, lock->s_name);
 			atomic_increment_64(&lock->s_nest);
 			critical_exit(crit);
 			return;
@@ -92,6 +98,6 @@ spinlock_unlock(struct spinlock *lock)
 	ASSERT(atomic_load_64(&(lock)->s_owner) == (uint64_t)mp_whoami(),\
 	       "Lock must be held.")
 
-void spinlock_init(struct spinlock *, const char *);
+void spinlock_init(struct spinlock *, const char *, unsigned);
 
 #endif /* !_CORE_SPINLOCK_H_ */

@@ -48,7 +48,7 @@ framebuffer_init(struct framebuffer *fb, unsigned width, unsigned height)
 	fb->fb_console.c_putc = framebuffer_putc;
 	fb->fb_console.c_flush = framebuffer_flush;
 
-	spinlock_init(&fb->fb_lock, "framebuffer");
+	spinlock_init(&fb->fb_lock, "framebuffer", SPINLOCK_FLAG_DEFAULT);
 
 	spinlock_lock(&fb->fb_lock);
 	fb->fb_font = &framebuffer_font_miklic_bold8x16;

@@ -17,7 +17,7 @@ vm_init(void)
 	int error;
 
 	/* XXX must initialize kernel_vm like vm_setup VMs.  */
-	spinlock_init(&kernel_vm.vm_lock, "Kernel VM lock");
+	spinlock_init(&kernel_vm.vm_lock, "Kernel VM lock", SPINLOCK_FLAG_DEFAULT | SPINLOCK_FLAG_RECURSE);
 
 	error = pool_create(&vm_pool, "VM", sizeof (struct vm), POOL_VIRTUAL);
 	if (error != 0)
@@ -42,7 +42,7 @@ vm_setup(struct vm **vmp, vaddr_t base, vaddr_t end)
 	if (vm == NULL)
 		return (ERROR_EXHAUSTED);
 
-	spinlock_init(&vm->vm_lock, "VM lock");
+	spinlock_init(&vm->vm_lock, "VM lock", SPINLOCK_FLAG_DEFAULT | SPINLOCK_FLAG_RECURSE);
 	VM_LOCK(vm);
 	vm->vm_pmap = NULL;
 	vm->vm_index = NULL;

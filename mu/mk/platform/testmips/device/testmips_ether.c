@@ -60,7 +60,7 @@ tmether_setup(struct device *device, void *busdata)
 	int error;
 
 	sc = device_softc_allocate(device, sizeof *sc);
-	spinlock_init(&sc->sc_lock, "testmips ethernet");
+	spinlock_init(&sc->sc_lock, "testmips ethernet", SPINLOCK_FLAG_DEFAULT);
 	TMETHER_LOCK(sc);
 	error = network_interface_attach(&sc->sc_netif,
 					 NETWORK_INTERFACE_ETHERNET,

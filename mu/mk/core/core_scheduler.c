@@ -79,7 +79,7 @@ scheduler_init(void)
 			    sizeof (struct scheduler_queue), POOL_VIRTUAL);
 	if (error != 0)
 		panic("%s: pool_created failed: %m", __func__, error);
-	spinlock_init(&scheduler_lock, "SCHEDULER");
+	spinlock_init(&scheduler_lock, "SCHEDULER", SPINLOCK_FLAG_DEFAULT);
 	TAILQ_INIT(&scheduler_queue_list);
 	scheduler_queue_setup(&scheduler_sleep_queue, "SCHEDULER SLEEP QUEUE",
 			      CPU_ID_INVALID);
@@ -344,7 +344,8 @@ scheduler_queue_insert(struct scheduler_queue *sq, struct scheduler_entry *se)
 static void
 scheduler_queue_setup(struct scheduler_queue *sq, const char *lk, cpu_id_t cpu)
 {
-	spinlock_init(&sq->sq_lock, lk);
+	spinlock_init(&sq->sq_lock, lk,
+		      SPINLOCK_FLAG_DEFAULT | SPINLOCK_FLAG_RECURSE);
 	SCHEDULER_LOCK();
 	SQ_LOCK(sq);
 	sq->sq_cpu = cpu;

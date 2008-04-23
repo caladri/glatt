@@ -106,7 +106,7 @@ sleepq_lookup(const void *cookie, bool create)
 		return (NULL);
 	}
 	sq = pool_allocate(&sleepq_pool);
-	spinlock_init(&sq->sq_lock, "SLEEP QUEUE");
+	spinlock_init(&sq->sq_lock, "SLEEP QUEUE", SPINLOCK_FLAG_DEFAULT);
 	SQ_LOCK(sq);
 	sq->sq_cookie = cookie;
 	TAILQ_INIT(&sq->sq_entries);
@@ -132,7 +132,7 @@ sleepq_startup(void *arg)
 {
 	int error;
 
-	spinlock_init(&sleepq_lock, "SLEEPQ");
+	spinlock_init(&sleepq_lock, "SLEEPQ", SPINLOCK_FLAG_DEFAULT);
 	error = pool_create(&sleepq_entry_pool, "SLEEPQ ENTRY",
 			    sizeof (struct sleepq_entry), POOL_VIRTUAL);
 	if (error != 0)

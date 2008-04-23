@@ -23,7 +23,7 @@ thread_init(void)
 	if (error != 0)
 		panic("%s: pool_create failed: %m", __func__, error);
 
-	spinlock_init(&thread_lock, "THREAD");
+	spinlock_init(&thread_lock, "THREAD", SPINLOCK_FLAG_DEFAULT);
 }
 
 int

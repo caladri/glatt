@@ -13,12 +13,37 @@
 		(tree)->right = NULL;					\
 	} while (0)
 
-#define	BTREE_INSERT(var, iter, tree, field, cmpfield)			\
+#define	BTREE_FIND(hitp, iter, tree, field, cmp, match)			\
 	do {								\
 		(iter) = (tree);					\
 									\
 		for (;;) {						\
-			if ((var)->cmpfield < (iter)->cmpfield) {	\
+			if ((cmp)) {					\
+				if ((iter)->field.left == NULL) {	\
+					*(hitp) = NULL;			\
+					break;				\
+				}					\
+				(iter) = (iter)->field.left;		\
+				continue;				\
+			}						\
+			if ((match)) {					\
+				*(hitp) = (iter);			\
+				break;					\
+			}						\
+			if ((iter)->field.right == NULL) {		\
+				*(hitp) = NULL;				\
+				break;					\
+			}						\
+			(iter) = (iter)->field.right;			\
+		}							\
+	} while (0)
+
+#define	BTREE_INSERT(var, iter, tree, field, cmp)			\
+	do {								\
+		(iter) = (tree);					\
+									\
+		for (;;) {						\
+			if ((cmp)) {					\
 				if ((iter)->field.left == NULL) {	\
 					(iter)->field.left = (var);	\
 					break;				\

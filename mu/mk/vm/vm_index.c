@@ -136,7 +136,8 @@ vm_insert_range(struct vm *vm, vaddr_t begin, vaddr_t end)
 		VM_UNLOCK(vm);
 		return (0);
 	}
-	BTREE_INSERT(vmi, iter, vm->vm_index, vmi_tree, vmi_base);
+	BTREE_INSERT(vmi, iter, vm->vm_index, vmi_tree,
+		     (vmi->vmi_base < iter->vmi_base));
 	VM_UNLOCK(vm);
 	return (0);
 }
@@ -248,30 +249,16 @@ vm_page_unmap(struct vm *vm, vaddr_t vaddr)
 static struct vm_index *
 vm_find_index(struct vm *vm, vaddr_t vaddr)
 {
+	struct vm_index *iter;
 	struct vm_index *vmi;
 
 	VM_LOCK(vm);
-	for (vmi = vm->vm_index; vmi != NULL; ) {
-		if (vmi->vmi_base == vaddr) {
-			VM_UNLOCK(vm);
-			return (vmi);
-		} else if (vaddr > vmi->vmi_base &&
-			   vaddr < (vmi->vmi_base +
-				    PAGE_TO_ADDR(vmi->vmi_size))) {
-			/*
-			 * XXX
-			 * Separate for eventual statistics.
-			 */
-			VM_UNLOCK(vm);
-			return (vmi);
-		}
-		if (vaddr < vmi->vmi_base)
-			vmi = BTREE_LEFT(&vmi->vmi_tree);
-		else
-			vmi = BTREE_RIGHT(&vmi->vmi_tree);
-	}
+	BTREE_FIND(&vmi, iter, vm->vm_index, vmi_tree, (vaddr < iter->vmi_base),
+		   ((vaddr == iter->vmi_base) ||
+		    (vaddr > iter->vmi_base &&
+		     vaddr < (iter->vmi_base + PAGE_TO_ADDR(iter->vmi_size)))));
 	VM_UNLOCK(vm);
-	return (NULL);
+	return (vmi);
 }
 
 static struct vm_index_page *

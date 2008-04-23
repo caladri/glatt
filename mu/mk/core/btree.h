@@ -13,6 +13,27 @@
 		(tree)->right = NULL;					\
 	} while (0)
 
+#define	BTREE_INSERT(var, iter, tree, field, cmpfield)			\
+	do {								\
+		(iter) = (tree);					\
+									\
+		for (;;) {						\
+			if ((var)->cmpfield < (iter)->cmpfield) {	\
+				if ((iter)->field.left == NULL) {	\
+					(iter)->field.left = (var);	\
+					break;				\
+				}					\
+				(iter) = (iter)->field.left;		\
+				continue;				\
+			}						\
+			if ((iter)->field.right == NULL) {		\
+				(iter)->field.right = (var);		\
+				break;					\
+			}						\
+			(iter) = (iter)->field.right;			\
+		}							\
+	} while (0)
+
 /* XXX These are temporary for helping transition code.  */
 #define	BTREE_LEFT(tree)						\
 	((tree)->left)

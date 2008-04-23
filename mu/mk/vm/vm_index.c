@@ -32,7 +32,6 @@ static struct pool vm_index_pool;
 static struct vm_index *vm_find_index(struct vm *, vaddr_t);
 static struct vm_index_page *vm_find_index_page(struct vm *, struct vm_index *, vaddr_t);
 static void vm_free_index(struct vm *, struct vm_index *);
-static void vm_insert_index(struct vm_index *, struct vm_index *);
 static int vm_use_index(struct vm *, struct vm_index *, size_t);
 
 int
@@ -119,6 +118,7 @@ vm_free_address(struct vm *vm, vaddr_t vaddr)
 int
 vm_insert_range(struct vm *vm, vaddr_t begin, vaddr_t end)
 {
+	struct vm_index *iter;
 	struct vm_index *vmi;
 
 	vmi = pool_allocate(&vm_index_pool);
@@ -130,16 +130,13 @@ vm_insert_range(struct vm *vm, vaddr_t begin, vaddr_t end)
 	BTREE_INIT(&vmi->vmi_tree);
 	TAILQ_INIT(&vmi->vmi_page_queue);
 	vm_free_index(vm, vmi);
+	/* XXX Push in to btree_insert.  */
 	if (vm->vm_index == NULL) {
 		vm->vm_index = vmi;
 		VM_UNLOCK(vm);
 		return (0);
 	}
-	/*
-	 * XXX It would be easier to just make this the new vm->vm_index all
-	 * the time and put the existing tree to our left or right appropriately
-	 */
-	vm_insert_index(vm->vm_index, vmi);
+	BTREE_INSERT(vmi, iter, vm->vm_index, vmi_tree, vmi_base);
 	VM_UNLOCK(vm);
 	return (0);
 }
@@ -295,20 +292,6 @@ static void
 vm_free_index(struct vm *vm, struct vm_index *vmi)
 {
 	TAILQ_INSERT_HEAD(&vm->vm_index_free, vmi, vmi_free_link);
-}
-
-static void
-vm_insert_index(struct vm_index *t, struct vm_index *vmi)
-{
-	struct vm_index **n;
-	if (vmi->vmi_base < t->vmi_base)
-		n = &BTREE_LEFT(&t->vmi_tree);
-	else
-		n = &BTREE_RIGHT(&t->vmi_tree);
-	if (*n != NULL)
-		vm_insert_index(*n, vmi);
-	else
-		*n = vmi;
 }
 
 static int

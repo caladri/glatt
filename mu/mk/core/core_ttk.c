@@ -17,6 +17,5 @@ ttk_idle(void)
 	/* XXX cpu_ttk_wait();  */
 	__asm__ __volatile__ ("wait");
 
-	scheduler_thread_runnable(td);
 	scheduler_schedule(NULL, NULL);
 }

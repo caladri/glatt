@@ -9,6 +9,7 @@
 #include <core/startup.h>
 #include <core/task.h>
 #include <core/thread.h>
+#include <core/ttk.h>
 #include <db/db.h>
 #include <io/console/console.h>
 #include <vm/vm.h>
@@ -201,9 +202,9 @@ next:		continue;
 		item->si_function(item->si_arg);
 	spinlock_unlock(&startup_lock);
 
-	/*
-	 * Process IPC ad absurdum.
-	 */
-	ipc_process();
+	/* Become idle thread.  */
+	for (;;) {
+		ttk_idle();
+	}
 }
 STARTUP_ITEM(main, STARTUP_MAIN, STARTUP_FIRST, startup_main_thread, &startup_lock);

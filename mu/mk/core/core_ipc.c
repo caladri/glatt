@@ -17,15 +17,7 @@ struct ipc_port {
 
 struct ipc_message {
 	struct ipc_header ipcmsg_header;
-	struct ipc_data ipcmsg_data;
 	TAILQ_ENTRY(struct ipc_message) ipcmsg_link;
-};
-
-struct ipc_queue {
-	struct mutex ipcq_mutex;
-	struct cv *ipcq_cv;
-	TAILQ_ENTRY(struct ipc_queue) ipcq_link;
-	TAILQ_HEAD(, struct ipc_message) ipcq_msgs;
 };
 
 static TAILQ_HEAD(, struct ipc_port) ipc_ports;
@@ -37,16 +29,6 @@ static ipc_port_t ipc_port_next		= IPC_PORT_UNRESERVED_START;
 #define	IPC_PORTS_UNLOCK()	mutex_unlock(&ipc_ports_lock)
 #define	IPC_PORT_LOCK(p)	mutex_lock(&(p)->ipcp_mutex)
 #define	IPC_PORT_UNLOCK(p)	mutex_unlock(&(p)->ipcp_mutex)
-
-static TAILQ_HEAD(, struct ipc_queue) ipc_queues;
-static struct mutex ipc_queues_lock;
-
-#define	IPC_QUEUES_LOCK()	mutex_lock(&ipc_queues_lock)
-#define	IPC_QUEUES_UNLOCK()	mutex_unlock(&ipc_queues_lock)
-#define	IPC_QUEUE_LOCK(q)	mutex_lock(&(q)->ipcq_mutex)
-#define	IPC_QUEUE_UNLOCK(q)	mutex_unlock(&(q)->ipcq_mutex)
-
-#define	current_ipcq()		(PCPU_GET(ipc_queue))
 
 static struct ipc_port *ipc_port_alloc(ipc_port_t);
 static void ipc_port_deliver(struct ipc_message *);
@@ -65,52 +47,16 @@ ipc_init(void)
 
 	mutex_init(&ipc_ports_lock, "IPC Ports", MUTEX_FLAG_DEFAULT);
 	TAILQ_INIT(&ipc_ports);
-
-	mutex_init(&ipc_queues_lock, "IPC Queues", MUTEX_FLAG_DEFAULT);
-	TAILQ_INIT(&ipc_queues);
-}
-
-void
-ipc_process(void)
-{
-	struct ipc_queue *ipcq;
-
-	ipcq = current_ipcq();
-
-	IPC_QUEUES_LOCK();
-	IPC_QUEUE_LOCK(ipcq);
-	TAILQ_INSERT_TAIL(&ipc_queues, ipcq, ipcq_link);
-	IPC_QUEUE_UNLOCK(ipcq);
-	IPC_QUEUES_UNLOCK();
-
-	for (;;) {
-		struct ipc_message *ipcmsg;
-
-		IPC_QUEUE_LOCK(ipcq);
-		if (TAILQ_EMPTY(&ipcq->ipcq_msgs)) {
-			ASSERT(TAILQ_EMPTY(&ipcq->ipcq_msgs), "Consistency is all I ask.");
-			cv_wait(ipcq->ipcq_cv);
-			continue;
-		}
-		ipcmsg = TAILQ_FIRST(&ipcq->ipcq_msgs);
-		TAILQ_REMOVE(&ipcq->ipcq_msgs, ipcmsg, ipcmsg_link);
-		IPC_QUEUE_UNLOCK(ipcq);
-		ipc_port_deliver(ipcmsg);
-		IPC_QUEUE_LOCK(ipcq);
-		IPC_QUEUE_UNLOCK(ipcq);
-	}
 }
 
 int
-ipc_send(struct ipc_header *ipch, struct ipc_data *ipcd)
+ipc_send(struct ipc_header *ipch)
 {
 	struct ipc_message *ipcmsg;
-	struct ipc_queue *ipcq;
 	struct ipc_port *ipcp;
 
 	ASSERT(ipch != NULL, "Must have a header.");
-	ASSERT(ipch->ipchdr_len == 0 || ipcd != NULL,
-	       "Must have data or no size.");
+	ASSERT(ipch->ipchdr_len == 0, "Must have no data.");
 
 	IPC_PORTS_LOCK();
 	ipcp = ipc_port_lookup(ipch->ipchdr_src);
@@ -130,19 +76,7 @@ ipc_send(struct ipc_header *ipch, struct ipc_data *ipcd)
 
 	ipcmsg = malloc(sizeof *ipcmsg);
 	ipcmsg->ipcmsg_header = *ipch;
-	if (ipcd != NULL)
-		ipcmsg->ipcmsg_data = *ipcd;
-
-	/*
-	 * XXX
-	 * This should be in ipc_queue_msg or something.
-	 */
-	ipcq = current_ipcq();
-	ASSERT(ipcq != NULL, "Queue must exist.");
-	IPC_QUEUE_LOCK(ipcq);
-	TAILQ_INSERT_TAIL(&ipcq->ipcq_msgs, ipcmsg, ipcmsg_link);
-	cv_signal(ipcq->ipcq_cv);
-	IPC_QUEUE_UNLOCK(ipcq);
+	ipc_port_deliver(ipcmsg);
 	return (0);
 }
 
@@ -183,7 +117,7 @@ ipc_port_free(ipc_port_t port)
 }
 
 int
-ipc_port_receive(ipc_port_t port, struct ipc_header *ipch, struct ipc_data *ipcd)
+ipc_port_receive(ipc_port_t port, struct ipc_header *ipch)
 {
 	struct ipc_message *ipcmsg;
 	struct ipc_port *ipcp;
@@ -210,9 +144,6 @@ ipc_port_receive(ipc_port_t port, struct ipc_header *ipch, struct ipc_data *ipcd
 	IPC_PORTS_UNLOCK();
 
 	*ipch = ipcmsg->ipcmsg_header;
-	if (ipcd != NULL) {
-		*ipcd = ipcmsg->ipcmsg_data;
-	}
 	free(ipcmsg);
 	return (0);
 }
@@ -326,22 +257,3 @@ ipc_port_lookup(ipc_port_t port)
 	}
 	return (NULL);
 }
-
-static void
-ipc_queue_startup(void *arg)
-{
-	struct ipc_queue *ipcq;
-
-	/*
-	 * Must not block.
-	 */
-	ipcq = malloc(sizeof *ipcq);
-	mutex_init(&ipcq->ipcq_mutex, "IPC Queue", MUTEX_FLAG_DEFAULT);
-	ipcq->ipcq_cv = cv_create(&ipcq->ipcq_mutex);
-	PCPU_SET(ipc_queue, ipcq);
-
-	ipcq = current_ipcq();
-
-	TAILQ_INIT(&ipcq->ipcq_msgs);
-}
-STARTUP_ITEM(ipc_queue, STARTUP_IPCQ, STARTUP_CPU, ipc_queue_startup, NULL);

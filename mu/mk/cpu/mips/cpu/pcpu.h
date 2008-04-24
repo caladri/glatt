@@ -7,7 +7,6 @@
 #include <cpu/memory.h>
 
 struct device;
-struct ipc_queue;
 struct thread;
 
 #define	PCPU_VIRTUAL	(KERNEL_BASE)
@@ -36,9 +35,6 @@ struct pcpu {
 
 	/* For ASID allocator in page mapping code.  */
 	unsigned pc_asidnext;
-
-	/* Per-CPU data structures for various MI code.  */
-	struct ipc_queue *pc_ipc_queue;
 };
 
 #define	PCPU_PTR()							\

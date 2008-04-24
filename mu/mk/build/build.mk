@@ -1,4 +1,4 @@
-# $Id: build.mk,v 1.50 2008-04-23 04:03:57 juli Exp $
+# $Id: build.mk,v 1.51 2008-04-24 03:46:33 juli Exp $
 
 .PATH: ${KERNEL_ROOT}/core
 .PATH: ${KERNEL_ROOT}/db
@@ -10,7 +10,6 @@
 
 # core
 KERNEL_SOURCES+=core_cv.c
-KERNEL_SOURCES+=core_idle.c
 KERNEL_SOURCES+=core_ipc.c
 KERNEL_SOURCES+=core_malloc.c
 .if !defined(NO_MORDER)

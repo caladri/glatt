@@ -40,7 +40,7 @@ test_ipc_send(struct test_private *priv, int type)
 	hdr.ipchdr_type = type;
 	hdr.ipchdr_len = 0;
 
-	error = ipc_send(&hdr, NULL);
+	error = ipc_send(&hdr);
 	if (error != 0)
 		panic("%s: ipc_send failed: %m", __func__, error);
 }
@@ -51,7 +51,7 @@ test_ipc_receive(struct test_private *priv, struct ipc_header *rx)
 	int error;
 
 	for (;;) {
-		error = ipc_port_receive(priv->receive, rx, NULL);
+		error = ipc_port_receive(priv->receive, rx);
 		if (error == 0)
 			break;
 		if (error != ERROR_AGAIN)

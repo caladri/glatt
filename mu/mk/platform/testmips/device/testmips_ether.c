@@ -82,10 +82,10 @@ tmether_interrupt(void *arg, int interrupt)
 	TMETHER_LOCK(sc);
 	switch (TEST_ETHER_DEV_READ(TEST_ETHER_DEV_STATUS)) {
 	case TEST_ETHER_DEV_STATUS_RX_OK:
-		kcprintf("TEST_ETHER_DEV_STATUS_RX_OK\n");
+		panic("%s: TEST_ETHER_DEV_STATUS_RX_OK", __func__);
 		break;
 	case TEST_ETHER_DEV_STATUS_RX_MORE:
-		kcprintf("TEST_ETHER_DEV_STATUS_RX_MORE\n");
+		panic("%s: TEST_ETHER_DEV_STATUS_RX_MORE", __func__);
 		break;
 	default:
 		panic("%s: unexpected status.", __func__);

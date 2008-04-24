@@ -2,7 +2,6 @@
 #include <core/mp.h>
 #include <core/spinlock.h>
 #include <core/startup.h>
-#include <io/console/console.h>
 
 /*
  * XXX
@@ -114,7 +113,9 @@ mp_ipi_handler(void *arg, enum ipi_type ipi)
 	case IPI_STOP:
 		/* XXX Is this the right place to do it?  */
 		mp_cpu_stopped(mp_whoami());
+#if 0 /* XXX cpu_stop() ? */
 		kcprintf("cpu%u: stopped.\n", mp_whoami());
+#endif
 		for (;;)
 			continue;
 #if 0

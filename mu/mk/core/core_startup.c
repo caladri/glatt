@@ -11,7 +11,9 @@
 #include <core/thread.h>
 #include <core/ttk.h>
 #include <db/db.h>
+#ifdef VERBOSE
 #include <io/console/console.h>
+#endif
 #include <vm/vm.h>
 
 SET(startup_items, struct startup_item);

@@ -5,8 +5,6 @@
 #include <cpu/memory.h>
 #include <platform/clock.h>
 
-#include <io/console/console.h>
-
 #define	TEST_RTC_DEV_BASE	(0x15000000)
 
 #define	TEST_RTC_DEV_TRIGGER	(0x0000)

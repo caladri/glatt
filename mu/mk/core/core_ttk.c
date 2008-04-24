@@ -5,8 +5,6 @@
 #include <core/thread.h>
 #include <core/ttk.h>
 
-#include <io/console/console.h>
-
 void
 ttk_idle(void)
 {

@@ -5,7 +5,9 @@
 #include <vm/page.h>
 #include <vm/vm.h>
 
+#ifdef VERBOSE
 #include <io/console/console.h>
+#endif
 
 #define	POOL_LOCK(pool)		spinlock_lock(&(pool)->pool_lock)
 #define	POOL_UNLOCK(pool)	spinlock_unlock(&(pool)->pool_lock)

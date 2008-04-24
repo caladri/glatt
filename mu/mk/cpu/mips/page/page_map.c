@@ -7,7 +7,9 @@
 #include <cpu/pcpu.h>
 #include <cpu/tlb.h>
 #include <db/db.h>
+#ifdef VERBOSE
 #include <io/console/console.h>
+#endif
 #include <page/page_map.h>
 #include <vm/page.h>
 #include <vm/vm.h>

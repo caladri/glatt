@@ -7,8 +7,6 @@
 #include <core/string.h>
 #include <core/thread.h>
 
-#include <io/console/console.h>
-
 struct morder_entry {
 	struct morder *m_order;
 	const char *m_class;

@@ -6,7 +6,6 @@
 #include <db/db.h>
 #include <io/device/bus.h>
 #include <io/device/bus_internal.h>
-#include <io/console/console.h>
 
 /*
  * External interface to bus management.

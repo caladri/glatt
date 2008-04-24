@@ -84,6 +84,10 @@ scheduler_thread_runnable(struct thread *td)
 	struct scheduler_entry *se = &td->td_sched;
 
 	SCHEDULER_LOCK();
+#if 0
+	if ((se->se_flags & SCHEDULER_RUNNABLE) != 0)
+		panic("%s: thread already runnable.", __func__);
+#endif
 	se->se_flags &= ~SCHEDULER_SLEEPING;
 	se->se_flags |= SCHEDULER_RUNNABLE;
 	SCHEDULER_UNLOCK();

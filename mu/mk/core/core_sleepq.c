@@ -51,7 +51,7 @@ sleepq_enter(const void *cookie, struct spinlock *lock)
 	TAILQ_INSERT_TAIL(&sq->sq_entries, se, se_link);
 
 	scheduler_thread_sleeping(td);
-	scheduler_schedule(&sq->sq_lock);
+	scheduler_schedule(NULL, &sq->sq_lock);
 	SQ_LOCK(sq);
 	TAILQ_REMOVE(&sq->sq_entries, se, se_link);
 	SQ_UNLOCK(sq);

@@ -15,26 +15,15 @@ struct thread;
 
 struct scheduler_entry {
 	struct thread *se_thread;
-	struct scheduler_queue *se_queue;
 	TAILQ_ENTRY(struct scheduler_entry) se_link;
 	unsigned se_flags;
 	cpu_id_t se_oncpu;
 };
 
-struct scheduler_queue {
-	struct spinlock sq_lock;
-	cpu_id_t sq_cpu;
-	TAILQ_HEAD(, struct scheduler_entry) sq_queue;
-	unsigned sq_length;
-	TAILQ_ENTRY(struct scheduler_queue) sq_link;
-	bool sq_switchable;
-};
-
 void scheduler_cpu_pin(struct thread *);
 struct scheduler_queue *scheduler_cpu_setup(void);
-void scheduler_cpu_switchable(void);
 void scheduler_init(void);
-void scheduler_schedule(struct spinlock *);
+void scheduler_schedule(struct thread *, struct spinlock *);
 void scheduler_thread_runnable(struct thread *);
 void scheduler_thread_setup(struct thread *);
 void scheduler_thread_sleeping(struct thread *);

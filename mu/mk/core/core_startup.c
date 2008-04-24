@@ -86,7 +86,7 @@ startup_main(void)
 				  (void *)(uintptr_t)startup_main_thread);
 	scheduler_cpu_pin(td);
 	scheduler_thread_runnable(td);
-	scheduler_schedule(&startup_lock);
+	scheduler_schedule(td, &startup_lock);
 }
 
 static void
@@ -200,12 +200,6 @@ next:		continue;
 	TAILQ_FOREACH(item, &sorted_items, si_link)
 		item->si_function(item->si_arg);
 	spinlock_unlock(&startup_lock);
-
-	/*
-	 * Threaded initialialization complete, the scheduler may run other
-	 * threads now.
-	 */
-	scheduler_cpu_switchable();
 
 	/*
 	 * Process IPC ad absurdum.

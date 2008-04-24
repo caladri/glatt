@@ -18,5 +18,5 @@ ttk_idle(void)
 	__asm__ __volatile__ ("wait");
 
 	scheduler_thread_runnable(td);
-	scheduler_schedule(NULL);
+	scheduler_schedule(NULL, NULL);
 }

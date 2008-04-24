@@ -8,7 +8,6 @@
 
 struct device;
 struct ipc_queue;
-struct scheduler_queue;
 struct thread;
 
 #define	PCPU_VIRTUAL	(KERNEL_BASE)
@@ -39,7 +38,6 @@ struct pcpu {
 	unsigned pc_asidnext;
 
 	/* Per-CPU data structures for various MI code.  */
-	struct scheduler_queue *pc_runq;
 	struct ipc_queue *pc_ipc_queue;
 };
 

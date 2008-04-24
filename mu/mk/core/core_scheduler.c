@@ -44,12 +44,6 @@ scheduler_cpu_pin(struct thread *td)
 	SCHEDULER_UNLOCK();
 }
 
-struct scheduler_queue *
-scheduler_cpu_setup(void)
-{
-	return (NULL);
-}
-
 void
 scheduler_schedule(struct thread *td, struct spinlock *lock)
 {

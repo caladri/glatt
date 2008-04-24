@@ -4,7 +4,6 @@
 #include <core/queue.h>
 #include <core/spinlock.h>
 
-struct scheduler_queue;
 struct thread;
 
 #define	SCHEDULER_DEFAULT	(0x00000000)	/* Default flags.  */
@@ -21,7 +20,6 @@ struct scheduler_entry {
 };
 
 void scheduler_cpu_pin(struct thread *);
-struct scheduler_queue *scheduler_cpu_setup(void);
 void scheduler_init(void);
 void scheduler_schedule(struct thread *, struct spinlock *);
 void scheduler_thread_runnable(struct thread *);

@@ -307,6 +307,12 @@ db_vm_index_dump(struct vm_index *vmi)
 {
 	struct vm_index_page *vmip;
 
+	/* XXX DOT
+	kcprintf("VMI%p [ label=\"%p\" ];\n", vmi, vmi->vmi_base);
+	kcprintf("VMI%p -> VMI%p;\n", vmi, vmi->vmi_tree.left);
+	kcprintf("VMI%p -> VMI%p;\n", vmi, vmi->vmi_tree.right);
+	return;
+	*/
 	kcprintf("VM Index %p [ %p ... %p (%zu pages) ]\n", vmi,
 		 (void *)vmi->vmi_base,
 		 (void *)(vmi->vmi_base + vmi->vmi_size * PAGE_SIZE),

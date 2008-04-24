@@ -343,11 +343,7 @@ db_vm_index_dump_kvm(void)
 
 	if (current_thread() != NULL) {
 		vm = current_thread()->td_parent->t_vm;
-		if (vm != &kernel_vm) {
-			db_vm_index_dump_vm(vm, "Thread");
-		} else {
-			kcprintf("Thread has kernel vm index.\n");
-		}
+		db_vm_index_dump_vm(vm, "Thread");
 	}
 }
 DB_SHOW_VALUE_VOIDF(kvm, vm_index, db_vm_index_dump_kvm);

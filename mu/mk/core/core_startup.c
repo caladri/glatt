@@ -29,8 +29,10 @@ static struct task *main_task;
 void
 startup_init(void)
 {
+#ifdef	VERBOSE
 #ifdef	UNIPROCESSOR
 	kcprintf("STARTUP: Uniprocessor kernel, only the boot CPU will be used.\n");
+#endif
 #endif
 	spinlock_init(&startup_lock, "STARTUP", SPINLOCK_FLAG_DEFAULT);
 

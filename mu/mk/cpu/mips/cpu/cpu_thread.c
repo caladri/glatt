@@ -1,6 +1,7 @@
 #include <core/types.h>
 #include <core/error.h>
 #include <core/string.h>
+#include <core/task.h>
 #include <core/thread.h>
 #include <vm/alloc.h>
 #include <vm/page.h>
@@ -20,20 +21,30 @@ cpu_thread_set_upcall(struct thread *td, void (*function)(void *), void *arg)
 int
 cpu_thread_setup(struct thread *td)
 {
-	vaddr_t kstack;
+	vaddr_t kstack, mbox;
 	unsigned off;
 	int error;
+
+	tlb_wired_init(&td->td_cputhread.td_tlbwired);
+	cpu_thread_set_upcall(td, cpu_thread_exception, td);
 
 	error = vm_alloc(&kernel_vm, KSTACK_SIZE, &kstack);
 	if (error != 0)
 		return (error);
 	td->td_kstack = (void *)kstack;
-	tlb_wired_init(&td->td_cputhread.td_tlbwired);
 	for (off = 0; off < KSTACK_SIZE; off += PAGE_SIZE)
 		tlb_wired_wire(&td->td_cputhread.td_tlbwired, kernel_vm.vm_pmap,
 			       kstack + off);
 	td->td_context.c_regs[CONTEXT_SP] = kstack + KSTACK_SIZE;
-	cpu_thread_set_upcall(td, cpu_thread_exception, td);
+
+	error = vm_alloc(td->td_parent->t_vm, MAILBOX_SIZE, &mbox);
+	if (error != 0)
+		return (error);
+	td->td_cputhread.td_mbox = mbox;
+	for (off = 0; off < MAILBOX_SIZE; off += MAILBOX_SIZE)
+		tlb_wired_wire(&td->td_cputhread.td_tlbwired,
+			       td->td_parent->t_vm->vm_pmap, mbox + off);
+
 	return (0);
 }
 

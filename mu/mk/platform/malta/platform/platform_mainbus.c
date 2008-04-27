@@ -7,7 +7,7 @@ mainbus_enumerate_children(struct bus_instance *bi)
 {
 	int error;
 
-	error = bus_enumerate_child(bi, "cpu", NULL);
+	error = bus_enumerate_child_generic(bi, "cpu");
 	if (error != 0)
 		return (error);
 
@@ -18,7 +18,7 @@ mainbus_enumerate_children(struct bus_instance *bi)
 }
 
 static int
-mainbus_setup(struct bus_instance *bi, void *busdata)
+mainbus_setup(struct bus_instance *bi)
 {
 	return (0);
 }

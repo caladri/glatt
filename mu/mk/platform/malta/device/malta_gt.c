@@ -46,24 +46,15 @@ gt_describe(struct bus_instance *bi)
 static int
 gt_enumerate_children(struct bus_instance *bi)
 {
+	struct bus_instance *child;
 	struct pci_interface *pci;
 	int error;
 
-	pci = bus_softc(bi);
-
-	error = bus_enumerate_child(bi, "pci", pci);
+	error = bus_enumerate_child(bi, "pci", &child);
 	if (error != 0)
 		return (error);
 
-	return (0);
-}
-
-static int
-gt_setup(struct bus_instance *bi, void *busdata)
-{
-	struct pci_interface *pci;
-
-	pci = bus_softc_allocate(bi, sizeof *pci);
+	pci = bus_parent_data_allocate(child, sizeof *pci);
 
 	pci->pci_cs_read = gt_pci_cs_read;
 
@@ -75,6 +66,16 @@ gt_setup(struct bus_instance *bi, void *busdata)
 
 	pci->pci_cs_base = 0x1be00000;
 
+	error = bus_setup_child(child);
+	if (error != 0)
+		return (error);
+
+	return (0);
+}
+
+static int
+gt_setup(struct bus_instance *bi)
+{
 	return (0);
 }
 

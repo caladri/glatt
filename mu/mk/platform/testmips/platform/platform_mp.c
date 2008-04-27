@@ -199,9 +199,10 @@ platform_mp_attach_cpu(bool bootstrap)
 		PCPU_SET(flags, PCPU_GET(flags) | PCPU_FLAG_BOOTSTRAP);
 
 	/* Add CPU device.  This also sets up interrupts.  */
-	error = bus_enumerate_child(platform_mp_bus, "cpu", NULL);
+	error = bus_enumerate_child_generic(platform_mp_bus, "cpu");
 	if (error != 0)
-		panic("%s: bus_enumerate_child failed: %m", __func__, error);
+		panic("%s: bus_enumerate_child_generic failed: %m", __func__,
+		      error);
 
 #ifndef	UNIPROCESSOR
 	/* Install an IPI interrupt handler.  */
@@ -210,10 +211,10 @@ platform_mp_attach_cpu(bool bootstrap)
 #endif
 
 	if (bootstrap) {
-		error = bus_enumerate_child(platform_mp_bus, "mpbus", NULL);
+		error = bus_enumerate_child_generic(platform_mp_bus, "mpbus");
 		if (error != 0)
-			panic("%s: bus_enumerate_child failed: %m", __func__,
-			      error);
+			panic("%s: bus_enumerate_child_generic failed: %m",
+			      __func__, error);
 	}
 }
 
@@ -230,7 +231,7 @@ platform_mp_describe(struct bus_instance *bi)
 }
 
 static int
-platform_mp_setup(struct bus_instance *bi, void *busdata)
+platform_mp_setup(struct bus_instance *bi)
 {
 	ASSERT(platform_mp_bus == NULL,
 	       "Can only have one mp instance.");

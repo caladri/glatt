@@ -21,6 +21,7 @@ struct bus_instance {
 	STAILQ_HEAD(, struct bus_instance) bi_children;
 	struct bus_instance *bi_parent;
 	struct bus_attachment *bi_attachment;
+	void *bi_pdata;
 	void *bi_softc;
 	STAILQ_ENTRY(struct bus_instance) bi_peer;
 	STAILQ_ENTRY(struct bus_instance) bi_link;
@@ -80,6 +81,7 @@ bus_instance_create(struct bus_instance **bip, struct bus_instance *parent,
 	STAILQ_INIT(&bi->bi_children);
 	bi->bi_parent = parent;
 	bi->bi_attachment = attachment;
+	bi->bi_pdata = NULL;
 	bi->bi_softc = NULL;
 	if (parent != NULL)
 		STAILQ_INSERT_TAIL(&parent->bi_children, bi, bi_peer);
@@ -103,7 +105,9 @@ bus_instance_destroy(struct bus_instance *bi)
 	STAILQ_REMOVE(&bus->bus_instances, bi, struct bus_instance, bi_link);
 	if (parent != NULL)
 		STAILQ_REMOVE(&parent->bi_children, bi, struct bus_instance, bi_peer);
-	if (bi->bi_softc == NULL)
+	if (bi->bi_pdata != NULL)
+		free(bi->bi_pdata);
+	if (bi->bi_softc != NULL)
 		free(bi->bi_softc);
 	if (!STAILQ_EMPTY(&bi->bi_children))
 		panic("%s: should not be called yet.", __func__);
@@ -120,11 +124,9 @@ bus_instance_enumerate_children(struct bus_instance *bi)
 	bus = bi->bi_attachment->ba_bus;
 
 	STAILQ_FOREACH(attachment, &bus->bus_children, ba_peers) {
-		error = bus_enumerate_child(bi, attachment->ba_bus->bus_name,
-					    NULL);
-		if (error != 0) {
-			bus_instance_printf(bi, "bus_enumerate_child (%s) failed: %m", attachment->ba_bus->bus_name);
-		}
+		error = bus_enumerate_child_generic(bi, attachment->ba_bus->bus_name);
+		if (error != 0)
+			bus_instance_printf(bi, "bus_enumerate_child_generic (%s) failed: %m", attachment->ba_bus->bus_name, error);
 	}
 	return (0);
 }
@@ -141,12 +143,27 @@ bus_instance_parent(struct bus_instance *bi)
 	return (bi->bi_parent);
 }
 
+void *
+bus_instance_parent_data(struct bus_instance *bi)
+{
+	ASSERT(bi->bi_pdata != NULL, "Don't ask for what you haven't created.");
+	return (bi->bi_pdata);
+}
+
+void *
+bus_instance_parent_data_allocate(struct bus_instance *bi, size_t size)
+{
+	ASSERT(bi->bi_pdata == NULL, "Can't create two parent datas.");
+	bi->bi_pdata = malloc(size);
+	return (bi->bi_pdata);
+}
+
 int
-bus_instance_setup(struct bus_instance *bi, void *busdata)
+bus_instance_setup(struct bus_instance *bi)
 {
 	int error;
 
-	error = bi->bi_attachment->ba_interface->bus_setup(bi, busdata);
+	error = bi->bi_attachment->ba_interface->bus_setup(bi);
 	if (error != 0) {
 #ifdef VERBOSE
 		bus_instance_printf(bi, "bus_setup: %m", error);
@@ -386,7 +403,7 @@ bus_enumerate(void *arg)
 	if (error != 0)
 		panic("%s: bus_instance_create failed: %m", __func__, error);
 
-	error = bus_instance_setup(bi, NULL);
+	error = bus_instance_setup(bi);
 	if (error != 0)
 		panic("%s: bus_instance_setup failed: %m", __func__, error);
 }

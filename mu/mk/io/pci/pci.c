@@ -70,13 +70,13 @@ pci_enumerate_children(struct bus_instance *bi)
 }
 
 static int
-pci_setup(struct bus_instance *bi, void *busdata)
+pci_setup(struct bus_instance *bi)
 {
 	struct pci_softc *sc;
 
 	sc = bus_softc_allocate(bi, sizeof *sc);
 
-	sc->sc_interface = busdata;
+	sc->sc_interface = bus_parent_data(bi);
 
 	return (0);
 }

@@ -20,7 +20,7 @@ root_enumerate_children(struct bus_instance *bi)
 }
 
 static int
-root_setup(struct bus_instance *bi, void *busdata)
+root_setup(struct bus_instance *bi)
 {
 	return (0);
 }

@@ -25,12 +25,14 @@ leaf_enumerate_children(struct bus_instance *bi)
 }
 
 static int
-leaf_setup(struct bus_instance *bi, void *busdata)
+leaf_setup(struct bus_instance *bi)
 {
-	struct leaf_device *ld = busdata;
+	struct leaf_device *ld;
 	struct leaf_softc *ls;
 	struct device *device;
 	int error;
+
+	ld = bus_parent_data(bi);
 
 	error = device_create(&device, bi, ld->ld_class);
 	if (error != 0)

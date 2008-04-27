@@ -30,7 +30,7 @@ mpbus_enumerate_children(struct bus_instance *bi)
 }
 
 static int
-mpbus_setup(struct bus_instance *bi, void *busdata)
+mpbus_setup(struct bus_instance *bi)
 {
 	if ((PCPU_GET(flags) & PCPU_FLAG_BOOTSTRAP) == 0) {
 		panic("%s: shouldn't be enumerating on application processor.",

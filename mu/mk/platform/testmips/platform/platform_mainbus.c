@@ -7,14 +7,15 @@ mainbus_enumerate_children(struct bus_instance *bi)
 {
 	int error;
 
-	error = bus_enumerate_child(bi, "mp", NULL);
+	error = bus_enumerate_child_generic(bi, "mp");
 	if (error != 0)
 		return (error);
+	
 	return (0);
 }
 
 static int
-mainbus_setup(struct bus_instance *bi, void *busdata)
+mainbus_setup(struct bus_instance *bi)
 {
 	return (0);
 }

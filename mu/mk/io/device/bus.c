@@ -12,11 +12,14 @@
  */
 
 int
-bus_enumerate_child(struct bus_instance *bi, const char *class, void *busdata)
+bus_enumerate_child(struct bus_instance *bi, const char *class,
+		    struct bus_instance **childp)
 {
 	struct bus_instance *child;
 	struct bus *bus;
 	int error;
+
+	ASSERT(childp != NULL, "Parent bus must be able to set up the child.");
 
 	if (strcmp("root", class) == 0)
 		return (ERROR_NOT_PERMITTED);
@@ -32,15 +35,27 @@ bus_enumerate_child(struct bus_instance *bi, const char *class, void *busdata)
 	}
 
 	error = bus_instance_create(&child, bi, bus);
-	if (error != 0) {
+	if (error != 0)
 		return (error);
-	}
 
-	error = bus_instance_setup(child, busdata);
-	if (error != 0) {
-		bus_instance_destroy(child);
+	*childp = child;
+
+	return (0);
+}
+
+int
+bus_enumerate_child_generic(struct bus_instance *bi, const char *class)
+{
+	struct bus_instance *child;
+	int error;
+
+	error = bus_enumerate_child(bi, class, &child);
+	if (error != 0)
 		return (error);
-	}
+
+	error = bus_setup_child(child);
+	if (error != 0)
+		return (error);
 
 	return (0);
 }
@@ -68,6 +83,24 @@ bus_parent(struct bus_instance *bi)
 	return (bus_instance_parent(bi));
 }
 
+void *
+bus_parent_data(struct bus_instance *bi)
+{
+	void *pdata;
+
+	pdata = bus_instance_parent_data(bi);
+	return (pdata);
+}
+
+void *
+bus_parent_data_allocate(struct bus_instance *bi, size_t size)
+{
+	void *pdata;
+
+	pdata = bus_instance_parent_data_allocate(bi, size);
+	return (pdata);
+}
+
 void
 bus_printf(struct bus_instance *bi, const char *fmt, ...)
 {
@@ -76,6 +109,21 @@ bus_printf(struct bus_instance *bi, const char *fmt, ...)
 	va_start(ap, fmt);
 	bus_vprintf(bi, fmt, ap);
 	va_end(ap);
+}
+
+int
+bus_setup_child(struct bus_instance *bi)
+{
+	int error;
+
+	error = bus_instance_setup(bi);
+	if (error != 0) {
+		/* XXX Should we leave this up to the parent?  */
+		bus_instance_destroy(bi);
+		return (error);
+	}
+
+	return (0);
 }
 
 void *

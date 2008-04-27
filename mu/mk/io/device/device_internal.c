@@ -63,13 +63,19 @@ device_destroy(struct device *device)
 int
 device_enumerate(struct bus_instance *bi, const char *class, void *busdata)
 {
-	struct leaf_device ld;
+	struct bus_instance *leaf;
+	struct leaf_device *ld;
 	int error;
 
-	ld.ld_class = class;
-	ld.ld_busdata = busdata;
+	error = bus_enumerate_child(bi, "leaf", &leaf);
+	if (error != 0)
+		return (error);
 
-	error = bus_enumerate_child(bi, "leaf", &ld);
+	ld = bus_parent_data_allocate(leaf, sizeof *ld);
+	ld->ld_class = class;
+	ld->ld_busdata = busdata;
+
+	error = bus_setup_child(leaf);
 	if (error != 0)
 		return (error);
 

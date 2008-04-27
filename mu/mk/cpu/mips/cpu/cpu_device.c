@@ -30,7 +30,7 @@ cpu_enumerate_children(struct bus_instance *bi)
 }
 
 static int
-cpu_setup(struct bus_instance *bi, void *busdata)
+cpu_setup(struct bus_instance *bi)
 {
 	cpu_interrupt_setup();
 

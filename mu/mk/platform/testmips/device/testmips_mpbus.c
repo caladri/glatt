@@ -1,6 +1,5 @@
 #include <core/types.h>
 #include <core/error.h>
-#include <core/malloc.h>
 #include <core/spinlock.h>
 #include <core/startup.h>
 #include <cpu/pcpu.h>

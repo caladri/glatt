@@ -1,4 +1,4 @@
-# $Id: build.mk,v 1.51 2008-04-24 03:46:33 juli Exp $
+# $Id: build.mk,v 1.52 2008-04-28 19:15:06 juli Exp $
 
 .PATH: ${KERNEL_ROOT}/core
 .PATH: ${KERNEL_ROOT}/db
@@ -57,6 +57,7 @@ KERNEL_SOURCES+=network_interface.c
 
 # io/pci
 KERNEL_SOURCES+=pci.c
+KERNEL_SOURCES+=pcidev.c
 
 # vm
 KERNEL_SOURCES+=vm.c

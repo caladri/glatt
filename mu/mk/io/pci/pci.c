@@ -4,9 +4,13 @@
 #include <db/db.h>
 #include <io/device/bus.h>
 #include <io/pci/pci.h>
+#include <io/pci/pcidev.h>
 #include <io/pci/pcireg.h>
 
+#include <io/console/console.h>/*XXX*/
+
 struct pci_softc {
+	struct bus_instance *sc_instance;
 	struct pci_interface *sc_interface;
 };
 
@@ -14,7 +18,26 @@ static int
 pci_enumerate_child(struct pci_softc *sc, pci_bus_t bus, pci_slot_t slot,
 		    pci_function_t function, pci_cs_data_t id)
 {
-	return (ERROR_NOT_IMPLEMENTED);
+	struct bus_instance *child;
+	struct pci_device *pcidev;
+	int error;
+
+	error = bus_enumerate_child(sc->sc_instance, "pcidev", &child);
+	if (error != 0)
+		return (error);
+
+	pcidev = bus_parent_data_allocate(child, sizeof *pcidev);
+	pcidev->pd_bus = bus;
+	pcidev->pd_slot = slot;
+	pcidev->pd_function = function;
+	pcidev->pd_vendor = id & 0xffff;
+	pcidev->pd_device = (id >> 16) & 0xffff;
+
+	error = bus_setup_child(child);
+	if (error != 0)
+		return (error);
+
+	return (0);
 }
 
 static pci_tag_t
@@ -63,7 +86,8 @@ pci_enumerate_children(struct bus_instance *bi)
 			continue;
 		error = pci_enumerate_child(sc, bus, slot, function, data);
 		if (error != 0)
-			bus_printf(bi, "could not attach device %x", data);
+			panic("%s: pci_enumerate_child failed: %m", __func__,
+			      error);
 	}
 
 	return (0);
@@ -76,6 +100,7 @@ pci_setup(struct bus_instance *bi)
 
 	sc = bus_softc_allocate(bi, sizeof *sc);
 
+	sc->sc_instance = bi;
 	sc->sc_interface = bus_parent_data(bi);
 
 	return (0);

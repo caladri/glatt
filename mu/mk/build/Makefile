@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.27 2008-03-31 21:53:32 juli Exp $
+# $Id: Makefile,v 1.28 2008-04-28 19:15:06 juli Exp $
 
 KERNEL?=	mu-mk
 
@@ -34,6 +34,7 @@ KERNEL_CPPFLAGS+=-DUNIPROCESSOR
 KERNEL_CPPFLAGS+=-DNO_MORDER
 .endif
 
+KERNEL_CFLAGS+= -O2 -Wuninitialized
 KERNEL_CFLAGS+=	${KERNEL_ABI} ${KERNEL_CPU} -nostdinc
 KERNEL_CFLAGS+=	-std=c99 -pedantic
 KERNEL_CFLAGS+=	-Werror -W -Wall -Wno-unused -Wformat

@@ -18,38 +18,72 @@
 #define	EXCEPTION_BASE_GENERAL		(XKPHYS_MAP(XKPHYS_UC, 0x00000180))
 #define	EXCEPTION_BASE_XTLBMISS		(XKPHYS_MAP(XKPHYS_UC, 0x00000080))
 
+static const char *cpu_exception_names[] = {
 #define	EXCEPTION_INT			(0x00)
+	"Interrupt",
 #define	EXCEPTION_TLB_MOD		(0x01)
+	"TLB Modify",
 #define	EXCEPTION_TLB_LOAD		(0x02)
+	"TLB Load",
 #define	EXCEPTION_TLB_STORE		(0x03)
+	"TLB Store",
 #define	EXCEPTION_ADDRESS_LOAD		(0x04)
+	"Address Load",
 #define	EXCEPTION_ADDRESS_STORE		(0x05)
+	"Address Store",
 #define	EXCEPTION_INSTRUCTION_BUS_ERROR	(0x06)
+	"Bus Error (Instruction)",
 #define	EXCEPTION_DATA_BUS_ERROR	(0x07)
+	"Bus Error (Data)",
 #define	EXCEPTION_SYSCALL		(0x08)
+	"System Call",
 #define	EXCEPTION_BREAKPOINT		(0x09)
-#define	EXCEPTION_RESERVED		(0x0a)
+	"Breakpoint",
+#define	EXCEPTION_RESERVED_0A		(0x0a)
+	NULL,
 #define	EXCEPTION_CP_UNAVAILABLE	(0x0b)
+	"Coprocessor Unavailable",
 #define	EXCEPTION_OVERFLOW		(0x0c)
+	"Overflow",
 #define	EXCEPTION_TRAP			(0x0d)
+	"Trap",
 #define	EXCEPTION_VCEI			(0x0e)
+	"Cache Coherency (Instruction)",
 #define	EXCEPTION_FLOATING_POINT	(0x0f)
-	//.dword	generic_exception	/* Res (16) */
-	//.dword	generic_exception	/* Res (17) */
-	//.dword	generic_exception	/* Res (18) */
-	//.dword	generic_exception	/* Res (19) */
-	//.dword	generic_exception	/* Res (20) */
-	//.dword	generic_exception	/* Res (21) */
-	//.dword	generic_exception	/* Res (22) */
+	"Floating Point",
+#define	EXCEPTION_RESERVED_10		(0x10)
+	NULL,
+#define	EXCEPTION_RESERVED_11		(0x11)
+	NULL,
+#define	EXCEPTION_RESERVED_12		(0x12)
+	NULL,
+#define	EXCEPTION_RESERVED_13		(0x13)
+	NULL,
+#define	EXCEPTION_RESERVED_14		(0x14)
+	NULL,
+#define	EXCEPTION_RESERVED_15		(0x15)
+	NULL,
+#define	EXCEPTION_RESERVED_16		(0x16)
+	NULL,
 #define	EXCEPTION_WATCHPOINT		(0x17)
-	//.dword	generic_exception	/* Res (24) */
-	//.dword	generic_exception	/* Res (25) */
-	//.dword	generic_exception	/* Res (26) */
-	//.dword	generic_exception	/* Res (27) */
-	//.dword	generic_exception	/* Res (28) */
-	//.dword	generic_exception	/* Res (29) */
-	//.dword	generic_exception	/* Res (30) */
+	"Watchpoint",
+#define	EXCEPTION_RESERVED_18		(0x18)
+	NULL,
+#define	EXCEPTION_RESERVED_19		(0x19)
+	NULL,
+#define	EXCEPTION_RESERVED_1A		(0x1a)
+	NULL,
+#define	EXCEPTION_RESERVED_1B		(0x1b)
+	NULL,
+#define	EXCEPTION_RESERVED_1C		(0x1c)
+	NULL,
+#define	EXCEPTION_RESERVED_1D		(0x1d)
+	NULL,
+#define	EXCEPTION_RESERVED_1E		(0x1e)
+	NULL,
 #define	EXCEPTION_VCED			(0x1f)
+	"Cache Coherency (Data)",
+};
 
 
 extern char utlb_vector[], utlb_vector_end[];
@@ -125,7 +159,9 @@ cpu_exception_frame_dump(struct thread *td, struct frame *fp)
 	cause = cpu_read_cause();
 	code = (cause & CP0_CAUSE_EXCEPTION) >> CP0_CAUSE_EXCEPTION_SHIFT;
 
-	kcprintf("Fatal trap type %u on CPU %u:\n", code, mp_whoami());
+	kcprintf("Fatal trap type %u (%s) on CPU %u:\n", code,
+		 cpu_exception_names[code] == NULL ? "Reserved" :
+		 cpu_exception_names[code], mp_whoami());
 	kcprintf("thread              = %p (%s)\n",
 		 (void *)td, td == NULL ? "nil" : td->td_name);
 	if (td != NULL) {

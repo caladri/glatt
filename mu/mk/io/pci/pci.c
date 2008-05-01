@@ -7,8 +7,6 @@
 #include <io/pci/pcidev.h>
 #include <io/pci/pcireg.h>
 
-#include <io/console/console.h>/*XXX*/
-
 struct pci_softc {
 	struct bus_instance *sc_instance;
 	struct pci_interface *sc_interface;

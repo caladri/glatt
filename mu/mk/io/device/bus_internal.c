@@ -8,6 +8,7 @@
 #include <db/db_show.h>
 #include <io/device/bus.h>
 #include <io/device/bus_internal.h>
+#include <io/device/leaf.h> /* for debugger only! */
 #include <io/console/console.h>
 
 DB_SHOW_TREE(bus, bus);
@@ -438,7 +439,17 @@ bus_db_instance_tree(struct bus_instance *bi)
 	struct bus_instance *child;
 
 	bus_db_instance_tree_leader(bi->bi_parent, bi, true);
-	kcprintf("%s\n", bus->bus_name);
+	kcprintf("%s", bus->bus_name);
+	if (strcmp(bus->bus_name, "leaf") == 0) {
+		/* Don't use accessor functions since they check for NULL.  */
+		struct leaf_device *ld = bi->bi_pdata;
+		if (ld == NULL) {
+			kcprintf(" <unattached>");
+		} else {
+			kcprintf(" *%s*", ld->ld_class);
+		}
+	}
+	kcprintf("\n");
 
 	STAILQ_FOREACH(child, &bi->bi_children, bi_peer) {
 		bus_db_instance_tree(child);

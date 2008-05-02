@@ -5,9 +5,13 @@
 #include <core/startup.h>
 #include <core/string.h>
 #include <db/db.h>
+#include <db/db_show.h>
 #include <io/device/bus.h>
 #include <io/device/bus_internal.h>
 #include <io/console/console.h>
+
+DB_SHOW_TREE(bus, bus);
+DB_SHOW_VALUE_TREE(bus, root, DB_SHOW_TREE_POINTER(bus));
 
 struct bus {
 	const char *bus_name;
@@ -408,3 +412,46 @@ bus_enumerate(void *arg)
 		panic("%s: bus_instance_setup failed: %m", __func__, error);
 }
 STARTUP_ITEM(bus_enumerate, STARTUP_DRIVERS, STARTUP_FIRST, bus_enumerate, NULL);
+
+static void
+bus_db_instance_tree_leader(struct bus_instance *parent,
+			    struct bus_instance *bi, bool last)
+{
+	if (parent == NULL)
+		return;
+	bus_db_instance_tree_leader(parent->bi_parent, parent, false);
+	if (last && STAILQ_NEXT(bi, bi_peer) == NULL) {
+		kcprintf("`-");
+		return;
+	}
+	if (STAILQ_NEXT(bi, bi_peer) == NULL) {
+		kcprintf("  ");
+	} else {
+		kcprintf("|%c", last ? '-' : ' ');
+	}
+}
+
+static void
+bus_db_instance_tree(struct bus_instance *bi)
+{
+	struct bus *bus = bi->bi_attachment->ba_bus;
+	struct bus_instance *child;
+
+	bus_db_instance_tree_leader(bi->bi_parent, bi, true);
+	kcprintf("%s\n", bus->bus_name);
+
+	STAILQ_FOREACH(child, &bi->bi_children, bi_peer) {
+		bus_db_instance_tree(child);
+	}
+}
+
+static void
+bus_db_instances(void)
+{
+	if (bus_root == NULL) {
+		kcprintf("No busses attached.\n");
+		return;
+	}
+	bus_db_instance_tree(STAILQ_FIRST(&bus_root->bus_instances));
+}
+DB_SHOW_VALUE_VOIDF(instances, bus, bus_db_instances);

@@ -6,6 +6,11 @@
 #include <core/spinlock.h>
 #include <core/string.h>
 #include <core/thread.h>
+#include <db/db_show.h>
+#include <io/console/console.h>
+
+DB_SHOW_TREE(morder, morder);
+DB_SHOW_VALUE_TREE(morder, root, DB_SHOW_TREE_POINTER(morder));
 
 struct morder_entry {
 	struct morder *m_order;
@@ -224,3 +229,31 @@ morder_remove(const char *class, const void *lock)
 	if (ml->ml_count == 0)
 		morder_dispose(&td->td_morder, ml);
 }
+
+static void
+db_morder_dump_entry(struct morder_entry *me)
+{
+	unsigned i;
+
+	for (i = 0; i < me->m_order->m_level; i++)
+		kcprintf(" ");
+	kcprintf("%s\n", me->m_class);
+}
+
+static void
+db_morder_dump_morder(struct morder *mo)
+{
+	struct morder_entry *me;
+	
+	SLIST_FOREACH(me, &mo->m_list, m_link)
+		db_morder_dump_entry(me);
+	if (mo->m_child != NULL)
+		db_morder_dump_morder(mo->m_child);
+}
+
+static void
+db_morder_dump_entries(void)
+{
+	db_morder_dump_morder(&morder_bottom);
+}
+DB_SHOW_VALUE_VOIDF(entries, morder, db_morder_dump_entries);

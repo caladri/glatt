@@ -2,12 +2,16 @@
 #include <core/error.h>
 #include <core/pool.h>
 #include <db/db.h>
+#include <db/db_show.h>
 #include <vm/page.h>
 #include <vm/vm.h>
 
 #ifdef VERBOSE
 #include <io/console/console.h>
 #endif
+
+DB_SHOW_TREE(pool, pool);
+DB_SHOW_VALUE_TREE(pool, root, DB_SHOW_TREE_POINTER(pool));
 
 #define	POOL_LOCK(pool)		spinlock_lock(&(pool)->pool_lock)
 #define	POOL_UNLOCK(pool)	spinlock_unlock(&(pool)->pool_lock)
@@ -34,6 +38,8 @@ struct pool_page {
 #define	MAX_ALLOC_SIZE	((PAGE_SIZE - (sizeof (struct pool_page) +	\
 				       (sizeof (struct pool_item) * 2)))\
 			 / 2)
+
+static TAILQ_HEAD(, struct pool) pool_list = TAILQ_HEAD_INITIALIZER(pool_list);
 
 static struct pool_item *pool_get(struct pool *);
 static void pool_initialize_page(struct pool_page *);
@@ -152,6 +158,7 @@ pool_create(struct pool *pool, const char *name, size_t size, unsigned flags)
 	kcprintf("POOL: Created dynamic pool \"%s\" of size %zu (%zu/pg)\n",
 		 pool->pool_name, pool->pool_size, pool->pool_maxitems);
 #endif
+	TAILQ_INSERT_TAIL(&pool_list, pool, pool_link);
 	return (0);
 }
 
@@ -223,3 +230,58 @@ pool_page_item(struct pool_page *page, unsigned i)
 	ASSERT(pool_page(item) == page, "item is within its page");
 	return (item);
 }
+
+static void
+db_pool_dump_pool(struct pool *pool, bool pages, bool items)
+{
+	struct pool_item *item;
+	struct pool_page *page;
+	unsigned i;
+
+	kcprintf("pool %p %s size %zu maxitems %zu\n", pool, pool->pool_name,
+		 pool->pool_size, pool->pool_maxitems);
+	if (!pages)
+		return;
+	SLIST_FOREACH(page, &pool->pool_pages, pp_link) {
+		kcprintf("\tpage %p backing %p (%p) items %zu\n", page,
+			 page->pp_backing, page->pp_backing->pg_addr,
+			 page->pp_items);
+		if (!items)
+			continue;
+		for (i = 0; i < pool->pool_maxitems; i++) {
+			item = pool_page_item(page, i);
+			kcprintf("\t\titem %p flags %x\n", item,
+				 item->pi_flags);
+		}
+	}
+}
+
+static void
+db_pool_dump_all(void)
+{
+	struct pool *pool;
+
+	TAILQ_FOREACH(pool, &pool_list, pool_link)
+		db_pool_dump_pool(pool, true, true);
+}
+DB_SHOW_VALUE_VOIDF(all, pool, db_pool_dump_all);
+
+static void
+db_pool_dump_pages(void)
+{
+	struct pool *pool;
+
+	TAILQ_FOREACH(pool, &pool_list, pool_link)
+		db_pool_dump_pool(pool, true, false);
+}
+DB_SHOW_VALUE_VOIDF(pages, pool, db_pool_dump_pages);
+
+static void
+db_pool_dump_pools(void)
+{
+	struct pool *pool;
+
+	TAILQ_FOREACH(pool, &pool_list, pool_link)
+		db_pool_dump_pool(pool, false, false);
+}
+DB_SHOW_VALUE_VOIDF(pools, pool, db_pool_dump_pools);

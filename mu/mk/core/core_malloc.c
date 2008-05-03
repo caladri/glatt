@@ -8,12 +8,12 @@ struct malloc_bucket {
 	size_t mb_size;
 };
 
-#define	MALLOC_NBUCKETS	(7)
+#define	MALLOC_NBUCKETS	(8)
 
 static struct malloc_bucket malloc_buckets[MALLOC_NBUCKETS];
-static struct pool malloc_bigbucket;
+static struct malloc_bucket malloc_bigbucket;
 
-static struct pool *malloc_pool(size_t);
+static struct malloc_bucket *malloc_bucket(size_t);
 
 void
 free(void *p)
@@ -24,16 +24,16 @@ free(void *p)
 void *
 malloc(size_t size)
 {
-	struct pool *pool;
+	struct malloc_bucket *mb;
 	void *p;
 
-	pool = malloc_pool(size);
-	p = pool_allocate(pool);
+	mb = malloc_bucket(size);
+	p = pool_allocate(&mb->mb_pool);
 	return (p);
 }
 
-static struct pool *
-malloc_pool(size_t size)
+static struct malloc_bucket *
+malloc_bucket(size_t size)
 {
 	struct malloc_bucket *mb;
 	unsigned i;
@@ -43,9 +43,21 @@ malloc_pool(size_t size)
 	for (i = 0; i < MALLOC_NBUCKETS; i++) {
 		mb = &malloc_buckets[i];
 		if (mb->mb_size >= size)
-			return (&mb->mb_pool);
+			return (mb);
 	}
 	return (&malloc_bigbucket);
+}
+
+static void
+malloc_setup_bucket(struct malloc_bucket *mb, size_t size)
+{
+	int error;
+
+	error = pool_create(&mb->mb_pool, mb == &malloc_bigbucket ?
+			    "MALLOC BIG" : "MALLOC", size, POOL_VIRTUAL);
+	if (error != 0)
+		panic("%s: pool_create failed: %m", __func__, error);
+	mb->mb_size = size;
 }
 
 static void
@@ -53,22 +65,15 @@ malloc_setup(void *arg)
 {
 	struct malloc_bucket *mb;
 	unsigned i;
-	int error;
 	size_t j;
 
 	j = 16;
 
 	for (i = 0; i < MALLOC_NBUCKETS; i++) {
 		mb = &malloc_buckets[i];
-		error = pool_create(&mb->mb_pool, "MALLOC", j, POOL_VIRTUAL);
-		if (error != 0)
-			panic("%s: pool_create failed: %m", __func__, error);
-		mb->mb_size = j;
+		malloc_setup_bucket(mb, j);
 		j *= 2;
 	}
-	error = pool_create(&malloc_bigbucket, "MALLOC BIG", pool_max_alloc,
-			    POOL_VIRTUAL);
-	if (error != 0)
-		panic("%s: pool_create failed: %m", __func__, error);
+	malloc_setup_bucket(&malloc_bigbucket, pool_max_alloc);
 }
 STARTUP_ITEM(malloc, STARTUP_POOL, STARTUP_FIRST, malloc_setup, NULL);

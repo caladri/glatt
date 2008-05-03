@@ -1,4 +1,4 @@
-# $Id: build.mk,v 1.52 2008-04-28 19:15:06 juli Exp $
+# $Id: build.mk,v 1.53 2008-05-03 08:15:56 juli Exp $
 
 .PATH: ${KERNEL_ROOT}/core
 .PATH: ${KERNEL_ROOT}/db
@@ -29,7 +29,6 @@ KERNEL_SOURCES+=core_sleepq.c
 KERNEL_SOURCES+=core_spinlock.c
 KERNEL_SOURCES+=core_startup.c
 KERNEL_SOURCES+=core_task.c
-KERNEL_SOURCES+=core_test.c
 KERNEL_SOURCES+=core_thread.c
 KERNEL_SOURCES+=core_ttk.c
 KERNEL_SOURCES+=core_vdae.c

@@ -11,10 +11,6 @@ enum startup_component {
 	STARTUP_DRIVERS,		/* Register device drivers.  */
 	STARTUP_MP,			/* Start up multiprocessor.  */
 	STARTUP_MAIN,			/* Enter main loop.  */
-
-	/* These are only used for per-CPU initialization.  */
-	STARTUP_IPCQ,			/* Initialize per-CPU IPC queue.  */
-	STARTUP_IDLE,			/* Create idle thread.  */
 };
 
 enum startup_order {
@@ -22,9 +18,6 @@ enum startup_order {
 	STARTUP_FIRST,
 	STARTUP_SECOND,
 	STARTUP_AFTER,
-
-	/* These are only used for per-CPU initialization.  */
-	STARTUP_CPU,
 };
 
 struct startup_item {

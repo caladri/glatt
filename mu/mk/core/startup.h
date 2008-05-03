@@ -17,7 +17,6 @@ enum startup_order {
 	STARTUP_BEFORE,
 	STARTUP_FIRST,
 	STARTUP_SECOND,
-	STARTUP_AFTER,
 };
 
 struct startup_item {

@@ -49,12 +49,11 @@ malloc_bucket(size_t size)
 }
 
 static void
-malloc_setup_bucket(struct malloc_bucket *mb, size_t size)
+malloc_setup_bucket(struct malloc_bucket *mb, size_t size, const char *name)
 {
 	int error;
 
-	error = pool_create(&mb->mb_pool, mb == &malloc_bigbucket ?
-			    "MALLOC BIG" : "MALLOC", size, POOL_VIRTUAL);
+	error = pool_create(&mb->mb_pool, name, size, POOL_VIRTUAL);
 	if (error != 0)
 		panic("%s: pool_create failed: %m", __func__, error);
 	mb->mb_size = size;
@@ -63,17 +62,11 @@ malloc_setup_bucket(struct malloc_bucket *mb, size_t size)
 static void
 malloc_setup(void *arg)
 {
-	struct malloc_bucket *mb;
 	unsigned i;
 	size_t j;
 
-	j = 16;
-
-	for (i = 0; i < MALLOC_NBUCKETS; i++) {
-		mb = &malloc_buckets[i];
-		malloc_setup_bucket(mb, j);
-		j *= 2;
-	}
-	malloc_setup_bucket(&malloc_bigbucket, pool_max_alloc);
+	for (j = 16, i = 0; i < MALLOC_NBUCKETS; j *= 2, i++)
+		malloc_setup_bucket(&malloc_buckets[i], j, "MALLOC");
+	malloc_setup_bucket(&malloc_bigbucket, pool_max_alloc, "MALLOC BIG");
 }
 STARTUP_ITEM(malloc, STARTUP_POOL, STARTUP_FIRST, malloc_setup, NULL);

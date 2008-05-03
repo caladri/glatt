@@ -29,8 +29,6 @@ struct pool_page {
 	struct pool *pp_pool;
 	SLIST_ENTRY(struct pool_page) pp_link;
 	size_t pp_items;
-	/* XXX push into 'struct pool' once we nuke static initializers.  */
-	size_t pp_maxitems;
 };
 
 #define	MAX_ALLOC_SIZE	((PAGE_SIZE - (sizeof (struct pool_page) +	\
@@ -84,8 +82,6 @@ pool_allocate(struct pool *pool)
 	page->pp_pool = pool;
 	SLIST_INSERT_HEAD(&pool->pool_pages, page, pp_link);
 	page->pp_items = 0;
-	page->pp_maxitems = (PAGE_SIZE - sizeof (struct pool_page)) /
-		(pool->pool_size + sizeof (struct pool_item));
 	pool_initialize_page(page);
 
 	item = pool_get(pool);
@@ -145,14 +141,17 @@ pool_create(struct pool *pool, const char *name, size_t size, unsigned flags)
 	if (size > MAX_ALLOC_SIZE)
 		panic("%s: don't use pools for large allocations, use the VM"
 		      " allocation interfaces instead.", __func__);
-#ifdef	VERBOSE
-	kcprintf("POOL: Created dynamic pool \"%s\" of size %zu\n", name, size);
-#endif
 	spinlock_init(&pool->pool_lock, "DYNAMIC POOL", SPINLOCK_FLAG_DEFAULT);
 	pool->pool_name = name;
 	pool->pool_size = size;
+	pool->pool_maxitems = (PAGE_SIZE - sizeof (struct pool_page)) /
+		(pool->pool_size + sizeof (struct pool_item));
 	SLIST_INIT(&pool->pool_pages);
 	pool->pool_flags = flags | POOL_VALID;
+#ifdef	VERBOSE
+	kcprintf("POOL: Created dynamic pool \"%s\" of size %zu (%zu/pg)\n",
+		 pool->pool_name, pool->pool_size, pool->pool_maxitems);
+#endif
 	return (0);
 }
 
@@ -170,9 +169,9 @@ pool_get(struct pool *pool)
 	unsigned i;
 
 	SLIST_FOREACH(page, &pool->pool_pages, pp_link) {
-		if (page->pp_items == page->pp_maxitems)
+		if (page->pp_items == pool->pool_maxitems)
 			continue;
-		for (i = 0; i < page->pp_maxitems; i++) {
+		for (i = 0; i < pool->pool_maxitems; i++) {
 			item = pool_page_item(page, i);
 			ASSERT(pool_page(item) == page,
 			       "item is within its page");
@@ -190,9 +189,12 @@ static void
 pool_initialize_page(struct pool_page *page)
 {
 	struct pool_item *item;
+	struct pool *pool;
 	unsigned i;
 
-	for (i = 0; i < page->pp_maxitems; i++) {
+	pool = page->pp_pool;
+
+	for (i = 0; i < pool->pool_maxitems; i++) {
 		item = pool_page_item(page, i);
 		item->pi_flags = POOL_ITEM_DEFAULT;
 		item->pi_flags |= POOL_ITEM_FREE;
@@ -215,7 +217,7 @@ pool_page_item(struct pool_page *page, unsigned i)
 	struct pool_item *item;
 	unsigned offset;
 
-	ASSERT(i < page->pp_maxitems, "access past end of page.");
+	ASSERT(i < page->pp_pool->pool_maxitems, "access past end of page.");
 	offset = i * (page->pp_pool->pool_size + sizeof *item);
 	item = (struct pool_item *)((uintptr_t)(page + 1) + offset);
 	ASSERT(pool_page(item) == page, "item is within its page");

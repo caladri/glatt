@@ -15,6 +15,7 @@ struct pool {
 	struct spinlock pool_lock;
 	const char *pool_name;
 	size_t pool_size;
+	size_t pool_maxitems;
 	SLIST_HEAD(, struct pool_page) pool_pages;
 	uint32_t pool_flags;
 };

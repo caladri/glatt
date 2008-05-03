@@ -12,6 +12,7 @@ struct vm_page {
 	uint32_t pg_flags;
 	uint32_t pg_refcnt;
 };
+TAILQ_HEAD(vm_pageq, struct vm_page);
 
 #define	PAGE_SIZE		(1 << PAGE_SHIFT)
 #define	PAGE_MASK		(PAGE_SIZE - 1)

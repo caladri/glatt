@@ -2,9 +2,13 @@
 #include <core/error.h>
 #include <core/string.h>
 #include <db/db.h>
+#include <db/db_show.h>
 #include <io/console/console.h>
 #include <vm/page.h>
 #include <vm/vm.h>
+
+DB_SHOW_TREE(vm_page, page);
+DB_SHOW_VALUE_TREE(page, vm, DB_SHOW_TREE_POINTER(vm_page));
 
 #define	VM_PAGE_ARRAY_ENTRIES	(PAGE_SIZE / sizeof (struct vm_page))
 #define	VM_PAGE_ARRAY_COUNT	(1)
@@ -16,8 +20,7 @@ static unsigned page_array_count;
 
 COMPILE_TIME_ASSERT(sizeof (struct vm_page_array) == PAGE_SIZE);
 
-static TAILQ_HEAD(, struct vm_page) page_free_queue;
-static TAILQ_HEAD(, struct vm_page) page_use_queue;
+static struct vm_pageq page_free_queue, page_use_queue;
 static struct spinlock page_lock;
 
 static struct vm_page *page_array_get_page(void);
@@ -373,3 +376,50 @@ page_ref_hold(struct vm_page *page)
 	ASSERT(page->pg_refcnt != 0, "Refcount wrapped.");
 	PAGE_UNLOCK();
 }
+
+static void
+db_vm_page_dump(struct vm_page *page)
+{
+	kcprintf("vm_page %p addr %p refcnt %u\n", page, (void *)page->pg_addr,
+		 page->pg_refcnt);
+}
+
+static void
+db_vm_page_dump_queue(struct vm_pageq *pq)
+{
+	struct vm_page *page;
+
+	TAILQ_FOREACH(page, pq, pg_link)
+		db_vm_page_dump(page);
+}
+
+static void
+db_vm_page_dump_arrays(void)
+{
+	unsigned i, j;
+
+	kcprintf("page array count = %u/%u\n", page_array_count,
+		 VM_PAGE_ARRAY_COUNT);
+	for (i = 0; i < VM_PAGE_ARRAY_COUNT; i++) {
+		kcprintf("page array #%u\n", i);
+		for (j = 0; j < VM_PAGE_ARRAY_ENTRIES; j++) {
+			kcprintf("page #%u\n", j);
+			db_vm_page_dump(&page_array_pages[i].vmpa_pages[j]);
+		}
+	}
+}
+DB_SHOW_VALUE_VOIDF(arrays, vm_page, db_vm_page_dump_arrays);
+
+static void
+db_vm_page_dump_freeq(void)
+{
+	db_vm_page_dump_queue(&page_free_queue);
+}
+DB_SHOW_VALUE_VOIDF(freeq, vm_page, db_vm_page_dump_freeq);
+
+static void
+db_vm_page_dump_useq(void)
+{
+	db_vm_page_dump_queue(&page_use_queue);
+}
+DB_SHOW_VALUE_VOIDF(useq, vm_page, db_vm_page_dump_useq);

@@ -11,7 +11,7 @@ vm_alloc(struct vm *vm, size_t size, vaddr_t *vaddrp)
 	size_t o, pages;
 	struct vm_page *page;
 	vaddr_t vaddr;
-	int error, error2;
+	int error;
 
 	if (size < pool_max_alloc)
 		panic("%s: allocation too small, use pool instead.", __func__);
@@ -22,19 +22,7 @@ vm_alloc(struct vm *vm, size_t size, vaddr_t *vaddrp)
 	for (o = 0; o < pages; o++) {
 		error = page_alloc(vm, PAGE_FLAG_DEFAULT, &page);
 		if (error != 0) {
-			while (o--) {
-				error2 = page_extract(vm, vaddr + o * PAGE_SIZE,
-						     &page);
-				if (error2 != 0)
-					panic("%s: failed to extract from mapping: %m",
-					      __func__, error2);
-			}
-			error2 = vm_free_address(vm, vaddr);
-			if (error2 != 0) {
-				panic("%s: vm_free_address failed: %m",
-				      __func__, error2);
-			}
-			return (error);
+			panic("%s: out of memory.", __func__);
 		}
 		error = page_map(vm, vaddr + o * PAGE_SIZE, page);
 		if (error != 0) {
@@ -56,7 +44,7 @@ vm_free(struct vm *vm, size_t size, vaddr_t vaddr)
 	if ((size % PAGE_SIZE) != 0)
 		pages++;
 	for (o = 0; o < pages; o++) {
-		error = page_extract(vm, vaddr + o * PAGE_SIZE, &page);
+		error = vm_map_extract(vm, vaddr + o * PAGE_SIZE, &page);
 		if (error != 0)
 			panic("%s: failed to extract from mapping: %m",
 			      __func__, error);

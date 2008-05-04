@@ -26,11 +26,6 @@
 #define	KERNEL_BASE	(XKSEG_BASE)
 #define	KERNEL_END	(XKSEG_END)
 
-	/* Place thread stack at the end of address space.  */
-
-#define	KSTACK_BASE	(KERNEL_END - KSTACK_SIZE)
-#define	KSTACK_END	(KERNEL_END)
-
 	/* 32-bit kernel physical address space mapping.  */
 #define	KSEG0_MAP(a)	(0x80000000 | (a))
 

@@ -337,13 +337,20 @@ db_vm_index_dump_vm(struct vm *vm, const char *name)
 static void
 db_vm_index_dump_kvm(void)
 {
-	struct vm *vm;
-
 	db_vm_index_dump_vm(&kernel_vm, "Kernel");
-
-	if (current_thread() != NULL) {
-		vm = current_thread()->td_parent->t_vm;
-		db_vm_index_dump_vm(vm, "Thread");
-	}
 }
 DB_SHOW_VALUE_VOIDF(kvm, vm_index, db_vm_index_dump_kvm);
+
+static void
+db_vm_index_dump_task(void)
+{
+	if (current_thread() != NULL) {
+		struct vm *vm;
+
+		vm = current_thread()->td_parent->t_vm;
+		db_vm_index_dump_vm(vm, "Thread");
+	} else {
+		kcprintf("No running thread.\n");
+	}
+}
+DB_SHOW_VALUE_VOIDF(task, vm_index, db_vm_index_dump_task);

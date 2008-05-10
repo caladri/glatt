@@ -15,7 +15,7 @@ DB_SHOW_VALUE_TREE(cpu, root, DB_SHOW_TREE_POINTER(cpu));
 
 volatile bool startup_early = true;
 
-COMPILE_TIME_ASSERT(sizeof (struct pcpu) <= PAGE_SIZE);
+COMPILE_TIME_ASSERT(pcpu_size, sizeof (struct pcpu) <= PAGE_SIZE);
 
 void
 cpu_halt(void)

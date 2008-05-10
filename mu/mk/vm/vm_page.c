@@ -4,6 +4,7 @@
 #include <db/db.h>
 #include <db/db_show.h>
 #include <io/console/console.h>
+#include <vm/map.h>
 #include <vm/page.h>
 #include <vm/vm.h>
 
@@ -18,7 +19,7 @@ static struct vm_page_array {
 } page_array_pages[VM_PAGE_ARRAY_COUNT];
 static unsigned page_array_count;
 
-COMPILE_TIME_ASSERT(sizeof (struct vm_page_array) == PAGE_SIZE);
+COMPILE_TIME_ASSERT(array_size, sizeof (struct vm_page_array) == PAGE_SIZE);
 
 static struct vm_pageq page_free_queue, page_use_queue;
 static struct spinlock page_lock;

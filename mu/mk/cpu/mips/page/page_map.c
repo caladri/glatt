@@ -11,6 +11,7 @@
 #include <io/console/console.h>
 #endif
 #include <page/page_map.h>
+#include <vm/index.h>
 #include <vm/page.h>
 #include <vm/vm.h>
 

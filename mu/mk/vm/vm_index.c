@@ -6,31 +6,16 @@
 #include <core/thread.h>
 #include <db/db.h>
 #include <io/console/console.h>
+#include <vm/index.h>
+#include <vm/map.h>
 #include <vm/page.h>
 #include <vm/vm.h>
 
 DB_SHOW_TREE(vm_index, index);
 DB_SHOW_VALUE_TREE(index, vm, DB_SHOW_TREE_POINTER(vm_index));
 
-struct vm_index_page {
-	vaddr_t vmip_base;
-	struct vm_page *vmip_page;
-	TAILQ_ENTRY(struct vm_index_page) vmip_link;
-};
-
-struct vm_index {
-	vaddr_t vmi_base;
-	size_t vmi_size;
-	BTREE(struct vm_index) vmi_tree;
-	TAILQ_ENTRY(struct vm_index) vmi_free_link;
-	TAILQ_HEAD(, struct vm_index_page) vmi_page_queue;
-};
-
-static struct pool vm_index_page_pool;
 static struct pool vm_index_pool;
 
-static struct vm_index *vm_find_index(struct vm *, vaddr_t);
-static struct vm_index_page *vm_find_index_page(struct vm *, struct vm_index *, vaddr_t);
 static void vm_free_index(struct vm *, struct vm_index *);
 static int vm_use_index(struct vm *, struct vm_index *, size_t);
 
@@ -39,10 +24,6 @@ vm_init_index(void)
 {
 	int error;
 
-	error = pool_create(&vm_index_page_pool, "VM Index Page",
-			    sizeof (struct vm_index_page), POOL_DEFAULT);
-	if (error != 0)
-		return (error);
 	error = pool_create(&vm_index_pool, "VM Index",
 			    sizeof (struct vm_index), POOL_DEFAULT);
 	if (error != 0)
@@ -97,6 +78,21 @@ vm_alloc_address(struct vm *vm, vaddr_t *vaddrp, size_t pages)
 	return (0);
 }
 
+struct vm_index *
+vm_find_index(struct vm *vm, vaddr_t vaddr)
+{
+	struct vm_index *iter;
+	struct vm_index *vmi;
+
+	VM_LOCK(vm);
+	BTREE_FIND(&vmi, iter, vm->vm_index, vmi_tree, (vaddr < iter->vmi_base),
+		   ((vaddr == iter->vmi_base) ||
+		    (vaddr > iter->vmi_base &&
+		     vaddr < (iter->vmi_base + PAGE_TO_ADDR(iter->vmi_size)))));
+	VM_UNLOCK(vm);
+	return (vmi);
+}
+
 int
 vm_free_address(struct vm *vm, vaddr_t vaddr)
 {
@@ -105,7 +101,7 @@ vm_free_address(struct vm *vm, vaddr_t vaddr)
 	VM_LOCK(vm);
 	vmi = vm_find_index(vm, vaddr);
 	if (vmi != NULL) {
-		ASSERT(TAILQ_EMPTY(&vmi->vmi_page_queue),
+		ASSERT(TAILQ_EMPTY(&vmi->vmi_map),
 		       "Cannot free address with active mappings.");
 		vm_free_index(vm, vmi);
 		VM_UNLOCK(vm);
@@ -128,7 +124,7 @@ vm_insert_range(struct vm *vm, vaddr_t begin, vaddr_t end)
 	vmi->vmi_base = begin;
 	vmi->vmi_size = ADDR_TO_PAGE(end - begin);
 	BTREE_INIT(&vmi->vmi_tree);
-	TAILQ_INIT(&vmi->vmi_page_queue);
+	TAILQ_INIT(&vmi->vmi_map);
 	vm_free_index(vm, vmi);
 	/* XXX Push in to btree_insert.  */
 	if (vm->vm_index == NULL) {
@@ -138,77 +134,6 @@ vm_insert_range(struct vm *vm, vaddr_t begin, vaddr_t end)
 	}
 	BTREE_INSERT(vmi, iter, vm->vm_index, vmi_tree,
 		     (vmi->vmi_base < iter->vmi_base));
-	VM_UNLOCK(vm);
-	return (0);
-}
-
-int
-vm_map_extract(struct vm *vm, vaddr_t vaddr, struct vm_page **pagep)
-{
-	struct vm_index *vmi;
-	struct vm_index_page *vmip;
-
-	VM_LOCK(vm);
-	vmi = vm_find_index(vm, vaddr);
-	if (vmi == NULL) {
-		VM_UNLOCK(vm);
-		return (ERROR_NOT_FOUND);
-	}
-	vmip = vm_find_index_page(vm, vmi, vaddr);
-	if (vmip == NULL) {
-		VM_UNLOCK(vm);
-		return (ERROR_NOT_FOUND);
-	}
-	*pagep = vmip->vmip_page;
-	VM_UNLOCK(vm);
-	return (0);
-}
-
-int
-vm_map_free(struct vm *vm, vaddr_t vaddr)
-{
-	struct vm_index *vmi;
-	struct vm_index_page *vmip;
-
-	VM_LOCK(vm);
-	vmi = vm_find_index(vm, vaddr);
-	if (vmi == NULL) {
-		VM_UNLOCK(vm);
-		return (ERROR_NOT_FOUND);
-	}
-	vmip = vm_find_index_page(vm, vmi, vaddr);
-	if (vmip == NULL) {
-		VM_UNLOCK(vm);
-		return (ERROR_NOT_FOUND);
-	}
-	TAILQ_REMOVE(&vmi->vmi_page_queue, vmip, vmip_link);
-	pool_free(vmip);
-	VM_UNLOCK(vm);
-	return (0);
-}
-
-int
-vm_map_insert(struct vm *vm, vaddr_t vaddr, struct vm_page *page)
-{
-	struct vm_index *vmi;
-	struct vm_index_page *vmip;
-
-	ASSERT(PAGE_ALIGNED(vaddr), "Page must be aligned.");
-
-	VM_LOCK(vm);
-	vmi = vm_find_index(vm, vaddr);
-	if (vmi == NULL) {
-		VM_UNLOCK(vm);
-		return (ERROR_NOT_FOUND);
-	}
-	vmip = pool_allocate(&vm_index_page_pool);
-	if (vmip == NULL) {
-		VM_UNLOCK(vm);
-		return (ERROR_EXHAUSTED);
-	}
-	vmip->vmip_base = vaddr;
-	vmip->vmip_page = page;
-	TAILQ_INSERT_TAIL(&vmi->vmi_page_queue, vmip, vmip_link);
 	VM_UNLOCK(vm);
 	return (0);
 }
@@ -246,35 +171,6 @@ vm_page_unmap(struct vm *vm, vaddr_t vaddr)
 	return (0);
 }
 
-static struct vm_index *
-vm_find_index(struct vm *vm, vaddr_t vaddr)
-{
-	struct vm_index *iter;
-	struct vm_index *vmi;
-
-	VM_LOCK(vm);
-	BTREE_FIND(&vmi, iter, vm->vm_index, vmi_tree, (vaddr < iter->vmi_base),
-		   ((vaddr == iter->vmi_base) ||
-		    (vaddr > iter->vmi_base &&
-		     vaddr < (iter->vmi_base + PAGE_TO_ADDR(iter->vmi_size)))));
-	VM_UNLOCK(vm);
-	return (vmi);
-}
-
-static struct vm_index_page *
-vm_find_index_page(struct vm *vm, struct vm_index *vmi, vaddr_t vaddr)
-{
-	struct vm_index_page *vmip;
-
-	SPINLOCK_ASSERT_HELD(&vm->vm_lock);
-	TAILQ_FOREACH(vmip, &vmi->vmi_page_queue, vmip_link) {
-		if (PAGE_FLOOR(vaddr) == vmip->vmip_base) {
-			return (vmip);
-		}
-	}
-	return (NULL);
-}
-
 static void
 vm_free_index(struct vm *vm, struct vm_index *vmi)
 {
@@ -305,7 +201,7 @@ vm_use_index(struct vm *vm, struct vm_index *vmi, size_t pages)
 static void
 db_vm_index_dump(struct vm_index *vmi)
 {
-	struct vm_index_page *vmip;
+	struct vm_map_page *vmmp;
 
 	/* XXX DOT
 	kcprintf("VMI%p [ label=\"%p\" ];\n", vmi, vmi->vmi_base);
@@ -317,11 +213,11 @@ db_vm_index_dump(struct vm_index *vmi)
 		 (void *)vmi->vmi_base,
 		 (void *)(vmi->vmi_base + vmi->vmi_size * PAGE_SIZE),
 		 vmi->vmi_size);
-	TAILQ_FOREACH(vmip, &vmi->vmi_page_queue, vmip_link) {
-		kcprintf("\tMapping %p -> %p (vm_page %p, vm_index_page %p)\n",
-			 (void *)vmip->vmip_base,
-			 (void *)page_address(vmip->vmip_page),
-			 vmip->vmip_page, vmip);
+	TAILQ_FOREACH(vmmp, &vmi->vmi_map, vmmp_link) {
+		kcprintf("\tMapping %p -> %p (vm_page %p, vm_map_page %p)\n",
+			 (void *)vmmp->vmmp_base,
+			 (void *)page_address(vmmp->vmmp_page),
+			 vmmp->vmmp_page, vmmp);
 	}
 }
 

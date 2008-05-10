@@ -24,7 +24,7 @@ struct pool_item {
 	uint16_t pi_unused16;
 	uint32_t pi_unused32;
 };
-COMPILE_TIME_ASSERT(sizeof (struct pool_item) == 8);
+COMPILE_TIME_ASSERT(pool_item_size, sizeof (struct pool_item) == 8);
 
 #define	POOL_PAGE_MAGIC		(0x19800604)
 struct pool_page {

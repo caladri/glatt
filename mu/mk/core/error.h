@@ -18,7 +18,7 @@ static const char *error_strings[] = {
 	"Invalid parameter or value.",
 #define	ERROR_COUNT		(0x0007)
 };
-COMPILE_TIME_ASSERT(sizeof error_strings / sizeof error_strings[0] ==
-		    ERROR_COUNT);
+COMPILE_TIME_ASSERT(error_count_accurate, sizeof error_strings /
+		    sizeof error_strings[0] == ERROR_COUNT);
 
 #endif /* !_CORE_ERROR_H_ */

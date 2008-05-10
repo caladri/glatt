@@ -2,6 +2,8 @@
 #include <core/error.h>
 #include <core/pool.h>
 #include <vm/alloc.h>
+#include <vm/index.h>
+#include <vm/map.h>
 #include <vm/page.h>
 #include <vm/vm.h>
 

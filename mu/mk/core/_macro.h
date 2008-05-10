@@ -44,11 +44,11 @@
 	/* Compile-time assertions.  */
 
 #ifndef	ASSEMBLER
-#define	COMPILE_TIME_ASSERT(p)						\
-	typedef	uint8_t CONCAT(ctassert_, __LINE__) [(!(p) * -1) + (p)]
+#define	COMPILE_TIME_ASSERT(name, p)					\
+	typedef	uint8_t CONCAT(ctassert_, name) [(!(p) * -1) + (p)]
 
-COMPILE_TIME_ASSERT(true);
-COMPILE_TIME_ASSERT(!false);
+COMPILE_TIME_ASSERT(true_is_true, true);
+COMPILE_TIME_ASSERT(false_is_false, !false);
 #endif
 
 	/* Using separate sections to implement dynamic lists.  */

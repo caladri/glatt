@@ -1,4 +1,4 @@
-# $Id: build.mk,v 1.53 2008-05-03 08:15:56 juli Exp $
+# $Id: build.mk,v 1.54 2008-05-10 21:42:53 juli Exp $
 
 .PATH: ${KERNEL_ROOT}/core
 .PATH: ${KERNEL_ROOT}/db
@@ -62,4 +62,5 @@ KERNEL_SOURCES+=pcidev.c
 KERNEL_SOURCES+=vm.c
 KERNEL_SOURCES+=vm_alloc.c
 KERNEL_SOURCES+=vm_index.c
+KERNEL_SOURCES+=vm_map.c
 KERNEL_SOURCES+=vm_page.c

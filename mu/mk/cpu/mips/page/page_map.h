@@ -50,19 +50,19 @@ struct pmap_lev2 {
 	pt_entry_t pml2_entries[NPTEL2];
 };
 
-COMPILE_TIME_ASSERT(sizeof (struct pmap_lev2) == PAGE_SIZE);
+COMPILE_TIME_ASSERT(lev2_size, sizeof (struct pmap_lev2) == PAGE_SIZE);
 
 struct pmap_lev1 {
 	struct pmap_lev2 *pml1_level2[NL2PL1];
 };
 
-COMPILE_TIME_ASSERT(sizeof (struct pmap_lev1) == PAGE_SIZE);
+COMPILE_TIME_ASSERT(lev1_size, sizeof (struct pmap_lev1) == PAGE_SIZE);
 
 struct pmap_lev0 {
 	struct pmap_lev1 *pml0_level1[NL1PL0];
 };
 
-COMPILE_TIME_ASSERT(sizeof (struct pmap_lev0) == PAGE_SIZE);
+COMPILE_TIME_ASSERT(lev0_size, sizeof (struct pmap_lev0) == PAGE_SIZE);
 
 struct pmap {
 	struct pmap_lev0 *pm_level0[NL0PMAP];
@@ -76,7 +76,7 @@ struct pmap {
  * direct-mapped region, or we would have to have the page tables self-map the
  * pmap entry.
  */
-COMPILE_TIME_ASSERT(sizeof (struct pmap) <= PAGE_SIZE);
+COMPILE_TIME_ASSERT(pmap_size, sizeof (struct pmap) <= PAGE_SIZE);
 
 static __inline vaddr_t
 pmap_index_pte(vaddr_t vaddr)

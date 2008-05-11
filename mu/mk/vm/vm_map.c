@@ -13,8 +13,7 @@
 
 static struct pool vm_map_page_pool;
 
-static struct vm_map_page *vm_map_find(struct vm *,
-						    struct vm_index *, vaddr_t);
+static struct vm_map_page *vm_map_find(struct vm *, struct vm_index *, vaddr_t);
 
 int
 vm_init_map(void)

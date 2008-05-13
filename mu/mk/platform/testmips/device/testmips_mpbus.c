@@ -6,7 +6,7 @@
 #include <io/device/bus.h>
 #include <io/device/device.h>
 
-static const char *mpbus_children[] = {
+static const char *mpbus_child_devices[] = {
 	"tmether",
 	"tmfb",
 	NULL,
@@ -18,7 +18,7 @@ mpbus_enumerate_children(struct bus_instance *bi)
 	const char **childp;
 	int error;
 
-	for (childp = mpbus_children; *childp != NULL; childp++) {
+	for (childp = mpbus_child_devices; *childp != NULL; childp++) {
 		error = device_enumerate(bi, *childp, NULL);
 		if (error != 0)
 			bus_printf(bi, "%s not present or enabled: %m", *childp,

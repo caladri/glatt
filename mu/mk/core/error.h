@@ -16,7 +16,9 @@ static const char *error_strings[] = {
 	"Try again as needed.",
 #define	ERROR_INVALID		(0x0006)
 	"Invalid parameter or value.",
-#define	ERROR_COUNT		(0x0007)
+#define	ERROR_UNEXPECTED	(0x0007)
+	"Unexpected result.",
+#define	ERROR_COUNT		(0x0008)
 };
 COMPILE_TIME_ASSERT(error_count_accurate, sizeof error_strings /
 		    sizeof error_strings[0] == ERROR_COUNT);

@@ -31,25 +31,37 @@ tmdisk_read(struct tmdisk_softc *sc, uint64_t offset)
 static int
 tmdisk_size(struct tmdisk_softc *sc, uint64_t *sizep)
 {
-	uint64_t off, m;
+	uint64_t offset, ogood;
+	uint64_t m, s;
 	int error;
 
-	for (off = TEST_DISK_DEV_BLOCKSIZE; off > 0; off *= 2) {
-		error = tmdisk_read(sc, off);
-		if (error != 0)
-			break;
-	}
+	m = 1;
+	s = 3;
+	offset = 1;
+	ogood = 0;
 
-	error = tmdisk_read(sc, off);
-	if (error != 0)
-		off /= 2;
-	for (m = 0; m <= off; m += TEST_DISK_DEV_BLOCKSIZE) {
-		error = tmdisk_read(sc, off + m);
+	for (;;) {
+		offset = (ogood * s) + (m * TEST_DISK_DEV_BLOCKSIZE);
+
+		error = tmdisk_read(sc, offset);
 		if (error != 0) {
-			*sizep = off + (m - TEST_DISK_DEV_BLOCKSIZE);
-			return (0);
+			if (m == 1) {
+				*sizep = ogood + TEST_DISK_DEV_BLOCKSIZE;
+				return (0);
+			}
+			m /= 2;
+			if (s > 1)
+				s--;
+			continue;
 		}
+		if (ogood == offset) {
+			m = 1;
+			continue;
+		}
+		ogood = offset;
+		m++;
 	}
+	
 	return (ERROR_UNEXPECTED);
 }
 

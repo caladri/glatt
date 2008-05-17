@@ -37,7 +37,6 @@ tmdisk_size(struct tmdisk_softc *sc, uint64_t *sizep)
 
 	m = 1;
 	s = 3;
-	offset = 1;
 	ogood = 0;
 
 	for (;;) {
@@ -45,11 +44,12 @@ tmdisk_size(struct tmdisk_softc *sc, uint64_t *sizep)
 
 		error = tmdisk_read(sc, offset);
 		if (error != 0) {
-			if (m == 1) {
+			if (m == 1 && s == 1) {
 				*sizep = ogood + TEST_DISK_DEV_BLOCKSIZE;
 				return (0);
 			}
-			m /= 2;
+			if (m > 1)
+				m /= 2;
 			if (s > 1)
 				s--;
 			continue;

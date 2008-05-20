@@ -263,7 +263,7 @@ pmap_alloc_pte(struct pmap *pm, vaddr_t vaddr, pt_entry_t **ptep)
 	struct pmap_lev0 *pml0;
 	struct pmap_lev1 *pml1;
 	struct pmap_lev2 *pml2;
-	uint32_t pml0i, pml1i, pml2i;
+	unsigned pml0i, pml1i, pml2i;
 	vaddr_t tmpaddr;
 	int error;
 

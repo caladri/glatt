@@ -22,7 +22,7 @@ task_init(void)
 
 int
 task_create(struct task **taskp, struct task *parent, const char *name,
-	    uint32_t flags)
+	    unsigned flags)
 {
 	struct task *task;
 	int error;

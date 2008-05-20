@@ -9,8 +9,8 @@ struct vm;
 struct vm_page {
 	paddr_t pg_addr;	/* XXX Can do better.  */
 	TAILQ_ENTRY(struct vm_page) pg_link;
-	uint32_t pg_flags;
-	uint32_t pg_refcnt;
+	unsigned pg_flags;
+	unsigned pg_refcnt;
 };
 TAILQ_HEAD(vm_pageq, struct vm_page);
 
@@ -30,8 +30,8 @@ TAILQ_HEAD(vm_pageq, struct vm_page);
 void page_init(void);
 
 paddr_t page_address(struct vm_page *);
-int page_alloc(struct vm *, uint32_t, struct vm_page **);
-int page_alloc_direct(struct vm *, uint32_t, vaddr_t *);
+int page_alloc(struct vm *, unsigned, struct vm_page **);
+int page_alloc_direct(struct vm *, unsigned, vaddr_t *);
 int page_free_direct(struct vm *, vaddr_t);
 int page_insert_pages(paddr_t, size_t);
 int page_map(struct vm *, vaddr_t, struct vm_page *);

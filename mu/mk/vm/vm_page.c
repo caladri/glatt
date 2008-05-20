@@ -26,7 +26,7 @@ static struct spinlock page_array_lock;
 static struct spinlock page_queue_lock;
 
 static struct vm_page *page_array_get_page(void);
-static void page_insert(struct vm_page *, paddr_t, uint32_t);
+static void page_insert(struct vm_page *, paddr_t, unsigned);
 static int page_lookup(paddr_t, struct vm_page **);
 static void page_ref_drop(struct vm_page *);
 static void page_ref_hold(struct vm_page *);
@@ -281,7 +281,7 @@ page_array_get_page(void)
 }
 
 static void
-page_insert(struct vm_page *page, paddr_t paddr, uint32_t flags)
+page_insert(struct vm_page *page, paddr_t paddr, unsigned flags)
 {
 	page->pg_addr = paddr;
 	page->pg_flags = flags;

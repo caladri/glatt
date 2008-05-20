@@ -28,7 +28,7 @@ thread_init(void)
 
 int
 thread_create(struct thread **tdp, struct task *parent, const char *name,
-	      uint32_t flags)
+	      unsigned flags)
 {
 	struct thread *td;
 	int error;

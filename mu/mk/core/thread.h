@@ -18,7 +18,7 @@ struct thread {
 	struct task *td_parent;
 	STAILQ_ENTRY(struct thread) td_link;
 	char td_name[THREAD_NAME_SIZE];
-	uint32_t td_flags;
+	unsigned td_flags;
 #ifndef	NO_MORDER
 	struct morder_thread td_morder;
 #endif
@@ -30,7 +30,7 @@ struct thread {
 
 void thread_init(void);
 
-int thread_create(struct thread **, struct task *, const char *, uint32_t);
+int thread_create(struct thread **, struct task *, const char *, unsigned);
 void thread_set_upcall(struct thread *, void (*)(void *), void *);
 void thread_switch(struct thread *, struct thread *);
 void thread_trampoline(struct thread *, void (*)(void *), void *);

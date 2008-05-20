@@ -17,7 +17,7 @@ struct pool {
 	size_t pool_size;
 	size_t pool_maxitems;
 	SLIST_HEAD(, struct pool_page) pool_pages;
-	uint32_t pool_flags;
+	unsigned pool_flags;
 	TAILQ_ENTRY(struct pool) pool_link;
 };
 

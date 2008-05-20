@@ -17,12 +17,12 @@ struct task {
 	STAILQ_HEAD(, struct task) t_children;
 	STAILQ_HEAD(, struct thread) t_threads;
 	STAILQ_ENTRY(struct task) t_link;
-	uint32_t t_flags;
+	unsigned t_flags;
 	struct vm *t_vm;
 };
 
 void task_init(void);
 
-int task_create(struct task **, struct task *, const char *, uint32_t);
+int task_create(struct task **, struct task *, const char *, unsigned);
 
 #endif /* !_CORE_TASK_H_ */

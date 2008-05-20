@@ -3,12 +3,9 @@
 #include <core/pool.h>
 #include <db/db.h>
 #include <db/db_show.h>
+#include <io/console/console.h>
 #include <vm/page.h>
 #include <vm/vm.h>
-
-#ifdef VERBOSE
-#include <io/console/console.h>
-#endif
 
 DB_SHOW_TREE(pool, pool);
 DB_SHOW_VALUE_TREE(pool, root, DB_SHOW_TREE_POINTER(pool));

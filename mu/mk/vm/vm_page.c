@@ -77,7 +77,7 @@ page_alloc(struct vm *vm, unsigned flags, struct vm_page **pagep)
 	PAGEQ_UNLOCK();
 
 	if ((flags & PAGE_FLAG_ZERO) != 0)
-		page_zero(page);
+		pmap_zero(page);
 	*pagep = page;
 	return (0);
 }
@@ -261,14 +261,6 @@ page_unmap_direct(struct vm *vm, struct vm_page *page, vaddr_t vaddr)
 	if (error == 0)
 		page_ref_drop(page);
 	return (error);
-}
-
-void
-page_zero(struct vm_page *page)
-{
-	page_ref_hold(page);
-	pmap_zero(page);
-	page_ref_drop(page);
 }
 
 static struct vm_page *

@@ -123,6 +123,7 @@ vm_insert_range(struct vm *vm, vaddr_t begin, vaddr_t end)
 	VM_LOCK(vm);
 	vmi->vmi_base = begin;
 	vmi->vmi_size = ADDR_TO_PAGE(end - begin);
+	vmi->vmi_flags = VM_INDEX_FLAG_DEFAULT;
 	BTREE_INIT(&vmi->vmi_tree);
 	TAILQ_INIT(&vmi->vmi_map);
 	vm_free_index(vm, vmi);
@@ -174,6 +175,11 @@ vm_page_unmap(struct vm *vm, vaddr_t vaddr)
 static void
 vm_free_index(struct vm *vm, struct vm_index *vmi)
 {
+#if 0 /* XXX Not as long as this is called at allocation-time.  */
+	ASSERT((vmi->vmi_flags & VM_INDEX_FLAG_INUSE) != 0,
+	       "VM Index must be in use.");
+#endif
+	vmi->vmi_flags &= ~VM_INDEX_FLAG_INUSE;
 	TAILQ_INSERT_HEAD(&vm->vm_index_free, vmi, vmi_free_link);
 }
 
@@ -183,6 +189,9 @@ vm_use_index(struct vm *vm, struct vm_index *vmi, size_t pages)
 	size_t count;
 	int error;
 
+	ASSERT((vmi->vmi_flags & VM_INDEX_FLAG_INUSE) == 0,
+	       "VM Index must not be in use.");
+	vmi->vmi_flags |= VM_INDEX_FLAG_INUSE;
 	TAILQ_REMOVE(&vm->vm_index_free, vmi, vmi_free_link);
 	if (vmi->vmi_size != pages) {
 		count = vmi->vmi_size - pages;

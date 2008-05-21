@@ -86,6 +86,8 @@ vm_map_insert(struct vm *vm, vaddr_t vaddr, struct vm_page *page)
 		VM_UNLOCK(vm);
 		return (ERROR_NOT_FOUND);
 	}
+	ASSERT(vm_map_find(vm, vmi, vaddr) == NULL,
+	       "Can't insert mapping twice.");
 	vmmp = pool_allocate(&vm_map_page_pool);
 	if (vmmp == NULL) {
 		VM_UNLOCK(vm);

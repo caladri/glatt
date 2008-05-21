@@ -19,6 +19,7 @@ struct vm_index {
 int vm_init_index(void);
 
 int vm_alloc_address(struct vm *, vaddr_t *, size_t);
+int vm_alloc_range(struct vm *, vaddr_t, vaddr_t);
 struct vm_index *vm_find_index(struct vm *, vaddr_t);
 int vm_free_address(struct vm *, vaddr_t);
 int vm_insert_range(struct vm *, vaddr_t, vaddr_t);

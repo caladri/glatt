@@ -17,6 +17,7 @@ DB_SHOW_VALUE_TREE(index, vm, DB_SHOW_TREE_POINTER(vm_index));
 static struct pool vm_index_pool;
 
 static void vm_free_index(struct vm *, struct vm_index *);
+static int vm_insert_index(struct vm *, struct vm_index **, vaddr_t, size_t);
 static int vm_use_index(struct vm *, struct vm_index *, size_t);
 
 int
@@ -35,45 +36,97 @@ int
 vm_alloc_address(struct vm *vm, vaddr_t *vaddrp, size_t pages)
 {
 	struct vm_index *vmi;
-	struct vm_index *t;
 	int error;
 
-	vmi = NULL;
-
 	VM_LOCK(vm);
-	/* Look for a best match.  */
-	TAILQ_FOREACH(t, &vm->vm_index_free, vmi_free_link) {
-		if (t->vmi_size == pages) {
-			error = vm_use_index(vm, t, pages);
+	TAILQ_FOREACH(vmi, &vm->vm_index_free, vmi_free_link) {
+		if (vmi->vmi_size == pages) {
+			error = vm_use_index(vm, vmi, pages);
 			if (error != 0) {
 				VM_UNLOCK(vm);
 				return (error);
 			}
-			*vaddrp = t->vmi_base;
+			*vaddrp = vmi->vmi_base;
 			VM_UNLOCK(vm);
 			return (0);
 		}
-		if (t->vmi_size > pages) {
-			if (vmi == NULL) {
-				vmi = t;
-			} else {
-				if (vmi->vmi_size > t->vmi_size)
-					vmi = t;
+	}
+	TAILQ_FOREACH(vmi, &vm->vm_index_free, vmi_free_link) {
+		if (vmi->vmi_size > pages) {
+			error = vm_alloc_range(vm, vmi->vmi_base,
+					       vmi->vmi_base +
+					       PAGE_TO_ADDR(pages)); 
+			if (error != 0) {
+				VM_UNLOCK(vm);
+				return (error);
 			}
+			*vaddrp = vmi->vmi_base;
+			VM_UNLOCK(vm);
+			return (0);
 		}
 	}
+	/* XXX Look for adjacent entries, collapse, etc..  */
+	VM_UNLOCK(vm);
+	return (ERROR_NOT_IMPLEMENTED);
+}
+
+int
+vm_alloc_range(struct vm *vm, vaddr_t begin, vaddr_t end)
+{
+	struct vm_index *vmi, *nvmi;
+	size_t leader, trailer;
+	size_t size;
+	int error;
+
+	VM_LOCK(vm);
+	vmi = vm_find_index(vm, begin);
 	if (vmi == NULL) {
-		/* XXX Collapse tree and rebalance if possible.  */
-		kcprintf("%s: need to collapse tree.\n", __func__);
+		VM_UNLOCK(vm);
+		return (ERROR_NOT_FOUND);
+	}
+	if ((vmi->vmi_flags & VM_INDEX_FLAG_INUSE) != 0) {
+		VM_UNLOCK(vm);
+		return (ERROR_NOT_FREE);
+	}
+	size = PAGE_TO_ADDR(vmi->vmi_size);
+	if (vmi->vmi_base + size < end) {
+		/* XXX Compact entries.  */
 		VM_UNLOCK(vm);
 		return (ERROR_NOT_IMPLEMENTED);
 	}
-	error = vm_use_index(vm, vmi, pages);
-	if (error != 0) {
-		VM_UNLOCK(vm);
-		return (error);
+	leader = begin - vmi->vmi_base;
+	trailer = size - (leader + (end - begin));
+	ASSERT((end - begin) + leader + trailer == size,
+	       "Leader, trailer and range calculations correct.");
+	if (leader != 0) {
+		vmi->vmi_size = ADDR_TO_PAGE(leader);
+		error = vm_insert_index(vm, &nvmi, begin,
+					ADDR_TO_PAGE(end - begin));
+		if (error != 0) {
+			vmi->vmi_size = ADDR_TO_PAGE(size);
+			VM_UNLOCK(vm);
+			return (error);
+		}
+	} else {
+		nvmi = vmi;
+		nvmi->vmi_size = ADDR_TO_PAGE(end - begin);
 	}
-	*vaddrp = vmi->vmi_base;
+	if (trailer != 0) {
+		error = vm_insert_index(vm, NULL, end, ADDR_TO_PAGE(trailer));
+		if (error != 0) {
+			/* XXX
+			 * We could just give the user more than they
+			 * wanted but that could turn out to be very bad.  For
+			 * now just fragment the map and error out.
+			 */
+			nvmi->vmi_size += ADDR_TO_PAGE(trailer);
+			VM_UNLOCK(vm);
+			return (error);
+		}
+	}
+	error = vm_use_index(vm, nvmi, ADDR_TO_PAGE(end - begin));
+	if (error != 0)
+		panic("%s: vm_use_index failed: %m", __func__, error);
 	VM_UNLOCK(vm);
 	return (0);
 }
@@ -85,6 +138,10 @@ vm_find_index(struct vm *vm, vaddr_t vaddr)
 	struct vm_index *vmi;
 
 	VM_LOCK(vm);
+	if (vm->vm_index == NULL) {
+		VM_UNLOCK(vm);
+		return (NULL);
+	}
 	BTREE_FIND(&vmi, iter, vm->vm_index, vmi_tree, (vaddr < iter->vmi_base),
 		   ((vaddr == iter->vmi_base) ||
 		    (vaddr > iter->vmi_base &&
@@ -114,27 +171,14 @@ vm_free_address(struct vm *vm, vaddr_t vaddr)
 int
 vm_insert_range(struct vm *vm, vaddr_t begin, vaddr_t end)
 {
-	struct vm_index *iter;
-	struct vm_index *vmi;
+	int error;
 
-	vmi = pool_allocate(&vm_index_pool);
-	if (vmi == NULL)
-		return (ERROR_EXHAUSTED);
 	VM_LOCK(vm);
-	vmi->vmi_base = begin;
-	vmi->vmi_size = ADDR_TO_PAGE(end - begin);
-	vmi->vmi_flags = VM_INDEX_FLAG_DEFAULT;
-	BTREE_INIT(&vmi->vmi_tree);
-	TAILQ_INIT(&vmi->vmi_map);
-	vm_free_index(vm, vmi);
-	/* XXX Push in to btree_insert.  */
-	if (vm->vm_index == NULL) {
-		vm->vm_index = vmi;
+	error = vm_insert_index(vm, NULL, begin, ADDR_TO_PAGE(end - begin));
+	if (error != 0) {
 		VM_UNLOCK(vm);
-		return (0);
+		return (error);
 	}
-	BTREE_INSERT(vmi, iter, vm->vm_index, vmi_tree,
-		     (vmi->vmi_base < iter->vmi_base));
 	VM_UNLOCK(vm);
 	return (0);
 }
@@ -183,41 +227,66 @@ vm_free_index(struct vm *vm, struct vm_index *vmi)
 	TAILQ_INSERT_HEAD(&vm->vm_index_free, vmi, vmi_free_link);
 }
 
+int
+vm_insert_index(struct vm *vm, struct vm_index **vmip, vaddr_t base,
+		size_t pages)
+{
+	struct vm_index *iter;
+	struct vm_index *vmi;
+
+	SPINLOCK_ASSERT_HELD(&vm->vm_lock);
+
+	ASSERT(vm_find_index(vm, base) == NULL,
+	       "Cannot insert an index twice!");
+
+	vmi = pool_allocate(&vm_index_pool);
+	if (vmi == NULL)
+		return (ERROR_EXHAUSTED);
+	vmi->vmi_base = base;
+	vmi->vmi_size = pages;
+	vmi->vmi_flags = VM_INDEX_FLAG_DEFAULT;
+	BTREE_INIT(&vmi->vmi_tree);
+	TAILQ_INIT(&vmi->vmi_map);
+	vm_free_index(vm, vmi);
+	if (vmip != NULL)
+		*vmip = vmi;
+	/* XXX Push in to btree_insert.  */
+	if (vm->vm_index == NULL) {
+		vm->vm_index = vmi;
+		return (0);
+	}
+	BTREE_INSERT(vmi, iter, vm->vm_index, vmi_tree,
+		     (vmi->vmi_base < iter->vmi_base));
+	return (0);
+}
+
+
 static int
 vm_use_index(struct vm *vm, struct vm_index *vmi, size_t pages)
 {
-	size_t count;
-	int error;
-
 	ASSERT((vmi->vmi_flags & VM_INDEX_FLAG_INUSE) == 0,
 	       "VM Index must not be in use.");
 	vmi->vmi_flags |= VM_INDEX_FLAG_INUSE;
 	TAILQ_REMOVE(&vm->vm_index_free, vmi, vmi_free_link);
-	if (vmi->vmi_size != pages) {
-		count = vmi->vmi_size - pages;
-		vmi->vmi_size = pages;
-		error = vm_insert_range(vm, vmi->vmi_base + (pages * PAGE_SIZE),
-					vmi->vmi_base + ((pages + count) *
-							 PAGE_SIZE));
-		if (error != 0) {
-			vmi->vmi_size += count;
-			vm_free_index(vm, vmi);
-			return (error);
-		}
-	}
+	ASSERT(vmi->vmi_size == pages, "You must know how much you're using.");
 	return (0);
 }
+
+static void
+db_vm_index_dump_dot(struct vm_index *vmi)
+{
+	kcprintf("VMI%p [ label=\"%p ... %p\" ];\n", vmi, vmi->vmi_base,
+		 vmi->vmi_base + PAGE_TO_ADDR(vmi->vmi_size));
+	kcprintf("VMI%p -> VMI%p;\n", vmi, vmi->vmi_tree.left);
+	kcprintf("VMI%p -> VMI%p;\n", vmi, vmi->vmi_tree.right);
+	/* XXX Should be easy to generate box-drawings for vmi_map.  */
+}
+
 static void
 db_vm_index_dump(struct vm_index *vmi)
 {
 	struct vm_map_page *vmmp;
 
-	/* XXX DOT
-	kcprintf("VMI%p [ label=\"%p\" ];\n", vmi, vmi->vmi_base);
-	kcprintf("VMI%p -> VMI%p;\n", vmi, vmi->vmi_tree.left);
-	kcprintf("VMI%p -> VMI%p;\n", vmi, vmi->vmi_tree.right);
-	return;
-	*/
 	kcprintf("VM Index %p [ %p ... %p (%zu pages) ]\n", vmi,
 		 (void *)vmi->vmi_base,
 		 (void *)(vmi->vmi_base + vmi->vmi_size * PAGE_SIZE),
@@ -231,20 +300,28 @@ db_vm_index_dump(struct vm_index *vmi)
 }
 
 static void
-db_vm_index_dump_vm(struct vm *vm, const char *name)
+db_vm_index_dump_vm(struct vm *vm, void (*function)(struct vm_index *))
 {
 	struct vm_index *vmi;
 
-	kcprintf("Dumping %s VM Index...\n", name);
-	BTREE_FOREACH(vmi, vm->vm_index, vmi_tree, db_vm_index_dump);
+	BTREE_FOREACH(vmi, vm->vm_index, vmi_tree, function);
 }
 
 static void
 db_vm_index_dump_kvm(void)
 {
-	db_vm_index_dump_vm(&kernel_vm, "Kernel");
+	db_vm_index_dump_vm(&kernel_vm, db_vm_index_dump);
 }
 DB_SHOW_VALUE_VOIDF(kvm, vm_index, db_vm_index_dump_kvm);
+
+static void
+db_vm_index_dump_kvm_dot(void)
+{
+	kcprintf("digraph KVM {\n");
+	db_vm_index_dump_vm(&kernel_vm, db_vm_index_dump_dot);
+	kcprintf("};\n");
+}
+DB_SHOW_VALUE_VOIDF(dotkvm, vm_index, db_vm_index_dump_kvm_dot);
 
 static void
 db_vm_index_dump_task(void)
@@ -253,7 +330,7 @@ db_vm_index_dump_task(void)
 		struct vm *vm;
 
 		vm = current_thread()->td_parent->t_vm;
-		db_vm_index_dump_vm(vm, "Thread");
+		db_vm_index_dump_vm(vm, db_vm_index_dump_dot);
 	} else {
 		kcprintf("No running thread.\n");
 	}

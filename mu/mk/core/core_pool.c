@@ -65,7 +65,7 @@ pool_allocate(struct pool *pool)
 		return ((void *)item);
 	}
 	if ((pool->pool_flags & POOL_VIRTUAL) != 0) {
-		error = vm_alloc(&kernel_vm, PAGE_SIZE, &vaddr);
+		error = vm_alloc_page(&kernel_vm, &vaddr);
 	} else {
 		error = page_alloc_direct(&kernel_vm, PAGE_FLAG_DEFAULT, &vaddr);
 	}
@@ -116,7 +116,7 @@ pool_free(void *m)
 	SLIST_REMOVE(&pool->pool_pages, page, struct pool_page, pp_link);
 	vaddr = (vaddr_t)page;
 	if ((pool->pool_flags & POOL_VIRTUAL) != 0) {
-		error = vm_free(&kernel_vm, PAGE_SIZE, vaddr);
+		error = vm_free_page(&kernel_vm, vaddr);
 	} else {
 		error = page_free_direct(&kernel_vm, vaddr);
 	}

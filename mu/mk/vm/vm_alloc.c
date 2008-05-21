@@ -35,6 +35,17 @@ vm_alloc(struct vm *vm, size_t size, vaddr_t *vaddrp)
 }
 
 int
+vm_alloc_page(struct vm *vm, vaddr_t *vaddrp)
+{
+	int error;
+
+	error = vm_alloc(vm, PAGE_SIZE, vaddrp);
+	if (error != 0)
+		return (error);
+	return (0);
+}
+
+int
 vm_free(struct vm *vm, size_t size, vaddr_t vaddr)
 {
 	size_t o, pages;
@@ -61,5 +72,16 @@ vm_free(struct vm *vm, size_t size, vaddr_t vaddr)
 	error = vm_free_address(vm, vaddr);
 	if (error != 0)
 		panic("%s: failed to free address: %m", __func__, error);
+	return (0);
+}
+
+int
+vm_free_page(struct vm *vm, vaddr_t vaddr)
+{
+	int error;
+
+	error = vm_free(vm, PAGE_SIZE, vaddr);
+	if (error != 0)
+		return (error);
 	return (0);
 }

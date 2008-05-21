@@ -21,6 +21,8 @@ vm_init(void)
 	/* XXX must initialize kernel_vm like vm_setup VMs.  */
 	spinlock_init(&kernel_vm.vm_lock, "Kernel VM lock", SPINLOCK_FLAG_DEFAULT | SPINLOCK_FLAG_RECURSE);
 
+	TAILQ_INIT(&kernel_vm.vm_index_free);
+
 	error = pool_create(&vm_pool, "VM", sizeof (struct vm), POOL_VIRTUAL);
 	if (error != 0)
 		panic("%s: pool_create failed: %m", __func__, error);

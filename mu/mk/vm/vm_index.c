@@ -75,8 +75,11 @@ vm_alloc_range(struct vm *vm, vaddr_t begin, vaddr_t end)
 {
 	struct vm_index *vmi, *nvmi;
 	size_t leader, trailer;
+	size_t range;
 	size_t size;
 	int error;
+
+	range = end - begin;
 
 	VM_LOCK(vm);
 	vmi = vm_find_index(vm, begin);
@@ -95,13 +98,12 @@ vm_alloc_range(struct vm *vm, vaddr_t begin, vaddr_t end)
 		return (ERROR_NOT_IMPLEMENTED);
 	}
 	leader = begin - vmi->vmi_base;
-	trailer = size - (leader + (end - begin));
-	ASSERT((end - begin) + leader + trailer == size,
-	       "Leader, trailer and range calculations correct.");
+	trailer = size - (leader + range);
+	ASSERT(range + leader + trailer == size,
+	       "Leader, trailer and range calculations incorrect.");
 	if (leader != 0) {
 		vmi->vmi_size = ADDR_TO_PAGE(leader);
-		error = vm_insert_index(vm, &nvmi, begin,
-					ADDR_TO_PAGE(end - begin));
+		error = vm_insert_index(vm, &nvmi, begin, ADDR_TO_PAGE(range));
 		if (error != 0) {
 			vmi->vmi_size = ADDR_TO_PAGE(size);
 			VM_UNLOCK(vm);
@@ -109,7 +111,7 @@ vm_alloc_range(struct vm *vm, vaddr_t begin, vaddr_t end)
 		}
 	} else {
 		nvmi = vmi;
-		nvmi->vmi_size = ADDR_TO_PAGE(end - begin);
+		nvmi->vmi_size = ADDR_TO_PAGE(range);
 	}
 	if (trailer != 0) {
 		error = vm_insert_index(vm, NULL, end, ADDR_TO_PAGE(trailer));
@@ -124,7 +126,7 @@ vm_alloc_range(struct vm *vm, vaddr_t begin, vaddr_t end)
 			return (error);
 		}
 	}
-	error = vm_use_index(vm, nvmi, ADDR_TO_PAGE(end - begin));
+	error = vm_use_index(vm, nvmi, ADDR_TO_PAGE(range));
 	if (error != 0)
 		panic("%s: vm_use_index failed: %m", __func__, error);
 	VM_UNLOCK(vm);
@@ -224,6 +226,12 @@ vm_free_index(struct vm *vm, struct vm_index *vmi)
 	       "VM Index must be in use.");
 #endif
 	vmi->vmi_flags &= ~VM_INDEX_FLAG_INUSE;
+	/*
+	 * In theory this means the most-fragmented spaces will stay at the
+	 * front of the queue and the giant chunk o' free vm space will stay
+	 * at the back, the last to be considered for allocations.  Thrashes
+	 * the caches, que sera sera.
+	 */
 	TAILQ_INSERT_HEAD(&vm->vm_index_free, vmi, vmi_free_link);
 }
 

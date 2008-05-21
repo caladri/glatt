@@ -1,3 +1,5 @@
+o) Include io/.../build.mk based on some sort of components system.
+
 root
 `->mainbus
    `->mp

@@ -7,7 +7,6 @@
 #include <db/db.h>
 #include <io/console/console.h>
 #include <vm/index.h>
-#include <vm/map.h>
 #include <vm/page.h>
 #include <vm/vm.h>
 
@@ -160,8 +159,10 @@ vm_free_address(struct vm *vm, vaddr_t vaddr)
 	VM_LOCK(vm);
 	vmi = vm_find_index(vm, vaddr);
 	if (vmi != NULL) {
+#if 0
 		ASSERT(TAILQ_EMPTY(&vmi->vmi_map),
 		       "Cannot free address with active mappings.");
+#endif
 		vm_free_index(vm, vmi);
 		VM_UNLOCK(vm);
 		return (0);
@@ -254,7 +255,6 @@ vm_insert_index(struct vm *vm, struct vm_index **vmip, vaddr_t base,
 	vmi->vmi_size = pages;
 	vmi->vmi_flags = VM_INDEX_FLAG_DEFAULT;
 	BTREE_INIT(&vmi->vmi_tree);
-	TAILQ_INIT(&vmi->vmi_map);
 	vm_free_index(vm, vmi);
 	if (vmip != NULL)
 		*vmip = vmi;
@@ -287,24 +287,17 @@ db_vm_index_dump_dot(struct vm_index *vmi)
 		 vmi->vmi_base + PAGE_TO_ADDR(vmi->vmi_size));
 	kcprintf("VMI%p -> VMI%p;\n", vmi, vmi->vmi_tree.left);
 	kcprintf("VMI%p -> VMI%p;\n", vmi, vmi->vmi_tree.right);
-	/* XXX Should be easy to generate box-drawings for vmi_map.  */
+	/* XXX Should be easy to generate box-drawings via pmap.  */
 }
 
 static void
 db_vm_index_dump(struct vm_index *vmi)
 {
-	struct vm_map_page *vmmp;
-
 	kcprintf("VM Index %p [ %p ... %p (%zu pages) ]\n", vmi,
 		 (void *)vmi->vmi_base,
 		 (void *)(vmi->vmi_base + vmi->vmi_size * PAGE_SIZE),
 		 vmi->vmi_size);
-	TAILQ_FOREACH(vmmp, &vmi->vmi_map, vmmp_link) {
-		kcprintf("\tMapping %p -> %p (vm_page %p, vm_map_page %p)\n",
-			 (void *)vmmp->vmmp_base,
-			 (void *)page_address(vmmp->vmmp_page),
-			 vmmp->vmmp_page, vmmp);
-	}
+	/* XXX Show mappinga via pmap.  */
 }
 
 static void

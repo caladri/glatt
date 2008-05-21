@@ -3,7 +3,6 @@
 #include <core/pool.h>
 #include <vm/alloc.h>
 #include <vm/index.h>
-#include <vm/map.h>
 #include <vm/page.h>
 #include <vm/vm.h>
 
@@ -46,7 +45,7 @@ vm_free(struct vm *vm, size_t size, vaddr_t vaddr)
 	if ((size % PAGE_SIZE) != 0)
 		pages++;
 	for (o = 0; o < pages; o++) {
-		error = vm_map_extract(vm, vaddr + o * PAGE_SIZE, &page);
+		error = page_extract(vm, vaddr + o * PAGE_SIZE, &page);
 		if (error != 0)
 			panic("%s: failed to extract from mapping: %m",
 			      __func__, error);

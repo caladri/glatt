@@ -4,7 +4,6 @@
 #include <db/db.h>
 #include <db/db_show.h>
 #include <io/console/console.h>
-#include <vm/map.h>
 #include <vm/page.h>
 #include <vm/vm.h>
 
@@ -105,13 +104,11 @@ page_alloc_direct(struct vm *vm, unsigned flags, vaddr_t *vaddrp)
 }
 
 int
-page_free_direct(struct vm *vm, vaddr_t vaddr)
+page_extract(struct vm *vm, vaddr_t vaddr, struct vm_page **pagep)
 {
 	struct vm_page *page;
 	paddr_t paddr;
 	int error;
-
-	ASSERT(PAGE_ALIGNED(vaddr), "must be a page address");
 
 	error = pmap_extract(vm, vaddr, &paddr);
 	if (error != 0)
@@ -121,7 +118,18 @@ page_free_direct(struct vm *vm, vaddr_t vaddr)
 	if (error != 0)
 		return (error);
 
-	error = page_unmap_direct(vm, page, vaddr);
+	return (0);
+}
+
+int
+page_free_direct(struct vm *vm, vaddr_t vaddr)
+{
+	struct vm_page *page;
+	int error;
+
+	ASSERT(PAGE_ALIGNED(vaddr), "must be a page address");
+
+	error = page_extract(vm, vaddr, &page);
 	if (error != 0)
 		return (error);
 
@@ -198,12 +206,9 @@ page_map(struct vm *vm, vaddr_t vaddr, struct vm_page *page)
 
 	ASSERT(PAGE_ALIGNED(vaddr), "must be a page address");
 	page_ref_hold(page);
-	error = vm_map_insert(vm, vaddr, page);
-	if (error == 0) {
-		error = pmap_map(vm, vaddr, page);
-		if (error == 0)
-			return (0);
-	}
+	error = pmap_map(vm, vaddr, page);
+	if (error == 0)
+		return (0);
 	page_ref_drop(page);
 	return (error);
 }
@@ -238,17 +243,17 @@ page_unmap(struct vm *vm, vaddr_t vaddr)
 	int error;
 
 	ASSERT(PAGE_ALIGNED(vaddr), "must be a page address");
-	error = vm_map_extract(vm, vaddr, &page);
-	if (error == 0) {
-		error = pmap_unmap(vm, vaddr);
-		if (error == 0) {
-			error = vm_map_free(vm, vaddr);
-			if (error == 0) {
-				page_ref_drop(page);
-			}
-		}
-	}
-	return (error);
+
+	error = page_extract(vm, vaddr, &page);
+	if (error != 0)
+		return (error);
+
+	error = pmap_unmap(vm, vaddr);
+	if (error != 0)
+		return (error);
+
+	page_ref_drop(page);
+	return (0);
 }
 
 int

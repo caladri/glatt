@@ -11,7 +11,6 @@ struct vm_index {
 	unsigned vmi_flags;
 	BTREE(struct vm_index) vmi_tree;
 	TAILQ_ENTRY(struct vm_index) vmi_free_link;
-	TAILQ_HEAD(, struct vm_map_page) vmi_map;
 };
 #define	VM_INDEX_FLAG_DEFAULT	(0x00000000)
 #define	VM_INDEX_FLAG_INUSE	(0x00000001)

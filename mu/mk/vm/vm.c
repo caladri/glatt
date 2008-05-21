@@ -4,7 +4,6 @@
 #include <db/db.h>
 #include <vm/page.h>
 #include <vm/index.h>
-#include <vm/map.h>
 #include <vm/vm.h>
 
 DB_SHOW_TREE(vm, vm);
@@ -29,9 +28,6 @@ vm_init(void)
 	error = vm_init_index();
 	if (error != 0)
 		panic("%s: vm_init_index failed: %m", __func__, error);
-	error = vm_init_map();
-	if (error != 0)
-		panic("%s: vm_init_map failed: %m", __func__, error);
 
 	/*
 	 * Bring up PMAP.

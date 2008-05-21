@@ -26,8 +26,6 @@ extern struct vm kernel_vm;
 
 void vm_init(void);
 
-int vm_page_map(struct vm *, struct vm_page *, vaddr_t *);
-int vm_page_unmap(struct vm *, vaddr_t);
 int vm_setup(struct vm **, vaddr_t, vaddr_t);
 
 #endif /* !_VM_VM_H_ */

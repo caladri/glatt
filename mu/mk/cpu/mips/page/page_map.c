@@ -19,6 +19,19 @@
 #define	PMAP_ASID_FIRST		(1)
 #define	PMAP_ASID_MAX		(255)
 
+/*
+ * Make sure our page structures are correctly-sized.
+ */
+COMPILE_TIME_ASSERT(sizeof (struct pmap_lev2) == PAGE_SIZE);
+COMPILE_TIME_ASSERT(sizeof (struct pmap_lev1) == PAGE_SIZE);
+COMPILE_TIME_ASSERT(sizeof (struct pmap_lev0) == PAGE_SIZE);
+/*
+ * If it goes over PAGE_SIZE, we would need a way to allocate a contiguous
+ * direct-mapped region, or we would have to have the page tables self-map the
+ * pmap entry.
+ */
+COMPILE_TIME_ASSERT(sizeof (struct pmap) <= PAGE_SIZE);
+
 static void pmap_alloc_asid(struct pmap *);
 static int pmap_alloc_pte(struct pmap *, vaddr_t, pt_entry_t **);
 static void pmap_collect(struct pmap *);

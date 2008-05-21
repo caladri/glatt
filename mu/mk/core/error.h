@@ -1,7 +1,7 @@
 #ifndef	_CORE_ERROR_H_
 #define	_CORE_ERROR_H_
 
-static const char *error_strings[] = {
+static const char *error_strings[] __used = {
 #define	ERROR_IT_S_ALRIGHT	(0x0000)
 	"Sterling Void.",
 #define	ERROR_NOT_FOUND		(0x0001)
@@ -22,7 +22,5 @@ static const char *error_strings[] = {
 	"Resource in use.",
 #define	ERROR_COUNT		(0x0009)
 };
-COMPILE_TIME_ASSERT(error_count_accurate, sizeof error_strings /
-		    sizeof error_strings[0] == ERROR_COUNT);
 
 #endif /* !_CORE_ERROR_H_ */

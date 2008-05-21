@@ -1,4 +1,5 @@
 #include <core/types.h>
+#include <core/error.h>
 #include <core/ipc.h>
 #ifndef	NO_MORDER
 #include <core/morder.h>
@@ -15,6 +16,12 @@
 #include <io/console/console.h>
 #endif
 #include <vm/vm.h>
+
+/* Some compile-time assertions for every build.  */
+COMPILE_TIME_ASSERT(true);
+COMPILE_TIME_ASSERT(!false);
+COMPILE_TIME_ASSERT(sizeof error_strings /
+		    sizeof error_strings[0] == ERROR_COUNT);
 
 SET(startup_items, struct startup_item);
 

@@ -18,7 +18,7 @@
 /*
  * PageMask must increment in steps of 2 bits.
  */
-COMPILE_TIME_ASSERT(pagemask_valid, POPCNT(TLBMASK_MASK) % 2 == 0);
+COMPILE_TIME_ASSERT(POPCNT(TLBMASK_MASK) % 2 == 0);
 
 #ifndef	UNIPROCESSOR
 struct tlb_shootdown_arg {

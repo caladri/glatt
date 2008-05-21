@@ -41,15 +41,10 @@
 #define	LOG2(x)								\
 	(POPCNT((x) - 1))
 
-	/* Compile-time assertions.  */
+	/* Compile-time assertions.  (Only use in source files.)  */
 
-#ifndef	ASSEMBLER
-#define	COMPILE_TIME_ASSERT(name, p)					\
-	typedef	uint8_t CONCAT(ctassert_, name) [(!(p) * -1) + (p)]
-
-COMPILE_TIME_ASSERT(true_is_true, true);
-COMPILE_TIME_ASSERT(false_is_false, !false);
-#endif
+#define	COMPILE_TIME_ASSERT(p)					\
+	typedef	uint8_t CONCAT(ctassert_, __LINE__) [(!(p) * -1) + (p)]
 
 	/* Using separate sections to implement dynamic lists.  */
 #define	SECTION_START(s)	_CONCAT(__start_, s)

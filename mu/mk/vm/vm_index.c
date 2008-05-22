@@ -186,10 +186,8 @@ vm_find_index(struct vm *vm, vaddr_t vaddr)
 static void
 vm_free_index(struct vm *vm, struct vm_index *vmi)
 {
-#if 0 /* XXX Not as long as this is called at allocation-time.  */
 	ASSERT((vmi->vmi_flags & VM_INDEX_FLAG_INUSE) != 0,
 	       "VM Index must be in use.");
-#endif
 	vmi->vmi_flags &= ~VM_INDEX_FLAG_INUSE;
 	/*
 	 * In theory this means the most-fragmented spaces will stay at the
@@ -219,11 +217,13 @@ vm_insert_index(struct vm *vm, struct vm_index **vmip, vaddr_t base,
 	vmi->vmi_size = pages;
 	vmi->vmi_flags = VM_INDEX_FLAG_DEFAULT;
 	BTREE_INIT(&vmi->vmi_tree);
-	vm_free_index(vm, vmi);
-	if (vmip != NULL)
-		*vmip = vmi;
+
+	TAILQ_INSERT_TAIL(&vm->vm_index_free, vmi, vmi_free_link);
 	BTREE_INSERT(vmi, iter, &vm->vm_index, vmi_tree,
 		     (vmi->vmi_base < iter->vmi_base));
+
+	if (vmip != NULL)
+		*vmip = vmi;
 	return (0);
 }
 static int

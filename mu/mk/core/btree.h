@@ -53,9 +53,13 @@
 		}							\
 	} while (0)
 
-#define	BTREE_INSERT(var, iter, tree, field, cmp)			\
+#define	BTREE_INSERT(var, iter, treep, field, cmp)			\
 	do {								\
-		(iter) = (tree);					\
+		if (((iter) = *(treep)) == NULL) {			\
+			*(treep) = (var);				\
+			(var)->field.parent = (iter);			\
+			break;						\
+		}							\
 									\
 		for (;;) {						\
 			if ((cmp)) {					\

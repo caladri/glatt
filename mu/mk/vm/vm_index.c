@@ -139,10 +139,6 @@ vm_find_index(struct vm *vm, vaddr_t vaddr)
 	struct vm_index *vmi;
 
 	VM_LOCK(vm);
-	if (vm->vm_index == NULL) {
-		VM_UNLOCK(vm);
-		return (NULL);
-	}
 	BTREE_FIND(&vmi, iter, vm->vm_index, vmi_tree, (vaddr < iter->vmi_base),
 		   ((vaddr == iter->vmi_base) ||
 		    (vaddr > iter->vmi_base &&
@@ -225,12 +221,7 @@ vm_insert_index(struct vm *vm, struct vm_index **vmip, vaddr_t base,
 	vm_free_index(vm, vmi);
 	if (vmip != NULL)
 		*vmip = vmi;
-	/* XXX Push in to btree_insert.  */
-	if (vm->vm_index == NULL) {
-		vm->vm_index = vmi;
-		return (0);
-	}
-	BTREE_INSERT(vmi, iter, vm->vm_index, vmi_tree,
+	BTREE_INSERT(vmi, iter, &vm->vm_index, vmi_tree,
 		     (vmi->vmi_base < iter->vmi_base));
 	return (0);
 }

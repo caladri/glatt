@@ -17,7 +17,10 @@
 
 #define	BTREE_FIND(hitp, iter, tree, field, cmp, match)			\
 	do {								\
-		(iter) = (tree);					\
+		if (((iter) = (tree)) == NULL) {			\
+			*(hitp) = NULL;					\
+			break;						\
+		}							\
 									\
 		for (;;) {						\
 			if ((cmp)) {					\

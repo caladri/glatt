@@ -39,7 +39,7 @@ struct pool_page {
 static TAILQ_HEAD(, struct pool) pool_list = TAILQ_HEAD_INITIALIZER(pool_list);
 
 static struct pool_item *pool_get(struct pool *);
-static void pool_initialize_page(struct pool_page *);
+static void pool_insert_page(struct pool *, struct pool_page *);
 static struct pool_page *pool_page(struct pool_item *);
 static struct pool_item *pool_page_item(struct pool_page *, unsigned);
 
@@ -49,7 +49,6 @@ void *
 pool_allocate(struct pool *pool)
 {
 	struct pool_item *item;
-	struct pool_page *page;
 	vaddr_t vaddr;
 	int error;
 
@@ -64,6 +63,11 @@ pool_allocate(struct pool *pool)
 		POOL_UNLOCK(pool);
 		return ((void *)item);
 	}
+
+	if ((pool->pool_flags & POOL_MANAGED) != 0)
+		panic("%s: pool %s exhausted.", __func__,
+		      pool->pool_name);
+
 	if ((pool->pool_flags & POOL_VIRTUAL) != 0) {
 		error = vm_alloc_page(&kernel_vm, &vaddr);
 	} else {
@@ -72,12 +76,7 @@ pool_allocate(struct pool *pool)
 	if (error != 0)
 		panic("%s: can't map page for allocation: %m", __func__, error);
 
-	page = (struct pool_page *)vaddr;
-	page->pp_magic = POOL_PAGE_MAGIC;
-	page->pp_pool = pool;
-	SLIST_INSERT_HEAD(&pool->pool_pages, page, pp_link);
-	page->pp_items = 0;
-	pool_initialize_page(page);
+	pool_insert_page(pool, (struct pool_page *)vaddr);
 
 	item = pool_get(pool);
 	if (item++ == NULL)
@@ -110,18 +109,21 @@ pool_free(void *m)
 	}
 	/*
 	 * Last item in page, unmap it, free any virtual addresses and put the
-	 * page itself back into the free pool.
+	 * page itself back into the free pool, unless this is a managed pool.
 	 */
-	page->pp_magic = ~POOL_PAGE_MAGIC;
-	SLIST_REMOVE(&pool->pool_pages, page, struct pool_page, pp_link);
-	vaddr = (vaddr_t)page;
-	if ((pool->pool_flags & POOL_VIRTUAL) != 0) {
-		error = vm_free_page(&kernel_vm, vaddr);
-	} else {
-		error = page_free_direct(&kernel_vm, vaddr);
+	if ((pool->pool_flags & POOL_MANAGED) == 0) {
+		page->pp_magic = ~POOL_PAGE_MAGIC;
+		SLIST_REMOVE(&pool->pool_pages, page, struct pool_page,
+			     pp_link);
+		vaddr = (vaddr_t)page;
+		if ((pool->pool_flags & POOL_VIRTUAL) != 0) {
+			error = vm_free_page(&kernel_vm, vaddr);
+		} else {
+			error = page_free_direct(&kernel_vm, vaddr);
+		}
+		if (error != 0)
+			panic("%s: can't free page: %m", __func__, error);
 	}
-	if (error != 0)
-		panic("%s: can't free page: %m", __func__, error);
 	POOL_UNLOCK(pool);
 }
 
@@ -129,8 +131,12 @@ int
 pool_create(struct pool *pool, const char *name, size_t size, unsigned flags)
 {
 	if (size > MAX_ALLOC_SIZE)
-		panic("%s: don't use pools for large allocations, use the VM"
-		      " allocation interfaces instead.", __func__);
+		panic("%s: don't use pool %s for large allocations, use the VM"
+		      " allocation interfaces instead.", __func__, name);
+	if ((flags & (POOL_VIRTUAL | POOL_MANAGED)) ==
+	    (POOL_VIRTUAL | POOL_MANAGED))
+		panic("%s: what you do with managed pool %s is your business.",
+		      __func__, name);
 	spinlock_init(&pool->pool_lock, "DYNAMIC POOL", SPINLOCK_FLAG_DEFAULT);
 	pool->pool_name = name;
 	pool->pool_size = size;
@@ -144,6 +150,19 @@ pool_create(struct pool *pool, const char *name, size_t size, unsigned flags)
 #endif
 	TAILQ_INSERT_TAIL(&pool_list, pool, pool_link);
 	return (0);
+}
+
+void
+pool_insert(struct pool *pool, vaddr_t vaddr)
+{
+	struct pool_page *page;
+
+	POOL_LOCK(pool);
+	if ((pool->pool_flags & POOL_MANAGED) == 0)
+		panic("%s: keep your hands off %s.", __func__, pool->pool_name);
+	page = (struct pool_page *)vaddr;
+	pool_insert_page(pool, page);
+	POOL_UNLOCK(pool);
 }
 
 int
@@ -177,13 +196,15 @@ pool_get(struct pool *pool)
 }
 
 static void
-pool_initialize_page(struct pool_page *page)
+pool_insert_page(struct pool *pool, struct pool_page *page)
 {
 	struct pool_item *item;
-	struct pool *pool;
 	unsigned i;
 
-	pool = page->pp_pool;
+	page->pp_magic = POOL_PAGE_MAGIC;
+	page->pp_pool = pool;
+	SLIST_INSERT_HEAD(&pool->pool_pages, page, pp_link);
+	page->pp_items = 0;
 
 	for (i = 0; i < pool->pool_maxitems; i++) {
 		item = pool_page_item(page, i);

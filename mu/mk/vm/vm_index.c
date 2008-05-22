@@ -15,6 +15,7 @@ DB_SHOW_VALUE_TREE(index, vm, DB_SHOW_TREE_POINTER(vm_index));
 
 static struct pool vm_index_pool;
 
+static struct vm_index *vm_find_index(struct vm *, vaddr_t);
 static void vm_free_index(struct vm *, struct vm_index *);
 static int vm_insert_index(struct vm *, struct vm_index **, vaddr_t, size_t);
 static int vm_use_index(struct vm *, struct vm_index *, size_t);
@@ -132,21 +133,6 @@ vm_alloc_range(struct vm *vm, vaddr_t begin, vaddr_t end)
 	return (0);
 }
 
-struct vm_index *
-vm_find_index(struct vm *vm, vaddr_t vaddr)
-{
-	struct vm_index *iter;
-	struct vm_index *vmi;
-
-	VM_LOCK(vm);
-	BTREE_FIND(&vmi, iter, vm->vm_index, vmi_tree, (vaddr < iter->vmi_base),
-		   ((vaddr == iter->vmi_base) ||
-		    (vaddr > iter->vmi_base &&
-		     vaddr < (iter->vmi_base + PAGE_TO_ADDR(iter->vmi_size)))));
-	VM_UNLOCK(vm);
-	return (vmi);
-}
-
 int
 vm_free_address(struct vm *vm, vaddr_t vaddr)
 {
@@ -182,6 +168,21 @@ vm_insert_range(struct vm *vm, vaddr_t begin, vaddr_t end)
 	return (0);
 }
 
+static struct vm_index *
+vm_find_index(struct vm *vm, vaddr_t vaddr)
+{
+	struct vm_index *iter;
+	struct vm_index *vmi;
+
+	VM_LOCK(vm);
+	BTREE_FIND(&vmi, iter, vm->vm_index, vmi_tree, (vaddr < iter->vmi_base),
+		   ((vaddr == iter->vmi_base) ||
+		    (vaddr > iter->vmi_base &&
+		     vaddr < (iter->vmi_base + PAGE_TO_ADDR(iter->vmi_size)))));
+	VM_UNLOCK(vm);
+	return (vmi);
+}
+
 static void
 vm_free_index(struct vm *vm, struct vm_index *vmi)
 {
@@ -199,7 +200,7 @@ vm_free_index(struct vm *vm, struct vm_index *vmi)
 	TAILQ_INSERT_HEAD(&vm->vm_index_free, vmi, vmi_free_link);
 }
 
-int
+static int
 vm_insert_index(struct vm *vm, struct vm_index **vmip, vaddr_t base,
 		size_t pages)
 {
@@ -225,8 +226,6 @@ vm_insert_index(struct vm *vm, struct vm_index **vmip, vaddr_t base,
 		     (vmi->vmi_base < iter->vmi_base));
 	return (0);
 }
-
-
 static int
 vm_use_index(struct vm *vm, struct vm_index *vmi, size_t pages)
 {

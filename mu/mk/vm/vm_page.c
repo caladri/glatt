@@ -31,8 +31,10 @@ static struct spinlock page_queue_lock;
 static struct vm_page *page_array_get_page(void);
 static void page_insert(struct vm_page *, paddr_t);
 static int page_lookup(paddr_t, struct vm_page **);
+static int page_map_direct(struct vm *, struct vm_page *, vaddr_t *);
 static void page_ref_drop(struct vm_page *);
 static void page_ref_hold(struct vm_page *);
+static int page_unmap_direct(struct vm *, struct vm_page *, vaddr_t);
 
 #define	PAGE_ARRAY_LOCK()	spinlock_lock(&page_array_lock)
 #define	PAGE_ARRAY_UNLOCK()	spinlock_unlock(&page_array_lock)
@@ -218,21 +220,6 @@ page_map(struct vm *vm, vaddr_t vaddr, struct vm_page *page)
 }
 
 int
-page_map_direct(struct vm *vm, struct vm_page *page, vaddr_t *vaddrp)
-{
-	int error;
-
-	if (vm != &kernel_vm)
-		panic("%s: can't direct map for non-kernel address space.",
-		      __func__);
-	page_ref_hold(page);
-	error = pmap_map_direct(vm, page, vaddrp);
-	if (error != 0)
-		page_ref_drop(page);
-	return (error);
-}
-
-int
 page_release(struct vm *vm, struct vm_page *page)
 {
 	page_ref_drop(page);
@@ -258,18 +245,6 @@ page_unmap(struct vm *vm, vaddr_t vaddr)
 
 	page_ref_drop(page);
 	return (0);
-}
-
-int
-page_unmap_direct(struct vm *vm, struct vm_page *page, vaddr_t vaddr)
-{
-	int error;
-
-	ASSERT(PAGE_ALIGNED(vaddr), "must be a page address");
-	error = pmap_unmap_direct(vm, vaddr);
-	if (error == 0)
-		page_ref_drop(page);
-	return (error);
 }
 
 static struct vm_page *
@@ -346,6 +321,21 @@ page_lookup(paddr_t paddr, struct vm_page **pagep)
 	return (ERROR_NOT_FOUND);
 }
 
+static int
+page_map_direct(struct vm *vm, struct vm_page *page, vaddr_t *vaddrp)
+{
+	int error;
+
+	if (vm != &kernel_vm)
+		panic("%s: can't direct map for non-kernel address space.",
+		      __func__);
+	page_ref_hold(page);
+	error = pmap_map_direct(vm, page, vaddrp);
+	if (error != 0)
+		page_ref_drop(page);
+	return (error);
+}
+
 static void
 page_ref_drop(struct vm_page *page)
 {
@@ -370,6 +360,18 @@ page_ref_hold(struct vm_page *page)
 	page->pg_refcnt++;
 	ASSERT(page->pg_refcnt != 0, "Refcount wrapped.");
 	PAGEQ_UNLOCK();
+}
+
+static int
+page_unmap_direct(struct vm *vm, struct vm_page *page, vaddr_t vaddr)
+{
+	int error;
+
+	ASSERT(PAGE_ALIGNED(vaddr), "must be a page address");
+	error = pmap_unmap_direct(vm, vaddr);
+	if (error == 0)
+		page_ref_drop(page);
+	return (error);
 }
 
 static void

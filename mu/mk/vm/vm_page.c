@@ -18,14 +18,18 @@ static struct vm_page_array {
 } page_array_pages[VM_PAGE_ARRAY_COUNT];
 static unsigned page_array_count;
 
+#if 0
 COMPILE_TIME_ASSERT(sizeof (struct vm_page_array) == PAGE_SIZE);
+#else
+COMPILE_TIME_ASSERT(sizeof (struct vm_page_array) <= PAGE_SIZE);
+#endif
 
 static struct vm_pageq page_free_queue, page_use_queue;
 static struct spinlock page_array_lock;
 static struct spinlock page_queue_lock;
 
 static struct vm_page *page_array_get_page(void);
-static void page_insert(struct vm_page *, paddr_t, unsigned);
+static void page_insert(struct vm_page *, paddr_t);
 static int page_lookup(paddr_t, struct vm_page **);
 static void page_ref_drop(struct vm_page *);
 static void page_ref_hold(struct vm_page *);
@@ -161,7 +165,7 @@ page_insert_pages(paddr_t base, size_t pages)
 		}
 		PAGE_ARRAY_LOCK();
 		page = page_array_get_page();
-		page_insert(page, base, PAGE_FLAG_DEFAULT);
+		page_insert(page, base);
 		page_ref_hold(page);
 		PAGE_ARRAY_UNLOCK();
 		error = page_map_direct(&kernel_vm, page, &va);
@@ -178,7 +182,7 @@ page_insert_pages(paddr_t base, size_t pages)
 			}
 			PAGE_ARRAY_LOCK();
 			page_ref_hold(page);
-			page_insert(&vpa->vmpa_pages[i], base, PAGE_FLAG_DEFAULT);
+			page_insert(&vpa->vmpa_pages[i], base);
 			PAGE_ARRAY_UNLOCK();
 			base += PAGE_SIZE;
 			pages--;
@@ -286,10 +290,9 @@ page_array_get_page(void)
 }
 
 static void
-page_insert(struct vm_page *page, paddr_t paddr, unsigned flags)
+page_insert(struct vm_page *page, paddr_t paddr)
 {
 	page->pg_addr = paddr;
-	page->pg_flags = flags;
 	page->pg_refcnt = 0;
 	TAILQ_INSERT_TAIL(&page_free_queue, page, pg_link);
 }

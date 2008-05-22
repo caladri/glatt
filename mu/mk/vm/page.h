@@ -5,11 +5,11 @@
 #include <page/page.h>
 
 struct vm;
+struct vm_page;
 
 struct vm_page {
 	paddr_t pg_addr;	/* XXX Can do better.  */
 	TAILQ_ENTRY(struct vm_page) pg_link;
-	unsigned pg_flags;
 	unsigned pg_refcnt;
 };
 TAILQ_HEAD(vm_pageq, struct vm_page);

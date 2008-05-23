@@ -8,7 +8,6 @@ struct vm;
 struct vm_page;
 
 struct vm_page {
-	paddr_t pg_addr;	/* XXX Can do better.  */
 	TAILQ_ENTRY(struct vm_page) pg_link;
 	unsigned pg_refcnt;
 };

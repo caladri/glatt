@@ -63,9 +63,29 @@ page_init(void)
 paddr_t
 page_address(struct vm_page *page)
 {
+	struct vm_page_tree_page *ptp;
+	paddr_t paddr;
+	vaddr_t vaddr;
+	int error;
+
 	ASSERT(page != NULL, "Must have a page.");
 	ASSERT(page->pg_refcnt != 0, "Cannot take address of unused page.");
-	return (page->pg_addr);
+
+	/*
+	 * vm_pages are allocated linearly inside a vm_page_tree_page, and the
+	 * 0th entry in the ptp_entries array is that vm_page_tree_page.  If
+	 * you subtract them, you get which element it is (say, nth) within the
+	 * ptp_entires array, which means your page is m+n where m is the page
+	 * number of the vm_page_tree_page.
+	 */
+	vaddr = PAGE_FLOOR((vaddr_t)page);
+	error = pmap_extract(&kernel_vm, vaddr, &paddr);
+	if (error != 0)
+		panic("%s: pmap_extract failed: %m", __func__, error);
+
+	ptp = (struct vm_page_tree_page *)vaddr;
+	paddr += PAGE_SIZE * (page - &ptp->ptp_entries[0]);
+	return (paddr);
 }
 
 int
@@ -199,8 +219,7 @@ page_insert_pages(paddr_t base, size_t pages)
 				break;
 		}
 		BTREE_INSERT(ptp, iter, &page_tree, ptp_tree.pt_tree,
-			     (ptp->ptp_entries[0].pg_addr <
-			      iter->ptp_entries[0].pg_addr));
+			     (ptp < iter));
 	}
 	PAGE_TREE_UNLOCK();
 
@@ -257,7 +276,6 @@ page_unmap(struct vm *vm, vaddr_t vaddr)
 static void
 page_insert(struct vm_page *page, paddr_t paddr)
 {
-	page->pg_addr = paddr;
 	page->pg_refcnt = 0;
 	TAILQ_INSERT_TAIL(&page_free_queue, page, pg_link);
 }
@@ -279,7 +297,7 @@ page_map_direct(struct vm *vm, struct vm_page *page, vaddr_t *vaddrp)
 		panic("%s: can't direct map for non-kernel address space.",
 		      __func__);
 	page_ref_hold(page);
-	error = pmap_map_direct(vm, page->pg_addr, vaddrp);
+	error = pmap_map_direct(vm, page_address(page), vaddrp);
 	if (error != 0)
 		page_ref_drop(page);
 	return (error);
@@ -326,7 +344,7 @@ page_unmap_direct(struct vm *vm, struct vm_page *page, vaddr_t vaddr)
 static void
 db_vm_page_dump(struct vm_page *page)
 {
-	kcprintf("vm_page %p addr %p refcnt %u\n", page, (void *)page->pg_addr,
+	kcprintf("vm_page %p addr %p refcnt %u\n", page, page_address(page),
 		 page->pg_refcnt);
 }
 

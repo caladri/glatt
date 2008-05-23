@@ -1,4 +1,5 @@
 #include <core/types.h>
+#include <core/btree.h>
 #include <core/error.h>
 #include <core/string.h>
 #include <db/db.h>
@@ -7,28 +8,29 @@
 #include <vm/page.h>
 #include <vm/vm.h>
 
+struct vm_page_tree_page;
+
 DB_SHOW_TREE(vm_page, page);
 DB_SHOW_VALUE_TREE(page, vm, DB_SHOW_TREE_POINTER(vm_page));
 
-#define	VM_PAGE_ARRAY_ENTRIES	(PAGE_SIZE / sizeof (struct vm_page))
-#define	VM_PAGE_ARRAY_COUNT	(1)
+struct vm_page_tree {
+	BTREE(struct vm_page_tree_page) pt_tree;
+};
 
-static struct vm_page_array {
-	struct vm_page vmpa_pages[VM_PAGE_ARRAY_ENTRIES];
-} page_array_pages[VM_PAGE_ARRAY_COUNT];
-static unsigned page_array_count;
+#define	VM_PAGE_TREE_ENTRIES	((PAGE_SIZE - sizeof (struct vm_page_tree)) / \
+				  sizeof (struct vm_page))
+struct vm_page_tree_page {
+	struct vm_page_tree ptp_tree;
+	struct vm_page ptp_entries[VM_PAGE_TREE_ENTRIES];
+};
 
-#if 0
-COMPILE_TIME_ASSERT(sizeof (struct vm_page_array) == PAGE_SIZE);
-#else
-COMPILE_TIME_ASSERT(sizeof (struct vm_page_array) <= PAGE_SIZE);
-#endif
+COMPILE_TIME_ASSERT(sizeof (struct vm_page_tree_page) <= PAGE_SIZE);
 
+static struct vm_page_tree_page *page_tree;
 static struct vm_pageq page_free_queue, page_use_queue;
-static struct spinlock page_array_lock;
+static struct spinlock page_tree_lock;
 static struct spinlock page_queue_lock;
 
-static struct vm_page *page_array_get_page(void);
 static void page_insert(struct vm_page *, paddr_t);
 static int page_lookup(paddr_t, struct vm_page **);
 static int page_map_direct(struct vm *, struct vm_page *, vaddr_t *);
@@ -36,8 +38,8 @@ static void page_ref_drop(struct vm_page *);
 static void page_ref_hold(struct vm_page *);
 static int page_unmap_direct(struct vm *, struct vm_page *, vaddr_t);
 
-#define	PAGE_ARRAY_LOCK()	spinlock_lock(&page_array_lock)
-#define	PAGE_ARRAY_UNLOCK()	spinlock_unlock(&page_array_lock)
+#define	PAGE_TREE_LOCK()	spinlock_lock(&page_tree_lock)
+#define	PAGE_TREE_UNLOCK()	spinlock_unlock(&page_tree_lock)
 
 #define	PAGEQ_LOCK()	spinlock_lock(&page_queue_lock)
 #define	PAGEQ_UNLOCK()	spinlock_unlock(&page_queue_lock)
@@ -45,7 +47,7 @@ static int page_unmap_direct(struct vm *, struct vm_page *, vaddr_t);
 void
 page_init(void)
 {
-	spinlock_init(&page_array_lock, "Page array", SPINLOCK_FLAG_DEFAULT);
+	spinlock_init(&page_tree_lock, "Page tree", SPINLOCK_FLAG_DEFAULT);
 	spinlock_init(&page_queue_lock, "Page queue",
 		      SPINLOCK_FLAG_DEFAULT | SPINLOCK_FLAG_RECURSE);
 
@@ -53,8 +55,8 @@ page_init(void)
 	TAILQ_INIT(&page_use_queue);
 
 #ifdef	VERBOSE
-	kcprintf("PAGE: page size is %uK, %lu pages per page array.\n",
-		 PAGE_SIZE / 1024, VM_PAGE_ARRAY_ENTRIES);
+	kcprintf("PAGE: page size is %uK, %lu pages per page tree.\n",
+		 PAGE_SIZE / 1024, VM_PAGE_TREE_ENTRIES);
 #endif
 }
 
@@ -139,6 +141,10 @@ page_free_direct(struct vm *vm, vaddr_t vaddr)
 	if (error != 0)
 		return (error);
 
+	error = page_unmap_direct(vm, page, vaddr);
+	if (error != 0)
+		return (error);
+
 	error = page_release(vm, page);
 	if (error != 0)
 		return (error);
@@ -149,59 +155,60 @@ page_free_direct(struct vm *vm, vaddr_t vaddr)
 int
 page_insert_pages(paddr_t base, size_t pages)
 {
-	struct vm_page_array *vpa;
-	struct vm_page *page;
-	size_t inserted;
-	vaddr_t va;
+	struct vm_page_tree_page *ptp, *iter;
+	struct vm_page_tree *pt;
+	size_t ptps, ptpents;
+	vaddr_t vaddr;
 	unsigned i;
 	int error;
 
-	inserted = 0;
-
 	ASSERT(PAGE_ALIGNED(base), "must be a page address");
 
-	for (;;) {
-		if (pages == 1) {
-			kcprintf("PAGE: no array for %p.\n", (void *)base);
-			break;
-		}
-		PAGE_ARRAY_LOCK();
-		page = page_array_get_page();
-		page_insert(page, base);
-		page_ref_hold(page);
-		PAGE_ARRAY_UNLOCK();
-		error = page_map_direct(&kernel_vm, page, &va);
-		if (error != 0)
-			panic("%s: failed to map page array: %m", __func__,
-			      error);
-		vpa = (struct vm_page_array *)va;
-		base += PAGE_SIZE;
-		pages--;
-		for (i = 0; i < VM_PAGE_ARRAY_ENTRIES; i++) {
-			if (pages == 0) {
-				page_ref_drop(page);
-				break;
-			}
-			PAGE_ARRAY_LOCK();
-			page_ref_hold(page);
-			page_insert(&vpa->vmpa_pages[i], base);
-			PAGE_ARRAY_UNLOCK();
-			base += PAGE_SIZE;
-			pages--;
-			inserted++;
-		}
-		page_ref_drop(page);
-		if (pages == 0)
-			break;
-	}
+	ptps = ptpents = 0;
 
-#ifdef	VERBOSE
-	kcprintf("PAGE: inserted %lu pages (%luM)\n", inserted,
-		 (inserted * PAGE_SIZE) / (1024 * 1024));
-	kcprintf("PAGE: using %u arrays (%u, %u)\n", page_array_count,
-		 page_array_count / VM_PAGE_ARRAY_COUNT,
-		 page_array_count % VM_PAGE_ARRAY_COUNT);
+	PAGE_TREE_LOCK();
+	while (pages > 1) {
+		error = pmap_map_direct(&kernel_vm, base, &vaddr);
+		if (error != 0)
+			panic("%s: pmap_map_direct failed: %m", __func__,
+			      error);
+
+		ptp = (struct vm_page_tree_page *)vaddr;
+		pt = &ptp->ptp_tree;
+		BTREE_INIT(&ptp->ptp_tree.pt_tree);
+
+		ptps++;
+
+		for (i = 0; i < VM_PAGE_TREE_ENTRIES; i++) {
+			struct vm_page *page;
+
+			page = &ptp->ptp_entries[i];
+			page_insert(page, base);
+			if (i == 0) {
+				/*
+				 * The 0th page here is the one that these
+				 * entires are in.
+				 */
+				page_ref_hold(page);
+			}
+
+			ptpents++;
+			pages--;
+			base += PAGE_SIZE;
+			if (pages == 0)
+				break;
+		}
+		BTREE_INSERT(ptp, iter, &page_tree, ptp_tree.pt_tree,
+			     (ptp->ptp_entries[0].pg_addr <
+			      iter->ptp_entries[0].pg_addr));
+	}
+	PAGE_TREE_UNLOCK();
+
+#if VERBOSE
+	kcprintf("PAGE: inserted %zu page tree entries in %zu nodes.\n",
+		 ptpents, ptps);
 #endif
+
 	return (0);
 }
 
@@ -247,23 +254,6 @@ page_unmap(struct vm *vm, vaddr_t vaddr)
 	return (0);
 }
 
-static struct vm_page *
-page_array_get_page(void)
-{
-	struct vm_page_array *vpa;
-	struct vm_page *page;
-	unsigned i;
-
-	ASSERT(page_array_count !=
-	       (VM_PAGE_ARRAY_ENTRIES * VM_PAGE_ARRAY_COUNT),
-	       "Too many page arrays.");
-
-	i = page_array_count++;
-	vpa = &page_array_pages[i / VM_PAGE_ARRAY_ENTRIES];
-	page = &vpa->vmpa_pages[i % VM_PAGE_ARRAY_ENTRIES];
-	return (page);
-}
-
 static void
 page_insert(struct vm_page *page, paddr_t paddr)
 {
@@ -275,50 +265,9 @@ page_insert(struct vm_page *page, paddr_t paddr)
 static int
 page_lookup(paddr_t paddr, struct vm_page **pagep)
 {
-	struct vm_page_array *vmpa, *vmpa2;
-	struct vm_page *page, *page2;
-	unsigned i, j, k;
-	vaddr_t va;
-	int error;
-
 	ASSERT(PAGE_ALIGNED(paddr), "must be a page address");
 
-	PAGE_ARRAY_LOCK();
-	for (i = 0; i < VM_PAGE_ARRAY_COUNT; i++) {
-		vmpa = &page_array_pages[i];
-		for (j = 0; j < VM_PAGE_ARRAY_ENTRIES; j++) {
-			page = &vmpa->vmpa_pages[j];
-			if (page->pg_refcnt == 0)
-				continue;
-			if (page_address(page) == paddr) {
-				*pagep = page;
-				PAGE_ARRAY_UNLOCK();
-				return (0);
-			}
-
-			error = page_map_direct(&kernel_vm, page, &va);
-			if (error != 0)
-				panic("%s: page_map_direct failed: %m",
-				      __func__, error);
-			vmpa2 = (struct vm_page_array *)va;
-			for (k = 0; k < VM_PAGE_ARRAY_ENTRIES; k++) {
-				page2 = &vmpa2->vmpa_pages[k];
-				if (page2->pg_refcnt == 0)
-					continue;
-				if (page_address(page2) == paddr) {
-					*pagep = page2;
-					PAGE_ARRAY_UNLOCK();
-					return (0);
-				}
-			}
-			error = page_unmap_direct(&kernel_vm, page, va);
-			if (error != 0)
-				panic("%s: page_unmap_direct failed: %m",
-				      __func__, error);
-		}
-	}
-	PAGE_ARRAY_UNLOCK();
-	return (ERROR_NOT_FOUND);
+	panic("%s: not yet implemented.", __func__);
 }
 
 static int
@@ -330,7 +279,7 @@ page_map_direct(struct vm *vm, struct vm_page *page, vaddr_t *vaddrp)
 		panic("%s: can't direct map for non-kernel address space.",
 		      __func__);
 	page_ref_hold(page);
-	error = pmap_map_direct(vm, page, vaddrp);
+	error = pmap_map_direct(vm, page->pg_addr, vaddrp);
 	if (error != 0)
 		page_ref_drop(page);
 	return (error);
@@ -389,23 +338,6 @@ db_vm_page_dump_queue(struct vm_pageq *pq)
 	TAILQ_FOREACH(page, pq, pg_link)
 		db_vm_page_dump(page);
 }
-
-static void
-db_vm_page_dump_arrays(void)
-{
-	unsigned i, j;
-
-	kcprintf("page array count = %u/%u\n", page_array_count,
-		 VM_PAGE_ARRAY_COUNT);
-	for (i = 0; i < VM_PAGE_ARRAY_COUNT; i++) {
-		kcprintf("page array #%u\n", i);
-		for (j = 0; j < VM_PAGE_ARRAY_ENTRIES; j++) {
-			kcprintf("page #%u\n", j);
-			db_vm_page_dump(&page_array_pages[i].vmpa_pages[j]);
-		}
-	}
-}
-DB_SHOW_VALUE_VOIDF(arrays, vm_page, db_vm_page_dump_arrays);
 
 static void
 db_vm_page_dump_freeq(void)

@@ -184,13 +184,10 @@ pmap_map(struct vm *vm, vaddr_t vaddr, struct vm_page *page)
 }
 
 int
-pmap_map_direct(struct vm *vm, struct vm_page *page, vaddr_t *vaddrp)
+pmap_map_direct(struct vm *vm, paddr_t paddr, vaddr_t *vaddrp)
 {
-	paddr_t paddr;
-
 	if (vm != &kernel_vm)
 		return (ERROR_NOT_IMPLEMENTED);
-	paddr = page_address(page);
 	*vaddrp = (vaddr_t)XKPHYS_MAP(XKPHYS_CCEW, paddr);
 	return (0);
 }

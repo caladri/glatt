@@ -69,7 +69,6 @@ page_address(struct vm_page *page)
 	int error;
 
 	ASSERT(page != NULL, "Must have a page.");
-	ASSERT(page->pg_refcnt != 0, "Cannot take address of unused page.");
 
 	/*
 	 * vm_pages are allocated linearly inside a vm_page_tree_page, and the

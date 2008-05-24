@@ -79,7 +79,7 @@ page_address(struct vm_page *page)
 	 * number of the vm_page_tree_page.
 	 */
 	vaddr = PAGE_FLOOR((vaddr_t)page);
-	error = pmap_extract(&kernel_vm, vaddr, &paddr);
+	error = pmap_extract_direct(&kernel_vm, vaddr, &paddr);
 	if (error != 0)
 		panic("%s: pmap_extract failed: %m", __func__, error);
 

@@ -54,7 +54,7 @@ db_show(void)
 	struct db_show_tree *current;
 	int argc, i;
 
-	current = &db_show_tree_root;;
+	current = &db_show_tree_root;
 
 	for (;;) {
 		kcprintf("(db show ");

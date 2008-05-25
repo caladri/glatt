@@ -184,15 +184,6 @@ pmap_map(struct vm *vm, vaddr_t vaddr, struct vm_page *page)
 }
 
 int
-pmap_map_direct(struct vm *vm, paddr_t paddr, vaddr_t *vaddrp)
-{
-	if (vm != &kernel_vm)
-		return (ERROR_NOT_IMPLEMENTED);
-	*vaddrp = (vaddr_t)XKPHYS_MAP(XKPHYS_CCEW, paddr);
-	return (0);
-}
-
-int
 pmap_unmap(struct vm *vm, vaddr_t vaddr)
 {
 	struct pmap *pm;
@@ -211,15 +202,6 @@ pmap_unmap(struct vm *vm, vaddr_t vaddr)
 	return (0);
 }
 
-int
-pmap_unmap_direct(struct vm *vm, vaddr_t vaddr)
-{
-	if (vm != &kernel_vm)
-		return (ERROR_NOT_IMPLEMENTED);
-	/* Don't have to do anything to get rid of direct-mapped memory.  */
-	return (0);
-}
-
 void
 pmap_zero(struct vm_page *page)
 {
@@ -228,7 +210,7 @@ pmap_zero(struct vm_page *page)
 	size_t i;
 
 	paddr = page_address(page);
-	p = (uint64_t *)XKPHYS_MAP(XKPHYS_CCEW, paddr);
+	p = (uint64_t *)XKPHYS_MAP(XKPHYS_CNC, paddr);
 
 	for (i = 0; i < (PAGE_SIZE / sizeof *p) / 16; i++) {
 		p[0x0] = p[0x1] = p[0x2] = p[0x3] =

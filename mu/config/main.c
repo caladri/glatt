@@ -15,11 +15,17 @@ static const char *options_required[] = {
 	NULL
 };
 
+struct configuration {
+	struct option *c_option;
+	bool c_enable;
+	struct configuration *c_next;
+};
+
 struct requirement {
 	enum requirement_type {
 		Implies,
 		Requires,
-		MutuallyExclusive,
+		MutuallyExcludes,
 	} r_type;
 	struct option *r_option;
 	struct requirement *r_next;
@@ -40,8 +46,11 @@ struct option {
 
 static void check(struct option *);
 static void config(struct option *, const char *);
-static void enable(struct option *, const char *, bool);
+static void imply(struct option *);
 static struct option *load(struct option *, const char *, const char *);
+static struct configuration *mkconfiguration(struct configuration *,
+					     struct option *, const char *,
+					     bool);
 static struct option *mkfile(struct option *, const char *, const char *);
 static struct option *mkoption(struct option *, const char *);
 static struct option *mkrequirement(struct option *, const char *,
@@ -57,13 +66,9 @@ main(int argc, char *argv[])
 {
 	const char *root, *platform, *configuration;
 	struct option *options;
-	const char **requirep;
 	int ch;
 
 	options = NULL;
-
-	for (requirep = options_required; *requirep != NULL; requirep++)
-		options = mkoption(options, *requirep);
 
 	while ((ch = getopt(argc, argv, "")) != -1) {
 		switch (ch) {
@@ -87,13 +92,8 @@ main(int argc, char *argv[])
 	argc--;
 
 	options = load(options, root, platform);
-	check(options);
-
 	config(options, configuration);
 	check(options);
-
-	for (requirep = options_required; *requirep != NULL; requirep++)
-		require(options, *requirep);
 
 	show(options);
 
@@ -105,32 +105,10 @@ check(struct option *options)
 {
 	struct requirement *requirement;
 	struct option *option;
+	const char **requirep;
 
-	/*
-	 * Turn on any implicit options.
-	 */
-restart:
-	for (option = options; option != NULL; option = option->o_next) {
-		for (requirement = option->o_requirements; requirement != NULL;
-		     requirement = requirement->r_next) {
-			switch (requirement->r_type) {
-			case Implies:
-				if (!option->o_enable)
-					continue;
-				if (!requirement->r_option->o_enable) {
-					warn("enabling %s for %s",
-					     requirement->r_option->o_name,
-					     option->o_name);
-					requirement->r_option->o_enable = true;
-					goto restart;
-				}
-				continue;
-			case Requires:
-			case MutuallyExclusive:
-				continue;
-			}
-		}
-	}
+	for (requirep = options_required; *requirep != NULL; requirep++)
+		require(options, *requirep);
 
 	for (option = options; option != NULL; option = option->o_next) {
 		for (requirement = option->o_requirements; requirement != NULL;
@@ -154,7 +132,7 @@ restart:
 					     option->o_name);
 				}
 				continue;
-			case MutuallyExclusive:
+			case MutuallyExcludes:
 				if (!option->o_enable)
 					continue;
 				if (requirement->r_option->o_enable) {
@@ -169,23 +147,25 @@ restart:
 }
 
 static void
-config(struct option *options, const char *configuration)
+config(struct option *options, const char *configstr)
 {
+	struct configuration *configuration, *configurations;
 	char name[1024];
+	size_t offset;
 	bool enabled;
 	bool first;
-	size_t offset;
 
+	configurations = NULL;
 	first = true;
 
-	while (configuration[0] != '\0') {
-		switch (configuration[0]) {
+	while (configstr[0] != '\0') {
+		switch (configstr[0]) {
 		case '-':
-			configuration++;
+			configstr++;
 			enabled = false;
 			break;
 		case '+':
-			configuration++;
+			configstr++;
 			enabled = true;
 			break;
 		default:
@@ -196,31 +176,42 @@ config(struct option *options, const char *configuration)
 		}
 		first = false;
 
-		offset = strcspn(configuration, "-+");
+		offset = strcspn(configstr, "-+");
 		if (offset == 0)
 			errx(1, "extra - or + in configuration string");
 		if (offset > sizeof name)
-			errx(1, "name too long: %s", configuration);
-		memcpy(name, configuration, offset);
+			errx(1, "name too long: %s", configstr);
+		memcpy(name, configstr, offset);
 		name[offset] = '\0';
-		configuration += offset;
+		configstr += offset;
 
-		if (enabled)
-			enable(options, name, true);
-		else
-			enable(options, name, false);
+		configurations = mkconfiguration(configurations, options,
+						 name, enabled);
 	}
-}
 
-static void
-enable(struct option *options, const char *name, bool yes)
-{
-	struct option *option;
+	/*
+	 * First turn on things explicitly enabled by the user, then turn on
+	 * implicit things, then disable things disabled by the user.
+	 */
+	for (configuration = configurations; configuration != NULL;
+	     configuration = configuration->c_next) {
+		if (configuration->c_enable)
+			configuration->c_option->o_enable = true;
+	}
 
-	option = search(options, name);
-	if (option == NULL)
-		errx(1, "cannot set unknown option %s", name);
-	option->o_enable = yes;
+	imply(options);
+
+	for (configuration = configurations; configuration != NULL;
+	     configuration = configuration->c_next) {
+		if (!configuration->c_enable)
+			configuration->c_option->o_enable = false;
+	}
+
+	while (configurations != NULL) {
+		struct configuration *next = configurations->c_next;
+		free(configurations);
+		configurations = next;
+	}
 }
 
 static struct option *
@@ -257,6 +248,28 @@ include(struct option *options, int rootdir, ...)
 	return (options);
 }
 
+static void
+imply(struct option *options)
+{
+	struct requirement *requirement;
+	struct option *option;
+
+restart:
+	for (option = options; option != NULL; option = option->o_next) {
+		for (requirement = option->o_requirements; requirement != NULL;
+		     requirement = requirement->r_next) {
+			if (requirement->r_type != Implies)
+				continue;
+			if (!option->o_enable)
+				continue;
+			if (requirement->r_option->o_enable)
+				continue;
+			requirement->r_option->o_enable = true;
+			goto restart;
+		}
+	}
+}
+
 static struct option *
 load(struct option *options, const char *root, const char *platform)
 {
@@ -282,6 +295,33 @@ load(struct option *options, const char *root, const char *platform)
 	close(srcdir);
 
 	return (options);
+}
+
+static struct configuration *
+mkconfiguration(struct configuration *configurations, struct option *options,
+		const char *name, bool enabled)
+{
+	struct configuration *configuration;
+	struct option *option;
+
+	option = search(options, name);
+	if (option == NULL)
+		errx(1, "cannot configure non-existant option %s", name);
+
+	for (configuration = configurations; configuration != NULL;
+	     configuration = configuration->c_next) {
+		if (configuration->c_option == option) {
+			configuration->c_enable = enabled;
+			return (configurations);
+		}
+	}
+
+	configuration = malloc(sizeof *configuration);
+	configuration->c_option = option;
+	configuration->c_enable = enabled;
+	configuration->c_next = configurations;
+	configurations = configuration;
+	return (configurations);
 }
 
 static struct option *
@@ -335,32 +375,6 @@ mkrequirement(struct option *options, const char *name1,
 	if (option1 == option2)
 		errx(1, "option has requirement relationship with itself.");
 
-	for (requirement = option1->o_requirements; requirement != NULL;
-	     requirement = requirement->r_next) {
-		if (requirement->r_option == option2) {
-			if (requirement->r_type == type)
-				return (options);
-			errx(1, "%s already has a requirement of %s",
-			     name1, name2);
-		}
-	}
-
-	for (requirement = option2->o_requirements; requirement != NULL;
-	     requirement = requirement->r_next) {
-		if (requirement->r_option == option1) {
-			switch (requirement->r_type) {
-			case Implies:
-			case Requires:
-				continue;
-			case MutuallyExclusive:
-				if (type == MutuallyExclusive)
-					return (options);
-				errx(1, "%s is mutually-exclusive with %s",
-				     name2, name1);
-			}
-		}
-	}
-
 	requirement = malloc(sizeof *requirement);
 	requirement->r_type = type;
 	requirement->r_option = option2;
@@ -395,14 +409,6 @@ parse(struct option *options, int rootdir, FILE *file)
 		name[offset] = '\0';
 		line += offset;
 
-		if (name[0] == '+') {
-			if (line[0] != '\0')
-				errx(1, "end of line must follow enable");
-			options = mkoption(options, name + 1);
-			enable(options, name + 1, true);
-			continue;
-		}
-
 		while (isspace(*(unsigned char *)line))
 			line++;
 
@@ -411,8 +417,36 @@ parse(struct option *options, int rootdir, FILE *file)
 				errx(1, "whitespace at end of cpu line");
 			options = include(options, rootdir, "cpu", line, NULL);
 		} else {
+			struct {
+				const char *rm_prefix;
+				enum requirement_type rm_type;
+			} requirement_mapping[] = {
+				{ "implies:",		Implies },
+				{ "requires:",		Requires },
+				{ "mutually-excludes:",	MutuallyExcludes },
+				{ NULL,			0 /*XXX*/ },
+			}, *rm;
+
+			for (rm = requirement_mapping; rm->rm_prefix != NULL;
+			     rm++) {
+				if (strncmp(line, rm->rm_prefix,
+					    strlen(rm->rm_prefix)) != 0)
+					continue;
+				line += strlen(rm->rm_prefix);
+				while (isspace(*(unsigned char *)line))
+					line++;
+				if (strcspn(line, " \t") != strlen(line))
+					errx(1, "whitespace after requirement");
+				options = mkrequirement(options, name,
+							rm->rm_type, line);
+				break;
+			}
+			if (rm->rm_prefix != NULL)
+				continue;
+
 			if (strcspn(line, " \t") != strlen(line))
 				errx(1, "whitespace at end of file line");
+
 			options = mkfile(options, name, line);
 		}
 	}
@@ -467,7 +501,7 @@ show(struct option *options)
 					printf("\t\t\trequires %s\n",
 					       requirement->r_option->o_name);
 					break;
-				case MutuallyExclusive:
+				case MutuallyExcludes:
 					printf("\t\t\tincompatible with %s\n",
 					       requirement->r_option->o_name);
 					break;

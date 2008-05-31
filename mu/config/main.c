@@ -15,6 +15,16 @@ static const char *options_required[] = {
 	NULL
 };
 
+struct requirement {
+	enum requirement_type {
+		Implies,
+		Requires,
+		MutuallyExclusive,
+	} r_type;
+	struct option *r_option;
+	struct requirement *r_next;
+};
+
 struct file {
 	const char *f_path;
 	struct file *f_next;
@@ -24,14 +34,18 @@ struct option {
 	const char *o_name;
 	bool o_enable;
 	struct file *o_files;
+	struct requirement *o_requirements;
 	struct option *o_next;
 };
 
+static void check(struct option *);
 static void config(struct option *, const char *);
 static void enable(struct option *, const char *, bool);
 static struct option *load(struct option *, const char *, const char *);
 static struct option *mkfile(struct option *, const char *, const char *);
 static struct option *mkoption(struct option *, const char *);
+static struct option *mkrequirement(struct option *, const char *,
+				    enum requirement_type, const char *);
 static struct option *parse(struct option *, int, FILE *);
 static void require(struct option *, const char *);
 static struct option *search(struct option *, const char *);
@@ -73,15 +87,85 @@ main(int argc, char *argv[])
 	argc--;
 
 	options = load(options, root, platform);
+	check(options);
 
 	config(options, configuration);
+	check(options);
 
 	for (requirep = options_required; *requirep != NULL; requirep++)
 		require(options, *requirep);
-	
+
 	show(options);
 
 	return (0);
+}
+
+static void
+check(struct option *options)
+{
+	struct requirement *requirement;
+	struct option *option;
+
+	/*
+	 * Turn on any implicit options.
+	 */
+restart:
+	for (option = options; option != NULL; option = option->o_next) {
+		for (requirement = option->o_requirements; requirement != NULL;
+		     requirement = requirement->r_next) {
+			switch (requirement->r_type) {
+			case Implies:
+				if (!option->o_enable)
+					continue;
+				if (!requirement->r_option->o_enable) {
+					warn("enabling %s for %s",
+					     requirement->r_option->o_name,
+					     option->o_name);
+					requirement->r_option->o_enable = true;
+					goto restart;
+				}
+				continue;
+			case Requires:
+			case MutuallyExclusive:
+				continue;
+			}
+		}
+	}
+
+	for (option = options; option != NULL; option = option->o_next) {
+		for (requirement = option->o_requirements; requirement != NULL;
+		     requirement = requirement->r_next) {
+			switch (requirement->r_type) {
+			case Implies:
+				if (!option->o_enable)
+					continue;
+				if (!requirement->r_option->o_enable) {
+					errx(1, "%s should be enabled for %s",
+					     requirement->r_option->o_name,
+					     option->o_name);
+				}
+				continue;
+			case Requires:
+				if (!option->o_enable)
+					continue;
+				if (!requirement->r_option->o_enable) {
+					errx(1, "%s must be enabled for %s",
+					     requirement->r_option->o_name,
+					     option->o_name);
+				}
+				continue;
+			case MutuallyExclusive:
+				if (!option->o_enable)
+					continue;
+				if (requirement->r_option->o_enable) {
+					errx(1, "%s cannot be enabled with %s",
+					     requirement->r_option->o_name,
+					     option->o_name);
+				}
+				continue;
+			}
+		}
+	}
 }
 
 static void
@@ -226,13 +310,64 @@ mkoption(struct option *options, const char *name)
 		return (options);
 
 	option = malloc(sizeof *option);
-	if (option == NULL)
-		errx(1, "malloc failed");
 	option->o_name = strdup(name);
 	option->o_enable = false;
 	option->o_next = options;
 
 	return (option);
+}
+
+static struct option *
+mkrequirement(struct option *options, const char *name1,
+	      enum requirement_type type, const char *name2)
+{
+	struct option *option1, *option2;
+	struct requirement *requirement;
+
+	option1 = search(options, name1);
+	option2 = search(options, name2);
+
+	if (option1 == NULL || option2 == NULL) {
+		return (mkrequirement(mkoption(mkoption(options, name1), name2),
+				      name1, type, name2));
+	}
+
+	if (option1 == option2)
+		errx(1, "option has requirement relationship with itself.");
+
+	for (requirement = option1->o_requirements; requirement != NULL;
+	     requirement = requirement->r_next) {
+		if (requirement->r_option == option2) {
+			if (requirement->r_type == type)
+				return (options);
+			errx(1, "%s already has a requirement of %s",
+			     name1, name2);
+		}
+	}
+
+	for (requirement = option2->o_requirements; requirement != NULL;
+	     requirement = requirement->r_next) {
+		if (requirement->r_option == option1) {
+			switch (requirement->r_type) {
+			case Implies:
+			case Requires:
+				continue;
+			case MutuallyExclusive:
+				if (type == MutuallyExclusive)
+					return (options);
+				errx(1, "%s is mutually-exclusive with %s",
+				     name2, name1);
+			}
+		}
+	}
+
+	requirement = malloc(sizeof *requirement);
+	requirement->r_type = type;
+	requirement->r_option = option2;
+	requirement->r_next = option1->o_requirements;
+	option1->o_requirements = requirement;
+
+	return (options);
 }
 
 static struct option *
@@ -259,6 +394,14 @@ parse(struct option *options, int rootdir, FILE *file)
 		memcpy(name, line, offset);
 		name[offset] = '\0';
 		line += offset;
+
+		if (name[0] == '+') {
+			if (line[0] != '\0')
+				errx(1, "end of line must follow enable");
+			options = mkoption(options, name + 1);
+			enable(options, name + 1, true);
+			continue;
+		}
 
 		while (isspace(*(unsigned char *)line))
 			line++;
@@ -308,12 +451,38 @@ show(struct option *options)
 	for (option = options; option != NULL; option = option->o_next) {
 		printf("\t%c%s\n", option->o_enable ? '+' : '-',
 		       option->o_name);
+		if (option->o_requirements != NULL) {
+			struct requirement *requirement;
+
+			printf("\t\trequirements:\n");
+			for (requirement = option->o_requirements;
+			     requirement != NULL;
+			     requirement = requirement->r_next) {
+				switch (requirement->r_type) {
+				case Implies:
+					printf("\t\t\timplies %s\n",
+					       requirement->r_option->o_name);
+					break;
+				case Requires:
+					printf("\t\t\trequires %s\n",
+					       requirement->r_option->o_name);
+					break;
+				case MutuallyExclusive:
+					printf("\t\t\tincompatible with %s\n",
+					       requirement->r_option->o_name);
+					break;
+				}
+			}
+		} else {
+			printf("\t\tno requirements\n");
+		}
 		if (option->o_files != NULL) {
 			struct file *file;
 
+			printf("\t\tfiles:\n");
 			for (file = option->o_files; file != NULL;
 			     file = file->f_next)
-				printf("\t\t%s\n", file->f_path);
+				printf("\t\t\t%s\n", file->f_path);
 		} else {
 			printf("\t\tno files\n");
 		}

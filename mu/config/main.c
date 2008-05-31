@@ -581,6 +581,6 @@ static void
 usage(void)
 {
 	fprintf(stderr,
-"usage: mu-config kernel-base platform configuration\n");
+"usage: mu-config [-sv] kernel-base platform configuration\n");
 	exit(1);
 }

@@ -2,6 +2,7 @@
 #include <ctype.h>
 #include <err.h>
 #include <fcntl.h>
+#include <libgen.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -46,6 +47,7 @@ struct option {
 
 static void check(struct option *);
 static void config(struct option *, const char *);
+static void generate(struct option *, const char *);
 static void imply(struct option *);
 static struct option *load(struct option *, const char *, const char *);
 static struct configuration *mkconfiguration(struct configuration *,
@@ -66,12 +68,17 @@ main(int argc, char *argv[])
 {
 	const char *root, *platform, *configuration;
 	struct option *options;
+	bool doshow;
 	int ch;
 
+	doshow = false;
 	options = NULL;
 
-	while ((ch = getopt(argc, argv, "")) != -1) {
+	while ((ch = getopt(argc, argv, "s")) != -1) {
 		switch (ch) {
+		case 's':
+			doshow = true;
+			break;
 		default:
 			usage();
 		}
@@ -95,7 +102,11 @@ main(int argc, char *argv[])
 	config(options, configuration);
 	check(options);
 
-	show(options);
+	if (doshow) {
+		show(options);
+	} else {
+		generate(options, root);
+	}
 
 	return (0);
 }
@@ -246,6 +257,43 @@ include(struct option *options, int rootdir, ...)
 	fclose(file);
 
 	return (options);
+}
+
+static void
+generate(struct option *options, const char *root)
+{
+	struct option *option;
+	FILE *config_mk;
+
+	config_mk = fopen("config.mk", "w");
+	if (config_mk == NULL)
+		err(1, "unable to open config.mk for writing.");
+
+	for (option = options; option != NULL; option = option->o_next) {
+		struct file *file;
+		char uppercase[1024], *q;
+		const char *p;
+		
+		for (p = option->o_name, q = uppercase; *p != '\0'; p++, q++)
+			*q = toupper(*p);
+		*q = '\0';
+
+		/* Write config.mk entry.  */
+		if (option->o_enable) {
+			fprintf(config_mk, "%s=ENABLED\n", uppercase);
+			for (file = option->o_files; file != NULL;
+			     file = file->f_next) {
+				fprintf(config_mk, ".PATH: %s/%s\n",
+					root, dirname(file->f_path));
+				fprintf(config_mk, "KERNEL_SOURCES+=%s\n",
+					basename(file->f_path));
+			}
+		} else {
+			fprintf(config_mk, ".undef %s\n", uppercase);
+		}
+	}
+
+	fclose(config_mk);
 }
 
 static void

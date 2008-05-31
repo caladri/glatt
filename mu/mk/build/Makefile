@@ -1,34 +1,19 @@
-# $Id: Makefile,v 1.29 2008-05-21 06:42:57 juli Exp $
+# $Id: Makefile,v 1.30 2008-05-31 23:44:50 juli Exp $
 
 KERNEL?=	mu-mk
 
 kernel: ${KERNEL}
 simulate: simulate-${KERNEL}
 
-KERNEL_ROOT?=	${.CURDIR}/..
-BUILD_ROOT?=	${KERNEL_ROOT}/build
-
-KERNEL_SUBDIRS+=core
-KERNEL_SUBDIRS+=db
-KERNEL_SUBDIRS+=io/console
-KERNEL_SUBDIRS+=io/device
-KERNEL_SUBDIRS+=io/network
-KERNEL_SUBDIRS+=io/pci
-KERNEL_SUBDIRS+=vm
+.include "config.mk"
 
 PLATFORM_ROOT=	${KERNEL_ROOT}/platform/${PLATFORM}
-
-.include "${BUILD_ROOT}/config.mk"
 
 .include "${PLATFORM_ROOT}/platform.mk"
 
 CPU_ROOT=	${KERNEL_ROOT}/cpu/${CPU}
 
 .include "${CPU_ROOT}/cpu.mk"
-
-.for subdir in ${KERNEL_SUBDIRS}
-.include "${KERNEL_ROOT}/${subdir}/build.mk"
-.endfor
 
 KERNEL_CPPFLAGS=-I${KERNEL_ROOT} -I${PLATFORM_ROOT} -I${CPU_ROOT}
 .if defined(NO_ASSERT)

@@ -1,0 +1,19 @@
+cpu		mips
+
+# testmips enables MP by default and requires it.
+std		implies: mp
+std		requires: mp
+
+std		platform/testmips/device/testmips_console.c
+std		platform/testmips/device/testmips_disk.c
+std		platform/testmips/device/testmips_diskc.c
+std		platform/testmips/device/testmips_ether.c
+std		platform/testmips/device/testmips_mpbus.c
+
+tmfb		platform/testmips/device/testmips_framebuffer.c
+
+std		platform/testmips/platform/platform_clock.c
+std		platform/testmips/platform/platform_mainbus.c
+std		platform/testmips/platform/platform_mp.c
+std		platform/testmips/platform/platform_start.c
+std		platform/testmips/platform/platform_startup.c

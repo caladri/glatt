@@ -1,0 +1,19 @@
+std		cpu/mips/cpu/start.S
+
+std		cpu/mips/cpu/cpu_context.S
+std		cpu/mips/cpu/cpu_clock_r4k.c
+std		cpu/mips/cpu/cpu_critical.c
+std		cpu/mips/cpu/cpu_device.c
+std		cpu/mips/cpu/cpu_exception.c
+std		cpu/mips/cpu/cpu_identify.c
+std		cpu/mips/cpu/cpu_interrupt.c
+std		cpu/mips/cpu/cpu_startup.c
+std		cpu/mips/cpu/cpu_task.c
+std		cpu/mips/cpu/cpu_thread.c
+std		cpu/mips/cpu/cpu_tlb.c
+std		cpu/mips/cpu/cpu_tlb_wired.S
+std		cpu/mips/cpu/cpu_vector.S
+
+std		cpu/mips/page/page_map.c
+
+mp		cpu/mips/cpu/cpu_mp.c

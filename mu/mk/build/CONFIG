@@ -1,0 +1,49 @@
+# XXX for now
+std		requires: db
+
+std		core/core_cv.c
+std		core/core_ipc.c
+std		core/core_malloc.c
+std		core/core_mutex.c
+std		core/core_pool.c
+std		core/core_printf.c
+std		core/core_scheduler.c
+std		core/core_sleepq.c
+std		core/core_spinlock.c
+std		core/core_startup.c
+std		core/core_task.c
+std		core/core_thread.c
+std		core/core_ttk.c
+std		core/core_vdae.c
+
+morder		core/core_morder.c
+
+mp		core/core_mp.c
+mp		core/core_mp_cpu.c
+mp		core/core_mp_hokusai.c
+mp		core/core_mp_ipi.c
+
+db		db/db.c
+db		db/db_misc.c
+db		db/db_panic.c
+db		db/db_show.c
+
+std		io/console/console.c
+framebuffer	io/console/framebuffer.c
+framebuffer	io/console/framebuffer_font.c
+
+std		io/device/bus.c
+std		io/device/bus_internal.c
+std		io/device/bus_leaf.c
+std		io/device/bus_root.c
+std		io/device/device_internal.c
+
+network		io/network/network_interface.c
+
+pci		io/pci/pci.c
+pci		io/pci/pcidev.c
+
+std		vm/vm.c
+std		vm/vm_alloc.c
+std		vm/vm_index.c
+std		vm/vm_page.c

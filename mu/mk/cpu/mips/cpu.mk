@@ -1,26 +1,4 @@
-# $Id: cpu.mk,v 1.34 2008-05-20 06:06:37 juli Exp $
-
-.PATH: ${CPU_ROOT}/cpu
-.PATH: ${CPU_ROOT}/page
-
-KERNEL_SOURCES+=cpu_context.S
-KERNEL_SOURCES+=cpu_clock_r4k.c
-KERNEL_SOURCES+=cpu_critical.c
-KERNEL_SOURCES+=cpu_device.c
-KERNEL_SOURCES+=cpu_exception.c
-KERNEL_SOURCES+=cpu_identify.c
-KERNEL_SOURCES+=cpu_interrupt.c
-.if !defined(UNIPROCESSOR)
-KERNEL_SOURCES+=cpu_mp.c
-.endif
-KERNEL_SOURCES+=cpu_startup.c
-KERNEL_SOURCES+=cpu_task.c
-KERNEL_SOURCES+=cpu_thread.c
-KERNEL_SOURCES+=cpu_tlb.c
-KERNEL_SOURCES+=cpu_tlb_wired.S
-KERNEL_SOURCES+=cpu_vector.S
-KERNEL_SOURCES+=page_map.c
-KERNEL_SOURCES+=start.S
+# $Id: cpu.mk,v 1.35 2008-05-31 23:44:50 juli Exp $
 
 KERNEL_CC=	mips64-gxemul-elf-gcc
 KERNEL_AS=	mips64-gxemul-elf-as

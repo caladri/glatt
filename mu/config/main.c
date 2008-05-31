@@ -1,6 +1,7 @@
 #include <sys/types.h>
 #include <ctype.h>
 #include <err.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <libgen.h>
 #include <stdarg.h>
@@ -47,7 +48,7 @@ struct option {
 
 static void check(struct option *);
 static void config(struct option *, const char *);
-static void generate(struct option *, const char *);
+static void generate(struct option *, const char *, const char *);
 static void imply(struct option *);
 static struct option *load(struct option *, const char *, const char *);
 static struct configuration *mkconfiguration(struct configuration *,
@@ -109,7 +110,7 @@ main(int argc, char *argv[])
 	if (doshow) {
 		show(options, verbose);
 	} else {
-		generate(options, root);
+		generate(options, root, platform);
 	}
 
 	return (0);
@@ -264,20 +265,40 @@ include(struct option *options, int rootdir, ...)
 }
 
 static void
-generate(struct option *options, const char *root)
+generate(struct option *options, const char *root, const char *platform)
 {
 	struct option *option;
 	FILE *config_mk;
+	int rv;
+
+	rv = unlink("_root");
+	if (rv == -1 && errno != ENOENT)
+		err(1, "unable to remove _root symlink");
+
+	rv = symlink(root, "_root");
+	if (rv == -1)
+		err(1, "unable to create _root symlink");
+
+	rv = unlink("Makefile");
+	if (rv == -1 && errno != ENOENT)
+		err(1, "unable to remove Makefile symlink");
+
+	rv = symlink("_root/build/Makefile", "Makefile");
+	if (rv == -1)
+		err(1, "unable to create Makefile symlink");
 
 	config_mk = fopen("config.mk", "w");
 	if (config_mk == NULL)
 		err(1, "unable to open config.mk for writing.");
 
+	fprintf(config_mk, "KERNEL_ROOT=%s\n", root);
+	fprintf(config_mk, "PLATFORM=%s\n", platform);
+
 	for (option = options; option != NULL; option = option->o_next) {
 		struct file *file;
 		char uppercase[1024], *q;
 		const char *p;
-		
+
 		for (p = option->o_name, q = uppercase; *p != '\0'; p++, q++)
 			*q = toupper(*p);
 		*q = '\0';

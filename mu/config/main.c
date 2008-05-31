@@ -48,7 +48,7 @@ struct option {
 
 static void check(struct option *);
 static void config(struct option *, const char *);
-static void generate(struct option *, const char *, const char *);
+static void generate(struct option *, const char *, const char *, const char *);
 static void imply(struct option *);
 static struct option *load(struct option *, const char *, const char *);
 static struct configuration *mkconfiguration(struct configuration *,
@@ -110,7 +110,7 @@ main(int argc, char *argv[])
 	if (doshow) {
 		show(options, verbose);
 	} else {
-		generate(options, root, platform);
+		generate(options, root, platform, configuration);
 	}
 
 	return (0);
@@ -265,7 +265,8 @@ include(struct option *options, int rootdir, ...)
 }
 
 static void
-generate(struct option *options, const char *root, const char *platform)
+generate(struct option *options, const char *root, const char *platform,
+	 const char *configstr)
 {
 	struct option *option;
 	FILE *config_mk;
@@ -293,6 +294,7 @@ generate(struct option *options, const char *root, const char *platform)
 
 	fprintf(config_mk, "KERNEL_ROOT=%s\n", root);
 	fprintf(config_mk, "PLATFORM=%s\n", platform);
+	fprintf(config_mk, "CONFIGSTR=%s\n", configstr);
 
 	for (option = options; option != NULL; option = option->o_next) {
 		struct file *file;

@@ -60,7 +60,7 @@ static struct option *mkrequirement(struct option *, const char *,
 static struct option *parse(struct option *, int, FILE *);
 static void require(struct option *, const char *);
 static struct option *search(struct option *, const char *);
-static void show(struct option *);
+static void show(struct option *, bool);
 static void usage(void);
 
 int
@@ -68,16 +68,20 @@ main(int argc, char *argv[])
 {
 	const char *root, *platform, *configuration;
 	struct option *options;
-	bool doshow;
+	bool doshow, verbose;
 	int ch;
 
 	doshow = false;
 	options = NULL;
+	verbose = false;
 
-	while ((ch = getopt(argc, argv, "s")) != -1) {
+	while ((ch = getopt(argc, argv, "sv")) != -1) {
 		switch (ch) {
 		case 's':
 			doshow = true;
+			break;
+		case 'v':
+			verbose = true;
 			break;
 		default:
 			usage();
@@ -103,7 +107,7 @@ main(int argc, char *argv[])
 	check(options);
 
 	if (doshow) {
-		show(options);
+		show(options, verbose);
 	} else {
 		generate(options, root);
 	}
@@ -525,7 +529,7 @@ search(struct option *options, const char *name)
 }
 
 static void
-show(struct option *options)
+show(struct option *options, bool verbose)
 {
 	struct option *option;
 
@@ -558,6 +562,8 @@ show(struct option *options)
 		} else {
 			printf("\t\tno requirements\n");
 		}
+		if (!option->o_enable && !verbose)
+			continue;
 		if (option->o_files != NULL) {
 			struct file *file;
 

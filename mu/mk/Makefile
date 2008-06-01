@@ -7,17 +7,15 @@ CONFIG?=std+db+pci+gt
 .else
 .error "Unknown platform."
 .endif
+BUILDDIR=obj.${PLATFORM}.${CONFIG}
 
-all:
+config:
+	@rm -rf ${BUILDDIR}
 	@(cd ${KERNEL_ROOT}/../config &&				\
-		${MAKE} clean mu-config)
-	@[ -d obj.${PLATFORM} ] || mkdir -p obj.${PLATFORM}
-	@(cd obj.${PLATFORM} &&						\
-		${KERNEL_ROOT}/../config/mu-config ${KERNEL_ROOT} ${PLATFORM} ${CONFIG})
-	@(cd obj.${PLATFORM} && ${MAKE})
-
-simulate: all
-	@(cd obj.${PLATFORM} && ${MAKE} simulate)
-
-clean:
-	@rm -rf obj.${PLATFORM}
+		${MAKE} clean mu-config > /dev/null ||			\
+		echo 'Could not build mu-config:' $?)
+	@mkdir -p ${BUILDDIR}
+	@(cd ${BUILDDIR} &&						\
+		${KERNEL_ROOT}/../config/mu-config			\
+			${KERNEL_ROOT} ${PLATFORM} ${CONFIG})
+	@echo 'Build directory has been set up:' ${BUILDDIR}

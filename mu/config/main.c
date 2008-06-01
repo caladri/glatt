@@ -99,14 +99,13 @@ main(int argc, char *argv[])
 	argc--;
 
 	if (argc == 0) {
-		if (doshow) {
-			show(options);
-			return (0);
-		}
-		usage();
+		if (!doshow)
+			usage();
+		configuration = "std";
+	} else {
+		configuration = *argv++;
+		argc--;
 	}
-	configuration = *argv++;
-	argc--;
 
 	if (argc != 0)
 		usage();

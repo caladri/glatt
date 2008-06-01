@@ -1,49 +1,15 @@
-o) Include io/.../build.mk based on some sort of components system.
-
-root
-`->mainbus
-   `->mp
-      `->mpcpu
-         |->mpbus
-	 |  |->tmfb
-	 |  |->tmdisk
-	 |  |  `-> disk
-	 |  `->tmether
-	 |     `-> netif
-         `->cpu
-            `->clock_r4k
-
-Rewrite:
-	2) Scheduler.  The current stuff seems too convoluted?
-
 o) Device/bus methods for resource management.
 	o) Interrupt reservation.
 	o) DMA
 o) Hints and static configuration sorts of things.
-
-This single-image thing seems kind of problematic.  Next up needs to be an
-asymmetric rewrite, I think, with each CPU having its own data structures and
-them having to do inter-host IPC.
-
-Should just create an ipc_process thread at STARTUP_MAIN:STARTUP_BEFORE, rather
-than having the startup thread become ipc_process, but that requires per-cpu
-startup items.
-
-Is there a problem with vm_map_page?  There was something like memory corruption
-when it was used in page_lookup, but was that all there was to it?  Is core_pool
-at risk (it uses it for POOL_VIRTUAL pools)!?
-
-Urgent:
 
 Ad infinitum: Keep going over code and restructuring to make less ugly and
 hokey and hard to maintain.
 
 o) VM.
 	o) Better physical page data structures.
-	o) Virtual page data structures.
 	o) Cleanup pmap and friends.
-	o) Locking.
-	o) IPC.
+	o) Finer-grained locking.
 	o) Userland.
 	o) Allocate multiple contiguous physical pages.
 o) Exceptions.
@@ -84,4 +50,3 @@ o) Device drivers.
 			o) IPC.
 			o) Userland.
 		o) IPC.
-	o) Clock calibration.

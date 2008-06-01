@@ -1,19 +1,6 @@
-# $Id: platform.mk,v 1.6 2008-03-06 00:46:44 juli Exp $
-
-.PATH: ${PLATFORM_ROOT}/platform
-.PATH: ${PLATFORM_ROOT}/device
-
-# device
-KERNEL_SOURCES+=malta_console.c
-KERNEL_SOURCES+=malta_gt.c
-
-# platform
-KERNEL_SOURCES+=platform_mainbus.c
-KERNEL_SOURCES+=platform_start.c
-KERNEL_SOURCES+=platform_startup.c
+# $Id: platform.mk,v 1.7 2008-06-01 00:06:00 juli Exp $
 
 CPU=		mips
-UNIPROCESSOR=	t
 
 # Load the kernel at 1MB physical.
 KERNEL_TEXT=	0xa800000000100000

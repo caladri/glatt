@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.30 2008-05-31 23:44:50 juli Exp $
+# $Id: Makefile,v 1.31 2008-06-01 00:06:00 juli Exp $
 
 KERNEL?=	mu-mk
 
@@ -16,16 +16,16 @@ CPU_ROOT=	${KERNEL_ROOT}/cpu/${CPU}
 .include "${CPU_ROOT}/cpu.mk"
 
 KERNEL_CPPFLAGS=-I${KERNEL_ROOT} -I${PLATFORM_ROOT} -I${CPU_ROOT}
-.if defined(NO_ASSERT)
+.if !defined(DB)
 KERNEL_CPPFLAGS+=-DNO_ASSERT
 .endif
 .if defined(VERBOSE)
 KERNEL_CPPFLAGS+=-DVERBOSE
 .endif
-.if defined(UNIPROCESSOR)
+.if !defined(MP)
 KERNEL_CPPFLAGS+=-DUNIPROCESSOR
 .endif
-.if defined(NO_MORDER)
+.if !defined(MORDER)
 KERNEL_CPPFLAGS+=-DNO_MORDER
 .endif
 

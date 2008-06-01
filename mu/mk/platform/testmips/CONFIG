@@ -5,11 +5,15 @@ std		implies: mp
 std		requires: mp
 
 std		platform/testmips/device/testmips_console.c
-std		platform/testmips/device/testmips_disk.c
-std		platform/testmips/device/testmips_diskc.c
-std		platform/testmips/device/testmips_ether.c
 std		platform/testmips/device/testmips_mpbus.c
 
+tmdisk		platform/testmips/device/testmips_disk.c
+tmdisk		platform/testmips/device/testmips_diskc.c
+
+tmether		requires: network
+tmether		platform/testmips/device/testmips_ether.c
+
+tmfb		requires: framebuffer
 tmfb		platform/testmips/device/testmips_framebuffer.c
 
 std		platform/testmips/platform/platform_clock.c

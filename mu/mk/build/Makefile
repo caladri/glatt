@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.32 2008-06-01 00:21:57 juli Exp $
+# $Id: Makefile,v 1.33 2008-06-01 01:17:48 juli Exp $
 
 KERNEL?=	mu-mk
 
@@ -76,3 +76,6 @@ _as.h: ${PLATFORM_ROOT}/platform/_as.sym
 
 .S.o: _as.h
 	${KERNEL_CC} ${KERNEL_CPPFLAGS} ${KERNEL_CFLAGS} -DASSEMBLER -include ${.OBJDIR}/_as.h -c -o $@ $<
+
+reconfig:
+	mu-config ${KERNEL_ROOT} ${PLATFORM} ${CONFIGSTR}

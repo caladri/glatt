@@ -1,9 +1,9 @@
 PLATFORM?=testmips
 KERNEL_ROOT=${.CURDIR}
 .if ${PLATFORM} == "testmips"
-CONFIG?=std+db
+CONFIG?=std
 .elif ${PLATFORM} == "malta"
-CONFIG?=std+db+pci+gt
+CONFIG?=std+pci+gt
 .else
 .error "Unknown platform."
 .endif

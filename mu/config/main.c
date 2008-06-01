@@ -525,6 +525,8 @@ parse(struct option *options, int rootdir, FILE *file)
 				if (strncmp(line, rm->rm_prefix,
 					    strlen(rm->rm_prefix)) != 0)
 					continue;
+				if (!onenable)
+					errx(1, "cannot invert a requirement");
 				line += strlen(rm->rm_prefix);
 				while (isspace(*(unsigned char *)line))
 					line++;

@@ -35,6 +35,7 @@ struct requirement {
 
 struct file {
 	const char *f_path;
+	bool f_onenable;
 	struct file *f_next;
 };
 
@@ -54,14 +55,14 @@ static struct option *load(struct option *, const char *, const char *);
 static struct configuration *mkconfiguration(struct configuration *,
 					     struct option *, const char *,
 					     bool);
-static struct option *mkfile(struct option *, const char *, const char *);
+static struct option *mkfile(struct option *, const char *, const char *, bool);
 static struct option *mkoption(struct option *, const char *);
 static struct option *mkrequirement(struct option *, const char *,
 				    enum requirement_type, const char *);
 static struct option *parse(struct option *, int, FILE *);
 static void require(struct option *, const char *);
 static struct option *search(struct option *, const char *);
-static void show(struct option *, bool);
+static void show(struct option *);
 static void usage(void);
 
 int
@@ -69,20 +70,16 @@ main(int argc, char *argv[])
 {
 	const char *root, *platform, *configuration;
 	struct option *options;
-	bool doshow, verbose;
+	bool doshow;
 	int ch;
 
 	doshow = false;
 	options = NULL;
-	verbose = false;
 
-	while ((ch = getopt(argc, argv, "sv")) != -1) {
+	while ((ch = getopt(argc, argv, "s")) != -1) {
 		switch (ch) {
 		case 's':
 			doshow = true;
-			break;
-		case 'v':
-			verbose = true;
 			break;
 		default:
 			usage();
@@ -91,24 +88,35 @@ main(int argc, char *argv[])
 	argc -= optind;
 	argv += optind;
 
-	if (argc != 3)
+	if (argc == 0)
 		usage();
-
 	root = *argv++;
 	argc--;
 
+	if (argc == 0)
+		usage();
 	platform = *argv++;
 	argc--;
 
+	if (argc == 0) {
+		if (doshow) {
+			show(options);
+			return (0);
+		}
+		usage();
+	}
 	configuration = *argv++;
 	argc--;
+
+	if (argc != 0)
+		usage();
 
 	options = load(options, root, platform);
 	config(options, configuration);
 	check(options);
 
 	if (doshow) {
-		show(options, verbose);
+		show(options);
 	} else {
 		generate(options, root, platform, configuration);
 	}
@@ -306,17 +314,19 @@ generate(struct option *options, const char *root, const char *platform,
 		*q = '\0';
 
 		/* Write config.mk entry.  */
-		if (option->o_enable) {
+		if (option->o_enable)
 			fprintf(config_mk, "%s=ENABLED\n", uppercase);
-			for (file = option->o_files; file != NULL;
-			     file = file->f_next) {
-				fprintf(config_mk, ".PATH: %s/%s\n",
-					root, dirname(file->f_path));
-				fprintf(config_mk, "KERNEL_SOURCES+=%s\n",
-					basename(file->f_path));
-			}
-		} else {
+		else
 			fprintf(config_mk, ".undef %s\n", uppercase);
+
+		for (file = option->o_files; file != NULL;
+		     file = file->f_next) {
+			if (file->f_onenable != option->o_enable)
+				continue;
+			fprintf(config_mk, ".PATH: %s/%s\n",
+				root, dirname(file->f_path));
+			fprintf(config_mk, "KERNEL_SOURCES+=%s\n",
+				basename(file->f_path));
 		}
 	}
 
@@ -400,16 +410,18 @@ mkconfiguration(struct configuration *configurations, struct option *options,
 }
 
 static struct option *
-mkfile(struct option *options, const char *name, const char *path)
+mkfile(struct option *options, const char *name, const char *path,
+       bool onenable)
 {
 	struct option *option;
 	struct file *file;
 
 	option = search(options, name);
 	if (option == NULL)
-		return (mkfile(mkoption(options, name), name, path));
+		return (mkfile(mkoption(options, name), name, path, onenable));
 	file = malloc(sizeof *file);
 	file->f_path = strdup(path);
+	file->f_onenable = onenable;
 	file->f_next = option->o_files;
 	option->o_files = file;
 	return (options);
@@ -463,6 +475,7 @@ static struct option *
 parse(struct option *options, int rootdir, FILE *file)
 {
 	char name[1024];
+	bool onenable;
 	size_t offset;
 	char *line;
 	size_t len;
@@ -474,6 +487,12 @@ parse(struct option *options, int rootdir, FILE *file)
 
 		if (line[0] == '#' || line[0] == '\0')
 			continue;
+
+		onenable = true;
+		if (line[0] == '!') {
+			onenable = false;
+			line++;
+		}
 
 		offset = strcspn(line, " \t");
 		if (offset == 0)
@@ -522,7 +541,7 @@ parse(struct option *options, int rootdir, FILE *file)
 			if (strcspn(line, " \t") != strlen(line))
 				errx(1, "whitespace at end of file line");
 
-			options = mkfile(options, name, line);
+			options = mkfile(options, name, line, onenable);
 		}
 	}
 	return (options);
@@ -552,7 +571,7 @@ search(struct option *options, const char *name)
 }
 
 static void
-show(struct option *options, bool verbose)
+show(struct option *options)
 {
 	struct option *option;
 
@@ -585,15 +604,15 @@ show(struct option *options, bool verbose)
 		} else {
 			printf("\t\tno requirements\n");
 		}
-		if (!option->o_enable && !verbose)
-			continue;
 		if (option->o_files != NULL) {
 			struct file *file;
 
 			printf("\t\tfiles:\n");
 			for (file = option->o_files; file != NULL;
 			     file = file->f_next)
-				printf("\t\t\t%s\n", file->f_path);
+				printf("\t\t\t%s%s\n", file->f_onenable ?
+				       "on enable " : "on disable ",
+				       file->f_path);
 		} else {
 			printf("\t\tno files\n");
 		}
@@ -604,6 +623,6 @@ static void
 usage(void)
 {
 	fprintf(stderr,
-"usage: mu-config [-sv] kernel-base platform configuration\n");
+"usage: mu-config [-s] kernel-base platform configuration\n");
 	exit(1);
 }

@@ -1,0 +1,13 @@
+cpu		mips
+
+std		mutually-excludes: mp
+std		implies: little_endian
+
+std		platform/malta/device/malta_console.c
+
+gt		requires: pci
+gt		platform/malta/device/malta_gt.c
+
+std		platform/malta/platform/platform_mainbus.c
+std		platform/malta/platform/platform_start.c
+std		platform/malta/platform/platform_startup.c

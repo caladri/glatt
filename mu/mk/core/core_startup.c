@@ -103,7 +103,8 @@ startup_main(void)
 void
 startup_version(void)
 {
-	kcprintf("\n%s (%s)\n%s\n\n", MK_NAME, MK_CONFIG, MK_COPYRIGHT);
+	kcprintf("\n%s %s (%s)\n%s\n\n", MK_NAME, MK_VERSION, MK_CONFIG,
+		 MK_COPYRIGHT);
 }
 
 static void

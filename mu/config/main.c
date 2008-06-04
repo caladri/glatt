@@ -438,6 +438,8 @@ mkoption(struct option *options, const char *name)
 	option = malloc(sizeof *option);
 	option->o_name = strdup(name);
 	option->o_enable = false;
+	option->o_files = NULL;
+	option->o_requirements = NULL;
 	option->o_next = options;
 
 	return (option);

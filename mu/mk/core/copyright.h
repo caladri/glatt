@@ -6,9 +6,12 @@
 #endif
 
 #define	MK_NAME								\
-	"Glatt MU/MK (" STRING(CONFIGSTR) ")"
+	"Glatt MU/MK"
+	
+#define	MK_CONFIG							\
+	(STRING(CONFIGSTR))
 
-#define	COPYRIGHT							\
+#define	MK_COPYRIGHT							\
 	"Copyright (c) 2005-2008 The Positry.  All rights reserved."
 
 #endif /* !_CORE_COPYRIGHT_H_ */

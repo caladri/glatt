@@ -1,4 +1,5 @@
 #include <core/types.h>
+#include <core/copyright.h>
 #include <core/error.h>
 #include <core/ipc.h>
 #ifndef	NO_MORDER
@@ -12,9 +13,7 @@
 #include <core/thread.h>
 #include <core/ttk.h>
 #include <db/db.h>
-#ifdef VERBOSE
 #include <io/console/console.h>
-#endif
 #include <vm/vm.h>
 
 /* Some compile-time assertions for every build.  */
@@ -99,6 +98,12 @@ startup_main(void)
 	scheduler_cpu_pin(td);
 	scheduler_thread_runnable(td);
 	scheduler_schedule(td, &startup_lock);
+}
+
+void
+startup_version(void)
+{
+	kcprintf("\n%s (%s)\n%s\n\n", MK_NAME, MK_CONFIG, MK_COPYRIGHT);
 }
 
 static void

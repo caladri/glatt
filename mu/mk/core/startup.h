@@ -42,5 +42,6 @@ extern volatile bool startup_early;	/* true if PCPU isn't usable.  */
 
 void startup_init(void);
 void startup_main(void);
+void startup_version(void);
 
 #endif /* !_CORE_STARTUP_H_ */

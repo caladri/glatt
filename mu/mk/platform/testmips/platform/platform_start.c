@@ -1,5 +1,4 @@
 #include <core/types.h>
-#include <core/copyright.h>
 #include <core/error.h>
 #include <core/startup.h>
 #include <core/string.h>
@@ -44,10 +43,7 @@ platform_start(void)
 
 	db_init();
 
-	kcputs("\n");
-	kcputs(MK_NAME "\n");
-	kcputs(COPYRIGHT "\n");
-	kcputs("\n");
+	startup_version();
 
 	/*
 	 * Startup our physical page pool.

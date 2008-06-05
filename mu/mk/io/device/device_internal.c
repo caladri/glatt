@@ -46,7 +46,9 @@ void
 device_describe(struct device *device)
 {
 	if (device->d_attachment->da_interface->device_describe == NULL) {
+#ifdef VERBOSE
 		device_printf(device, "<%m>", ERROR_NOT_IMPLEMENTED);
+#endif
 		return;
 	}
 	device->d_attachment->da_interface->device_describe(device);

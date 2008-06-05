@@ -318,7 +318,9 @@ static void
 bus_instance_describe(struct bus_instance *bi)
 {
 	if (bi->bi_attachment->ba_interface->bus_describe == NULL) {
+#ifdef VERBOSE
 		bus_instance_printf(bi, "<%m>", ERROR_NOT_IMPLEMENTED);
+#endif
 		return;
 	}
 	bi->bi_attachment->ba_interface->bus_describe(bi);

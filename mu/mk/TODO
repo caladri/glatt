@@ -1,52 +1,14 @@
-o) Device/bus methods for resource management.
-	o) Interrupt reservation.
-	o) DMA
-o) Hints and static configuration sorts of things.
+To do before release:
+	o) Userland.
+	o) System calls.
+	o) ELF loader.
+	o) Memory/interrupt allocation from busses.
+	o) Write mu-tune for device hints, perhaps other things.
+	o) Clean up VM, pmap and exceptions.  Add vm objects and pv lists?
+	o) IPC credentials.
+	o) Simple ethernet stack.
+	o) Either implement preemption or declare preemption never.
+	o) Timekeeping or defer it.
+	o) Simple storage stack.
 
-Ad infinitum: Keep going over code and restructuring to make less ugly and
-hokey and hard to maintain.
-
-o) VM.
-	o) Better physical page data structures.
-	o) Cleanup pmap and friends.
-	o) Finer-grained locking.
-	o) Userland.
-	o) Allocate multiple contiguous physical pages.
-o) Exceptions.
-	o) Be careful to make correct use of EXL and ERL.  Without it, I am
-	   leaving open a race where I can take an interrupt at 'eret' and then
-	   when the exception pc is trashed, that eret will return to itself ad
-	   absurdum.
-	o) I think I'd like to rewrite it all with EXL and ERL in mind.  Might
-	   be nice to wire the kernel stack, mark it dirty on insert, and start
-	   using that as a place to store random crap.  Or use $gp as an
-	   exception frame thing?
-o) Tasks.
-	o) Task switching.
-		o) Userland.
-	o) Threads.
-		o) Userland.
-	o) Userland.
-o) Clocks.
-	o) Scheduling.
-o) Locking.
-o) IPC.
-	o) Userland.
-	o) CRUX system for renaming ports in a task.  For example mapping the
-	   system port to a user port for emulation.  Such as:
-	   	crux(IPC_PORT_SYSTEM, 1024);
-		ipc_port_listen(1024);
-		fd = open(name);
-		ipc_port_receive(1024);
-		/* fake open */
-		crux_teardown(IPC_PORT_SYSTEM);
-		/* real open */
-o) Device drivers.
-	o) Ethernet.
-		o) IP.
-			o) Arp.
-			o) Multicast.
-				o) IPC.
-			o) IPC.
-			o) Userland.
-		o) IPC.
+Current goal: December 2008 release.

@@ -48,8 +48,7 @@ void
 page_init(void)
 {
 	spinlock_init(&page_tree_lock, "Page tree", SPINLOCK_FLAG_DEFAULT);
-	spinlock_init(&page_queue_lock, "Page queue",
-		      SPINLOCK_FLAG_DEFAULT | SPINLOCK_FLAG_RECURSE);
+	spinlock_init(&page_queue_lock, "Page queue", SPINLOCK_FLAG_DEFAULT);
 
 	TAILQ_INIT(&page_free_queue);
 	TAILQ_INIT(&page_use_queue);
@@ -286,6 +285,7 @@ page_unmap(struct vm *vm, vaddr_t vaddr)
 static void
 page_insert(struct vm_page *page, paddr_t paddr)
 {
+	SPINLOCK_ASSERT_HELD(&page_queue_lock);
 	page->pg_refcnt = 0;
 	TAILQ_INSERT_TAIL(&page_free_queue, page, pg_link);
 }

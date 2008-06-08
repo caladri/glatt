@@ -202,6 +202,7 @@ page_insert_pages(paddr_t base, size_t pages)
 			struct vm_page *page;
 
 			page = &ptp->ptp_entries[i];
+			PAGEQ_LOCK();
 			page_insert(page, base);
 			if (i == 0) {
 				/*
@@ -210,6 +211,7 @@ page_insert_pages(paddr_t base, size_t pages)
 				 */
 				page_ref_hold(page);
 			}
+			PAGEQ_UNLOCK();
 
 			ptpents++;
 			pages--;
@@ -236,19 +238,26 @@ page_map(struct vm *vm, vaddr_t vaddr, struct vm_page *page)
 	int error;
 
 	ASSERT(PAGE_ALIGNED(vaddr), "must be a page address");
+	PAGEQ_LOCK();
 	page_ref_hold(page);
+	PAGEQ_UNLOCK();
 	error = pmap_map(vm, vaddr, page);
-	if (error == 0)
-		return (0);
-	page_ref_drop(page);
-	return (error);
+	if (error != 0) {
+		PAGEQ_LOCK();
+		page_ref_drop(page);
+		PAGEQ_UNLOCK();
+		return (error);
+	}
+	return (0);
 }
 
 int
 page_release(struct vm *vm, struct vm_page *page)
 {
+	PAGEQ_LOCK();
 	page_ref_drop(page);
 	ASSERT(page->pg_refcnt == 0, "Cannot release if refs held.");
+	PAGEQ_UNLOCK();
 	return (0);
 }
 
@@ -268,7 +277,9 @@ page_unmap(struct vm *vm, vaddr_t vaddr)
 	if (error != 0)
 		return (error);
 
+	PAGEQ_LOCK();
 	page_ref_drop(page);
+	PAGEQ_UNLOCK();
 	return (0);
 }
 
@@ -295,37 +306,42 @@ page_map_direct(struct vm *vm, struct vm_page *page, vaddr_t *vaddrp)
 	if (vm != &kernel_vm)
 		panic("%s: can't direct map for non-kernel address space.",
 		      __func__);
+	PAGEQ_LOCK();
 	page_ref_hold(page);
+	PAGEQ_UNLOCK();
 	error = pmap_map_direct(vm, page_address(page), vaddrp);
-	if (error != 0)
+	if (error != 0) {
+		PAGEQ_LOCK();
 		page_ref_drop(page);
+		PAGEQ_UNLOCK();
+	}
 	return (error);
 }
 
 static void
 page_ref_drop(struct vm_page *page)
 {
-	PAGEQ_LOCK();
+	SPINLOCK_ASSERT_HELD(&page_queue_lock);
+
 	ASSERT(page->pg_refcnt != 0, "Cannot drop refcount on unheld page.");
 	page->pg_refcnt--;
 	if (page->pg_refcnt == 0) {
 		TAILQ_REMOVE(&page_use_queue, page, pg_link);
 		TAILQ_INSERT_TAIL(&page_free_queue, page, pg_link);
 	}
-	PAGEQ_UNLOCK();
 }
 
 static void
 page_ref_hold(struct vm_page *page)
 {
-	PAGEQ_LOCK();
+	SPINLOCK_ASSERT_HELD(&page_queue_lock);
+
 	if (page->pg_refcnt == 0) {
 		TAILQ_REMOVE(&page_free_queue, page, pg_link);
 		TAILQ_INSERT_TAIL(&page_use_queue, page, pg_link);
 	}
 	page->pg_refcnt++;
 	ASSERT(page->pg_refcnt != 0, "Refcount wrapped.");
-	PAGEQ_UNLOCK();
 }
 
 static int
@@ -335,9 +351,12 @@ page_unmap_direct(struct vm *vm, struct vm_page *page, vaddr_t vaddr)
 
 	ASSERT(PAGE_ALIGNED(vaddr), "must be a page address");
 	error = pmap_unmap_direct(vm, vaddr);
-	if (error == 0)
-		page_ref_drop(page);
-	return (error);
+	if (error != 0)
+		panic("%s: pmap_unmap_direct failed: %m", __func__, error);
+	PAGEQ_LOCK();
+	page_ref_drop(page);
+	PAGEQ_UNLOCK();
+	return (0);
 }
 
 static void

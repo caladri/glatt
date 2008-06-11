@@ -9,7 +9,7 @@
 static void
 cpu_describe(struct bus_instance *bi)
 {
-	bus_printf(bi, "%s %s revision %u.%u, %d TLB entries. (%s)",
+	bus_printf(bi, "%s %s revision %u.%u, %d TLB entries (%s)",
 		   PCPU_GET(cpuinfo).cpu_company, PCPU_GET(cpuinfo).cpu_type,
 		   (unsigned)PCPU_GET(cpuinfo).cpu_revision_major,
 		   (unsigned)PCPU_GET(cpuinfo).cpu_revision_minor,

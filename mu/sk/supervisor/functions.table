@@ -1,7 +1,0 @@
-#
-# This is a list of functions exported by the supervisor to the kernel.
-# Each line contains a function declaration.
-#
-
-Install(cpu_id_t);
-Exit();

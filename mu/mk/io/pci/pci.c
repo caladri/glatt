@@ -1,7 +1,6 @@
 #include <core/types.h>
 #include <core/critical.h>
 #include <core/error.h>
-#include <db/db.h>
 #include <io/device/bus.h>
 #include <io/pci/pci.h>
 #include <io/pci/pcidev.h>

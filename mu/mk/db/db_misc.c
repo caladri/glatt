@@ -8,7 +8,7 @@ static void
 db_halt(void)
 {
 	kcprintf("%s: Halting...\n", __func__);
-	platform_halt();
+	cpu_halt();
 }
 DB_ACTION(h, "Halt the system.", db_halt);
 DB_ACTION_ALIAS(q, h);

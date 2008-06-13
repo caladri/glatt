@@ -120,7 +120,7 @@ bus_instance_destroy(struct bus_instance *bi)
 	if (bi->bi_softc != NULL)
 		free(bi->bi_softc);
 	if (!STAILQ_EMPTY(&bi->bi_children))
-		panic("%s: should not be called yet.", __func__);
+		NOTREACHED();
 	pool_free(bi);
 }
 

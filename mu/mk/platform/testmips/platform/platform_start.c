@@ -20,9 +20,7 @@ void
 platform_halt(void)
 {
 	*(volatile int *)XKPHYS_MAP(XKPHYS_UC, 0x10000000 | 0x10) = 1;
-	for (;;) {
-		/* NOTREACHED */
-	}
+	NOTREACHED();
 }
 
 void

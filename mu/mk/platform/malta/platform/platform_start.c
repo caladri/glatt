@@ -21,9 +21,7 @@ void
 platform_halt(void)
 {
 	/* XXX */
-	for (;;) {
-		/* NOTREACHED */
-	}
+	NOTREACHED();
 }
 
 void

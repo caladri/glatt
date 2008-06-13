@@ -160,7 +160,7 @@ next:		continue;
 	 */
 	TAILQ_FOREACH(item, &sorted_items, si_link)
 		item->si_function(item->si_arg);
-	ASSERT(false, "Must not be reached.");
+	NOTREACHED();
 }
 
 static void

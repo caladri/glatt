@@ -111,7 +111,6 @@ tmether_request(void *softc, enum network_interface_request req,
 	default:
 		return (ERROR_NOT_IMPLEMENTED);
 	}
-	panic("%s: should not be reached.", __func__);
 }
 
 DEVICE_INTERFACE(tmetherif) {

@@ -231,7 +231,7 @@ db_show_value(struct db_show_value *value)
 		value->sv_value.sv_voidf();
 		break;
 	default:
-		panic("%s: unimplemented.\n", __func__);
+		NOTREACHED();
 	}
 }
 

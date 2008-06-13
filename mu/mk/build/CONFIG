@@ -2,6 +2,7 @@
 std		requires: db
 std		implies: db
 
+std		core/core_assert.c
 std		core/core_cv.c
 std		core/core_ipc.c
 std		core/core_malloc.c
@@ -26,7 +27,6 @@ mp		core/core_mp_ipi.c
 
 db		db/db.c
 db		db/db_misc.c
-db		db/db_panic.c
 db		db/db_show.c
 
 std		io/console/console.c

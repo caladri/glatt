@@ -25,6 +25,10 @@ typedef	enum _bool {
 
 #include <core/_macro.h>
 
+	/* Pull in assertions and panic(), which are fundamental.  */
+
+#include <core/assert.h>
+
 #undef _IN_CORE_TYPES_H_
 
 #endif /* !_CORE_TYPES_H_ */

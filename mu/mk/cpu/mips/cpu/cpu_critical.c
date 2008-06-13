@@ -4,7 +4,6 @@
 #include <cpu/cpu.h>
 #include <cpu/interrupt.h>
 #include <cpu/pcpu.h>
-#include <db/db.h>
 
 critical_section_t
 cpu_critical_enter(void)

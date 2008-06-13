@@ -9,7 +9,10 @@
 #include <cpu/memory.h>
 #include <cpu/pcpu.h>
 #include <cpu/register.h>
+#include <cpu/startup.h>
+#ifdef DB
 #include <db/db.h>
+#endif
 #include <io/console/console.h>
 
 #define	EXCEPTION_SPACE			(0x80)
@@ -129,7 +132,12 @@ exception(struct frame *frame)
 debugger:
 	kcputs("\n\n");
 	cpu_exception_frame_dump(td, frame);
+#ifdef DB
 	db_enter();
+#else
+	kcputs("Debugger not present, halting...\n");
+	cpu_halt();
+#endif
 }
 
 static void

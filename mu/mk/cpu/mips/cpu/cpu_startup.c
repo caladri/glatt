@@ -6,16 +6,27 @@
 #include <cpu/memory.h>
 #include <cpu/pcpu.h>
 #include <cpu/tlb.h>
-#include <db/db.h>
+#ifdef DB
+#include <db/db_show.h>
+#endif
 #include <vm/page.h>
 #include <vm/vm.h>
 
+#ifdef DB
 DB_SHOW_TREE(cpu, cpu);
 DB_SHOW_VALUE_TREE(cpu, root, DB_SHOW_TREE_POINTER(cpu));
+#endif
 
 volatile bool startup_early = true;
 
 COMPILE_TIME_ASSERT(sizeof (struct pcpu) <= PAGE_SIZE);
+
+void
+cpu_break(void)
+{
+	__asm __volatile ("break 7" : : : "memory");
+	for (;;) continue;
+}
 
 void
 cpu_halt(void)

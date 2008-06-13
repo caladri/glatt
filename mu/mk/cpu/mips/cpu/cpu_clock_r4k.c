@@ -4,7 +4,6 @@
 #include <cpu/cpu.h>
 #include <cpu/interrupt.h>
 #include <cpu/pcpu.h>
-#include <db/db.h>
 #include <io/device/device.h>
 #include <platform/clock.h>
 

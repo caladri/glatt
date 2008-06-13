@@ -1,7 +1,9 @@
 #ifndef	_DB_DB_H_
 #define	_DB_DB_H_
 
-#include <cpu/db.h>
+#ifndef DB
+#error "Should not include this file unless the debugger is enabled."
+#endif
 
 void db_init(void);
 

@@ -3,15 +3,19 @@
 
 #include <core/queue.h>
 #include <core/spinlock.h>
+#ifdef DB
 #include <db/db_show.h>
+#endif
 #include <vm/types.h>
 
 struct pmap;
 struct vm_index;
 struct vm_page;
 
+#ifdef DB
 DB_SHOW_TREE_DECLARE(vm);
 DB_SHOW_TREE_DECLARE(vm_index);
+#endif
 
 struct vm {
 	struct spinlock vm_lock;

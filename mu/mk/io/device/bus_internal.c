@@ -4,15 +4,20 @@
 #include <core/pool.h>
 #include <core/startup.h>
 #include <core/string.h>
-#include <db/db.h>
+#ifdef DB
 #include <db/db_show.h>
+#endif
 #include <io/device/bus.h>
 #include <io/device/bus_internal.h>
+#ifdef DB
 #include <io/device/leaf.h> /* for debugger only! */
+#endif
 #include <io/console/console.h>
 
+#ifdef DB
 DB_SHOW_TREE(bus, bus);
 DB_SHOW_VALUE_TREE(bus, root, DB_SHOW_TREE_POINTER(bus));
+#endif
 
 struct bus {
 	const char *bus_name;
@@ -416,6 +421,7 @@ bus_enumerate(void *arg)
 }
 STARTUP_ITEM(bus_enumerate, STARTUP_DRIVERS, STARTUP_FIRST, bus_enumerate, NULL);
 
+#ifdef DB
 static void
 bus_db_instance_tree_leader(struct bus_instance *parent,
 			    struct bus_instance *bi, bool last)
@@ -468,3 +474,4 @@ bus_db_instances(void)
 	bus_db_instance_tree(STAILQ_FIRST(&bus_root->bus_instances));
 }
 DB_SHOW_VALUE_VOIDF(instances, bus, bus_db_instances);
+#endif

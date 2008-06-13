@@ -3,12 +3,15 @@
 #include <core/scheduler.h>
 #include <core/spinlock.h>
 #include <core/thread.h>
-#include <db/db.h>
+#ifdef DB
 #include <db/db_show.h>
+#endif
 #include <io/console/console.h>
 
+#ifdef DB
 DB_SHOW_TREE(scheduler, scheduler);
 DB_SHOW_VALUE_TREE(scheduler, root, DB_SHOW_TREE_POINTER(scheduler));
+#endif
 
 struct scheduler_queue {
 	TAILQ_HEAD(, struct scheduler_entry) sq_queue;
@@ -141,6 +144,7 @@ scheduler_switch(struct scheduler_entry *ose, struct scheduler_entry *se)
 		thread_switch(otd, td);
 }
 
+#ifdef DB
 static void
 scheduler_db_dump_queue(struct scheduler_queue *sq)
 {
@@ -172,3 +176,4 @@ scheduler_db_dump(void)
 	scheduler_db_dump_queue(&scheduler_queue);
 }
 DB_SHOW_VALUE_VOIDF(queues, scheduler, scheduler_db_dump);
+#endif

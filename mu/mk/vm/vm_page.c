@@ -2,16 +2,19 @@
 #include <core/btree.h>
 #include <core/error.h>
 #include <core/string.h>
-#include <db/db.h>
+#ifdef DB
 #include <db/db_show.h>
+#endif
 #include <io/console/console.h>
 #include <vm/page.h>
 #include <vm/vm.h>
 
 struct vm_page_tree_page;
 
+#ifdef DB
 DB_SHOW_TREE(vm_page, page);
 DB_SHOW_VALUE_TREE(page, vm, DB_SHOW_TREE_POINTER(vm_page));
+#endif
 
 struct vm_page_tree {
 	BTREE(struct vm_page_tree_page) pt_tree;
@@ -359,6 +362,7 @@ page_unmap_direct(struct vm *vm, struct vm_page *page, vaddr_t vaddr)
 	return (0);
 }
 
+#ifdef DB
 static void
 db_vm_page_dump(struct vm_page *page)
 {
@@ -388,3 +392,4 @@ db_vm_page_dump_useq(void)
 	db_vm_page_dump_queue(&page_use_queue);
 }
 DB_SHOW_VALUE_VOIDF(useq, vm_page, db_vm_page_dump_useq);
+#endif

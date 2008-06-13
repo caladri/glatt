@@ -5,7 +5,6 @@
 #include <core/string.h>
 #include <core/task.h>
 #include <core/thread.h>
-#include <db/db.h>
 #include <vm/page.h>
 
 static struct pool thread_pool;

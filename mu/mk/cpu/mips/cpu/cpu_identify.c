@@ -3,7 +3,6 @@
 #include <core/mp.h>
 #include <cpu/cpu.h>
 #include <cpu/cpuinfo.h>
-#include <db/db.h>
 #include <io/console/console.h>
 
 	/* Coprocessor 0 product ID fields.  */

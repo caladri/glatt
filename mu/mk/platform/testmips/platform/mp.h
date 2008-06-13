@@ -2,7 +2,6 @@
 #define	_PLATFORM_MP_H_
 
 #include <cpu/atomic.h>
-#include <db/db.h>
 
 typedef	uint64_t	cpu_bitmask_t;
 

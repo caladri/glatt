@@ -1,6 +1,10 @@
 #ifndef	_DB_DB_SHOW_H_
 #define	_DB_DB_SHOW_H_
 
+#ifndef DB
+#error "Should not include this file unless the debugger is enabled."
+#endif
+
 #include <core/queue.h>
 
 struct db_show_value;

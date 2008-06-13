@@ -6,7 +6,6 @@
 #include <cpu/memory.h>
 #include <cpu/pcpu.h>
 #include <cpu/tlb.h>
-#include <db/db.h>
 #ifdef VERBOSE
 #include <io/console/console.h>
 #endif

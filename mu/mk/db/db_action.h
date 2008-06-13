@@ -1,6 +1,10 @@
 #ifndef	_DB_DB_ACTION_H_
 #define	_DB_DB_ACTION_H_
 
+#ifndef DB
+#error "Should not include this file unless the debugger is enabled."
+#endif
+
 struct db_action {
 	const char *dba_char;
 	const char *dba_help;

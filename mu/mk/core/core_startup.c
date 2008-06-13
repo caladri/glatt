@@ -12,7 +12,6 @@
 #include <core/task.h>
 #include <core/thread.h>
 #include <core/ttk.h>
-#include <db/db.h>
 #include <io/console/console.h>
 #include <vm/vm.h>
 

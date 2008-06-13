@@ -3,6 +3,7 @@
 
 #include <platform/startup.h>
 
+void cpu_break(void) __noreturn;
 void cpu_halt(void) __noreturn;
 void cpu_startup(void);
 void cpu_startup_thread(void *);

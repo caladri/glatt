@@ -1,7 +1,3 @@
-# XXX for now
-std		requires: db
-std		implies: db
-
 std		core/core_assert.c
 std		core/core_cv.c
 std		core/core_ipc.c

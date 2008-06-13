@@ -4,7 +4,6 @@
 #include <core/critical.h>
 #include <core/mp.h>
 #include <cpu/atomic.h>
-#include <db/db.h>
 
 struct spinlock {
 	const char *s_name;

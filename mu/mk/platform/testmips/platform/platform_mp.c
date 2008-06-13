@@ -9,7 +9,6 @@
 #include <cpu/memory.h>
 #include <cpu/pcpu.h>
 #include <cpu/tlb.h>
-#include <db/db.h>
 #include <io/device/bus.h>
 #include <vm/page.h>
 #include <vm/vm.h>

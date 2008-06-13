@@ -8,7 +8,9 @@
 #include <cpu/memory.h>
 #include <cpu/pcpu.h>
 #include <cpu/tlb.h>
-#include <db/db.h>
+#ifdef DB
+#include <db/db_show.h>
+#endif
 #include <io/console/console.h>
 #include <page/page_map.h>
 #include <page/page_table.h>
@@ -302,6 +304,7 @@ tlb_wired_insert(unsigned index, struct tlb_wired_entry *twe)
 	critical_exit(crit);
 }
 
+#ifdef DB
 static void
 db_cpu_dump_tlb(void)
 {
@@ -333,3 +336,4 @@ db_cpu_dump_tlb(void)
 	kcprintf("Finished.\n");
 }
 DB_SHOW_VALUE_VOIDF(tlb, cpu, db_cpu_dump_tlb);
+#endif

@@ -1,6 +1,5 @@
 #include <core/types.h>
 #include <core/error.h>
-#include <db/db.h>
 #include <io/device/bus.h>
 
 static void

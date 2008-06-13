@@ -1,13 +1,17 @@
 #include <core/types.h>
 #include <core/error.h>
 #include <core/pool.h>
-#include <db/db.h>
+#ifdef DB
+#include <db/db_show.h>
+#endif
 #include <vm/page.h>
 #include <vm/index.h>
 #include <vm/vm.h>
 
+#ifdef DB
 DB_SHOW_TREE(vm, vm);
 DB_SHOW_VALUE_TREE(vm, root, DB_SHOW_TREE_POINTER(vm));
+#endif
 
 struct vm kernel_vm;
 static struct pool vm_pool;

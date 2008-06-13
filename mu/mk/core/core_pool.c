@@ -1,15 +1,18 @@
 #include <core/types.h>
 #include <core/error.h>
 #include <core/pool.h>
-#include <db/db.h>
+#ifdef DB
 #include <db/db_show.h>
+#endif
 #include <io/console/console.h>
 #include <vm/alloc.h>
 #include <vm/page.h>
 #include <vm/vm.h>
 
+#ifdef DB
 DB_SHOW_TREE(pool, pool);
 DB_SHOW_VALUE_TREE(pool, root, DB_SHOW_TREE_POINTER(pool));
+#endif
 
 #define	POOL_LOCK(pool)		spinlock_lock(&(pool)->pool_lock)
 #define	POOL_UNLOCK(pool)	spinlock_unlock(&(pool)->pool_lock)
@@ -236,6 +239,7 @@ pool_page_item(struct pool_page *page, unsigned i)
 	return (item);
 }
 
+#ifdef DB
 static void
 db_pool_dump_pool(struct pool *pool, bool pages, bool items)
 {
@@ -288,3 +292,4 @@ db_pool_dump_pools(void)
 		db_pool_dump_pool(pool, false, false);
 }
 DB_SHOW_VALUE_VOIDF(pools, pool, db_pool_dump_pools);
+#endif

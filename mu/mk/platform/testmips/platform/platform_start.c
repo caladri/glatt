@@ -7,7 +7,9 @@
 #include <cpu/exception.h>
 #include <cpu/interrupt.h>
 #include <cpu/memory.h>
+#ifdef DB
 #include <db/db.h>
+#endif
 #include <io/console/console.h>
 #include <vm/page.h>
 #include <vm/vm.h>
@@ -41,7 +43,9 @@ platform_start(void)
 
 	platform_console_init();
 
+#ifdef	DB
 	db_init();
+#endif
 
 	startup_version();
 

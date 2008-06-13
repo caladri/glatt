@@ -4,14 +4,18 @@
 #include <core/pool.h>
 #include <core/task.h>
 #include <core/thread.h>
-#include <db/db.h>
+#ifdef DB
+#include <db/db_show.h>
+#endif
 #include <io/console/console.h>
 #include <vm/index.h>
 #include <vm/page.h>
 #include <vm/vm.h>
 
+#ifdef DB
 DB_SHOW_TREE(vm_index, index);
 DB_SHOW_VALUE_TREE(index, vm, DB_SHOW_TREE_POINTER(vm_index));
+#endif
 
 static struct pool vm_index_pool;
 
@@ -226,6 +230,7 @@ vm_insert_index(struct vm *vm, struct vm_index **vmip, vaddr_t base,
 		*vmip = vmi;
 	return (0);
 }
+
 static int
 vm_use_index(struct vm *vm, struct vm_index *vmi, size_t pages)
 {
@@ -237,6 +242,7 @@ vm_use_index(struct vm *vm, struct vm_index *vmi, size_t pages)
 	return (0);
 }
 
+#ifdef DB
 static void
 db_vm_index_dump_dot(struct vm_index *vmi)
 {
@@ -294,3 +300,4 @@ db_vm_index_dump_task(void)
 	}
 }
 DB_SHOW_VALUE_VOIDF(task, vm_index, db_vm_index_dump_task);
+#endif

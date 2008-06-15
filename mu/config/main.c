@@ -49,6 +49,7 @@ struct option {
 
 struct options {
 	struct option *o_options;
+	struct configuration *o_configurations;
 	const char *o_cpu;
 };
 
@@ -59,9 +60,7 @@ static void generate(struct options *, const char *, const char *,
 static void imply(struct options *);
 static void include(struct options *, int, ...);
 static void load(struct options *, const char *, const char *);
-static struct configuration *mkconfiguration(struct configuration *,
-					     struct options *, const char *,
-					     bool);
+static void mkconfiguration(struct options *, const char *, bool);
 static void mkfile(struct options *, const char *, const char *, bool);
 static void mkoption(struct options *, const char *);
 static void mkrequirement(struct options *, const char *, enum requirement_type,
@@ -81,6 +80,7 @@ main(int argc, char *argv[])
 	int ch;
 
 	options.o_options = NULL;
+	options.o_configurations = NULL;
 	options.o_cpu = NULL;
 
 	doshow = false;
@@ -221,15 +221,14 @@ config(struct options *options, const char *configstr)
 		name[offset] = '\0';
 		configstr += offset;
 
-		configurations = mkconfiguration(configurations, options,
-						 name, enabled);
+		mkconfiguration(options, name, enabled);
 	}
 
 	/*
 	 * First turn on things explicitly enabled by the user, then turn on
 	 * implicit things, then disable things disabled by the user.
 	 */
-	for (configuration = configurations; configuration != NULL;
+	for (configuration = options->o_configurations; configuration != NULL;
 	     configuration = configuration->c_next) {
 		if (configuration->c_enable)
 			configuration->c_option->o_enable = true;
@@ -237,16 +236,10 @@ config(struct options *options, const char *configstr)
 
 	imply(options);
 
-	for (configuration = configurations; configuration != NULL;
+	for (configuration = options->o_configurations; configuration != NULL;
 	     configuration = configuration->c_next) {
 		if (!configuration->c_enable)
 			configuration->c_option->o_enable = false;
-	}
-
-	while (configurations != NULL) {
-		struct configuration *next = configurations->c_next;
-		free(configurations);
-		configurations = next;
 	}
 }
 
@@ -393,9 +386,8 @@ load(struct options *options, const char *root, const char *platform)
 	close(srcdir);
 }
 
-static struct configuration *
-mkconfiguration(struct configuration *configurations, struct options *options,
-		const char *name, bool enabled)
+static void
+mkconfiguration(struct options *options, const char *name, bool enabled)
 {
 	struct configuration *configuration;
 	struct option *option;
@@ -404,20 +396,19 @@ mkconfiguration(struct configuration *configurations, struct options *options,
 	if (option == NULL)
 		errx(1, "cannot configure non-existant option %s", name);
 
-	for (configuration = configurations; configuration != NULL;
+	for (configuration = options->o_configurations; configuration != NULL;
 	     configuration = configuration->c_next) {
 		if (configuration->c_option == option) {
 			configuration->c_enable = enabled;
-			return (configurations);
+			return;
 		}
 	}
 
 	configuration = malloc(sizeof *configuration);
 	configuration->c_option = option;
 	configuration->c_enable = enabled;
-	configuration->c_next = configurations;
-	configurations = configuration;
-	return (configurations);
+	configuration->c_next = options->o_configurations;
+	options->o_configurations = configuration;
 }
 
 static void

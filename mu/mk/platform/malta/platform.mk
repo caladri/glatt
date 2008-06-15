@@ -1,7 +1,5 @@
 # $Id: platform.mk,v 1.7 2008-06-01 00:06:00 juli Exp $
 
-CPU=		mips
-
 # Load the kernel at 1MB physical.
 KERNEL_TEXT=	0xa800000000100000
 

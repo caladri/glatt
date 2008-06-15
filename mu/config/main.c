@@ -49,6 +49,7 @@ struct option {
 
 struct options {
 	struct option *o_options;
+	const char *o_cpu;
 };
 
 static void check(struct options *);
@@ -80,6 +81,7 @@ main(int argc, char *argv[])
 	int ch;
 
 	options.o_options = NULL;
+	options.o_cpu = NULL;
 
 	doshow = false;
 
@@ -136,6 +138,9 @@ check(struct options *options)
 	struct requirement *requirement;
 	struct option *option;
 	const char **requirep;
+
+	if (options->o_cpu == NULL)
+		errx(1, "must have a cpu.");
 
 	for (requirep = options_required; *requirep != NULL; requirep++)
 		require(options, *requirep);
@@ -307,6 +312,7 @@ generate(struct options *options, const char *root, const char *platform,
 
 	fprintf(config_mk, "KERNEL_ROOT=%s\n", root);
 	fprintf(config_mk, "PLATFORM=%s\n", platform);
+	fprintf(config_mk, "CPU=%s\n", options->o_cpu);
 	fprintf(config_mk, "CONFIGSTR=%s\n", configstr);
 
 	for (option = options->o_options; option != NULL;
@@ -518,7 +524,10 @@ parse(struct options *options, int rootdir, FILE *file)
 		if (strcasecmp(name, "cpu") == 0) {
 			if (strcspn(line, " \t") != strlen(line))
 				errx(1, "whitespace at end of cpu line");
-			include(options, rootdir, "cpu", line, NULL);
+			if (options->o_cpu != NULL)
+				errx(1, "duplicate \"cpu\" directive.");
+			options->o_cpu = strdup(line);
+			include(options, rootdir, "cpu", options->o_cpu, NULL);
 		} else {
 			struct {
 				const char *rm_prefix;

@@ -47,34 +47,41 @@ struct option {
 	struct option *o_next;
 };
 
-static void check(struct option *);
-static void config(struct option *, const char *);
-static void generate(struct option *, const char *, const char *, const char *);
-static void imply(struct option *);
-static struct option *load(struct option *, const char *, const char *);
+struct options {
+	struct option *o_options;
+};
+
+static void check(struct options *);
+static void config(struct options *, const char *);
+static void generate(struct options *, const char *, const char *,
+		     const char *);
+static void imply(struct options *);
+static void include(struct options *, int, ...);
+static void load(struct options *, const char *, const char *);
 static struct configuration *mkconfiguration(struct configuration *,
-					     struct option *, const char *,
+					     struct options *, const char *,
 					     bool);
-static struct option *mkfile(struct option *, const char *, const char *, bool);
-static struct option *mkoption(struct option *, const char *);
-static struct option *mkrequirement(struct option *, const char *,
-				    enum requirement_type, const char *);
-static struct option *parse(struct option *, int, FILE *);
-static void require(struct option *, const char *);
-static struct option *search(struct option *, const char *);
-static void show(struct option *);
+static void mkfile(struct options *, const char *, const char *, bool);
+static void mkoption(struct options *, const char *);
+static void mkrequirement(struct options *, const char *, enum requirement_type,
+			  const char *);
+static void parse(struct options *, int, FILE *);
+static void require(struct options *, const char *);
+static struct option *search(struct options *, const char *);
+static void show(struct options *);
 static void usage(void);
 
 int
 main(int argc, char *argv[])
 {
 	const char *root, *platform, *configuration;
-	struct option *options;
+	struct options options;
 	bool doshow;
 	int ch;
 
+	options.o_options = NULL;
+
 	doshow = false;
-	options = NULL;
 
 	while ((ch = getopt(argc, argv, "s")) != -1) {
 		switch (ch) {
@@ -110,21 +117,21 @@ main(int argc, char *argv[])
 	if (argc != 0)
 		usage();
 
-	options = load(options, root, platform);
-	config(options, configuration);
-	check(options);
+	load(&options, root, platform);
+	config(&options, configuration);
+	check(&options);
 
 	if (doshow) {
-		show(options);
+		show(&options);
 	} else {
-		generate(options, root, platform, configuration);
+		generate(&options, root, platform, configuration);
 	}
 
 	return (0);
 }
 
 static void
-check(struct option *options)
+check(struct options *options)
 {
 	struct requirement *requirement;
 	struct option *option;
@@ -133,7 +140,8 @@ check(struct option *options)
 	for (requirep = options_required; *requirep != NULL; requirep++)
 		require(options, *requirep);
 
-	for (option = options; option != NULL; option = option->o_next) {
+	for (option = options->o_options; option != NULL;
+	     option = option->o_next) {
 		for (requirement = option->o_requirements; requirement != NULL;
 		     requirement = requirement->r_next) {
 			switch (requirement->r_type) {
@@ -170,7 +178,7 @@ check(struct option *options)
 }
 
 static void
-config(struct option *options, const char *configstr)
+config(struct options *options, const char *configstr)
 {
 	struct configuration *configuration, *configurations;
 	char name[1024];
@@ -237,8 +245,8 @@ config(struct option *options, const char *configstr)
 	}
 }
 
-static struct option *
-include(struct option *options, int rootdir, ...)
+static void
+include(struct options *options, int rootdir, ...)
 {
 	const char *dir;
 	va_list ap;
@@ -264,15 +272,13 @@ include(struct option *options, int rootdir, ...)
 	if (file == NULL)
 		errx(1, "open CONFIG");
 
-	options = parse(options, rootdir, file);
+	parse(options, rootdir, file);
 
 	fclose(file);
-
-	return (options);
 }
 
 static void
-generate(struct option *options, const char *root, const char *platform,
+generate(struct options *options, const char *root, const char *platform,
 	 const char *configstr)
 {
 	struct option *option;
@@ -303,7 +309,8 @@ generate(struct option *options, const char *root, const char *platform,
 	fprintf(config_mk, "PLATFORM=%s\n", platform);
 	fprintf(config_mk, "CONFIGSTR=%s\n", configstr);
 
-	for (option = options; option != NULL; option = option->o_next) {
+	for (option = options->o_options; option != NULL;
+	     option = option->o_next) {
 		struct file *file;
 		char uppercase[1024], *q;
 		const char *p;
@@ -333,13 +340,14 @@ generate(struct option *options, const char *root, const char *platform,
 }
 
 static void
-imply(struct option *options)
+imply(struct options *options)
 {
 	struct requirement *requirement;
 	struct option *option;
 
 restart:
-	for (option = options; option != NULL; option = option->o_next) {
+	for (option = options->o_options; option != NULL;
+	     option = option->o_next) {
 		for (requirement = option->o_requirements; requirement != NULL;
 		     requirement = requirement->r_next) {
 			if (requirement->r_type != Implies)
@@ -354,8 +362,8 @@ restart:
 	}
 }
 
-static struct option *
-load(struct option *options, const char *root, const char *platform)
+static void
+load(struct options *options, const char *root, const char *platform)
 {
 	int rootdir;
 	int srcdir;
@@ -369,20 +377,18 @@ load(struct option *options, const char *root, const char *platform)
 	if (rootdir == -1)
 		err(1, "could not open kernel root directory");
 
-	options = include(options, rootdir, "platform", platform, NULL);
-	options = include(options, rootdir, "build", NULL);
+	include(options, rootdir, "platform", platform, NULL);
+	include(options, rootdir, "build", NULL);
 
 	rv = fchdir(srcdir);
 	if (rv == -1)
 		err(1, "could not return to last directory");
 
 	close(srcdir);
-
-	return (options);
 }
 
 static struct configuration *
-mkconfiguration(struct configuration *configurations, struct option *options,
+mkconfiguration(struct configuration *configurations, struct options *options,
 		const char *name, bool enabled)
 {
 	struct configuration *configuration;
@@ -408,45 +414,47 @@ mkconfiguration(struct configuration *configurations, struct option *options,
 	return (configurations);
 }
 
-static struct option *
-mkfile(struct option *options, const char *name, const char *path,
+static void
+mkfile(struct options *options, const char *name, const char *path,
        bool onenable)
 {
 	struct option *option;
 	struct file *file;
 
 	option = search(options, name);
-	if (option == NULL)
-		return (mkfile(mkoption(options, name), name, path, onenable));
+	if (option == NULL) {
+		mkoption(options, name);
+		mkfile(options, name, path, onenable);
+		return;
+	}
+
 	file = malloc(sizeof *file);
 	file->f_path = strdup(path);
 	file->f_onenable = onenable;
 	file->f_next = option->o_files;
 	option->o_files = file;
-	return (options);
 }
 
-static struct option *
-mkoption(struct option *options, const char *name)
+static void
+mkoption(struct options *options, const char *name)
 {
 	struct option *option;
 
 	option = search(options, name);
 	if (option != NULL)
-		return (options);
+		return;
 
 	option = malloc(sizeof *option);
 	option->o_name = strdup(name);
 	option->o_enable = false;
 	option->o_files = NULL;
 	option->o_requirements = NULL;
-	option->o_next = options;
-
-	return (option);
+	option->o_next = options->o_options;
+	options->o_options = option;
 }
 
-static struct option *
-mkrequirement(struct option *options, const char *name1,
+static void
+mkrequirement(struct options *options, const char *name1,
 	      enum requirement_type type, const char *name2)
 {
 	struct option *option1, *option2;
@@ -456,8 +464,10 @@ mkrequirement(struct option *options, const char *name1,
 	option2 = search(options, name2);
 
 	if (option1 == NULL || option2 == NULL) {
-		return (mkrequirement(mkoption(mkoption(options, name1), name2),
-				      name1, type, name2));
+		mkoption(options, name1);
+		mkoption(options, name2);
+		mkrequirement(options, name1, type, name2);
+		return;
 	}
 
 	if (option1 == option2)
@@ -468,12 +478,10 @@ mkrequirement(struct option *options, const char *name1,
 	requirement->r_option = option2;
 	requirement->r_next = option1->o_requirements;
 	option1->o_requirements = requirement;
-
-	return (options);
 }
 
-static struct option *
-parse(struct option *options, int rootdir, FILE *file)
+static void
+parse(struct options *options, int rootdir, FILE *file)
 {
 	char name[1024];
 	bool onenable;
@@ -510,7 +518,7 @@ parse(struct option *options, int rootdir, FILE *file)
 		if (strcasecmp(name, "cpu") == 0) {
 			if (strcspn(line, " \t") != strlen(line))
 				errx(1, "whitespace at end of cpu line");
-			options = include(options, rootdir, "cpu", line, NULL);
+			include(options, rootdir, "cpu", line, NULL);
 		} else {
 			struct {
 				const char *rm_prefix;
@@ -534,8 +542,7 @@ parse(struct option *options, int rootdir, FILE *file)
 					line++;
 				if (strcspn(line, " \t") != strlen(line))
 					errx(1, "whitespace after requirement");
-				options = mkrequirement(options, name,
-							rm->rm_type, line);
+				mkrequirement(options, name, rm->rm_type, line);
 				break;
 			}
 			if (rm->rm_prefix != NULL)
@@ -544,14 +551,13 @@ parse(struct option *options, int rootdir, FILE *file)
 			if (strcspn(line, " \t") != strlen(line))
 				errx(1, "whitespace at end of file line");
 
-			options = mkfile(options, name, line, onenable);
+			mkfile(options, name, line, onenable);
 		}
 	}
-	return (options);
 }
 
 static void
-require(struct option *options, const char *name)
+require(struct options *options, const char *name)
 {
 	struct option *option;
 
@@ -563,23 +569,25 @@ require(struct option *options, const char *name)
 }
 
 static struct option *
-search(struct option *options, const char *name)
+search(struct options *options, const char *name)
 {
 	struct option *option;
 
-	for (option = options; option != NULL; option = option->o_next)
+	for (option = options->o_options; option != NULL;
+	     option = option->o_next)
 		if (strcasecmp(option->o_name, name) == 0)
 			return (option);
 	return (NULL);
 }
 
 static void
-show(struct option *options)
+show(struct options *options)
 {
 	struct option *option;
 
 	printf("configuration:\n");
-	for (option = options; option != NULL; option = option->o_next) {
+	for (option = options->o_options; option != NULL;
+	     option = option->o_next) {
 		printf("\t%c%s\n", option->o_enable ? '+' : '-',
 		       option->o_name);
 		if (option->o_requirements != NULL) {

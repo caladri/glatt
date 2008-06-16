@@ -50,16 +50,18 @@ struct option {
 struct configuration {
 	struct option *c_options;
 	struct setting *c_settings;
+	const char *c_root;
+	const char *c_platform;
+	const char *c_configstr;
 	const char *c_cpu;
 };
 
 static void check(struct configuration *);
-static void config(struct configuration *, const char *);
-static void generate(struct configuration *, const char *, const char *,
-		     const char *);
+static void config(struct configuration *);
+static void generate(struct configuration *);
 static void imply(struct configuration *);
 static void include(struct configuration *, int, ...);
-static void load(struct configuration *, const char *, const char *);
+static void load(struct configuration *);
 static void mkfile(struct configuration *, const char *, const char *, bool);
 static void mkoption(struct configuration *, const char *);
 static void mkrequirement(struct configuration *, const char *,
@@ -74,13 +76,15 @@ static void usage(void);
 int
 main(int argc, char *argv[])
 {
-	const char *root, *platform, *configstr;
 	struct configuration conf;
 	bool doshow;
 	int ch;
 
 	conf.c_options = NULL;
 	conf.c_settings = NULL;
+	conf.c_root = NULL;
+	conf.c_platform = NULL;
+	conf.c_configstr = "std";
 	conf.c_cpu = NULL;
 
 	doshow = false;
@@ -99,34 +103,33 @@ main(int argc, char *argv[])
 
 	if (argc == 0)
 		usage();
-	root = *argv++;
+	conf.c_root = *argv++;
 	argc--;
 
 	if (argc == 0)
 		usage();
-	platform = *argv++;
+	conf.c_platform = *argv++;
 	argc--;
 
 	if (argc == 0) {
 		if (!doshow)
 			usage();
-		configstr = "std";
 	} else {
-		configstr = *argv++;
+		conf.c_configstr = *argv++;
 		argc--;
 	}
 
 	if (argc != 0)
 		usage();
 
-	load(&conf, root, platform);
-	config(&conf, configstr);
+	load(&conf);
+	config(&conf);
 	check(&conf);
 
 	if (doshow) {
 		show(&conf);
 	} else {
-		generate(&conf, root, platform, configstr);
+		generate(&conf);
 	}
 
 	return (0);
@@ -183,15 +186,17 @@ check(struct configuration *conf)
 }
 
 static void
-config(struct configuration *conf, const char *configstr)
+config(struct configuration *conf)
 {
 	struct setting *setting;
+	const char *configstr;
 	char name[1024];
 	size_t offset;
 	bool enabled;
 	bool first;
 
 	first = true;
+	configstr = conf->c_configstr;
 
 	while (configstr[0] != '\0') {
 		switch (configstr[0]) {
@@ -275,8 +280,7 @@ include(struct configuration *conf, int rootdir, ...)
 }
 
 static void
-generate(struct configuration *conf, const char *root, const char *platform,
-	 const char *configstr)
+generate(struct configuration *conf)
 {
 	struct option *option;
 	FILE *config_mk;
@@ -286,7 +290,7 @@ generate(struct configuration *conf, const char *root, const char *platform,
 	if (rv == -1 && errno != ENOENT)
 		err(1, "unable to remove _root symlink");
 
-	rv = symlink(root, "_root");
+	rv = symlink(conf->c_root, "_root");
 	if (rv == -1)
 		err(1, "unable to create _root symlink");
 
@@ -302,10 +306,10 @@ generate(struct configuration *conf, const char *root, const char *platform,
 	if (config_mk == NULL)
 		err(1, "unable to open config.mk for writing.");
 
-	fprintf(config_mk, "KERNEL_ROOT=%s\n", root);
-	fprintf(config_mk, "PLATFORM=%s\n", platform);
+	fprintf(config_mk, "KERNEL_ROOT=%s\n", conf->c_root);
+	fprintf(config_mk, "PLATFORM=%s\n", conf->c_platform);
 	fprintf(config_mk, "CPU=%s\n", conf->c_cpu);
-	fprintf(config_mk, "CONFIGSTR=%s\n", configstr);
+	fprintf(config_mk, "CONFIGSTR=%s\n", conf->c_configstr);
 
 	for (option = conf->c_options; option != NULL;
 	     option = option->o_next) {
@@ -328,7 +332,7 @@ generate(struct configuration *conf, const char *root, const char *platform,
 			if (file->f_onenable != option->o_enable)
 				continue;
 			fprintf(config_mk, ".PATH: %s/%s\n",
-				root, dirname(file->f_path));
+				conf->c_root, dirname(file->f_path));
 			fprintf(config_mk, "KERNEL_SOURCES+=%s\n",
 				basename(file->f_path));
 		}
@@ -361,7 +365,7 @@ restart:
 }
 
 static void
-load(struct configuration *conf, const char *root, const char *platform)
+load(struct configuration *conf)
 {
 	int rootdir;
 	int srcdir;
@@ -371,11 +375,11 @@ load(struct configuration *conf, const char *root, const char *platform)
 	if (srcdir == -1)
 		err(1, "could not open current directory");
 
-	rootdir = open(root, O_RDONLY);
+	rootdir = open(conf->c_root, O_RDONLY);
 	if (rootdir == -1)
 		err(1, "could not open kernel root directory");
 
-	include(conf, rootdir, "platform", platform, NULL);
+	include(conf, rootdir, "platform", conf->c_platform, NULL);
 	include(conf, rootdir, "build", NULL);
 
 	rv = fchdir(srcdir);

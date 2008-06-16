@@ -1,6 +1,5 @@
 #include <sys/types.h>
 #include <ctype.h>
-#include <err.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <libgen.h>
@@ -58,6 +57,7 @@ struct configuration {
 
 static void check(struct configuration *);
 static void config(struct configuration *);
+static void fatal(struct configuration *, int, const char *, ...);
 static void generate(struct configuration *);
 static void imply(struct configuration *);
 static void include(struct configuration *, int, ...);
@@ -143,7 +143,7 @@ check(struct configuration *conf)
 	const char **requirep;
 
 	if (conf->c_cpu == NULL)
-		errx(1, "must have a cpu.");
+		fatal(conf, 0, "must have a cpu.");
 
 	for (requirep = conf_required; *requirep != NULL; requirep++)
 		require(conf, *requirep);
@@ -157,7 +157,7 @@ check(struct configuration *conf)
 				if (!option->o_enable)
 					continue;
 				if (!requirement->r_option->o_enable) {
-					errx(1, "%s should be enabled for %s",
+					fatal(conf, 0, "%s should be enabled for %s",
 					     requirement->r_option->o_name,
 					     option->o_name);
 				}
@@ -166,7 +166,7 @@ check(struct configuration *conf)
 				if (!option->o_enable)
 					continue;
 				if (!requirement->r_option->o_enable) {
-					errx(1, "%s must be enabled for %s",
+					fatal(conf, 0, "%s must be enabled for %s",
 					     requirement->r_option->o_name,
 					     option->o_name);
 				}
@@ -175,7 +175,7 @@ check(struct configuration *conf)
 				if (!option->o_enable)
 					continue;
 				if (requirement->r_option->o_enable) {
-					errx(1, "%s cannot be enabled with %s",
+					fatal(conf, 0, "%s cannot be enabled with %s",
 					     requirement->r_option->o_name,
 					     option->o_name);
 				}
@@ -210,7 +210,7 @@ config(struct configuration *conf)
 			break;
 		default:
 			if (!first)
-				errx(1, "configuration must have a + or -");
+				fatal(conf, 0, "configuration must have a + or -");
 			enabled = true;
 			break;
 		}
@@ -218,9 +218,9 @@ config(struct configuration *conf)
 
 		offset = strcspn(configstr, "-+");
 		if (offset == 0)
-			errx(1, "extra - or + in configuration string");
+			fatal(conf, 0, "extra - or + in configuration string");
 		if (offset > sizeof name)
-			errx(1, "name too long: %s", configstr);
+			fatal(conf, 0, "name too long: %s", configstr);
 		memcpy(name, configstr, offset);
 		name[offset] = '\0';
 		configstr += offset;
@@ -257,7 +257,7 @@ include(struct configuration *conf, int rootdir, ...)
 
 	rv = fchdir(rootdir);
 	if (rv == -1)
-		err(1, "could not enter kernel root directory");
+		fatal(conf, errno, "could not enter kernel root directory");
 
 	va_start(ap, rootdir);
 	for (;;) {
@@ -266,17 +266,41 @@ include(struct configuration *conf, int rootdir, ...)
 			break;
 		rv = chdir(dir);
 		if (rv == -1)
-			err(1, "could not enter subdirectory %s", dir);
+			fatal(conf, errno, "could not enter subdirectory %s",
+			      dir);
 	}
 	va_end(ap);
 
 	file = fopen("CONFIG", "r");
 	if (file == NULL)
-		errx(1, "open CONFIG");
+		fatal(conf, 0, "open CONFIG");
 
 	parse(conf, rootdir, file);
 
 	fclose(file);
+}
+
+static void
+fatal(struct configuration *conf, int error, const char *fmt, ...)
+{
+	va_list ap;
+
+	fprintf(stderr, "Fatal error.\n");
+	fprintf(stderr, "mu-config: ");
+	va_start(ap, fmt);
+	vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	if (error != 0)
+		fprintf(stderr, ": %s\n", strerror(error));
+	else
+		fprintf(stderr, "\n");
+
+	fprintf(stderr, "\troot\t\t%s\n", conf->c_root);
+	fprintf(stderr, "\tplatform\t%s\n", conf->c_platform);
+	fprintf(stderr, "\tconfigstr\t%s\n", conf->c_configstr);
+	fprintf(stderr, "\tcpu\t\t%s\n", conf->c_cpu);
+
+	exit(1);
 }
 
 static void
@@ -288,23 +312,23 @@ generate(struct configuration *conf)
 
 	rv = unlink("_root");
 	if (rv == -1 && errno != ENOENT)
-		err(1, "unable to remove _root symlink");
+		fatal(conf, errno, "unable to remove _root symlink");
 
 	rv = symlink(conf->c_root, "_root");
 	if (rv == -1)
-		err(1, "unable to create _root symlink");
+		fatal(conf, errno, "unable to create _root symlink");
 
 	rv = unlink("Makefile");
 	if (rv == -1 && errno != ENOENT)
-		err(1, "unable to remove Makefile symlink");
+		fatal(conf, errno, "unable to remove Makefile symlink");
 
 	rv = symlink("_root/build/Makefile", "Makefile");
 	if (rv == -1)
-		err(1, "unable to create Makefile symlink");
+		fatal(conf, errno, "unable to create Makefile symlink");
 
 	config_mk = fopen("config.mk", "w");
 	if (config_mk == NULL)
-		err(1, "unable to open config.mk for writing.");
+		fatal(conf, errno, "unable to open config.mk for writing");
 
 	fprintf(config_mk, "KERNEL_ROOT=%s\n", conf->c_root);
 	fprintf(config_mk, "PLATFORM=%s\n", conf->c_platform);
@@ -373,18 +397,18 @@ load(struct configuration *conf)
 
 	srcdir = open(".", O_RDONLY);
 	if (srcdir == -1)
-		err(1, "could not open current directory");
+		fatal(conf, errno, "could not open current directory");
 
 	rootdir = open(conf->c_root, O_RDONLY);
 	if (rootdir == -1)
-		err(1, "could not open kernel root directory");
+		fatal(conf, errno, "could not open kernel root directory");
 
 	include(conf, rootdir, "platform", conf->c_platform, NULL);
 	include(conf, rootdir, "build", NULL);
 
 	rv = fchdir(srcdir);
 	if (rv == -1)
-		err(1, "could not return to last directory");
+		fatal(conf, errno, "could not return to last directory");
 
 	close(srcdir);
 }
@@ -446,7 +470,7 @@ mkrequirement(struct configuration *conf, const char *name1,
 	}
 
 	if (option1 == option2)
-		errx(1, "option has requirement relationship with itself.");
+		fatal(conf, 0, "option has requirement relationship with itself.");
 
 	requirement = malloc(sizeof *requirement);
 	requirement->r_type = type;
@@ -463,7 +487,7 @@ mksetting(struct configuration *conf, const char *name, bool enabled)
 
 	option = search(conf, name);
 	if (option == NULL)
-		errx(1, "cannot configure non-existant option %s", name);
+		fatal(conf, 0, "cannot configure non-existant option %s", name);
 
 	for (setting = conf->c_settings; setting != NULL;
 	     setting = setting->s_next) {
@@ -505,9 +529,9 @@ parse(struct configuration *conf, int rootdir, FILE *file)
 
 		offset = strcspn(line, " \t");
 		if (offset == 0)
-			errx(1, "expected option in config file.");
+			fatal(conf, 0, "expected option in config file.");
 		if (offset > sizeof name)
-			errx(1, "name too long: %s", line);
+			fatal(conf, 0, "name too long: %s", line);
 		memcpy(name, line, offset);
 		name[offset] = '\0';
 		line += offset;
@@ -517,9 +541,9 @@ parse(struct configuration *conf, int rootdir, FILE *file)
 
 		if (strcasecmp(name, "cpu") == 0) {
 			if (strcspn(line, " \t") != strlen(line))
-				errx(1, "whitespace at end of cpu line");
+				fatal(conf, 0, "whitespace at end of cpu line");
 			if (conf->c_cpu != NULL)
-				errx(1, "duplicate \"cpu\" directive.");
+				fatal(conf, 0, "duplicate \"cpu\" directive.");
 			conf->c_cpu = strdup(line);
 			include(conf, rootdir, "cpu", conf->c_cpu, NULL);
 		} else {
@@ -539,12 +563,12 @@ parse(struct configuration *conf, int rootdir, FILE *file)
 					    strlen(rm->rm_prefix)) != 0)
 					continue;
 				if (!onenable)
-					errx(1, "cannot invert a requirement");
+					fatal(conf, 0, "cannot invert a requirement");
 				line += strlen(rm->rm_prefix);
 				while (isspace(*(unsigned char *)line))
 					line++;
 				if (strcspn(line, " \t") != strlen(line))
-					errx(1, "whitespace after requirement");
+					fatal(conf, 0, "whitespace after requirement");
 				mkrequirement(conf, name, rm->rm_type, line);
 				break;
 			}
@@ -552,7 +576,7 @@ parse(struct configuration *conf, int rootdir, FILE *file)
 				continue;
 
 			if (strcspn(line, " \t") != strlen(line))
-				errx(1, "whitespace at end of file line");
+				fatal(conf, 0, "whitespace at end of file line");
 
 			mkfile(conf, name, line, onenable);
 		}
@@ -566,9 +590,9 @@ require(struct configuration *conf, const char *name)
 
 	option = search(conf, name);
 	if (option == NULL)
-		errx(1, "required option %s not found", name);
+		fatal(conf, 0, "required option %s not found", name);
 	if (!option->o_enable)
-		errx(1, "required option %s not set", name);
+		fatal(conf, 0, "required option %s not set", name);
 }
 
 static struct option *

@@ -59,6 +59,7 @@ static void check(struct configuration *);
 static void config(struct configuration *);
 static void fatal(struct configuration *, int, const char *, ...);
 static void generate(struct configuration *);
+static const char *getline(FILE *);
 static void imply(struct configuration *);
 static void include(struct configuration *, int, ...);
 static void load(struct configuration *);
@@ -365,6 +366,21 @@ generate(struct configuration *conf)
 	fclose(config_mk);
 }
 
+static const char *
+getline(FILE *input)
+{
+	static char buf[1024];
+	char *p;
+
+	p = fgets(buf, sizeof buf, input);
+	if (p == NULL)
+		return (NULL);
+	p = strchr(buf, '\n');
+	if (p != NULL)
+		*p = '\0';
+	return (buf);
+}
+
 static void
 imply(struct configuration *conf)
 {
@@ -510,14 +526,9 @@ parse(struct configuration *conf, int rootdir, FILE *file)
 	char name[1024];
 	bool onenable;
 	size_t offset;
-	char *line;
-	size_t len;
+	const char *line;
 
-	while ((line = fgetln(file, &len)) != NULL) {
-		if (len == 0)
-			continue;
-		line[len - 1] = '\0';
-
+	while ((line = getline(file)) != NULL) {
 		if (line[0] == '#' || line[0] == '\0')
 			continue;
 
@@ -536,7 +547,7 @@ parse(struct configuration *conf, int rootdir, FILE *file)
 		name[offset] = '\0';
 		line += offset;
 
-		while (isspace(*(unsigned char *)line))
+		while (isspace(*(const unsigned char *)line))
 			line++;
 
 		if (strcasecmp(name, "cpu") == 0) {
@@ -565,7 +576,7 @@ parse(struct configuration *conf, int rootdir, FILE *file)
 				if (!onenable)
 					fatal(conf, 0, "cannot invert a requirement");
 				line += strlen(rm->rm_prefix);
-				while (isspace(*(unsigned char *)line))
+				while (isspace(*(const unsigned char *)line))
 					line++;
 				if (strcspn(line, " \t") != strlen(line))
 					fatal(conf, 0, "whitespace after requirement");
@@ -581,6 +592,8 @@ parse(struct configuration *conf, int rootdir, FILE *file)
 			mkfile(conf, name, line, onenable);
 		}
 	}
+	if (ferror(file))
+		fatal(conf, errno, "error while parsing file");
 }
 
 static void

@@ -1,6 +1,7 @@
+std		implies: ipc
+
 std		core/core_assert.c
 std		core/core_cv.c
-std		core/core_ipc.c
 std		core/core_malloc.c
 std		core/core_mutex.c
 std		core/core_pool.c
@@ -12,7 +13,8 @@ std		core/core_startup.c
 std		core/core_task.c
 std		core/core_thread.c
 std		core/core_ttk.c
-std		core/core_vdae.c
+
+ipc		core/core_ipc.c
 
 morder		core/core_morder.c
 
@@ -20,6 +22,8 @@ mp		core/core_mp.c
 mp		core/core_mp_cpu.c
 mp		core/core_mp_hokusai.c
 mp		core/core_mp_ipi.c
+
+vdae		core/core_vdae.c
 
 db		db/db.c
 db		db/db_misc.c

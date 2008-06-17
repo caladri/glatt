@@ -20,6 +20,9 @@ KERNEL_CPPFLAGS+=-DCONFIGSTR=${CONFIGSTR}
 .if defined(DB)
 KERNEL_CPPFLAGS+=-DDB
 .endif
+.if defined(IPC)
+KERNEL_CPPFLAGS+=-DIPC
+.endif
 .if defined(VERBOSE)
 KERNEL_CPPFLAGS+=-DVERBOSE
 .endif

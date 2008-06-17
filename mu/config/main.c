@@ -155,13 +155,6 @@ check(struct configuration *conf)
 		     requirement = requirement->r_next) {
 			switch (requirement->r_type) {
 			case Implies:
-				if (!option->o_enable)
-					continue;
-				if (!requirement->r_option->o_enable) {
-					fatal(conf, 0, "%s should be enabled for %s",
-					     requirement->r_option->o_name,
-					     option->o_name);
-				}
 				continue;
 			case Requires:
 				if (!option->o_enable)

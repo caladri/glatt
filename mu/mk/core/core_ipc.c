@@ -3,6 +3,7 @@
 #include <core/error.h>
 #include <core/ipc.h>
 #include <core/malloc.h>
+#include <core/mutex.h>
 #include <core/pool.h>
 #include <core/startup.h>
 #include <core/thread.h>
@@ -17,6 +18,7 @@ struct ipc_port {
 
 struct ipc_message {
 	struct ipc_header ipcmsg_header;
+	vaddr_t ipcmsg_page;
 	TAILQ_ENTRY(struct ipc_message) ipcmsg_link;
 };
 
@@ -50,13 +52,19 @@ ipc_init(void)
 }
 
 int
-ipc_send(struct ipc_header *ipch)
+ipc_send(struct ipc_header *ipch, vaddr_t *pagep)
 {
 	struct ipc_message *ipcmsg;
 	struct ipc_port *ipcp;
 
 	ASSERT(ipch != NULL, "Must have a header.");
 	ASSERT(ipch->ipchdr_len == 0, "Must have no data.");
+
+	if (pagep != NULL)
+		return (ERROR_UNIMPLEMENTED);
+
+	if (!PAGE_ALIGNED(page))
+		return (ERROR_INVALID);
 
 	IPC_PORTS_LOCK();
 	ipcp = ipc_port_lookup(ipch->ipchdr_src);
@@ -76,6 +84,7 @@ ipc_send(struct ipc_header *ipch)
 
 	ipcmsg = malloc(sizeof *ipcmsg);
 	ipcmsg->ipcmsg_header = *ipch;
+	ipcmsg->ipcmsg_page = (vaddr_t)NULL;
 	ipc_port_deliver(ipcmsg);
 	return (0);
 }
@@ -117,12 +126,15 @@ ipc_port_free(ipc_port_t port)
 }
 
 int
-ipc_port_receive(ipc_port_t port, struct ipc_header *ipch)
+ipc_port_receive(ipc_port_t port, struct ipc_header *ipch, vaddr_t *pagep)
 {
 	struct ipc_message *ipcmsg;
 	struct ipc_port *ipcp;
 
 	ASSERT(ipch != NULL, "Must be able to copy out header.");
+
+	if (pagep != NULL)
+		return (ERROR_UNIMPLEMENTED);
 
 	IPC_PORTS_LOCK();
 	ipcp = ipc_port_lookup(port);

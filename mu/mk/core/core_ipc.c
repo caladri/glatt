@@ -7,6 +7,7 @@
 #include <core/pool.h>
 #include <core/startup.h>
 #include <core/thread.h>
+#include <vm/page.h>
 
 struct ipc_port {
 	struct mutex ipcp_mutex;
@@ -58,13 +59,9 @@ ipc_send(struct ipc_header *ipch, vaddr_t *pagep)
 	struct ipc_port *ipcp;
 
 	ASSERT(ipch != NULL, "Must have a header.");
-	ASSERT(ipch->ipchdr_len == 0, "Must have no data.");
 
 	if (pagep != NULL)
-		return (ERROR_UNIMPLEMENTED);
-
-	if (!PAGE_ALIGNED(page))
-		return (ERROR_INVALID);
+		return (ERROR_NOT_IMPLEMENTED);
 
 	IPC_PORTS_LOCK();
 	ipcp = ipc_port_lookup(ipch->ipchdr_src);
@@ -134,7 +131,7 @@ ipc_port_receive(ipc_port_t port, struct ipc_header *ipch, vaddr_t *pagep)
 	ASSERT(ipch != NULL, "Must be able to copy out header.");
 
 	if (pagep != NULL)
-		return (ERROR_UNIMPLEMENTED);
+		return (ERROR_NOT_IMPLEMENTED);
 
 	IPC_PORTS_LOCK();
 	ipcp = ipc_port_lookup(port);

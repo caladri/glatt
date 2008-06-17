@@ -4,8 +4,9 @@
 #ifdef DB
 #include <db/db_show.h>
 #endif
-#include <vm/page.h>
+#include <vm/alloc.h>
 #include <vm/index.h>
+#include <vm/page.h>
 #include <vm/vm.h>
 
 #ifdef DB
@@ -37,6 +38,38 @@ vm_init(void)
 	 * Bring up PMAP.
 	 */
 	pmap_bootstrap();
+}
+
+int
+vm_page_copy(struct vm *vms, vaddr_t src, struct vm *vmd, vaddr_t *dstp)
+{
+	vaddr_t dst;
+	int error, error2;
+
+	if (dstp != NULL)
+		return (ERROR_INVALID);
+
+	if (vms == &kernel_vm || vmd == &kernel_vm)
+		return (ERROR_NOT_PERMITTED);
+
+	if (vms == vmd) {
+		*dstp = src;
+		return (0);
+	}
+
+	error = vm_alloc_page(vmd, &dst);
+	if (error != 0)
+		return (error);
+
+	error = page_copy(vms, src, vmd, dst);
+	if (error != 0) {
+		error2 = vm_free_page(vmd, dst);
+		if (error2 != 0)
+			panic("%s: vm_free_page failed: %m", __func__, error);
+		return (error);
+	}
+
+	return (0);
 }
 
 int

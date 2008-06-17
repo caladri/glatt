@@ -85,6 +85,34 @@ pmap_bootstrap(void)
 		panic("%s: pmap_init failed: %m", __func__, error);
 }
 
+/*
+ * XXX We are writing behind a vaddr, update cache?
+ */
+void
+pmap_copy(struct vm_page *spage, struct vm_page *dpage)
+{
+	vaddr_t src, dst;
+	int error;
+
+	error = pmap_map_direct(&kernel_vm, page_address(spage), &src);
+	if (error != 0)
+		panic("%s: pmap_map_direct failed: %m", __func__, error);
+
+	error = pmap_map_direct(&kernel_vm, page_address(dpage), &dst);
+	if (error != 0)
+		panic("%s: pmap_map_direct failed: %m", __func__, error);
+
+	memcpy((void *)dst, (const void *)src, PAGE_SIZE);
+
+	error = pmap_unmap_direct(&kernel_vm, src);
+	if (error != 0)
+		panic("%s: pmap_unmap_direct failed: %m", __func__, error);
+
+	error = pmap_unmap_direct(&kernel_vm, dst);
+	if (error != 0)
+		panic("%s: pmap_unmap_direct failed: %m", __func__, error);
+}
+
 int
 pmap_extract(struct vm *vm, vaddr_t vaddr, paddr_t *paddrp)
 {

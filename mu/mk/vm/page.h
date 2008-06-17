@@ -31,6 +31,7 @@ void page_init(void);
 paddr_t page_address(struct vm_page *);
 int page_alloc(struct vm *, unsigned, struct vm_page **);
 int page_alloc_direct(struct vm *, unsigned, vaddr_t *);
+int page_copy(struct vm *, vaddr_t, struct vm *, vaddr_t);
 int page_extract(struct vm *, vaddr_t, struct vm_page **);
 int page_free_direct(struct vm *, vaddr_t);
 int page_insert_pages(paddr_t, size_t);

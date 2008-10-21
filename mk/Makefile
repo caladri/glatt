@@ -7,7 +7,7 @@ CONFIG?=std+pci+gt
 .else
 .error "Unknown platform."
 .endif
-BUILDDIR=obj.${PLATFORM}.${CONFIG}
+BUILDDIR?=obj.${PLATFORM}.${CONFIG}
 
 config:
 	@rm -rf ${BUILDDIR}

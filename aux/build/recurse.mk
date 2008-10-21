@@ -9,10 +9,6 @@
 .endif
 
 .for _dir in ${SUBDIRS}
-_path:=${.CURDIR}/${_dir}
-.if !exists(${_path})
-.error "Sub-directory must exist: ${_dir}"
-.endif
 ${.TARGETS}::
-	${GO_MAKE:S,DST,${_path},:S,TGT,${.TARGET},}
+	${GO_MAKE:S,DST,${.CURDIR}/${_dir},:S,TGT,${.TARGET},}
 .endfor

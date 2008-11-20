@@ -39,9 +39,9 @@ KERNEL_SIMFLAGS+=-I ${KERNEL_SIMCLOCKHZ}
 .for simdisk in ${KERNEL_SIMDISKS}
 KERNEL_SIMFLAGS+=-d ${simdisk}
 .endfor
-.if defined(DISPLAY)
-KERNEL_SIMFLAGS+=-X
-.endif
+#.if defined(DISPLAY)
+#KERNEL_SIMFLAGS+=-X
+#.endif
 .if defined(KERNEL_SIMVERBOSE)
 KERNEL_SIMFLAGS+=-v
 .else

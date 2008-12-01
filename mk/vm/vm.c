@@ -65,7 +65,7 @@ vm_page_copy(struct vm *vms, vaddr_t src, struct vm *vmd, vaddr_t *dstp)
 	if (error != 0) {
 		error2 = vm_free_page(vmd, dst);
 		if (error2 != 0)
-			panic("%s: vm_free_page failed: %m", __func__, error);
+			panic("%s: vm_free_page failed: %m", __func__, error2);
 		return (error);
 	}
 

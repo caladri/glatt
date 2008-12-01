@@ -17,6 +17,11 @@ typedef	unsigned long		uint64_t;
 typedef	int64_t			intptr_t;
 typedef	uint64_t		uintptr_t;
 
+	/* C99 integer types otherwise.  */
+
+typedef	signed long		intmax_t;
+typedef	unsigned long		uintmax_t;
+
 #include <platform/types.h>
 
 #endif /* !_CPU_TYPES_H_ */

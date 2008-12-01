@@ -8,6 +8,7 @@ PATH:=		${PATH}:${TOOLCHAIN_ROOT}/bin
 
 all::
 	@echo '>>> Top-level Glatt build system.'
+	@echo '>>> If a file named config.mk exists, it will be included.'
 
 ###
 # mk section
@@ -33,7 +34,7 @@ mk-config-help:
 	@echo '    PLATFORM     Platform to build for, e.g.'
 	@echo '                 PLATFORM=testmips'
 mk-config:
-	${GO_MAKE:S,DST,mk,:S,TGT,config,} ${MK_FLAGS}
+	@${GO_MAKE:S,DST,mk,:S,TGT,config,} ${MK_FLAGS}
 
 TARGETS+=mk-build
 mk-build-help:
@@ -43,7 +44,32 @@ mk-build-help:
 	@echo '    MK_OBJ       Directory to build in, e.g.'
 	@echo '                 MK_OBJ=/usr/obj/mk.testmips'
 mk-build:
-	${GO_MAKE:S,DST,${MK_OBJ},:S,TGT,kernel,} ${MK_FLAGS}
+	@if [ -e ${MK_OBJ}/Makefile ]; then				\
+		${GO_MAKE:S,DST,${MK_OBJ},:S,TGT,kernel,} ${MK_FLAGS} ;	\
+	else								\
+		echo '>>> Please run '${MAKE}' mk-config first.' ;	\
+	fi
+
+TARGETS+=mk-options
+mk-options-help:
+	@echo 'Shows available configuration options for the microkernel.'
+	@echo 'usage: '${MAKE}' mk-options'
+mk-options:
+	@${GO_MAKE:S,DST,mk,:S,TGT,options,} ${MK_FLAGS}
+
+TARGETS+=mk-simulate
+mk-simulate-help:
+	@echo 'Performs a simulation of the microkernel in its build directory.'
+	@echo 'usage: '${MAKE}' mk-simulate'
+	@echo 'variables:'
+	@echo '    MK_OBJ       Directory to build in, e.g.'
+	@echo '                 MK_OBJ=/usr/obj/mk.testmips'
+mk-simulate:
+	@if [ -e ${MK_OBJ}/Makefile ]; then				\
+		${GO_MAKE:S,DST,${MK_OBJ},:S,TGT,simulate,} ${MK_FLAGS} ;\
+	else								\
+		echo '>>> Please run '${MAKE}' mk-config first.' ;	\
+	fi
 
 .PHONY: mk
 TARGETS+=mk
@@ -62,7 +88,7 @@ toolchain-help:
 	@echo 'usage: '${MAKE}' toolchain'
 toolchain:
 	@mkdir -p ${TOOLCHAIN_ROOT}
-	${GO_MAKE:S,DST,aux/toolchain,:S,TGT,install,} PREFIX=${TOOLCHAIN_ROOT}
-	${GO_MAKE:S,DST,aux/toolchain,:S,TGT,clean,}
+	@${GO_MAKE:S,DST,aux/toolchain,:S,TGT,install,} PREFIX=${TOOLCHAIN_ROOT}
+	@${GO_MAKE:S,DST,aux/toolchain,:S,TGT,clean,}
 
 .include "${GLATT_SRC}/aux/build/root.mk"

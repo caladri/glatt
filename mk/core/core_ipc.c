@@ -95,8 +95,7 @@ ipc_port_allocate(ipc_port_t *portp)
 	for (;;) {
 		IPC_PORTS_LOCK();
 		for (;;) {
-			if (ipc_port_next < IPC_PORT_UNRESERVED_START ||
-			    ipc_port_next >= IPC_PORT_UNRESERVED_END) {
+			if (ipc_port_next < IPC_PORT_UNRESERVED_START) {
 				ipc_port_next = IPC_PORT_UNRESERVED_START;
 				continue;
 			}
@@ -114,6 +113,21 @@ ipc_port_allocate(ipc_port_t *portp)
 		*portp = port;
 		return (0);
 	}
+}
+
+int
+ipc_port_allocate_reserved(ipc_port_t *portp, ipc_port_t port)
+{
+	struct ipc_port *ipcp;
+
+	if (port == IPC_PORT_UNKNOWN || port >= IPC_PORT_UNRESERVED_START)
+		return (ERROR_INVALID);
+
+	ipcp = ipc_port_alloc(port);
+	if (ipcp == NULL)
+		return (ERROR_NOT_FREE);
+	*portp = port;
+	return (0);
 }
 
 void

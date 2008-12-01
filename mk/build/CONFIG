@@ -1,4 +1,7 @@
 std		implies: ipc
+ipc		implies: ns
+fs		requires: ns
+ns		requires: ipc
 
 std		core/core_assert.c
 std		core/core_cv.c
@@ -29,6 +32,8 @@ db		db/db.c
 db		db/db_misc.c
 db		db/db_show.c
 
+fs		fs/fs.c
+
 std		io/console/console.c
 framebuffer	io/console/framebuffer.c
 framebuffer	io/console/framebuffer_font.c
@@ -43,6 +48,8 @@ network		io/network/network_interface.c
 
 pci		io/pci/pci.c
 pci		io/pci/pcidev.c
+
+ns		ns/ns.c
 
 std		vm/vm.c
 std		vm/vm_alloc.c

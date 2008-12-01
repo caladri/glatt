@@ -10,6 +10,7 @@ enum startup_component {
 	STARTUP_ROOT,			/* Attach root device.  */
 	STARTUP_DRIVERS,		/* Register device drivers.  */
 	STARTUP_MP,			/* Start up multiprocessor.  */
+	STARTUP_SERVERS,		/* Built-in servers.  */
 	STARTUP_MAIN,			/* Enter main loop.  */
 };
 

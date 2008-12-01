@@ -36,6 +36,8 @@ static struct spinlock page_queue_lock;
 
 static void page_insert(struct vm_page *, paddr_t);
 static int page_lookup(paddr_t, struct vm_page **);
+static char page_lookup_cmp(paddr_t, struct vm_page_tree_page *,
+			    struct vm_page **);
 static int page_map_direct(struct vm *, struct vm_page *, vaddr_t *);
 static void page_ref_drop(struct vm_page *);
 static void page_ref_hold(struct vm_page *);
@@ -324,9 +326,50 @@ page_insert(struct vm_page *page, paddr_t paddr)
 static int
 page_lookup(paddr_t paddr, struct vm_page **pagep)
 {
+	struct vm_page_tree_page *ptp, *iter;
+
 	ASSERT(PAGE_ALIGNED(paddr), "must be a page address");
 
-	panic("%s: not yet implemented.", __func__);
+	BTREE_FIND(&ptp, iter, page_tree, ptp_tree.pt_tree,
+		   page_lookup_cmp(paddr, iter, pagep) == '<',
+		   page_lookup_cmp(paddr, iter, pagep) == '=');
+
+	if (ptp == NULL)
+		return (ERROR_NOT_FOUND);
+	return (0);
+}
+
+static char
+page_lookup_cmp(paddr_t paddr, struct vm_page_tree_page *ptp,
+		struct vm_page **pagep)
+{
+	unsigned entry;
+	paddr_t base;
+
+	base = page_address(&ptp->ptp_entries[0]);
+
+	if (paddr < base)
+		return ('<');
+
+	entry = ADDR_TO_PAGE(paddr - base);
+
+	/*
+	 * XXX
+	 * This does not handle the case where paddr could be validly
+	 * represented in two (or more) different page tree pages due to
+	 * page_insert_pages being called for nearby areas multiple times.
+	 *
+	 * The correct way to handle it, of course, is to never let that sort
+	 * of thing happen and to fix page_insert_pages to always insert into
+	 * an existing page tree page that covers an address space if there is
+	 * one.  Luckily, this can be done with our new page_lookup.  Right?
+	 */
+	if (entry < VM_PAGE_TREE_ENTRIES) {
+		*pagep = &ptp->ptp_entries[entry];
+		return ('=');
+	}
+
+	return ('>');
 }
 
 static int

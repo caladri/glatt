@@ -9,5 +9,5 @@ SHARED_VARS+=	PATH
 _SHARED_VARS+=${_var}="${${_var}}"
 .endfor
 
-GO_MAKE=	@echo '>>> Entering DST.  Running '${MAKE}' 'TGT'.' &&	\
+GO_MAKE=	echo '>>> Entering DST.  Running '${MAKE}' 'TGT'.' &&	\
 			cd DST && ${MAKE} ${_SHARED_VARS} TGT

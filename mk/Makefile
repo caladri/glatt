@@ -14,3 +14,6 @@ config:
 	@mkdir -p ${BUILDDIR}
 	@(cd ${BUILDDIR} && mu-config ${KERNEL_ROOT} ${PLATFORM} ${CONFIG})
 	@echo 'Build directory has been set up:' ${BUILDDIR}
+
+options:
+	mu-config -s ${KERNEL_ROOT} ${PLATFORM}

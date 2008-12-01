@@ -50,6 +50,7 @@ pci		io/pci/pci.c
 pci		io/pci/pcidev.c
 
 ns		ns/ns.c
+ns		ns/service_directory.c
 
 std		vm/vm.c
 std		vm/vm_alloc.c

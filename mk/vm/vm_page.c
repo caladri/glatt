@@ -296,16 +296,11 @@ page_release(struct vm *vm, struct vm_page *page)
 }
 
 int
-page_unmap(struct vm *vm, vaddr_t vaddr)
+page_unmap(struct vm *vm, vaddr_t vaddr, struct vm_page *page)
 {
-	struct vm_page *page;
 	int error;
 
 	ASSERT(PAGE_ALIGNED(vaddr), "must be a page address");
-
-	error = page_extract(vm, vaddr, &page);
-	if (error != 0)
-		return (error);
 
 	error = pmap_unmap(vm, vaddr);
 	if (error != 0)

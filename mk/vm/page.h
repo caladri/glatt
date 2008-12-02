@@ -37,6 +37,6 @@ int page_free_direct(struct vm *, vaddr_t);
 int page_insert_pages(paddr_t, size_t);
 int page_map(struct vm *, vaddr_t, struct vm_page *);
 int page_release(struct vm *, struct vm_page *);
-int page_unmap(struct vm *, vaddr_t);
+int page_unmap(struct vm *, vaddr_t, struct vm_page *);
 
 #endif /* !_VM_PAGE_H_ */

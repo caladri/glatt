@@ -3,6 +3,10 @@ cpu		mips
 std		mutually-excludes: mp
 std		implies: little_endian
 
+# Some sane defaults
+std		implies: pci
+std		implies: gt
+
 std		platform/malta/device/malta_console.c
 
 gt		requires: pci

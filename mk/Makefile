@@ -1,13 +1,10 @@
-PLATFORM?=testmips
-KERNEL_ROOT=${.CURDIR}
-.if ${PLATFORM} == "testmips"
-CONFIG?=std
-.elif ${PLATFORM} == "malta"
-CONFIG?=std+pci+gt
-.else
-.error "Unknown platform."
+.if !defined(PLATFORM) || !defined(CONFIG)
+.error "Must define PLATFORM and CONFIG.  Try using the top-level Makefile."
 .endif
+
 BUILDDIR?=obj.${PLATFORM}.${CONFIG}
+
+KERNEL_ROOT?=${.CURDIR}
 
 config:
 	@rm -rf ${BUILDDIR}

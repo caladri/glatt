@@ -13,9 +13,8 @@ all::
 ###
 # mk section
 ###
-.if defined(MK_CONFIG)
+MK_CONFIG?=std
 MK_FLAGS+=CONFIG="${MK_CONFIG}"
-.endif
 MK_OBJ?=${.OBJDIR}/mk.obj
 MK_FLAGS+=BUILDDIR="${MK_OBJ}"
 .if defined(PLATFORM)

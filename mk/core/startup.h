@@ -26,7 +26,7 @@ struct startup_item {
 	void *si_arg;
 	enum startup_component si_component;
 	enum startup_order si_order;
-	BTREE(struct startup_item) si_tree;
+	BTREE_NODE(struct startup_item) si_tree;
 };
 
 #define	STARTUP_ITEM(name, component, order, func, arg)			\

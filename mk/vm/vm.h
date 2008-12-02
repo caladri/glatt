@@ -1,6 +1,7 @@
 #ifndef	_VM_VM_H_
 #define	_VM_VM_H_
 
+#include <core/btree.h>
 #include <core/queue.h>
 #include <core/spinlock.h>
 #ifdef DB
@@ -19,7 +20,7 @@ DB_SHOW_TREE_DECLARE(vm_index);
 struct vm {
 	struct spinlock vm_lock;
 	struct pmap *vm_pmap;
-	struct vm_index *vm_index;
+	BTREE_ROOT(struct vm_index) vm_index;
 	TAILQ_HEAD(, struct vm_index) vm_index_free;
 };
 #define	VM_LOCK(vm)	spinlock_lock(&(vm)->vm_lock)

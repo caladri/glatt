@@ -18,7 +18,7 @@ DB_SHOW_VALUE_TREE(page, vm, DB_SHOW_TREE_POINTER(vm_page));
 #endif
 
 struct vm_page_tree {
-	BTREE(struct vm_page_tree_page) pt_tree;
+	BTREE_NODE(struct vm_page_tree_page) pt_tree;
 };
 
 #define	VM_PAGE_TREE_ENTRIES	((PAGE_SIZE - sizeof (struct vm_page_tree)) / \
@@ -30,7 +30,7 @@ struct vm_page_tree_page {
 
 COMPILE_TIME_ASSERT(sizeof (struct vm_page_tree_page) <= PAGE_SIZE);
 
-static struct vm_page_tree_page *page_tree;
+static BTREE_ROOT(struct vm_page_tree_page) page_tree;
 static struct vm_pageq page_free_queue, page_use_queue;
 static struct spinlock page_tree_lock;
 static struct spinlock page_queue_lock;
@@ -328,7 +328,7 @@ page_lookup(paddr_t paddr, struct vm_page **pagep)
 
 	ASSERT(PAGE_ALIGNED(paddr), "must be a page address");
 
-	BTREE_FIND(&ptp, iter, page_tree, ptp_tree.pt_tree,
+	BTREE_FIND(&ptp, iter, &page_tree, ptp_tree.pt_tree,
 		   page_lookup_cmp(paddr, iter, pagep) == '<',
 		   page_lookup_cmp(paddr, iter, pagep) == '=');
 

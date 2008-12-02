@@ -124,7 +124,8 @@ startup_bootstrap(void)
 static void
 startup_boot_thread(void *arg)
 {
-	static struct startup_item *sorted_items = NULL;
+	static BTREE_ROOT(struct startup_item) sorted_items =
+		BTREE_ROOT_INITIALIZER();
 	struct startup_item **itemp, *item, *iter;
 
 #ifdef	VERBOSE
@@ -145,7 +146,7 @@ startup_boot_thread(void *arg)
 	/*
 	 * Don't let other threads run until we're done starting up.
 	 */
-	BTREE_FOREACH(item, sorted_items, si_tree,
+	BTREE_FOREACH(item, &sorted_items, si_tree,
 		      (item->si_function(item->si_arg)));
 	NOTREACHED();
 }

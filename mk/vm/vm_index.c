@@ -179,7 +179,8 @@ vm_find_index(struct vm *vm, vaddr_t vaddr)
 	struct vm_index *vmi;
 
 	VM_LOCK(vm);
-	BTREE_FIND(&vmi, iter, vm->vm_index, vmi_tree, (vaddr < iter->vmi_base),
+	BTREE_FIND(&vmi, iter, &vm->vm_index, vmi_tree,
+		   (vaddr < iter->vmi_base),
 		   ((vaddr == iter->vmi_base) ||
 		    (vaddr > iter->vmi_base &&
 		     vaddr < (iter->vmi_base + PAGE_TO_ADDR(iter->vmi_size)))));
@@ -268,7 +269,7 @@ db_vm_index_dump_vm(struct vm *vm, void (*function)(struct vm_index *))
 {
 	struct vm_index *vmi;
 
-	BTREE_FOREACH(vmi, vm->vm_index, vmi_tree, (function(vmi)));
+	BTREE_FOREACH(vmi, &vm->vm_index, vmi_tree, (function(vmi)));
 }
 
 static void

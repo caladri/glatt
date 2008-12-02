@@ -86,7 +86,7 @@ vm_setup(struct vm **vmp, vaddr_t base, vaddr_t end)
 	spinlock_init(&vm->vm_lock, "VM lock", SPINLOCK_FLAG_DEFAULT | SPINLOCK_FLAG_RECURSE);
 	VM_LOCK(vm);
 	vm->vm_pmap = NULL;
-	vm->vm_index = NULL;
+	BTREE_INIT_ROOT(&vm->vm_index);
 	TAILQ_INIT(&vm->vm_index_free);
 	error = pmap_init(vm, base, end);
 	if (error != 0) {

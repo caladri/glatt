@@ -9,7 +9,7 @@ struct vm_index {
 	vaddr_t vmi_base;
 	size_t vmi_size;
 	unsigned vmi_flags;
-	BTREE(struct vm_index) vmi_tree;
+	BTREE_NODE(struct vm_index) vmi_tree;
 	TAILQ_ENTRY(struct vm_index) vmi_free_link;
 };
 #define	VM_INDEX_FLAG_DEFAULT	(0x00000000)

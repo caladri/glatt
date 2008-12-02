@@ -1,18 +1,28 @@
 #ifndef	_CORE_BTREE_H_
 #define	_CORE_BTREE_H_
 
-#define	BTREE(type)							\
+#define	BTREE_NODE(type)						\
 	struct {							\
 		type *left;						\
 		type *right;						\
 		type *parent;						\
 	}
 
-#define	BTREE_INIT(tree)						\
+#define	BTREE_ROOT(type)						\
+	struct {							\
+		type *child;						\
+	}
+
+#define	BTREE_INIT(node)						\
 	do {								\
-		(tree)->left = NULL;					\
-		(tree)->right = NULL;					\
-		(tree)->parent = NULL;					\
+		(node)->left = NULL;					\
+		(node)->right = NULL;					\
+		(node)->parent = NULL;					\
+	} while (0)
+
+#define	BTREE_INIT_ROOT(root)						\
+	do {								\
+		(root)->child = NULL;					\
 	} while (0)
 
 #define	BTREE_INITIALIZER()						\
@@ -22,9 +32,14 @@
 		.parent = NULL,						\
 	}
 
+#define	BTREE_ROOT_INITIALIZER()					\
+	{								\
+		.child = NULL,						\
+	}
+
 #define	BTREE_FIND(hitp, iter, tree, field, cmp, match)			\
 	do {								\
-		if (((iter) = (tree)) == NULL) {			\
+		if (((iter) = (tree)->child) == NULL) {			\
 			*(hitp) = NULL;					\
 			break;						\
 		}							\
@@ -60,10 +75,10 @@
 		}							\
 	} while (0)
 
-#define	BTREE_INSERT(var, iter, treep, field, cmp)			\
+#define	BTREE_INSERT(var, iter, tree, field, cmp)			\
 	do {								\
-		if (((iter) = *(treep)) == NULL) {			\
-			*(treep) = (var);				\
+		if (((iter) = (tree)->child) == NULL) {			\
+			(tree)->child = (var);				\
 			(var)->field.parent = (iter);			\
 			break;						\
 		}							\
@@ -87,22 +102,27 @@
 		}							\
 	} while (0)
 
-#define	BTREE_MIN(var, tree, field)					\
+#define	BTREE_MIN_SUB(var, node, field)					\
 	do {								\
-		if ((tree) == NULL) {					\
+		if ((node) == NULL) {					\
 			(var) = NULL;					\
 			break;						\
 		}							\
-		for ((var) = (tree);					\
+		for ((var) = (node);					\
 		     (var)->field.left != NULL;				\
 		     (var) = (var)->field.left)				\
 			continue;					\
 	} while (0)
 
+#define	BTREE_MIN(var, tree, field)					\
+	do {								\
+		BTREE_MIN_SUB((var), (tree)->child, field);		\
+	} while (0)
+
 #define	BTREE_NEXT(var, field)						\
 	do {								\
 		if ((var)->field.right != NULL) {			\
-			BTREE_MIN((var), (var)->field.right, field);	\
+			BTREE_MIN_SUB((var), (var)->field.right, field);\
 			break;						\
 		}							\
 		for (;;) {						\

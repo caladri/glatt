@@ -177,6 +177,8 @@ page_extract(struct vm *vm, vaddr_t vaddr, struct vm_page **pagep)
 	if (error != 0)
 		return (error);
 
+	*pagep = page;
+
 	return (0);
 }
 

@@ -2,9 +2,10 @@
 #include <cpu/context.h>
 #include <cpu/frame.h>
 #include <cpu/register.h>
+#include <cpu/page.h>
 #include <cpu/pcpu.h>
+#include <cpu/pte.h>
 #include <cpu/tlb.h>
-#include <page/page_map.h>
 
 	/* CONTEXT offsets.  */
 DEFINE(CONTEXT_S0,	offsetof(struct context,	c_regs[CONTEXT_S0]));

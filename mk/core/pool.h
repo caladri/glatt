@@ -3,7 +3,6 @@
 
 #include <core/queue.h>
 #include <core/spinlock.h>
-#include <vm/types.h>
 
 struct pool_page;
 

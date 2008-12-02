@@ -2,6 +2,7 @@
 #include <core/error.h>
 #include <core/startup.h>
 #include <cpu/memory.h>
+#include <cpu/pmap.h>
 #include <io/console/console.h>
 #include <io/console/consoledev.h>
 #include <vm/page.h>

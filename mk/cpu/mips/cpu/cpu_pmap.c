@@ -5,11 +5,12 @@
 #include <core/string.h>
 #include <cpu/memory.h>
 #include <cpu/pcpu.h>
+#include <cpu/pmap.h>
+#include <cpu/pte.h>
 #include <cpu/tlb.h>
 #ifdef VERBOSE
 #include <io/console/console.h>
 #endif
-#include <page/page_map.h>
 #include <vm/index.h>
 #include <vm/page.h>
 #include <vm/vm.h>

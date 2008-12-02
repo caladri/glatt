@@ -22,6 +22,11 @@ typedef	uint64_t		uintptr_t;
 typedef	signed long		intmax_t;
 typedef	unsigned long		uintmax_t;
 
+	/* Virtual memory subsystem.  */
+
+typedef	uint64_t	paddr_t;
+typedef	uint64_t	vaddr_t;
+
 #include <platform/types.h>
 
 #endif /* !_CPU_TYPES_H_ */

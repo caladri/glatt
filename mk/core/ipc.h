@@ -1,8 +1,6 @@
 #ifndef	_CORE_IPC_H_
 #define	_CORE_IPC_H_
 
-#include <vm/types.h>
-
 typedef	uint64_t	ipc_port_t;
 typedef	int64_t		ipc_msg_t;
 typedef	uint64_t	ipc_size_t;

@@ -2,6 +2,7 @@
 #include <core/btree.h>
 #include <core/error.h>
 #include <core/string.h>
+#include <cpu/pmap.h>
 #ifdef DB
 #include <db/db_show.h>
 #endif

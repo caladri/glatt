@@ -1,8 +1,6 @@
 #ifndef	_CPU_TLB_H_
 #define	_CPU_TLB_H_
 
-#include <vm/types.h>
-
 struct pmap;
 
 /*

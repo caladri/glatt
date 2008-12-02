@@ -7,13 +7,12 @@
 #include <cpu/cpuinfo.h>
 #include <cpu/memory.h>
 #include <cpu/pcpu.h>
+#include <cpu/pte.h>
 #include <cpu/tlb.h>
 #ifdef DB
 #include <db/db_show.h>
 #endif
 #include <io/console/console.h>
-#include <page/page_map.h>
-#include <page/page_table.h>
 #include <vm/page.h>
 #include <vm/vm.h>
 

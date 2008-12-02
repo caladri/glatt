@@ -1,6 +1,7 @@
 #include <core/types.h>
 #include <core/error.h>
 #include <core/pool.h>
+#include <cpu/pmap.h>
 #ifdef DB
 #include <db/db_show.h>
 #endif

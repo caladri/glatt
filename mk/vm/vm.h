@@ -6,7 +6,6 @@
 #ifdef DB
 #include <db/db_show.h>
 #endif
-#include <vm/types.h>
 
 struct pmap;
 struct vm_index;

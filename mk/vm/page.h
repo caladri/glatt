@@ -2,7 +2,7 @@
 #define	_VM_PAGE_H_
 
 #include <core/queue.h>
-#include <page/page.h>
+#include <cpu/page.h>
 
 struct vm;
 struct vm_page;

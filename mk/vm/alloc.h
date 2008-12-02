@@ -1,7 +1,7 @@
 #ifndef	_VM_ALLOC_H_
 #define	_VM_ALLOC_H_
 
-#include <vm/types.h>
+struct vm;
 
 	/* Virtual memory allocator.  */
 int vm_alloc(struct vm *, size_t, vaddr_t *);

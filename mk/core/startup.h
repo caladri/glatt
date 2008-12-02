@@ -1,7 +1,7 @@
 #ifndef	_CORE_STARTUP_H_
 #define	_CORE_STARTUP_H_
 
-#include <core/queue.h>
+#include <core/btree.h>
 #include <cpu/startup.h>
 
 enum startup_component {
@@ -26,7 +26,7 @@ struct startup_item {
 	void *si_arg;
 	enum startup_component si_component;
 	enum startup_order si_order;
-	TAILQ_ENTRY(struct startup_item) si_link;
+	BTREE(struct startup_item) si_tree;
 };
 
 #define	STARTUP_ITEM(name, component, order, func, arg)			\
@@ -36,6 +36,7 @@ struct startup_item {
 		.si_arg = arg,						\
 		.si_component = component,				\
 		.si_order = order,					\
+		.si_tree = BTREE_INITIALIZER(),				\
 	};								\
 	SET_ADD(startup_items, startup_item_ ## name)
 

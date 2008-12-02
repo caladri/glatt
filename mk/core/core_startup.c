@@ -124,15 +124,12 @@ startup_bootstrap(void)
 static void
 startup_boot_thread(void *arg)
 {
-	struct startup_item **itemp, *item, *ip;
-	static TAILQ_HEAD(, struct startup_item) sorted_items;
-
-	TAILQ_INIT(&sorted_items);
+	static struct startup_item *sorted_items = NULL;
+	struct startup_item **itemp, *item, *iter;
 
 #ifdef	VERBOSE
 	kcprintf("STARTUP: The system is coming up.\n");
 #endif
-
 	spinlock_lock(&startup_lock);
 	for (itemp = SET_BEGIN(startup_items); itemp < SET_END(startup_items);
 	     itemp++) {
@@ -141,27 +138,15 @@ startup_boot_thread(void *arg)
 		(((a)->si_component < (b)->si_component) ||		\
 		 (((a)->si_component == (b)->si_component) &&		\
 		  ((a)->si_order < (b)->si_order)))
-		if (TAILQ_EMPTY(&sorted_items) ||
-		    LESS_THAN(item, TAILQ_FIRST(&sorted_items))) {
-			TAILQ_INSERT_HEAD(&sorted_items, item, si_link);
-		} else {
-			TAILQ_FOREACH(ip, &sorted_items, si_link) {
-				if (LESS_THAN(item, ip)) {
-					TAILQ_INSERT_BEFORE(ip, item, si_link);
-					goto next;
-				}
-			}
-			TAILQ_INSERT_TAIL(&sorted_items, item, si_link);
-		}
-#undef LESS_THAN
-next:		continue;
+		BTREE_INSERT(item, iter, &sorted_items, si_tree,
+			     (LESS_THAN(item, iter)));
 	}
 
 	/*
 	 * Don't let other threads run until we're done starting up.
 	 */
-	TAILQ_FOREACH(item, &sorted_items, si_link)
-		item->si_function(item->si_arg);
+	BTREE_FOREACH(item, sorted_items, si_tree,
+		      (item->si_function(item->si_arg)));
 	NOTREACHED();
 }
 

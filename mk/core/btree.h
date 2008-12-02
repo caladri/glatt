@@ -15,6 +15,13 @@
 		(tree)->parent = NULL;					\
 	} while (0)
 
+#define	BTREE_INITIALIZER()						\
+	{								\
+		.left = NULL,						\
+		.right = NULL,						\
+		.parent = NULL,						\
+	}
+
 #define	BTREE_FIND(hitp, iter, tree, field, cmp, match)			\
 	do {								\
 		if (((iter) = (tree)) == NULL) {			\
@@ -48,7 +55,7 @@
 		BTREE_MIN((var), (tree), field);			\
 									\
 		while ((var) != NULL) {					\
-			method((var));					\
+			method;						\
 			BTREE_NEXT((var), field);			\
 		}							\
 	} while (0)

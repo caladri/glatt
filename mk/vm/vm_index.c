@@ -268,7 +268,7 @@ db_vm_index_dump_vm(struct vm *vm, void (*function)(struct vm_index *))
 {
 	struct vm_index *vmi;
 
-	BTREE_FOREACH(vmi, vm->vm_index, vmi_tree, function);
+	BTREE_FOREACH(vmi, vm->vm_index, vmi_tree, (function(vmi)));
 }
 
 static void

@@ -23,6 +23,32 @@ fs_main(void *arg)
 	struct ipc_header ipch;
 	int error;
 
+	/* Register with the NS.  */
+	ipch.ipchdr_src = fs_port;
+	ipch.ipchdr_dst = IPC_PORT_NS;
+	ipch.ipchdr_msg = NS_MESSAGE_REGISTER;
+
+	error = ipc_send(&ipch, NULL);
+	if (error != 0)
+		panic("%s: ipc_send failed: %m", __func__, error);
+
+	for (;;) {
+		kcprintf("fs: waiting for registration with ns...\n");
+
+		ipc_port_wait(fs_port);
+
+		error = ipc_port_receive(fs_port, &ipch, NULL);
+		if (error != 0) {
+			if (error == ERROR_AGAIN)
+				continue;
+		}
+
+		kcprintf("fs: %lx -> %lx : %lx\n", ipch.ipchdr_src,
+			 ipch.ipchdr_dst, ipch.ipchdr_msg);
+	}
+
+	/* Receive real requests and responses.  */
+
 	for (;;) {
 		kcprintf("fs: waiting...\n");
 
@@ -37,7 +63,7 @@ fs_main(void *arg)
 		}
 
 		kcprintf("fs: %lx -> %lx : %lx\n", ipch.ipchdr_src,
-			 ipch.ipchdr_dst, ipch.ipchdr_type);
+			 ipch.ipchdr_dst, ipch.ipchdr_msg);
 	}
 }
 

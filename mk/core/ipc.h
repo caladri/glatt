@@ -14,7 +14,7 @@ typedef	uint64_t	ipc_size_t;
 struct ipc_header {
 	ipc_port_t ipchdr_src;
 	ipc_port_t ipchdr_dst;
-	ipc_msg_t ipchdr_type;
+	ipc_msg_t ipchdr_msg;
 };
 
 void ipc_init(void);

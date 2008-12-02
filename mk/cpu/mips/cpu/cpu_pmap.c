@@ -32,6 +32,33 @@ COMPILE_TIME_ASSERT(sizeof (struct pmap_lev0) == PAGE_SIZE);
  */
 COMPILE_TIME_ASSERT(sizeof (struct pmap) <= PAGE_SIZE);
 
+/*
+ * Page-table indexing inlines.
+ */
+static __inline vaddr_t
+pmap_index_pte(vaddr_t vaddr)
+{
+	return ((vaddr >> PTEL2SHIFT) % NPTEL2);
+}
+
+static __inline vaddr_t
+pmap_index2(vaddr_t vaddr)
+{
+	return ((vaddr >> L2L1SHIFT) % NL2PL1);
+}
+
+static __inline vaddr_t
+pmap_index1(vaddr_t vaddr)
+{
+	return ((vaddr >> L1L0SHIFT) % NL1PL0);
+}
+
+static __inline vaddr_t
+pmap_index0(vaddr_t vaddr)
+{
+	return ((vaddr >> PMAPL0SHIFT) % NL0PMAP);
+}
+
 static void pmap_alloc_asid(struct pmap *);
 static int pmap_alloc_pte(struct pmap *, vaddr_t, pt_entry_t **);
 static void pmap_collect(struct pmap *);

@@ -67,30 +67,6 @@ struct pmap {
 	unsigned pm_asid;
 };
 
-static __inline vaddr_t
-pmap_index_pte(vaddr_t vaddr)
-{
-	return ((vaddr >> PTEL2SHIFT) % NPTEL2);
-}
-
-static __inline vaddr_t
-pmap_index2(vaddr_t vaddr)
-{
-	return ((vaddr >> L2L1SHIFT) % NL2PL1);
-}
-
-static __inline vaddr_t
-pmap_index1(vaddr_t vaddr)
-{
-	return ((vaddr >> L1L0SHIFT) % NL1PL0);
-}
-
-static __inline vaddr_t
-pmap_index0(vaddr_t vaddr)
-{
-	return ((vaddr >> PMAPL0SHIFT) % NL0PMAP);
-}
-
 /*
  * TLB and PTE management.  Most things operate within the context of
  * EntryLo0,1, and begin with TLBLO_.  Things which work with EntryHi

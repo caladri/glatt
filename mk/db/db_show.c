@@ -227,6 +227,9 @@ static void
 db_show_value(struct db_show_value *value)
 {
 	switch (value->sv_type) {
+	case DB_SHOW_TYPE_TREE:
+		kcprintf("%s is a directory.\n", value->sv_name);
+		break;
 	case DB_SHOW_TYPE_VOIDF:
 		value->sv_value.sv_voidf();
 		break;

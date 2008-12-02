@@ -37,7 +37,7 @@ ns_main(void *arg)
 		}
 
 		kcprintf("ns: %lx -> %lx : %lx\n", ipch.ipchdr_src,
-			 ipch.ipchdr_dst, ipch.ipchdr_type);
+			 ipch.ipchdr_dst, ipch.ipchdr_msg);
 	}
 }
 

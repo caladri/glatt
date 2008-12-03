@@ -16,12 +16,20 @@ vm_alloc(struct vm *vm, size_t size, vaddr_t *vaddrp)
 
 	if (size < pool_max_alloc)
 		panic("%s: allocation too small, use pool instead.", __func__);
+
 	pages = ADDR_TO_PAGE(size + (PAGE_SIZE - 1));
+
+#if !defined(VM_ALLOC_NO_DIRECT)
+	if (vm == &kernel_vm && pages == 1) {
+		return (page_alloc_direct(vm, PAGE_FLAG_DEFAULT, vaddrp));
+	}
+#endif
+
 	error = vm_alloc_address(vm, &vaddr, pages);
 	if (error != 0)
 		return (error);
 	for (o = 0; o < pages; o++) {
-		error = page_alloc(vm, PAGE_FLAG_DEFAULT, &page);
+		error = page_alloc(PAGE_FLAG_DEFAULT, &page);
 		if (error != 0) {
 			panic("%s: out of memory.", __func__);
 		}
@@ -52,9 +60,14 @@ vm_free(struct vm *vm, size_t size, vaddr_t vaddr)
 	struct vm_page *page;
 	int error;
 
-	pages = size / PAGE_SIZE;
-	if ((size % PAGE_SIZE) != 0)
-		pages++;
+	pages = ADDR_TO_PAGE(size + (PAGE_SIZE - 1));
+
+#if !defined(VM_ALLOC_NO_DIRECT)
+	if (vm == &kernel_vm && pages == 1) {
+		return (page_free_direct(vm, vaddr));
+	}
+#endif
+
 	for (o = 0; o < pages; o++) {
 		error = page_extract(vm, vaddr + o * PAGE_SIZE, &page);
 		if (error != 0)
@@ -64,7 +77,7 @@ vm_free(struct vm *vm, size_t size, vaddr_t vaddr)
 		if (error != 0)
 			panic("%s: failed to release mapping: %m",
 			      __func__, error);
-		error = page_release(vm, page);
+		error = page_release(page);
 		if (error != 0)
 			panic("%s: failed to release page: %m", __func__,
 			      error);

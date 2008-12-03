@@ -53,8 +53,7 @@ cpu_startup(void)
 	cpu_write_status(KERNEL_STATUS);
 
 	/* Allocate a page for persistent per-CPU data.  */
-	error = page_alloc(&kernel_vm, PAGE_FLAG_DEFAULT | PAGE_FLAG_ZERO,
-			   &pcpu_page);
+	error = page_alloc(PAGE_FLAG_DEFAULT | PAGE_FLAG_ZERO, &pcpu_page);
 	if (error != 0)
 		panic("cpu%u: page allocate failed: %m", mp_whoami(), error);
 	pcpu_addr = page_address(pcpu_page);

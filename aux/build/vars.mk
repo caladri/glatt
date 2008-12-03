@@ -5,6 +5,9 @@ SHARED_VARS+=	VENDOR_SRC
 
 SHARED_VARS+=	PATH
 
+GNUMAKE?=	gnumake
+SHARED_VARS+=	GNUMAKE
+
 .for _var in ${SHARED_VARS}
 _SHARED_VARS+=${_var}="${${_var}}"
 .endfor

@@ -10,5 +10,5 @@
 
 .for _dir in ${SUBDIRS}
 ${.TARGETS}::
-	${GO_MAKE:S,DST,${.CURDIR}/${_dir},:S,TGT,${.TARGET},}
+	@${GO_MAKE:S,DST,${.CURDIR}/${_dir},:S,TGT,${.TARGET},}
 .endfor

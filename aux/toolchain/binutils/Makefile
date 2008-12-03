@@ -1,6 +1,3 @@
-# Things that belong elsewhere pt 1
-GNUMAKE?=gnumake
-
 BINUTILS=binutils-2.18
 BINUTILS_DIST=${VENDOR_SRC}/gnu/binutils/${BINUTILS}.tar.bz2
 BINUTILS_SRC=${.OBJDIR}/work/${BINUTILS}

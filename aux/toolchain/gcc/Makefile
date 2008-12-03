@@ -1,6 +1,3 @@
-# Things that belong elsewhere pt 1
-GNUMAKE?=gnumake
-
 GCC=gcc-4.2.4
 GCC_DIST=${VENDOR_SRC}/gnu/gcc/${GCC:S/-/-core-/}.tar.bz2
 GCC_SRC=${.OBJDIR}/work/${GCC}

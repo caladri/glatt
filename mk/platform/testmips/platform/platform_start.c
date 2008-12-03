@@ -41,7 +41,7 @@ platform_start(void)
 
 	platform_console_init();
 
-#ifdef	DB
+#ifdef DB
 	db_init();
 #endif
 

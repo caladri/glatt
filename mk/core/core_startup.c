@@ -34,8 +34,8 @@ static struct task *main_task;
 void
 startup_init(void)
 {
-#ifdef	VERBOSE
-#ifdef	UNIPROCESSOR
+#ifdef VERBOSE
+#ifdef UNIPROCESSOR
 	kcprintf("STARTUP: Uniprocessor kernel, only the boot CPU will be used.\n");
 #endif
 #endif
@@ -51,7 +51,7 @@ startup_init(void)
 	 */
 	scheduler_init();
 
-#ifdef	IPC
+#ifdef IPC
 	/*
 	 * Initialize IPC functionality.
 	 */
@@ -128,7 +128,7 @@ startup_boot_thread(void *arg)
 		BTREE_ROOT_INITIALIZER();
 	struct startup_item **itemp, *item, *iter;
 
-#ifdef	VERBOSE
+#ifdef VERBOSE
 	kcprintf("STARTUP: The system is coming up.\n");
 #endif
 	spinlock_lock(&startup_lock);
@@ -163,7 +163,7 @@ startup_main_thread(void *arg)
 	if (lock != NULL)
 		spinlock_unlock(lock);
 
-#ifdef	VERBOSE
+#ifdef VERBOSE
 	kcprintf("STARTUP: cpu%u starting main thread.\n", mp_whoami());
 #endif
 

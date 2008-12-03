@@ -39,7 +39,7 @@ struct pool_page {
 				       (sizeof (struct pool_item) * 2)))\
 			 / 2)
 
-#ifdef	DB
+#ifdef DB
 static TAILQ_HEAD(, struct pool) pool_list = TAILQ_HEAD_INITIALIZER(pool_list);
 #endif
 
@@ -149,11 +149,11 @@ pool_create(struct pool *pool, const char *name, size_t size, unsigned flags)
 		(pool->pool_size + sizeof (struct pool_item));
 	SLIST_INIT(&pool->pool_pages);
 	pool->pool_flags = flags | POOL_VALID;
-#ifdef	VERBOSE
+#ifdef VERBOSE
 	kcprintf("POOL: Created dynamic pool \"%s\" of size %zu (%zu/pg)\n",
 		 pool->pool_name, pool->pool_size, pool->pool_maxitems);
 #endif
-#ifdef	DB
+#ifdef DB
 	TAILQ_INSERT_TAIL(&pool_list, pool, pool_link);
 #endif
 	return (0);

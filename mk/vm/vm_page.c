@@ -57,7 +57,7 @@ page_init(void)
 	TAILQ_INIT(&page_free_queue);
 	TAILQ_INIT(&page_use_queue);
 
-#ifdef	VERBOSE
+#ifdef VERBOSE
 	kcprintf("PAGE: page size is %uK, %lu pages per page tree.\n",
 		 PAGE_SIZE / 1024, VM_PAGE_TREE_ENTRIES);
 #endif

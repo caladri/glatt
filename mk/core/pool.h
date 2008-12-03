@@ -18,7 +18,9 @@ struct pool {
 	size_t pool_maxitems;
 	SLIST_HEAD(, struct pool_page) pool_pages;
 	unsigned pool_flags;
+#ifdef DB
 	TAILQ_ENTRY(struct pool) pool_link;
+#endif
 };
 
 extern size_t pool_max_alloc;

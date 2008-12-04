@@ -45,7 +45,21 @@ fs_main(void *arg)
 
 		kcprintf("fs: %lx -> %lx : %lx\n", ipch.ipchdr_src,
 			 ipch.ipchdr_dst, ipch.ipchdr_msg);
+
+		if (ipch.ipchdr_src != IPC_PORT_NS) {
+			kcprintf("fs: message from unexpected source.\n");
+			continue;
+		}
+
+		if (ipch.ipchdr_msg != IPC_MSG_REPLY(NS_MESSAGE_REGISTER)) {
+			kcprintf("fs: unexpected message type from ns.\n");
+			continue;
+		}
+
+		break;
 	}
+
+	kcprintf("fs: registered with ns.\n");
 
 	/* Receive real requests and responses.  */
 

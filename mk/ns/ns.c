@@ -38,6 +38,12 @@ ns_main(void *arg)
 
 		kcprintf("ns: %lx -> %lx : %lx\n", ipch.ipchdr_src,
 			 ipch.ipchdr_dst, ipch.ipchdr_msg);
+
+		IPC_HEADER_REPLY(&ipch);
+
+		error = ipc_send(&ipch, NULL);
+		if (error != 0)
+			panic("%s: ipc_port_send failed: %m", __func__, error);
 	}
 }
 

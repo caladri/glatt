@@ -15,6 +15,16 @@ struct ipc_header {
 	ipc_msg_t ipchdr_msg;
 };
 
+#define	IPC_MSG_REPLY(msg)	(-(msg))
+
+#define	IPC_HEADER_REPLY(ipchdrp)					\
+	do {								\
+		ipc_port_t _reply = (ipchdrp)->ipchdr_src;		\
+		(ipchdrp)->ipchdr_src = (ipchdrp)->ipchdr_dst;		\
+		(ipchdrp)->ipchdr_dst = _reply;				\
+		(ipchdrp)->ipchdr_msg = -(ipchdrp)->ipchdr_msg;		\
+	} while (0)
+
 void ipc_init(void);
 void ipc_process(void);
 int ipc_send(struct ipc_header *, vaddr_t *);

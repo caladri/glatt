@@ -1,0 +1,83 @@
+There are tasks, threads, virtual memory and IPC ports.  Tasks and threads have
+no identifiers associated with them.  Virtual memory is an address-space in a
+machine-specified layout.  IPC ports have 64-bit identifiers which are global to
+the instance.
+
+Each task has associated with it a virtual memory space.  Each thread is
+associated with a parent task and shares the virtual memory space of the task
+with its fellow threads.  A task may be executing on multiple CPUs at a time,
+but exactly one thread is executing on exactly one CPU.  A thread is the unit
+at which scheduling occurs.
+
+Each thread has access to a thread-local virtual memory mapping at a fixed
+address at which it will find a mailbox that is used for interprocess
+communication.  A mailbox is a list of message descriptors which may be used to
+send or receive messages.  When a system call is performed, the mailbox is
+scanned and messages are sent and received as appropriate.  The messages are
+variable-length and after a system call all messages that could be sent will be
+removed from the mailbox.
+
+Messages have a structure (conceptually) like:
+	source port
+	destination port
+	message
+	right operation
+	data
+
+The source port and destination port are self-explanatory.  The message is a
+number which specifies the type of the message being sent -- this is specific to
+the protocol being spoken between the ports and is passed blindly by the kernel.
+
+As each IPC port is owned by a task, rights to access that port are controlled
+by that task.  The right operation specifies access control changes to be made
+to the IPC port.  The rights model is not completely decided at present.  It may
+be that rights are managed through IPC rather than alongside it (i.e. by a named
+service.)
+
+The data may be a length followed by data in the mailbox (for very small data,
+or for no data with a length of 0), a scatter-gather list (possibly only for
+send) or a list of pages in virtual memory.  When receiving, it would be nice to
+have some mechanism for limiting the forms in which one is willing to receive
+data, though a hard limit of only mailbox or virtual memory pages eliminates
+most concerns.  There will be some reasonable limit on the amount of data which
+can be sent in a single IPC operation.  When sending pages, one may specify on
+a page-by-page basis whether those pages should be copied or passed to the
+receiver permanently.  The sender has no control over the virtual addresses
+assigned to pages in the receiver.  The kernel may use whatever mechanism it
+sees as appropriate to perform the copy, either using a virtual memory
+copy-on-write approach or a complete duplication, or a mixture.
+
+All but a small number of port numbers used for well-known services are
+automatically and randomly allocated.  One of the reserved ports is for a name
+service which can be used to discover the port on which a service is present.
+Named services must be launched through access to the first user-space server
+which is started by the system (known as "init".)  Other tasks may not register
+their ports as named services.  The only named services should be ones providing
+core system functionality.  A number of named services are provided in the
+microkernel for centrally-managed resources (including the name service.)
+
+An incomplete list of the services provided in the microkernel:
+	o) ns -- the name server.
+	o) fs -- the filing server, which provides a central hierarchical
+	   filesystem-like namespace.
+	o) ms -- the microkernel server, which provides core microkernel
+	   services including task, thread, virtual memory and port management.
+
+A task contains at least one thread and whenever any thread (including the first
+thread in a task) starts, a single port is allocated to it and a hello message
+is sent (from some well-known port, possibly the "unknown" port (0)) to it, from
+which it can discern the port number of that port.  From there, it can begin its
+communication with the outside world.  It is probably also desirable to allocate
+ports, sent to the first thread in a task, giving it access to task and virtual
+memory management over single-purpose ports.  Depending on the rights model, the
+rights on those ports may have some significance to the microkernel.
+
+Task creation needs to be further defined but includes some sequence wherein a
+task and thread are created, and the parent can perform virtual memory functions
+to handle, for example, image activation.  There will be an image activator in
+kernel which uses the fs service, and it may be required that all task creation
+works through that.  This is not a dire situation, though, as it is possible to
+create a "dummy" program to be run which awaits virtual memory and instructions
+from its parent task.  This makes it harder to provide Unix-like fork()
+semantics, but that may be acceptable as most programs are threaded these days
+rather than using fork(), and only perform a fork() to do an exec().

@@ -13,7 +13,6 @@
 #include <ns/ns.h>
 #include <ns/service_directory.h>
 
-static ipc_port_t ns_port;
 static struct task *ns_task;
 static struct thread *ns_thread;
 
@@ -26,9 +25,9 @@ ns_main(void *arg)
 	for (;;) {
 		kcprintf("ns: waiting...\n");
 
-		ipc_port_wait(ns_port);
+		ipc_port_wait(IPC_PORT_NS);
 
-		error = ipc_port_receive(ns_port, &ipch, NULL);
+		error = ipc_port_receive(IPC_PORT_NS, &ipch, NULL);
 		if (error != 0) {
 			if (error == ERROR_AGAIN)
 				continue;
@@ -62,7 +61,7 @@ ns_startup(void *arg)
 	if (error != 0)
 		panic("%s: thread_create failed: %m", __func__, error);
 
-	error = ipc_port_allocate_reserved(&ns_port, IPC_PORT_NS);
+	error = ipc_port_allocate_reserved(ns_task, IPC_PORT_NS);
 	if (error != 0)
 		panic("%s: ipc_allocate_reserved failed: %m", __func__, error);
 

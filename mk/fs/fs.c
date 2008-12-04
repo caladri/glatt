@@ -94,7 +94,7 @@ fs_startup(void *arg)
 	if (error != 0)
 		panic("%s: thread_create failed: %m", __func__, error);
 
-	error = ipc_port_allocate(&fs_port);
+	error = ipc_port_allocate(fs_task, &fs_port);
 	if (error != 0)
 		panic("%s: ipc_allocate failed: %m", __func__, error);
 

@@ -10,6 +10,7 @@
 #include <vm/page.h>
 
 struct ipc_port {
+	struct task *ipcp_task; /* XXX Mach-like rights.  */
 	struct mutex ipcp_mutex;
 	struct cv *ipcp_cv;
 	ipc_port_t ipcp_port;
@@ -33,7 +34,7 @@ static ipc_port_t ipc_port_next		= IPC_PORT_UNRESERVED_START;
 #define	IPC_PORT_LOCK(p)	mutex_lock(&(p)->ipcp_mutex)
 #define	IPC_PORT_UNLOCK(p)	mutex_unlock(&(p)->ipcp_mutex)
 
-static struct ipc_port *ipc_port_alloc(ipc_port_t);
+static struct ipc_port *ipc_port_alloc(struct task *, ipc_port_t);
 static void ipc_port_deliver(struct ipc_message *);
 static struct ipc_port *ipc_port_lookup(ipc_port_t);
 
@@ -87,7 +88,7 @@ ipc_send(struct ipc_header *ipch, vaddr_t *pagep)
 }
 
 int
-ipc_port_allocate(ipc_port_t *portp)
+ipc_port_allocate(struct task *task, ipc_port_t *portp)
 {
 	struct ipc_port *ipcp;
 	ipc_port_t port;
@@ -107,7 +108,7 @@ ipc_port_allocate(ipc_port_t *portp)
 		}
 		IPC_PORTS_UNLOCK();
 
-		ipcp = ipc_port_alloc(port);
+		ipcp = ipc_port_alloc(task, port);
 		if (ipcp == NULL)
 			continue;
 		*portp = port;
@@ -116,17 +117,16 @@ ipc_port_allocate(ipc_port_t *portp)
 }
 
 int
-ipc_port_allocate_reserved(ipc_port_t *portp, ipc_port_t port)
+ipc_port_allocate_reserved(struct task *task, ipc_port_t port)
 {
 	struct ipc_port *ipcp;
 
 	if (port == IPC_PORT_UNKNOWN || port >= IPC_PORT_UNRESERVED_START)
 		return (ERROR_INVALID);
 
-	ipcp = ipc_port_alloc(port);
+	ipcp = ipc_port_alloc(task, port);
 	if (ipcp == NULL)
 		return (ERROR_NOT_FREE);
-	*portp = port;
 	return (0);
 }
 
@@ -190,7 +190,7 @@ ipc_port_wait(ipc_port_t port)
 }
 
 static struct ipc_port *
-ipc_port_alloc(ipc_port_t port)
+ipc_port_alloc(struct task *task, ipc_port_t port)
 {
 	struct ipc_port *ipcp, *old;
 
@@ -203,6 +203,7 @@ ipc_port_alloc(ipc_port_t port)
 	}
 
 	ipcp = pool_allocate(&ipc_port_pool);
+	ipcp->ipcp_task = task;
 	mutex_init(&ipcp->ipcp_mutex, "IPC Port", MUTEX_FLAG_DEFAULT);
 	ipcp->ipcp_cv = cv_create(&ipcp->ipcp_mutex);
 	ipcp->ipcp_port = port;

@@ -133,7 +133,7 @@ tlb_modify(vaddr_t vaddr)
 	if (vaddr >= KERNEL_BASE && vaddr < KERNEL_END)
 		vm = &kernel_vm;
 	else
-		vm = current_thread()->td_parent->t_vm;
+		vm = current_task()->t_vm;
 	pte = pmap_find(vm->vm_pmap, vaddr); /* XXX lock.  */
 	if (pte == NULL)
 		panic("%s: pmap_find returned NULL.", __func__);
@@ -153,7 +153,7 @@ tlb_refill(vaddr_t vaddr)
 	if (vaddr >= KERNEL_BASE && vaddr < KERNEL_END)
 		vm = &kernel_vm;
 	else
-		vm = current_thread()->td_parent->t_vm;
+		vm = current_task()->t_vm;
 	tlb_update(vm->vm_pmap, vaddr);
 }
 

@@ -6,6 +6,7 @@
 #include <core/mutex.h>
 #include <core/pool.h>
 #include <core/startup.h>
+#include <core/task.h>
 #include <core/thread.h>
 #include <vm/page.h>
 
@@ -69,6 +70,11 @@ ipc_send(struct ipc_header *ipch, vaddr_t *pagep)
 	if (ipcp == NULL) {
 		IPC_PORTS_UNLOCK();
 		return (ERROR_INVALID);
+	}
+	if (ipcp->ipcp_task != current_task()) {
+		IPC_PORT_UNLOCK(ipcp);
+		IPC_PORTS_UNLOCK();
+		return (ERROR_NO_RIGHT);
 	}
 	IPC_PORT_UNLOCK(ipcp);
 
@@ -152,6 +158,11 @@ ipc_port_receive(ipc_port_t port, struct ipc_header *ipch, vaddr_t *pagep)
 	if (ipcp == NULL) {
 		IPC_PORTS_UNLOCK();
 		return (ERROR_NOT_FOUND);
+	}
+	if (ipcp->ipcp_task != current_task()) {
+		IPC_PORT_UNLOCK(ipcp);
+		IPC_PORTS_UNLOCK();
+		return (ERROR_NO_RIGHT);
 	}
 	if (TAILQ_EMPTY(&ipcp->ipcp_msgs)) {
 		IPC_PORT_UNLOCK(ipcp);

@@ -20,7 +20,9 @@ static const char *error_strings[] __used = {
 	"Unexpected result.",
 #define	ERROR_NOT_FREE		(0x0008)
 	"Resource in use.",
-#define	ERROR_COUNT		(0x0009)
+#define	ERROR_NO_RIGHT		(0x0009)
+	"No right to perform operation.",
+#define	ERROR_COUNT		(0x000a)
 };
 
 #endif /* !_CORE_ERROR_H_ */

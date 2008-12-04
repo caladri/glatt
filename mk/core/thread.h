@@ -15,7 +15,7 @@
 #define	THREAD_DEFAULT	(0x00000000)	/* Default thread flags.  */
 
 struct thread {
-	struct task *td_parent;
+	struct task *td_task;
 	STAILQ_ENTRY(struct thread) td_link;
 	char td_name[THREAD_NAME_SIZE];
 	unsigned td_flags;

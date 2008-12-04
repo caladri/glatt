@@ -173,9 +173,8 @@ cpu_exception_frame_dump(struct thread *td, struct frame *fp)
 	kcprintf("thread              = %p (%s)\n",
 		 (void *)td, td == NULL ? "nil" : td->td_name);
 	if (td != NULL) {
-		kcprintf("task                = %p (%s)\n",
-			 (void *)td->td_parent, td->td_parent == NULL ? "nil" :
-			 td->td_parent->t_name);
+		kcprintf("task                = %p (%s)\n", (void *)td->td_task,
+			 td->td_task == NULL ? "nil" : td->td_task->t_name);
 	}
 	kcprintf("status              = %x\n", cpu_read_status());
 	kcprintf("cause               = %x\n", cause);

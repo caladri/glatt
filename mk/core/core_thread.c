@@ -26,20 +26,20 @@ thread_init(void)
 }
 
 int
-thread_create(struct thread **tdp, struct task *parent, const char *name,
+thread_create(struct thread **tdp, struct task *task, const char *name,
 	      unsigned flags)
 {
 	struct thread *td;
 	int error;
 
-	ASSERT(parent != NULL, "thread needs a task");
+	ASSERT(task != NULL, "thread needs a task");
 
 	td = pool_allocate(&thread_pool);
 	if (td == NULL)
 		return (ERROR_EXHAUSTED);
 	strlcpy(td->td_name, name, sizeof td->td_name);
-	td->td_parent = parent;
-	STAILQ_INSERT_TAIL(&parent->t_threads, td, td_link);
+	td->td_task = task;
+	STAILQ_INSERT_TAIL(&task->t_threads, td, td_link);
 	td->td_flags = flags;
 
 #ifndef	NO_MORDER

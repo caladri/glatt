@@ -291,10 +291,10 @@ DB_SHOW_VALUE_VOIDF(dotkvm, vm_index, db_vm_index_dump_kvm_dot);
 static void
 db_vm_index_dump_task(void)
 {
-	if (current_thread() != NULL) {
+	if (current_task() != NULL) {
 		struct vm *vm;
 
-		vm = current_thread()->td_parent->t_vm;
+		vm = current_task()->t_vm;
 		db_vm_index_dump_vm(vm, db_vm_index_dump_dot);
 	} else {
 		kcprintf("No running thread.\n");

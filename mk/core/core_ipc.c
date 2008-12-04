@@ -1,4 +1,5 @@
 #include <core/types.h>
+#include <core/btree.h>
 #include <core/cv.h>
 #include <core/error.h>
 #include <core/ipc.h>
@@ -16,7 +17,7 @@ struct ipc_port {
 	struct cv *ipcp_cv;
 	ipc_port_t ipcp_port;
 	TAILQ_HEAD(, struct ipc_message) ipcp_msgs;
-	TAILQ_ENTRY(struct ipc_port) ipcp_link;
+	BTREE_NODE(struct ipc_port) ipcp_link;
 };
 
 struct ipc_message {
@@ -25,7 +26,7 @@ struct ipc_message {
 	TAILQ_ENTRY(struct ipc_message) ipcmsg_link;
 };
 
-static TAILQ_HEAD(, struct ipc_port) ipc_ports;
+static BTREE_ROOT(struct ipc_port) ipc_ports = BTREE_ROOT_INITIALIZER();
 static struct mutex ipc_ports_lock;
 static struct pool ipc_port_pool;
 static ipc_port_t ipc_port_next		= IPC_PORT_UNRESERVED_START;
@@ -51,7 +52,6 @@ ipc_init(void)
 		panic("%s: pool_create failed: %m", __func__, error);
 
 	mutex_init(&ipc_ports_lock, "IPC Ports", MUTEX_FLAG_DEFAULT);
-	TAILQ_INIT(&ipc_ports);
 }
 
 int
@@ -203,7 +203,7 @@ ipc_port_wait(ipc_port_t port)
 static struct ipc_port *
 ipc_port_alloc(struct task *task, ipc_port_t port)
 {
-	struct ipc_port *ipcp, *old;
+	struct ipc_port *ipcp, *old, *iter;
 
 	IPC_PORTS_LOCK();
 	old = ipc_port_lookup(port);
@@ -235,7 +235,8 @@ ipc_port_alloc(struct task *task, ipc_port_t port)
 	/*
 	 * Register ourselves.
 	 */
-	TAILQ_INSERT_TAIL(&ipc_ports, ipcp, ipcp_link);
+	BTREE_INSERT(ipcp, iter, &ipc_ports, ipcp_link,
+		     (ipcp->ipcp_port < iter->ipcp_port));
 
 	IPC_PORT_UNLOCK(ipcp);
 
@@ -272,23 +273,13 @@ ipc_port_deliver(struct ipc_message *ipcmsg)
 static struct ipc_port *
 ipc_port_lookup(ipc_port_t port)
 {
-	struct ipc_port *ipcp;
+	struct ipc_port *ipcp, *iter;
 
-	if (port == IPC_PORT_UNKNOWN)
-		return (NULL);
-
-	/*
-	 * XXX
-	 * System ports will be frequently used so they should be in a static
-	 * array.
-	 */
-
-	TAILQ_FOREACH(ipcp, &ipc_ports, ipcp_link) {
+	BTREE_FIND(&ipcp, iter, &ipc_ports, ipcp_link, (port < iter->ipcp_port),
+		   (port == iter->ipcp_port));
+	if (ipcp != NULL) {
 		IPC_PORT_LOCK(ipcp);
-		if (ipcp->ipcp_port == port) {
-			return (ipcp);
-		}
-		IPC_PORT_UNLOCK(ipcp);
+		return (ipcp);
 	}
 	return (NULL);
 }

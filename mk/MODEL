@@ -17,6 +17,20 @@ scanned and messages are sent and received as appropriate.  The messages are
 variable-length and after a system call all messages that could be sent will be
 removed from the mailbox.
 
+The mailbox actually has a structure slightly more complex than implied.  The
+structure is like:
+	send_count
+	receive_offset
+	receive_count
+	mbox_cookie
+
+	[x send_count]
+	message_cookie
+	message_header [and data]
+
+	[x receive_count @ receive_offset]
+	message_header [and data]
+
 Messages have a structure (conceptually) like:
 	source port
 	destination port

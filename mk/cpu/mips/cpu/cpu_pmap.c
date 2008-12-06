@@ -22,7 +22,6 @@
 /*
  * Make sure our page structures are correctly-sized.
  */
-COMPILE_TIME_ASSERT(sizeof (struct pmap_lev2) == PAGE_SIZE);
 COMPILE_TIME_ASSERT(sizeof (struct pmap_lev1) == PAGE_SIZE);
 COMPILE_TIME_ASSERT(sizeof (struct pmap_lev0) == PAGE_SIZE);
 /*
@@ -38,13 +37,7 @@ COMPILE_TIME_ASSERT(sizeof (struct pmap) <= PAGE_SIZE);
 static __inline vaddr_t
 pmap_index_pte(vaddr_t vaddr)
 {
-	return ((vaddr >> PTEL2SHIFT) % NPTEL2);
-}
-
-static __inline vaddr_t
-pmap_index2(vaddr_t vaddr)
-{
-	return ((vaddr >> L2L1SHIFT) % NL2PL1);
+	return ((vaddr >> PTEL1SHIFT) % NPTEL1);
 }
 
 static __inline vaddr_t
@@ -64,8 +57,7 @@ static int pmap_alloc_pte(struct pmap *, vaddr_t, pt_entry_t **);
 static void pmap_collect(struct pmap *);
 static struct pmap_lev0 *pmap_find0(struct pmap *, vaddr_t);
 static struct pmap_lev1 *pmap_find1(struct pmap_lev0 *, vaddr_t);
-static struct pmap_lev2 *pmap_find2(struct pmap_lev1 *, vaddr_t);
-static pt_entry_t *pmap_find_pte(struct pmap_lev2 *, vaddr_t);
+static pt_entry_t *pmap_find_pte(struct pmap_lev1 *, vaddr_t);
 static bool pmap_is_direct(vaddr_t);
 static void pmap_pinit(struct pmap *, vaddr_t, vaddr_t);
 static void pmap_update(struct pmap *, vaddr_t, struct vm_page *, pt_entry_t);
@@ -87,20 +79,17 @@ pmap_bootstrap(void)
 #ifdef VERBOSE
 	kcprintf("PMAP: %u level 0 pointers in each pmap.\n", NL0PMAP);
 	kcprintf("PMAP: %lu level 1 pointers in each level 0 page.\n", NL1PL0);
-	kcprintf("PMAP: %lu level 2 pointers in each level 1 page.\n", NL2PL1);
-	kcprintf("PMAP: %lu PTEs in each level 2 page.\n", NPTEL2);
-	kcprintf("PMAP: Level 2 maps %lu pages of virtual address space.\n",
-		 NPTEL2);
+	kcprintf("PMAP: %lu PTEs in each level 1 page.\n", NPTEL1);
 	kcprintf("PMAP: Level 1 maps %lu pages of virtual address space.\n",
-		 NPTEL2 * NL2PL1);
+		 NPTEL1);
 	kcprintf("PMAP: Level 0 maps %lu pages of virtual address space.\n",
-		 NPTEL2 * NL2PL1 * NL1PL0);
+		 NPTEL1 * NL1PL0);
 	kcprintf("PMAP: Each pmap maps %lu pages of virtual address space.\n",
-		 NPTEL2 * NL2PL1 * NL1PL0 * NL0PMAP);
+		 NPTEL1 * NL1PL0 * NL0PMAP);
 	kcprintf("PMAP: Each pmap maps %luM (%luG) of virtual address space.\n",
-		 ((NPTEL2 * NL2PL1 * NL1PL0 * NL0PMAP * PAGE_SIZE) /
+		 ((NPTEL1 * NL1PL0 * NL0PMAP * PAGE_SIZE) /
 		  (1024 * 1024)),
-		 ((NPTEL2 * NL2PL1 * NL1PL0 * NL0PMAP * PAGE_SIZE) /
+		 ((NPTEL1 * NL1PL0 * NL0PMAP * PAGE_SIZE) /
 		  (1024 * 1024 * 1024)));
 #endif
 
@@ -172,7 +161,6 @@ pmap_find(struct pmap *pm, vaddr_t vaddr)
 {
 	struct pmap_lev0 *pml0;
 	struct pmap_lev1 *pml1;
-	struct pmap_lev2 *pml2;
 
 	if (vaddr < pm->pm_base || vaddr >= pm->pm_end)
 		return (NULL);
@@ -183,10 +171,7 @@ pmap_find(struct pmap *pm, vaddr_t vaddr)
 	pml1 = pmap_find1(pml0, vaddr);
 	if (pml1 == NULL)
 		return (NULL);
-	pml2 = pmap_find2(pml1, vaddr);
-	if (pml2 == NULL)
-		return (NULL);
-	return (pmap_find_pte(pml2, vaddr));
+	return (pmap_find_pte(pml1, vaddr));
 }
 
 int
@@ -309,8 +294,7 @@ pmap_alloc_pte(struct pmap *pm, vaddr_t vaddr, pt_entry_t **ptep)
 {
 	struct pmap_lev0 *pml0;
 	struct pmap_lev1 *pml1;
-	struct pmap_lev2 *pml2;
-	unsigned pml0i, pml1i, pml2i;
+	unsigned pml0i, pml1i;
 	vaddr_t tmpaddr;
 	int error;
 
@@ -340,20 +324,8 @@ pmap_alloc_pte(struct pmap *pm, vaddr_t vaddr, pt_entry_t **ptep)
 		pml0->pml0_level1[pml1i] = (struct pmap_lev1 *)tmpaddr;
 	}
 	pml1 = pmap_find1(pml0, vaddr);
-	pml2i = pmap_index2(vaddr);
-	if (pml1->pml1_level2[pml2i] == NULL) {
-		error = page_alloc_direct(&kernel_vm,
-					  PAGE_FLAG_DEFAULT | PAGE_FLAG_ZERO,
-					  &tmpaddr);
-		if (error != 0) {
-			/* XXX deallocate.  */
-			return (error);
-		}
-		pml1->pml1_level2[pml2i] = (struct pmap_lev2 *)tmpaddr;
-	}
-	pml2 = pmap_find2(pml1, vaddr);
 	if (ptep != NULL)
-		*ptep = pmap_find_pte(pml2, vaddr);
+		*ptep = pmap_find_pte(pml1, vaddr);
 	return (0);
 }
 
@@ -379,21 +351,12 @@ pmap_find1(struct pmap_lev0 *pml0, vaddr_t vaddr)
 	return (pml0->pml0_level1[pmap_index1(vaddr)]);
 }
 
-static struct pmap_lev2 *
-pmap_find2(struct pmap_lev1 *pml1, vaddr_t vaddr)
+static pt_entry_t *
+pmap_find_pte(struct pmap_lev1 *pml1, vaddr_t vaddr)
 {
 	if (pml1 == NULL)
 		return (NULL);
-	return (pml1->pml1_level2[pmap_index2(vaddr)]);
-}
-
-
-static pt_entry_t *
-pmap_find_pte(struct pmap_lev2 *pml2, vaddr_t vaddr)
-{
-	if (pml2 == NULL)
-		return (NULL);
-	return (&pml2->pml2_entries[pmap_index_pte(vaddr)]);
+	return (&pml1->pml1_entries[pmap_index_pte(vaddr)]);
 }
 
 static bool
@@ -412,7 +375,6 @@ pmap_pinit(struct pmap *pm, vaddr_t base, vaddr_t end)
 	pmap_alloc_asid(pm);
 	ASSERT(pmap_index0(base) == 0, "Base must be aligned.");
 	ASSERT(pmap_index1(base) == 0, "Base must be aligned.");
-	ASSERT(pmap_index2(base) == 0, "Base must be aligned.");
 	ASSERT(pmap_index_pte(base) == 0, "Base must be aligned.");
 	pm->pm_base = base;
 	pm->pm_end = end;

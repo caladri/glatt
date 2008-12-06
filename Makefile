@@ -49,6 +49,20 @@ mk-build:
 		echo '>>> Please run '${MAKE}' mk-config first.' ;	\
 	fi
 
+TARGETS+=mk-clean
+mk-clean-help:
+	@echo 'Cleans a build of the microkernel using '${MAKE}' clean.'
+	@echo 'usage: '${MAKE}' mk-clean'
+	@echo 'variables:'
+	@echo '    MK_OBJ       Directory to build in, e.g.'
+	@echo '                 MK_OBJ=/usr/obj/mk.testmips'
+mk-clean:
+	@if [ -e ${MK_OBJ}/Makefile ]; then				\
+		${GO_MAKE:S,DST,${MK_OBJ},:S,TGT,clean,} ${MK_FLAGS} ;	\
+	else								\
+		echo '>>> Already clean.' ;				\
+	fi
+
 TARGETS+=mk-options
 mk-options-help:
 	@echo 'Shows available configuration options for the microkernel.'

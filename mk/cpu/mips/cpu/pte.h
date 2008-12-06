@@ -32,28 +32,20 @@
 	/* 64-bit PTE.  */
 typedef	uint64_t	pt_entry_t;
 
-	/* Number of PTEs in Level 2.  */
-#define	NPTEL2		(PAGE_SIZE / sizeof (pt_entry_t))
-#define	PTEL2SHIFT	(LOG2(PAGE_SIZE))
-
-	/* Number of Level 2 pointers in Level 1.  */
-#define	NL2PL1		(PAGE_SIZE / sizeof (struct pmap_lev2 *))
-#define	L2L1SHIFT	(PTEL2SHIFT + LOG2(NPTEL2))
+	/* Number of PTEs in Level 1.  */
+#define	NPTEL1		(PAGE_SIZE / sizeof (pt_entry_t))
+#define	PTEL1SHIFT	(LOG2(PAGE_SIZE))
 
 	/* Number of Level 1 pointers in Level 0.  */
 #define	NL1PL0		(PAGE_SIZE / sizeof (struct pmap_lev1 *))
-#define	L1L0SHIFT	(L2L1SHIFT + LOG2(NL2PL1))
+#define	L1L0SHIFT	(PTEL1SHIFT + LOG2(NPTEL1))
 
 	/* Number of Level 0 pages required to map an entire address space.  */
-#define	NL0PMAP		(1) 
+#define	NL0PMAP		(128) 
 #define	PMAPL0SHIFT	(L1L0SHIFT + LOG2(NL1PL0))
 
-struct pmap_lev2 {
-	pt_entry_t pml2_entries[NPTEL2];
-};
-
 struct pmap_lev1 {
-	struct pmap_lev2 *pml1_level2[NL2PL1];
+	pt_entry_t pml1_entries[NPTEL1];
 };
 
 struct pmap_lev0 {

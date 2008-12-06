@@ -133,21 +133,10 @@ ENTRY(tlb_exception)
 	teq	zero, k1		/* L1 pointer can't be NULL.  */
 
 	/*
-	 * L1 -> L2.
+	 * L1 -> PTE.
 	 */
 	dmfc0	k0, CP0_BADVADDR
-	dsrl	k0, L2L1SHIFT
-	andi	k0, 0x3ff		/* We just want the low 10 bits.  */
-	dsll	k0, 3			/* Get an 8-byte offset.  */
-	daddu	k1, k0
-	ld	k1, 0(k1)
-	teq	zero, k1		/* L2 pointer can't be NULL.  */
-
-	/*
-	 * L2 -> PTE.
-	 */
-	dmfc0	k0, CP0_BADVADDR
-	dsrl	k0, PTEL2SHIFT
+	dsrl	k0, PTEL1SHIFT
 	andi	k0, 0x3ff		/* We just want the low 10 bits.  */
 	dsll	k0, 3			/* Get an 8-byte offset.  */
 	daddu	k1, k0

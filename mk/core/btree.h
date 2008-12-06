@@ -83,6 +83,13 @@
 			break;						\
 		}							\
 									\
+		BTREE_INSERT_SUB((var), (iter), (iter),	field, cmp);	\
+	} while (0)
+
+#define	BTREE_INSERT_SUB(var, iter, node, field, cmp)			\
+	do {								\
+		(iter) = (node);					\
+									\
 		for (;;) {						\
 			if ((cmp)) {					\
 				if ((iter)->field.left == NULL) {	\
@@ -136,6 +143,48 @@
 			}						\
 			(var) = (var)->field.parent;			\
 		}							\
+	} while (0)
+
+#define	BTREE_REMOVE(var, iter, tree, field)				\
+	do {								\
+		if ((tree)->child == (var)) {				\
+			BTREE_REMOVE_SUB((var), (iter), (tree)->child,	\
+					 field);			\
+			break;						\
+		}							\
+									\
+		if ((var)->field.parent->field.left == (var)) {		\
+			BTREE_REMOVE_SUB((var), (iter),			\
+					 (var)->field.parent->field.left,\
+					 field);			\
+			break;						\
+		}							\
+		BTREE_REMOVE_SUB((var), (iter),				\
+				 (var)->field.parent->field.right,	\
+				 field);				\
+	} while (0)
+
+#define	BTREE_REMOVE_SUB(var, iter, dst, field)				\
+	do {								\
+		if ((var)->field.left == NULL) {			\
+			(iter) = (var)->field.right;			\
+			(dst) = (iter);					\
+			if ((iter) != NULL)				\
+				(iter)->field.parent =			\
+					(var)->field.parent;		\
+		} else if ((var)->field.right == NULL) {		\
+			(iter) = (var)->field.left;			\
+			(dst) = (iter);					\
+			(iter)->field.parent = (var)->field.parent;	\
+		} else {						\
+			(dst) = (var)->field.right;			\
+			BTREE_MIN_SUB((iter), (var)->field.right,	\
+				      field);				\
+			(iter)->field.left = (var)->field.left;		\
+			(var)->field.left->field.parent = (iter);	\
+		}							\
+									\
+		(var)->field.parent = NULL;				\
 	} while (0)
 
 #endif /* !_CORE_BTREE_H_ */

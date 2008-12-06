@@ -1,7 +1,6 @@
 #include <core/types.h>
 #include <core/copyright.h>
 #include <core/error.h>
-#include <core/ipc.h>
 #ifndef	NO_MORDER
 #include <core/morder.h>
 #endif
@@ -13,6 +12,7 @@
 #include <core/thread.h>
 #include <core/ttk.h>
 #include <io/console/console.h>
+#include <ipc/system.h>
 #include <vm/vm.h>
 
 /* Some compile-time assertions for every build.  */

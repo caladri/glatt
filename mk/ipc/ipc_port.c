@@ -2,13 +2,14 @@
 #include <core/btree.h>
 #include <core/cv.h>
 #include <core/error.h>
-#include <core/ipc.h>
 #include <core/malloc.h>
 #include <core/mutex.h>
 #include <core/pool.h>
 #include <core/startup.h>
 #include <core/task.h>
 #include <core/thread.h>
+#include <ipc/ipc.h>
+#include <ipc/port.h>
 #include <vm/page.h>
 
 struct ipc_port {
@@ -41,7 +42,7 @@ static void ipc_port_deliver(struct ipc_message *);
 static struct ipc_port *ipc_port_lookup(ipc_port_t);
 
 void
-ipc_init(void)
+ipc_port_init(void)
 {
 	int error;
 
@@ -52,45 +53,6 @@ ipc_init(void)
 		panic("%s: pool_create failed: %m", __func__, error);
 
 	mutex_init(&ipc_ports_lock, "IPC Ports", MUTEX_FLAG_DEFAULT);
-}
-
-int
-ipc_send(struct ipc_header *ipch, vaddr_t *pagep)
-{
-	struct ipc_message *ipcmsg;
-	struct ipc_port *ipcp;
-
-	ASSERT(ipch != NULL, "Must have a header.");
-
-	if (pagep != NULL)
-		return (ERROR_NOT_IMPLEMENTED);
-
-	IPC_PORTS_LOCK();
-	ipcp = ipc_port_lookup(ipch->ipchdr_src);
-	if (ipcp == NULL) {
-		IPC_PORTS_UNLOCK();
-		return (ERROR_INVALID);
-	}
-	if (ipcp->ipcp_task != current_task()) {
-		IPC_PORT_UNLOCK(ipcp);
-		IPC_PORTS_UNLOCK();
-		return (ERROR_NO_RIGHT);
-	}
-	IPC_PORT_UNLOCK(ipcp);
-
-	ipcp = ipc_port_lookup(ipch->ipchdr_dst);
-	if (ipcp == NULL) {
-		IPC_PORTS_UNLOCK();
-		return (ERROR_NOT_FOUND);
-	}
-	IPC_PORT_UNLOCK(ipcp);
-	IPC_PORTS_UNLOCK();
-
-	ipcmsg = malloc(sizeof *ipcmsg);
-	ipcmsg->ipcmsg_header = *ipch;
-	ipcmsg->ipcmsg_page = (vaddr_t)NULL;
-	ipc_port_deliver(ipcmsg);
-	return (0);
 }
 
 int
@@ -143,15 +105,12 @@ ipc_port_free(ipc_port_t port)
 }
 
 int
-ipc_port_receive(ipc_port_t port, struct ipc_header *ipch, vaddr_t *pagep)
+ipc_port_receive(ipc_port_t port, struct ipc_header *ipch)
 {
 	struct ipc_message *ipcmsg;
 	struct ipc_port *ipcp;
 
 	ASSERT(ipch != NULL, "Must be able to copy out header.");
-
-	if (pagep != NULL)
-		return (ERROR_NOT_IMPLEMENTED);
 
 	IPC_PORTS_LOCK();
 	ipcp = ipc_port_lookup(port);
@@ -179,6 +138,42 @@ ipc_port_receive(ipc_port_t port, struct ipc_header *ipch, vaddr_t *pagep)
 
 	*ipch = ipcmsg->ipcmsg_header;
 	free(ipcmsg);
+	return (0);
+}
+
+int
+ipc_port_send(struct ipc_header *ipch)
+{
+	struct ipc_message *ipcmsg;
+	struct ipc_port *ipcp;
+
+	ASSERT(ipch != NULL, "Must have a header.");
+
+	IPC_PORTS_LOCK();
+	ipcp = ipc_port_lookup(ipch->ipchdr_src);
+	if (ipcp == NULL) {
+		IPC_PORTS_UNLOCK();
+		return (ERROR_INVALID);
+	}
+	if (ipcp->ipcp_task != current_task()) {
+		IPC_PORT_UNLOCK(ipcp);
+		IPC_PORTS_UNLOCK();
+		return (ERROR_NO_RIGHT);
+	}
+	IPC_PORT_UNLOCK(ipcp);
+
+	ipcp = ipc_port_lookup(ipch->ipchdr_dst);
+	if (ipcp == NULL) {
+		IPC_PORTS_UNLOCK();
+		return (ERROR_NOT_FOUND);
+	}
+	IPC_PORT_UNLOCK(ipcp);
+	IPC_PORTS_UNLOCK();
+
+	ipcmsg = malloc(sizeof *ipcmsg);
+	ipcmsg->ipcmsg_header = *ipch;
+	ipcmsg->ipcmsg_page = (vaddr_t)NULL;
+	ipc_port_deliver(ipcmsg);
 	return (0);
 }
 

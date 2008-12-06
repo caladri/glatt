@@ -1,7 +1,5 @@
-#ifndef	_CORE_IPC_H_
-#define	_CORE_IPC_H_
-
-struct task;
+#ifndef	_IPC_IPC_H_
+#define	_IPC_IPC_H_
 
 typedef	uint64_t	ipc_port_t;
 typedef	int64_t		ipc_msg_t;
@@ -27,14 +25,4 @@ struct ipc_header {
 		(ipchdrp)->ipchdr_msg = -(ipchdrp)->ipchdr_msg;		\
 	} while (0)
 
-void ipc_init(void);
-void ipc_process(void);
-int ipc_send(struct ipc_header *, vaddr_t *);
-
-int ipc_port_allocate(struct task *, ipc_port_t *);
-int ipc_port_allocate_reserved(struct task *, ipc_port_t);
-void ipc_port_free(ipc_port_t);
-int ipc_port_receive(ipc_port_t, struct ipc_header *, vaddr_t *);
-void ipc_port_wait(ipc_port_t);
-
-#endif /* !_CORE_IPC_H_ */
+#endif /* !_IPC_IPC_H_ */

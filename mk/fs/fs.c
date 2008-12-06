@@ -1,7 +1,6 @@
 #include <core/types.h>
 #include <core/cv.h>
 #include <core/error.h>
-#include <core/ipc.h>
 #include <core/mutex.h>
 #include <core/pool.h>
 #include <core/queue.h>
@@ -10,6 +9,8 @@
 #include <core/task.h>
 #include <core/thread.h>
 #include <io/console/console.h>
+#include <ipc/ipc.h>
+#include <ipc/port.h>
 #include <fs/fs.h>
 #include <ns/ns.h>
 
@@ -28,7 +29,7 @@ fs_main(void *arg)
 	ipch.ipchdr_dst = IPC_PORT_NS;
 	ipch.ipchdr_msg = NS_MESSAGE_REGISTER;
 
-	error = ipc_send(&ipch, NULL);
+	error = ipc_port_send(&ipch);
 	if (error != 0)
 		panic("%s: ipc_send failed: %m", __func__, error);
 
@@ -37,7 +38,7 @@ fs_main(void *arg)
 
 		ipc_port_wait(fs_port);
 
-		error = ipc_port_receive(fs_port, &ipch, NULL);
+		error = ipc_port_receive(fs_port, &ipch);
 		if (error != 0) {
 			if (error == ERROR_AGAIN)
 				continue;
@@ -68,7 +69,7 @@ fs_main(void *arg)
 
 		ipc_port_wait(fs_port);
 
-		error = ipc_port_receive(fs_port, &ipch, NULL);
+		error = ipc_port_receive(fs_port, &ipch);
 		if (error != 0) {
 			if (error == ERROR_AGAIN)
 				continue;

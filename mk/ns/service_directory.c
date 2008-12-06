@@ -1,7 +1,6 @@
 #include <core/types.h>
 #include <core/cv.h>
 #include <core/error.h>
-#include <core/ipc.h>
 #include <core/mutex.h>
 #include <core/pool.h>
 #include <core/queue.h>
@@ -9,6 +8,8 @@
 #include <core/startup.h>
 #include <core/task.h>
 #include <core/thread.h>
+#include <ipc/ipc.h>
+#include <ipc/port.h>
 #include <ns/ns.h>
 #include <ns/service_directory.h>
 

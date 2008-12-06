@@ -1,7 +1,6 @@
 #include <core/types.h>
 #include <core/cv.h>
 #include <core/error.h>
-#include <core/ipc.h>
 #include <core/mutex.h>
 #include <core/pool.h>
 #include <core/queue.h>
@@ -10,6 +9,8 @@
 #include <core/task.h>
 #include <core/thread.h>
 #include <io/console/console.h>
+#include <ipc/ipc.h>
+#include <ipc/port.h>
 #include <ns/ns.h>
 #include <ns/service_directory.h>
 
@@ -27,7 +28,7 @@ ns_main(void *arg)
 
 		ipc_port_wait(IPC_PORT_NS);
 
-		error = ipc_port_receive(IPC_PORT_NS, &ipch, NULL);
+		error = ipc_port_receive(IPC_PORT_NS, &ipch);
 		if (error != 0) {
 			if (error == ERROR_AGAIN)
 				continue;
@@ -40,7 +41,7 @@ ns_main(void *arg)
 
 		IPC_HEADER_REPLY(&ipch);
 
-		error = ipc_send(&ipch, NULL);
+		error = ipc_port_send(&ipch);
 		if (error != 0)
 			panic("%s: ipc_port_send failed: %m", __func__, error);
 	}

@@ -17,8 +17,6 @@ std		core/core_task.c
 std		core/core_thread.c
 std		core/core_ttk.c
 
-ipc		core/core_ipc.c
-
 morder		core/core_morder.c
 
 mp		core/core_mp.c
@@ -48,6 +46,9 @@ network		io/network/network_interface.c
 
 pci		io/pci/pci.c
 pci		io/pci/pcidev.c
+
+ipc		ipc/ipc_port.c
+ipc		ipc/ipc_system.c
 
 ns		ns/ns.c
 ns		ns/service_directory.c

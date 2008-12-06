@@ -1,16 +1,30 @@
 Tasks to do before release:
-	o) IPC data.
-	o) Userland.
-	o) System calls.
+	o) IPC
+		o) Mailbox structure.
+		o) Data descriptor format.
+		o) System call.
+		o) Rights model.
+	o) Simple FS server.
+	o) Link files into the kernel to present a MFS.
 	o) ELF loader.
+		o) Trivial static ELF loading for servers and such.
+		o) Userland ELF loader that can handle static and dynamic.
 	o) Memory/interrupt allocation from busses.
 	o) Write mu-tune for device hints, perhaps other things.
 	o) Clean up VM, pmap and exceptions.  Add vm objects and pv lists?
-	o) IPC credentials.
 	o) Simple ethernet stack.
 	o) Either implement preemption or declare preemption never.
 	o) Timekeeping or defer it.
 	o) Simple storage stack.
+	o) Determine malloc vs. pool usage.  If something is only going to have
+	   a small number of allocations, it should use malloc.  If something
+	   cannot use a virtual address it should use a pool without VIRTUAL
+	   set.  On the other hand, VIRTUAL pools no longer really exist, and
+	   that may be desirable.
+	o) Remove one level from PMAP, perhaps?
+	o) Ports for device drivers.
+	o) Simple service definition API to only have to provide a startup
+	   function and a function to handle IPC.
 
 Bugs:
 

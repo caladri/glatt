@@ -71,18 +71,6 @@ strncmp(const char *a, const char *b, size_t n)
 	return (*a - *b);
 }
 
-static __inline const char *
-strstr(const char *s, const char *sub)
-{
-	while (strlen(s) >= strlen(sub)) {
-		if (strncmp(s, sub, strlen(sub)) == 0) {
-			return (s);
-		}
-		s++;
-	}
-	return (NULL);
-}
-
 void kfvprintf(void (*)(void *, char), void *, const char *, va_list);
 
 #endif /* !_CORE_STRING_H_ */

@@ -15,3 +15,6 @@ o) service.h / ipc_service.c
    Services infrastructure.
 o) data.h / ipc_data.c
    Data descriptor processing.
+o) task.h / ipc_task.c / thread.h / ipc_thread.c
+   Any interfaces with task and thread code that may be necessary (e.g., used to
+   set up ports on task and thread creation.)

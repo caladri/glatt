@@ -11,40 +11,24 @@
 #include <io/console/console.h>
 #include <ipc/ipc.h>
 #include <ipc/port.h>
+#include <ipc/service.h>
 #include <ns/ns.h>
 #include <ns/service_directory.h>
 
-static struct task *ns_task;
-static struct thread *ns_thread;
+static int ns_handler(void *, struct ipc_header *);
 
-static void
-ns_main(void *arg)
+static int
+ns_handler(void *arg, struct ipc_header *ipch)
 {
-	struct ipc_header ipch;
 	int error;
 
-	for (;;) {
-		kcprintf("ns: waiting...\n");
+	IPC_HEADER_REPLY(ipch);
 
-		ipc_port_wait(IPC_PORT_NS);
+	error = ipc_port_send(ipch);
+	if (error != 0)
+		panic("%s: ipc_port_send failed: %m", __func__, error);
 
-		error = ipc_port_receive(IPC_PORT_NS, &ipch);
-		if (error != 0) {
-			if (error == ERROR_AGAIN)
-				continue;
-			panic("%s: ipc_port_receive failed: %m", __func__,
-			      error);
-		}
-
-		kcprintf("ns: %lx -> %lx : %lx\n", ipch.ipchdr_src,
-			 ipch.ipchdr_dst, ipch.ipchdr_msg);
-
-		IPC_HEADER_REPLY(&ipch);
-
-		error = ipc_port_send(&ipch);
-		if (error != 0)
-			panic("%s: ipc_port_send failed: %m", __func__, error);
-	}
+	return (0);
 }
 
 static void
@@ -54,19 +38,8 @@ ns_startup(void *arg)
 	
 	service_directory_init();
 
-	error = task_create(&ns_task, NULL, "name server", TASK_KERNEL);
+	error = ipc_service("ns", IPC_PORT_NS, ns_handler, NULL);
 	if (error != 0)
-		panic("%s: task_create failed: %m", __func__, error);
-
-	error = thread_create(&ns_thread, ns_task, "ns main", THREAD_DEFAULT);
-	if (error != 0)
-		panic("%s: thread_create failed: %m", __func__, error);
-
-	error = ipc_port_allocate_reserved(ns_task, IPC_PORT_NS);
-	if (error != 0)
-		panic("%s: ipc_allocate_reserved failed: %m", __func__, error);
-
-	thread_set_upcall(ns_thread, ns_main, NULL);
-	scheduler_thread_runnable(ns_thread);
+		panic("%s: ipc_service failed: %m", __func__, error);
 }
 STARTUP_ITEM(ns, STARTUP_SERVERS, STARTUP_BEFORE, ns_startup, NULL);

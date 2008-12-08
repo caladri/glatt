@@ -48,6 +48,8 @@ pci		io/pci/pci.c
 pci		io/pci/pcidev.c
 
 ipc		ipc/ipc_port.c
+# XXX Make ipc_service optional.
+ipc		ipc/ipc_service.c
 ipc		ipc/ipc_system.c
 
 ns		ns/ns.c

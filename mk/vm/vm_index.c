@@ -149,6 +149,13 @@ vm_free_address(struct vm *vm, vaddr_t vaddr)
 		ASSERT(TAILQ_EMPTY(&vmi->vmi_map),
 		       "Cannot free address with active mappings.");
 #endif
+
+		/*
+		 * XXX
+		 * If there is a range immediately before or after this one
+		 * and one or both are free, merge them.
+		 */
+
 		vm_free_index(vm, vmi);
 		VM_UNLOCK(vm);
 		return (0);

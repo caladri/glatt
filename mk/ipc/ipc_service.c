@@ -93,6 +93,7 @@ ipc_service_main(void *arg)
 	if (ipcsc->ipcsc_port >= IPC_PORT_UNRESERVED_START) {
 		ipch.ipchdr_src = ipcsc->ipcsc_port;
 		ipch.ipchdr_dst = IPC_PORT_NS;
+		ipch.ipchdr_right = IPC_PORT_RIGHT_SEND_ONCE;
 		ipch.ipchdr_msg = NS_MESSAGE_REGISTER;
 
 		error = ipc_port_send(&ipch);

@@ -12,24 +12,34 @@
 #include <ipc/port.h>
 #include <vm/page.h>
 
+struct ipc_message;
+struct ipc_port;
+struct ipc_port_right;
+
+struct ipc_message {
+	struct ipc_header ipcmsg_header;
+	TAILQ_ENTRY(struct ipc_message) ipcmsg_link;
+};
+
 struct ipc_port {
-	struct task *ipcp_task; /* XXX Mach-like rights.  */
 	struct mutex ipcp_mutex;
+	BTREE_ROOT(struct ipc_port_right) ipcp_rights;
 	struct cv *ipcp_cv;
 	ipc_port_t ipcp_port;
 	TAILQ_HEAD(, struct ipc_message) ipcp_msgs;
 	BTREE_NODE(struct ipc_port) ipcp_link;
 };
 
-struct ipc_message {
-	struct ipc_header ipcmsg_header;
-	vaddr_t ipcmsg_page;
-	TAILQ_ENTRY(struct ipc_message) ipcmsg_link;
+struct ipc_port_right {
+	struct task *ipcpr_task;
+	ipc_port_right_t ipcpr_rights;
+	BTREE_NODE(struct ipc_port_right) ipcpr_tree;
 };
 
 static BTREE_ROOT(struct ipc_port) ipc_ports = BTREE_ROOT_INITIALIZER();
 static struct mutex ipc_ports_lock;
 static struct pool ipc_port_pool;
+static struct pool ipc_port_right_pool;
 static ipc_port_t ipc_port_next		= IPC_PORT_UNRESERVED_START;
 
 #define	IPC_PORTS_LOCK()	mutex_lock(&ipc_ports_lock)
@@ -40,6 +50,8 @@ static ipc_port_t ipc_port_next		= IPC_PORT_UNRESERVED_START;
 static struct ipc_port *ipc_port_alloc(struct task *, ipc_port_t);
 static void ipc_port_deliver(struct ipc_message *);
 static struct ipc_port *ipc_port_lookup(ipc_port_t);
+static int ipc_port_right_insert(struct ipc_port *, ipc_port_right_t,
+				 struct task *);
 
 void
 ipc_port_init(void)
@@ -48,6 +60,12 @@ ipc_port_init(void)
 
 	error = pool_create(&ipc_port_pool, "IPC PORT",
 			    sizeof (struct ipc_port),
+			    POOL_DEFAULT | POOL_VIRTUAL);
+	if (error != 0)
+		panic("%s: pool_create failed: %m", __func__, error);
+
+	error = pool_create(&ipc_port_right_pool, "IPC PORT RIGHT",
+			    sizeof (struct ipc_port_right),
 			    POOL_DEFAULT | POOL_VIRTUAL);
 	if (error != 0)
 		panic("%s: pool_create failed: %m", __func__, error);
@@ -79,6 +97,7 @@ ipc_port_allocate(struct task *task, ipc_port_t *portp)
 		ipcp = ipc_port_alloc(task, port);
 		if (ipcp == NULL)
 			continue;
+
 		*portp = port;
 		return (0);
 	}
@@ -118,11 +137,7 @@ ipc_port_receive(ipc_port_t port, struct ipc_header *ipch)
 		IPC_PORTS_UNLOCK();
 		return (ERROR_NOT_FOUND);
 	}
-	if (ipcp->ipcp_task != current_task()) {
-		IPC_PORT_UNLOCK(ipcp);
-		IPC_PORTS_UNLOCK();
-		return (ERROR_NO_RIGHT);
-	}
+	/* XXX Check for receive right.  */
 	if (TAILQ_EMPTY(&ipcp->ipcp_msgs)) {
 		IPC_PORT_UNLOCK(ipcp);
 		IPC_PORTS_UNLOCK();
@@ -155,11 +170,7 @@ ipc_port_send(struct ipc_header *ipch)
 		IPC_PORTS_UNLOCK();
 		return (ERROR_INVALID);
 	}
-	if (ipcp->ipcp_task != current_task()) {
-		IPC_PORT_UNLOCK(ipcp);
-		IPC_PORTS_UNLOCK();
-		return (ERROR_NO_RIGHT);
-	}
+	/* XXX Check receive and send rights.  */
 	IPC_PORT_UNLOCK(ipcp);
 
 	ipcp = ipc_port_lookup(ipch->ipchdr_dst);
@@ -172,7 +183,6 @@ ipc_port_send(struct ipc_header *ipch)
 
 	ipcmsg = malloc(sizeof *ipcmsg);
 	ipcmsg->ipcmsg_header = *ipch;
-	ipcmsg->ipcmsg_page = (vaddr_t)NULL;
 	ipc_port_deliver(ipcmsg);
 	return (0);
 }
@@ -199,6 +209,7 @@ static struct ipc_port *
 ipc_port_alloc(struct task *task, ipc_port_t port)
 {
 	struct ipc_port *ipcp, *old, *iter;
+	int error;
 
 	IPC_PORTS_LOCK();
 	old = ipc_port_lookup(port);
@@ -209,11 +220,11 @@ ipc_port_alloc(struct task *task, ipc_port_t port)
 	}
 
 	ipcp = pool_allocate(&ipc_port_pool);
-	ipcp->ipcp_task = task;
 	mutex_init(&ipcp->ipcp_mutex, "IPC Port", MUTEX_FLAG_DEFAULT);
 	ipcp->ipcp_cv = cv_create(&ipcp->ipcp_mutex);
 	ipcp->ipcp_port = port;
 	TAILQ_INIT(&ipcp->ipcp_msgs);
+	BTREE_INIT_ROOT(&ipcp->ipcp_rights);
 
 	IPC_PORT_LOCK(ipcp);
 	/*
@@ -222,6 +233,17 @@ ipc_port_alloc(struct task *task, ipc_port_t port)
 	old = ipc_port_lookup(port);
 	if (old != NULL) {
 		IPC_PORT_UNLOCK(old);
+		pool_free(ipcp);
+		IPC_PORTS_UNLOCK();
+		return (NULL);
+	}
+
+	/*
+	 * Insert a receive right.
+	 */
+	error = ipc_port_right_insert(ipcp, IPC_PORT_RIGHT_RECEIVE, task);
+	if (error != 0) {
+		IPC_PORT_UNLOCK(ipcp);
 		pool_free(ipcp);
 		IPC_PORTS_UNLOCK();
 		return (NULL);
@@ -277,4 +299,33 @@ ipc_port_lookup(ipc_port_t port)
 		return (ipcp);
 	}
 	return (NULL);
+}
+
+static int
+ipc_port_right_insert(struct ipc_port *ipcp, ipc_port_right_t rights,
+		      struct task *task)
+{
+	struct ipc_port_right *ipcpr, *iter;
+
+	if ((rights & IPC_PORT_RIGHT_SEND) != 0)
+		rights &= ~IPC_PORT_RIGHT_SEND_ONCE;
+
+	BTREE_FIND(&ipcpr, iter, &ipcp->ipcp_rights, ipcpr_tree,
+		   (task < iter->ipcpr_task), (task == iter->ipcpr_task));
+	if (ipcpr != NULL) {
+		ipcpr->ipcpr_rights |= rights;
+		if ((ipcpr->ipcpr_rights & IPC_PORT_RIGHT_SEND) != 0)
+			ipcpr->ipcpr_rights &= ~IPC_PORT_RIGHT_SEND_ONCE;
+		return (0);
+	}
+
+	ipcpr = pool_allocate(&ipc_port_right_pool);
+	ipcpr->ipcpr_task = task;
+	ipcpr->ipcpr_rights = rights;
+	BTREE_INIT(&ipcpr->ipcpr_tree);
+
+	BTREE_INSERT(ipcpr, iter, &ipcp->ipcp_rights, ipcpr_tree,
+		     (ipcpr->ipcpr_task < iter->ipcpr_task));
+
+	return (0);
 }

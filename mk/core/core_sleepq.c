@@ -1,5 +1,7 @@
 #include <core/types.h>
+#include <core/btree.h>
 #include <core/pool.h>
+#include <core/queue.h>
 #include <core/scheduler.h>
 #include <core/sleepq.h>
 #include <core/startup.h>
@@ -21,7 +23,7 @@ struct sleepq {
 	struct spinlock sq_lock;
 	const void *sq_cookie;
 	TAILQ_HEAD(, struct sleepq_entry) sq_entries;
-	TAILQ_ENTRY(struct sleepq) sq_link;
+	BTREE_NODE(struct sleepq) sq_tree;
 };
 
 static struct pool sleepq_pool;
@@ -29,7 +31,7 @@ static struct pool sleepq_pool;
 #define	SQ_LOCK(sq)	spinlock_lock(&(sq)->sq_lock)
 #define	SQ_UNLOCK(sq)	spinlock_unlock(&(sq)->sq_lock)
 
-static TAILQ_HEAD(, struct sleepq) sleepq_queue_list;
+static BTREE_ROOT(struct sleepq) sleepq_queue_tree;
 
 static struct sleepq *sleepq_lookup(const void *, bool);
 static void sleepq_signal_entry(struct sleepq *, struct sleepq_entry *);
@@ -91,15 +93,15 @@ sleepq_signal_one(const void *cookie)
 static struct sleepq *
 sleepq_lookup(const void *cookie, bool create)
 {
-	struct sleepq *sq;
+	struct sleepq *sq, *iter;
 
 	SLEEPQ_LOCK();
-	TAILQ_FOREACH(sq, &sleepq_queue_list, sq_link) {
-		if (sq->sq_cookie == cookie) {
-			SQ_LOCK(sq);
-			SLEEPQ_UNLOCK();
-			return (sq);
-		}
+	BTREE_FIND(&sq, iter, &sleepq_queue_tree, sq_tree,
+		   (cookie < iter->sq_cookie), (cookie == iter->sq_cookie));
+	if (sq != NULL) {
+		SQ_LOCK(sq);
+		SLEEPQ_UNLOCK();
+		return (sq);
 	}
 	if (!create) {
 		SLEEPQ_UNLOCK();
@@ -110,7 +112,9 @@ sleepq_lookup(const void *cookie, bool create)
 	SQ_LOCK(sq);
 	sq->sq_cookie = cookie;
 	TAILQ_INIT(&sq->sq_entries);
-	TAILQ_INSERT_TAIL(&sleepq_queue_list, sq, sq_link);
+	BTREE_INIT(&sq->sq_tree);
+	BTREE_INSERT(sq, iter, &sleepq_queue_tree, sq_tree,
+		     (sq->sq_cookie < iter->sq_cookie));
 	SLEEPQ_UNLOCK();
 	return (sq);
 }
@@ -140,6 +144,6 @@ sleepq_startup(void *arg)
 			    POOL_VIRTUAL);
 	if (error != 0)
 		panic("%s: pool_create failed: %m", __func__, error);
-	TAILQ_INIT(&sleepq_queue_list);
+	BTREE_INIT_ROOT(&sleepq_queue_tree);
 }
 STARTUP_ITEM(sleepq, STARTUP_POOL, STARTUP_FIRST, sleepq_startup, NULL);

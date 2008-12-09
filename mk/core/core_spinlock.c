@@ -24,11 +24,13 @@ spinlock_lock(struct spinlock *lock)
 	while (!atomic_compare_and_set_64(&lock->s_owner, CPU_ID_INVALID,
 					  mp_whoami())) {
 		if (atomic_load_64(&lock->s_owner) == (uint64_t)mp_whoami()) {
-			if ((lock->s_flags & SPINLOCK_FLAG_RECURSE) == 0)
-				panic("%s: attempting to recurse on non-recursive lock (%s)", __func__, lock->s_name);
-			atomic_increment_64(&lock->s_nest);
-			critical_exit(crit);
-			return;
+			if ((lock->s_flags & SPINLOCK_FLAG_RECURSE) != 0) {
+				atomic_increment_64(&lock->s_nest);
+				critical_exit(crit);
+				return;
+			}
+			panic("%s: cannot recurse on spinlock (%s)", __func__,
+			      lock->s_name);
 		}
 		critical_exit(crit);
 		/*

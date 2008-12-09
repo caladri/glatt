@@ -22,8 +22,7 @@ Tasks to do before release:
 	   set.  On the other hand, VIRTUAL pools no longer really exist, and
 	   that may be desirable.
 	o) Ports for device drivers.
-	o) Simple service definition API to only have to provide a startup
-	   function and a function to handle IPC.
+	o) Signal / exception port functionality.
 
 Bugs:
 

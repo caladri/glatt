@@ -3,7 +3,6 @@ Tasks to do before release:
 		o) Mailbox structure.
 		o) Data descriptor format.
 		o) System call.
-		o) Rights model.
 	o) Simple FS server.
 	o) Link files into the kernel to present a MFS.
 	o) ELF loader.
@@ -25,5 +24,8 @@ Tasks to do before release:
 	o) Signal / exception port functionality.
 
 Bugs:
+	o) The old core_test.c program with a large number of threads causes a
+	   panic seemingly due to reuse of memory or exhaustion of memory, or
+	   perhaps due to a write somewhere inappropriate.
 
 Current goal: December 2008 release.

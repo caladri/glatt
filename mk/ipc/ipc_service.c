@@ -33,6 +33,7 @@ struct ipc_service_context {
 	struct thread *ipcsc_thread;
 };
 
+static void ipc_service_dump(struct ipc_service_context *, struct ipc_header *);
 static void ipc_service_main(void *);
 
 int
@@ -83,6 +84,13 @@ ipc_service(const char *name, ipc_port_t port, ipc_service_t *handler,
 }
 
 static void
+ipc_service_dump(struct ipc_service_context *ipcsc, struct ipc_header *ipch)
+{
+	kcprintf("%s: %lx -> %lx : %lx\n", ipcsc->ipcsc_name,
+		 ipch->ipchdr_src, ipch->ipchdr_dst, ipch->ipchdr_msg);
+}
+
+static void
 ipc_service_main(void *arg)
 {
 	struct ipc_service_context *ipcsc = arg;
@@ -97,14 +105,19 @@ ipc_service_main(void *arg)
 		ipch.ipchdr_msg = NS_MESSAGE_REGISTER;
 
 		error = ipc_port_send(&ipch);
-		if (error != 0)
+		if (error != 0) {
+			ipc_service_dump(ipcsc, &ipch);
 			panic("%s: ipc_send failed: %m", __func__, error);
+		}
 
 		for (;;) {
 			kcprintf("%s: waiting for registration with ns...\n",
 				 ipcsc->ipcsc_name);
 
-			ipc_port_wait(ipcsc->ipcsc_port);
+			error = ipc_port_wait(ipcsc->ipcsc_port);
+			if (error != 0)
+				panic("%s: ipc_port_wait failed: %m", __func__,
+				      error);
 
 			error = ipc_port_receive(ipcsc->ipcsc_port, &ipch);
 			if (error != 0) {
@@ -112,9 +125,7 @@ ipc_service_main(void *arg)
 					continue;
 			}
 
-			kcprintf("%s: %lx -> %lx : %lx\n", ipcsc->ipcsc_name,
-				 ipch.ipchdr_src, ipch.ipchdr_dst,
-				 ipch.ipchdr_msg);
+			ipc_service_dump(ipcsc, &ipch);
 
 			if (ipch.ipchdr_src != IPC_PORT_NS) {
 				kcprintf("%s: message from unexpected source.\n",
@@ -139,7 +150,9 @@ ipc_service_main(void *arg)
 	for (;;) {
 		kcprintf("%s: waiting...\n", ipcsc->ipcsc_name);
 
-		ipc_port_wait(ipcsc->ipcsc_port);
+		error = ipc_port_wait(ipcsc->ipcsc_port);
+		if (error != 0)
+			panic ("%s: ipc_port_wait failed: %m", __func__, error);
 
 		error = ipc_port_receive(ipcsc->ipcsc_port, &ipch);
 		if (error != 0) {
@@ -149,8 +162,7 @@ ipc_service_main(void *arg)
 			      error);
 		}
 
-		kcprintf("%s: %lx -> %lx : %lx\n", ipcsc->ipcsc_name,
-			 ipch.ipchdr_src, ipch.ipchdr_dst, ipch.ipchdr_msg);
+		ipc_service_dump(ipcsc, &ipch);
 
 		ipcsc->ipcsc_handler(ipcsc->ipcsc_arg, &ipch);
 	}

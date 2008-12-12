@@ -18,6 +18,10 @@ task_init(void)
 	if (error != 0)
 		panic("%s: pool_create failed: %m", __func__, error);
 	STAILQ_INIT(&task_list);
+
+#ifdef IPC
+	ipc_task_init();
+#endif
 }
 
 int
@@ -49,6 +53,15 @@ task_create(struct task **taskp, struct task *parent, const char *name,
 		panic("%s: need to destroy task, cpu_task_setup failed: %m",
 		      __func__, error);
 	}
+
+#ifdef IPC
+	error = ipc_task_setup(task);
+	if (error != 0) {
+		panic("%s: need to destroy task, ipc_task_setup failed: %m",
+		      __func__, error);
+	}
+#endif
+
 	*taskp = task;
 	return (0);
 }

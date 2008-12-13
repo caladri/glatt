@@ -17,7 +17,7 @@ typedef	uintmax_t ns_cookie_t;
 
 #define	NS_SERVICE_NAME_MESSAGE_FIELDS					\
 	NS_MINIMAL_MESSAGE_FIELDS;					\
-	unsigned char service_name[NS_SERVICE_NAME_LENGTH]
+	char service_name[NS_SERVICE_NAME_LENGTH]
 
 #define	NS_PORT_MESSAGE_FIELDS						\
 	NS_SERVICE_NAME_MESSAGE_FIELDS;					\

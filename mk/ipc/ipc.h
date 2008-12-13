@@ -25,12 +25,11 @@ struct ipc_header {
 #define	IPC_MSG_REPLY(msg)	(-(msg))
 
 #define	IPC_HEADER_REPLY(ipchdrp)					\
-	do {								\
-		ipc_port_t _reply = (ipchdrp)->ipchdr_src;		\
-		(ipchdrp)->ipchdr_src = (ipchdrp)->ipchdr_dst;		\
-		(ipchdrp)->ipchdr_dst = _reply;				\
-		(ipchdrp)->ipchdr_right = IPC_PORT_RIGHT_NONE;		\
-		(ipchdrp)->ipchdr_msg = -(ipchdrp)->ipchdr_msg;		\
-	} while (0)
+	((struct ipc_header) {						\
+		.ipchdr_src = (ipchdrp)->ipchdr_dst,			\
+		.ipchdr_dst = (ipchdrp)->ipchdr_src,			\
+		.ipchdr_right = IPC_PORT_RIGHT_NONE,			\
+		.ipchdr_msg = IPC_MSG_REPLY((ipchdrp)->ipchdr_msg),	\
+	})
 
 #endif /* !_IPC_IPC_H_ */

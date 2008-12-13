@@ -1,25 +1,20 @@
 #include <core/types.h>
-#include <core/cv.h>
+#include <core/btree.h>
 #include <core/error.h>
 #include <core/mutex.h>
 #include <core/pool.h>
-#include <core/queue.h>
-#include <core/scheduler.h>
-#include <core/startup.h>
-#include <core/task.h>
-#include <core/thread.h>
+#include <core/string.h>
 #include <ipc/ipc.h>
-#include <ipc/port.h>
 #include <ns/ns.h>
 #include <ns/service_directory.h>
 
 struct service_directory_entry {
 	char sde_name[NS_SERVICE_NAME_LENGTH];
 	ipc_port_t sde_port;
-	STAILQ_ENTRY(struct service_directory_entry) sde_link;
+	BTREE_NODE(struct service_directory_entry) sde_tree;
 };
 
-static STAILQ_HEAD(, struct service_directory_entry) service_directory;
+static BTREE_ROOT(struct service_directory_entry) service_directory;
 static struct mutex service_directory_lock;
 static struct pool service_directory_entry_pool;
 
@@ -38,17 +33,58 @@ service_directory_init(void)
 		panic("%s: pool_create failed: %m", __func__, error);
 
 	mutex_init(&service_directory_lock, "Service Directory", MUTEX_FLAG_DEFAULT);
-	STAILQ_INIT(&service_directory);
+	BTREE_INIT_ROOT(&service_directory);
 }
 
 int
 service_directory_enter(const char *service_name, ipc_port_t port)
 {
-	return (ERROR_NOT_IMPLEMENTED);
+	struct service_directory_entry *sde, *old, *iter;
+
+	sde = pool_allocate(&service_directory_entry_pool);
+	strlcpy(sde->sde_name, service_name, NS_SERVICE_NAME_LENGTH);
+	sde->sde_port = port;
+	BTREE_INIT(&sde->sde_tree);
+
+	SERVICE_DIRECTORY_LOCK();
+
+	BTREE_FIND(&old, iter, &service_directory, sde_tree,
+		   strcmp(sde->sde_name, iter->sde_name) == -1,
+		   strcmp(sde->sde_name, iter->sde_name) == 0);
+
+	if (old != NULL) {
+		SERVICE_DIRECTORY_UNLOCK();
+		pool_free(sde);
+		return (ERROR_NOT_FREE);
+	}
+
+	BTREE_INSERT(sde, iter, &service_directory, sde_tree,
+		     strcmp(sde->sde_name, iter->sde_name) == -1);
+
+	SERVICE_DIRECTORY_UNLOCK();
+
+	return (0);
 }
 
 int
-service_directory_lookup(const char *service_name, ipc_port_t *port)
+service_directory_lookup(const char *service_name, ipc_port_t *portp)
 {
-	return (ERROR_NOT_IMPLEMENTED);
+	struct service_directory_entry *sde, *iter;
+
+	SERVICE_DIRECTORY_LOCK();
+
+	BTREE_FIND(&sde, iter, &service_directory, sde_tree,
+		   strcmp(service_name, iter->sde_name) == -1,
+		   strcmp(service_name, iter->sde_name) == 0);
+
+	if (sde == NULL) {
+		SERVICE_DIRECTORY_UNLOCK();
+		return (ERROR_NOT_FOUND);
+	}
+
+	*portp = sde->sde_port;
+
+	SERVICE_DIRECTORY_UNLOCK();
+
+	return (0);
 }

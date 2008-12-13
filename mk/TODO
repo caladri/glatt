@@ -1,7 +1,6 @@
 Tasks to do before release:
 	o) IPC
 		o) Mailbox structure.
-		o) Data descriptor format.
 		o) System call.
 	o) Simple FS server.
 	o) Link files into the kernel to present a MFS.

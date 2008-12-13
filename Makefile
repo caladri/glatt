@@ -70,6 +70,20 @@ mk-options-help:
 mk-options:
 	@${GO_MAKE:S,DST,mk,:S,TGT,options,} ${MK_FLAGS}
 
+TARGETS+=mk-reconfig
+mk-reconfig-help:
+	@echo 'Performs a reconfig of the microkernel in its build directory.'
+	@echo 'usage: '${MAKE}' mk-reconfig'
+	@echo 'variables:'
+	@echo '    MK_OBJ       Directory to build in, e.g.'
+	@echo '                 MK_OBJ=/usr/obj/mk.testmips'
+mk-reconfig:
+	@if [ -e ${MK_OBJ}/Makefile ]; then				\
+		${GO_MAKE:S,DST,${MK_OBJ},:S,TGT,reconfig,} ${MK_FLAGS} ;\
+	else								\
+		echo '>>> Please run '${MAKE}' mk-config instead.' ;	\
+	fi
+
 TARGETS+=mk-simulate
 mk-simulate-help:
 	@echo 'Performs a simulation of the microkernel in its build directory.'

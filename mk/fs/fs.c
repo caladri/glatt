@@ -14,10 +14,10 @@
 #include <ipc/service.h>
 #include <fs/fs.h>
 
-static int fs_handler(void *, struct ipc_header *);
+static int fs_handler(void *, struct ipc_header *, struct ipc_data *);
 
 static int
-fs_handler(void *arg, struct ipc_header *ipch)
+fs_handler(void *arg, struct ipc_header *ipch, struct ipc_data *ipcd)
 {
 	return (0);
 }

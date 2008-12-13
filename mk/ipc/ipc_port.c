@@ -8,6 +8,7 @@
 #include <core/startup.h>
 #include <core/task.h>
 #include <core/thread.h>
+#include <ipc/data.h>
 #include <ipc/ipc.h>
 #include <ipc/port.h>
 #include <vm/page.h>
@@ -17,6 +18,7 @@ struct ipc_port;
 
 struct ipc_message {
 	struct ipc_header ipcmsg_header;
+	struct ipc_data *ipcmsg_data;
 	TAILQ_ENTRY(struct ipc_message) ipcmsg_link;
 };
 
@@ -133,7 +135,8 @@ ipc_port_allocate_reserved(struct task *task, ipc_port_t port)
 }
 
 int
-ipc_port_receive(ipc_port_t port, struct ipc_header *ipch)
+ipc_port_receive(ipc_port_t port, struct ipc_header *ipch,
+		 struct ipc_data **ipcdp)
 {
 	struct ipc_message *ipcmsg;
 	struct ipc_port *ipcp;
@@ -188,12 +191,22 @@ ipc_port_receive(ipc_port_t port, struct ipc_header *ipch)
 	IPC_PORTS_UNLOCK();
 
 	*ipch = ipcmsg->ipcmsg_header;
+	if (ipcdp != NULL) {
+		*ipcdp = ipcmsg->ipcmsg_data;
+	} else {
+		if (ipcmsg->ipcmsg_data != NULL) {
+			ipc_data_free(ipcmsg->ipcmsg_data);
+		}
+	}
+	ipcmsg->ipcmsg_data = NULL;
+
 	free(ipcmsg);
+
 	return (0);
 }
 
 int
-ipc_port_send(struct ipc_header *ipch)
+ipc_port_send(struct ipc_header *ipch, struct ipc_data *ipcd)
 {
 	struct ipc_message *ipcmsg;
 	struct ipc_port *ipcp;
@@ -244,6 +257,17 @@ ipc_port_send(struct ipc_header *ipch)
 
 	ipcmsg = malloc(sizeof *ipcmsg);
 	ipcmsg->ipcmsg_header = *ipch;
+	ipcmsg->ipcmsg_data = NULL;
+
+	if (ipcd != NULL) {
+		error = ipc_data_copyin(ipcd, &ipcmsg->ipcmsg_data);
+		if (error != 0) {
+			IPC_PORT_UNLOCK(ipcp);
+			IPC_PORTS_UNLOCK();
+			free(ipcmsg);
+			return (error);
+		}
+	}
 
 	TAILQ_INSERT_TAIL(&ipcp->ipcp_msgs, ipcmsg, ipcmsg_link);
 	cv_signal(ipcp->ipcp_cv);

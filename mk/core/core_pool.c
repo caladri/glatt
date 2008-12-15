@@ -21,11 +21,8 @@ DB_SHOW_VALUE_TREE(pool, root, DB_SHOW_TREE_POINTER(pool));
 #define	POOL_ITEM_FREE		(0x0001)
 
 struct pool_item {
-	uint16_t pi_flags;
-	uint16_t pi_unused16;
-	uint32_t pi_unused32;
+	uint8_t pi_flags;
 };
-COMPILE_TIME_ASSERT(sizeof (struct pool_item) == 8);
 
 #define	POOL_PAGE_MAGIC		(0x19800604)
 struct pool_page {
@@ -35,17 +32,24 @@ struct pool_page {
 	size_t pp_items;
 };
 
-#define	MAX_ALLOC_SIZE	((PAGE_SIZE - (sizeof (struct pool_page) +	\
-				       (sizeof (struct pool_item) * 2)))\
-			 / 2)
+#define	POOL_ITEM_OVERHEAD(n)						\
+	ROUNDUP(((n) * sizeof (struct pool_item)), sizeof (uintmax_t))
+#define	POOL_UTILIZATION(n, s)						\
+	(sizeof (struct pool_page) + POOL_ITEM_OVERHEAD((n)) + ((s) * (n)))
+
+#define	MAX_ALLOC_SIZE							\
+	((PAGE_SIZE / 2) - (POOL_ITEM_OVERHEAD(2) + sizeof (struct pool_page)))
 
 #ifdef DB
 static TAILQ_HEAD(, struct pool) pool_list = TAILQ_HEAD_INITIALIZER(pool_list);
 #endif
 
-static struct pool_item *pool_get(struct pool *);
+static struct pool_page *pool_datum_page(void *);
+static void *pool_get(struct pool *);
 static void pool_insert_page(struct pool *, struct pool_page *);
-static struct pool_page *pool_page(struct pool_item *);
+static struct pool_page *pool_item_page(struct pool_item *);
+static void *pool_page_datum(struct pool_page *, unsigned);
+static struct pool_item *pool_page_datum_item(struct pool_page *, void *);
 static struct pool_item *pool_page_item(struct pool_page *, unsigned);
 
 size_t pool_max_alloc = MAX_ALLOC_SIZE;
@@ -64,7 +68,7 @@ pool_allocate(struct pool *pool)
 
 	POOL_LOCK(pool);
 	item = pool_get(pool);
-	if (item++ != NULL) {
+	if (item != NULL) {
 		POOL_UNLOCK(pool);
 		return ((void *)item);
 	}
@@ -84,7 +88,7 @@ pool_allocate(struct pool *pool)
 	pool_insert_page(pool, (struct pool_page *)vaddr);
 
 	item = pool_get(pool);
-	if (item++ == NULL)
+	if (item == NULL)
 		panic("%s: can't get memory but we just allocated!", __func__);
 	POOL_UNLOCK(pool);
 	return ((void *)item);
@@ -99,9 +103,9 @@ pool_free(void *m)
 	vaddr_t vaddr;
 	int error;
 
-	item = m;
-	item--;
-	page = pool_page(item);
+	page = pool_datum_page(m);
+	item = pool_page_datum_item(page, m);
+	ASSERT(page == pool_item_page(item), "datum and item must match page");
 	pool = page->pp_pool;
 	ASSERT((pool->pool_flags & POOL_VALID) != 0, "pool must be valid.");
 	POOL_LOCK(pool);
@@ -145,8 +149,14 @@ pool_create(struct pool *pool, const char *name, size_t size, unsigned flags)
 	spinlock_init(&pool->pool_lock, "DYNAMIC POOL", SPINLOCK_FLAG_DEFAULT);
 	pool->pool_name = name;
 	pool->pool_size = size;
-	pool->pool_maxitems = (PAGE_SIZE - sizeof (struct pool_page)) /
-		(pool->pool_size + sizeof (struct pool_item));
+	/*
+	 * This can be done constantly, but I'm too tired at the moment to work
+	 * it out.
+	 */
+	for (pool->pool_maxitems = 0;
+	     POOL_UTILIZATION(pool->pool_maxitems + 1, size) <= PAGE_SIZE;
+	     pool->pool_maxitems++)
+		continue;
 	SLIST_INIT(&pool->pool_pages);
 	pool->pool_flags = flags | POOL_VALID;
 #ifdef VERBOSE
@@ -172,13 +182,23 @@ pool_insert(struct pool *pool, vaddr_t vaddr)
 	POOL_UNLOCK(pool);
 }
 
+static struct pool_page *
+pool_datum_page(void *datum)
+{
+	struct pool_page *page;
+
+	page = (struct pool_page *)PAGE_FLOOR((uintptr_t)datum);
+	ASSERT(page->pp_magic == POOL_PAGE_MAGIC, "datum in invalid page");
+	return (page);
+}
+
 int
 pool_destroy(struct pool *pool)
 {
 	panic("%s: can't destroy pools yet.", __func__);
 }
 
-static struct pool_item *
+static void *
 pool_get(struct pool *pool)
 {
 	struct pool_page *page;
@@ -190,12 +210,12 @@ pool_get(struct pool *pool)
 			continue;
 		for (i = 0; i < pool->pool_maxitems; i++) {
 			item = pool_page_item(page, i);
-			ASSERT(pool_page(item) == page,
+			ASSERT(pool_item_page(item) == page,
 			       "item is within its page");
 			if ((item->pi_flags & POOL_ITEM_FREE) != 0) {
 				item->pi_flags ^= POOL_ITEM_FREE;
 				page->pp_items++;
-				return (item);
+				return (pool_page_datum(page, i));
 			}
 		}
 	}
@@ -221,13 +241,41 @@ pool_insert_page(struct pool *pool, struct pool_page *page)
 }
 
 static struct pool_page *
-pool_page(struct pool_item *item)
+pool_item_page(struct pool_item *item)
 {
 	struct pool_page *page;
 
 	page = (struct pool_page *)PAGE_FLOOR((uintptr_t)item);
 	ASSERT(page->pp_magic == POOL_PAGE_MAGIC, "item in invalid page");
 	return (page);
+}
+
+static void *
+pool_page_datum(struct pool_page *page, unsigned i)
+{
+	void *datum;
+	unsigned offset;
+
+	ASSERT(i < page->pp_pool->pool_maxitems, "access past end of page.");
+	offset = POOL_ITEM_OVERHEAD(page->pp_pool->pool_maxitems) +
+		i * page->pp_pool->pool_size;
+	datum = (void *)((uintptr_t)(page + 1) + offset);
+	ASSERT(pool_datum_page(datum) == page, "datum is within its page");
+	return (datum);
+}
+
+static struct pool_item *
+pool_page_datum_item(struct pool_page *page, void *datum)
+{
+	struct pool_item *item;
+	unsigned i;
+
+	i = ((uintptr_t)datum - (uintptr_t)pool_page_datum(page, 0)) /
+		page->pp_pool->pool_size;
+	ASSERT(i < page->pp_pool->pool_maxitems, "access past end of page.");
+	item = pool_page_item(page, i);
+	ASSERT(pool_item_page(item) == page, "item is within its page");
+	return (item);
 }
 
 static struct pool_item *
@@ -237,9 +285,9 @@ pool_page_item(struct pool_page *page, unsigned i)
 	unsigned offset;
 
 	ASSERT(i < page->pp_pool->pool_maxitems, "access past end of page.");
-	offset = i * (page->pp_pool->pool_size + sizeof *item);
+	offset = i * sizeof *item;
 	item = (struct pool_item *)((uintptr_t)(page + 1) + offset);
-	ASSERT(pool_page(item) == page, "item is within its page");
+	ASSERT(pool_item_page(item) == page, "item is within its page");
 	return (item);
 }
 

@@ -8,8 +8,7 @@ struct pool_page;
 
 #define	POOL_DEFAULT	(0x00000000)	/* Default pool flags.  */
 #define	POOL_VIRTUAL	(0x00000001)	/* Map virtual, not direct-map.  */
-#define	POOL_MANAGED	(0x00000002)	/* Page allocator managed by caller.  */
-#define	POOL_VALID	(0x00000008)	/* Pool is valid.  */
+#define	POOL_VALID	(0x00000002)	/* Pool is valid.  */
 
 struct pool {
 	struct spinlock pool_lock;

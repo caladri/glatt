@@ -1,9 +1,6 @@
 #include <core/types.h>
 #include <core/copyright.h>
 #include <core/error.h>
-#ifndef	NO_MORDER
-#include <core/morder.h>
-#endif
 #include <core/pool.h>
 #include <core/scheduler.h>
 #include <core/spinlock.h>
@@ -63,13 +60,6 @@ startup_init(void)
 	 */
 	task_init();
 	thread_init();
-
-#ifndef	NO_MORDER
-	/*
-	 * Initialize lock order checker if present.
-	 */
-	morder_init();
-#endif
 }
 
 void

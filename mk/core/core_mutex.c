@@ -1,7 +1,4 @@
 #include <core/types.h>
-#ifndef NO_MORDER
-#include <core/morder.h>
-#endif
 #include <core/mutex.h>
 #include <core/sleepq.h>
 #include <core/thread.h>
@@ -37,10 +34,6 @@ mutex_lock(struct mutex *mtx)
 	td = current_thread();
 	ASSERT(td != NULL, "Must have a thread.");
 	ASSERT(mtx != NULL, "Cannot lock NULL mutex.");
-
-#ifndef	NO_MORDER
-	morder_lock(mtx);
-#endif
 
 	tries = 0;
 
@@ -78,10 +71,6 @@ mutex_unlock(struct mutex *mtx)
 	td = current_thread();
 
 	ASSERT(td != NULL, "Must have a thread.");
-
-#ifndef	NO_MORDER
-	morder_unlock(mtx);
-#endif
 
 	MTX_SPINLOCK(mtx);
 	ASSERT(mtx->mtx_owner == td, "Not my lock to unlock.");

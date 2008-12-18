@@ -17,14 +17,10 @@ std		core/core_task.c
 std		core/core_thread.c
 std		core/core_ttk.c
 
-morder		core/core_morder.c
-
 mp		core/core_mp.c
 mp		core/core_mp_cpu.c
 mp		core/core_mp_hokusai.c
 mp		core/core_mp_ipi.c
-
-vdae		core/core_vdae.c
 
 db		db/db.c
 db		db/db_misc.c

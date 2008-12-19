@@ -5,9 +5,11 @@
 #include <cpu/pcpu.h>
 #include <cpu/task.h>
 #ifdef IPC
+#include <ipc/ipc.h>
 #include <ipc/task.h>
 #endif
-#include <vm/vm.h>
+
+struct vm;
 
 #define	TASK_NAME_SIZE	(128)
 

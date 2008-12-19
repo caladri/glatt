@@ -2,8 +2,8 @@
 #define	_CORE_SCHEDULER_H_
 
 #include <core/queue.h>
-#include <core/spinlock.h>
 
+struct spinlock;
 struct thread;
 
 #define	SCHEDULER_DEFAULT	(0x00000000)	/* Default flags.  */

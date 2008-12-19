@@ -2,7 +2,6 @@
 #define	_IPC_TASK_H_
 
 #include <core/btree.h>
-#include <ipc/ipc.h>
 
 struct ipc_port_right;
 

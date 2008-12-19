@@ -6,6 +6,7 @@
 #include <cpu/pcpu.h>
 #include <cpu/pte.h>
 #include <cpu/tlb.h>
+#include <vm/vm.h>
 
 	/* CONTEXT offsets.  */
 DEFINE(CONTEXT_S0,	offsetof(struct context,	c_regs[CONTEXT_S0]));

@@ -57,24 +57,14 @@ pci_describe(struct bus_instance *bi)
 }
 
 static int
-pci_enumerate_children(struct bus_instance *bi)
+pci_slot_walk(struct pci_softc *sc, pci_bus_t bus, pci_slot_t slot)
 {
-	struct pci_softc *sc;
-	pci_bus_t bus;
-	pci_slot_t slot;
 	pci_function_t function;
+	pci_cs_data_t data;
+	pci_tag_t tag;
 	int error;
 
-	sc = bus_softc(bi);
-
-	bus = 0;
-
-	for (slot = 0; slot < 32; slot++) {
-		pci_cs_data_t data;
-		pci_tag_t tag;
-
-		function = 0;
-
+	for (function = 0; function < 8; function++) {
 		tag = pci_tag_make(bus, slot, function);
 
 		sc->sc_interface->pci_cs_read(sc->sc_interface, tag,
@@ -83,8 +73,39 @@ pci_enumerate_children(struct bus_instance *bi)
 			continue;
 		error = pci_enumerate_child(sc, bus, slot, function, data);
 		if (error != 0)
-			panic("%s: pci_enumerate_child failed: %m", __func__,
-			      error);
+			panic("%s: pci_enumerate_child failed: %m",
+			      __func__, error);
+	}
+	return (0);
+}
+
+static int
+pci_bus_walk(struct pci_softc *sc, pci_bus_t bus)
+{
+	pci_slot_t slot;
+	int error;
+
+	for (slot = 0; slot < 32; slot++) {
+		error = pci_slot_walk(sc, bus, slot);
+		if (error != 0)
+			panic("%s: pci_slot_walk failed: %m", __func__, error);
+	}
+	return (0);
+}
+
+static int
+pci_enumerate_children(struct bus_instance *bi)
+{
+	struct pci_softc *sc;
+	pci_bus_t bus;
+	int error;
+
+	sc = bus_softc(bi);
+
+	for (bus = 0; bus < 256; bus++) {
+		error = pci_bus_walk(sc, bus);
+		if (error != 0)
+			panic("%s: pci_bus_walk failed: %m", __func__, error);
 	}
 
 	return (0);

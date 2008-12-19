@@ -1,9 +1,18 @@
 Tasks to do before release:
+	o) Start threads and PCPU stuff much earlier to make it possible to use
+	   more mutexes than spinlocks, or otherwise enable using mutexes and
+	   not spinlocks for a larger number of things.  It would be nice to
+	   be able to move to reader/writer locks.
+	o) Userland -- start by just copying some instructions out to userland,
+	   then move into all of the ELF stuff below.
 	o) IPC
 		o) Mailbox structure.
 		o) System call.
+		o) Think more about the rights model and rights passing.
+		o) More complete data model.
 	o) Simple FS server.
 	o) Link files into the kernel to present a MFS.
+	   XXX Perhaps UFS read support would be more productive.
 	o) ELF loader.
 		o) Trivial static ELF loading for servers and such.
 		o) Userland ELF loader that can handle static and dynamic.

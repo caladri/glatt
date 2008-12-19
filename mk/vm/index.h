@@ -1,20 +1,6 @@
 #ifndef	_VM_INDEX_H_
 #define	_VM_INDEX_H_
 
-#include <core/btree.h>
-#include <core/queue.h>
-#include <vm/page.h>
-
-struct vm_index {
-	vaddr_t vmi_base;
-	size_t vmi_size;
-	unsigned vmi_flags;
-	BTREE_NODE(struct vm_index) vmi_tree;
-	TAILQ_ENTRY(struct vm_index) vmi_free_link;
-};
-#define	VM_INDEX_FLAG_DEFAULT	(0x00000000)
-#define	VM_INDEX_FLAG_INUSE	(0x00000001)
-
 int vm_init_index(void);
 
 int vm_alloc_address(struct vm *, vaddr_t *, size_t);

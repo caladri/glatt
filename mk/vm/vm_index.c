@@ -2,6 +2,7 @@
 #include <core/btree.h>
 #include <core/error.h>
 #include <core/pool.h>
+#include <core/queue.h>
 #include <core/task.h>
 #include <core/thread.h>
 #ifdef DB
@@ -11,6 +12,16 @@
 #include <vm/index.h>
 #include <vm/page.h>
 #include <vm/vm.h>
+
+struct vm_index {
+	vaddr_t vmi_base;
+	size_t vmi_size;
+	unsigned vmi_flags;
+	BTREE_NODE(struct vm_index) vmi_tree;
+	TAILQ_ENTRY(struct vm_index) vmi_free_link;
+};
+#define	VM_INDEX_FLAG_DEFAULT	(0x00000000)
+#define	VM_INDEX_FLAG_INUSE	(0x00000001)
 
 #ifdef DB
 DB_SHOW_TREE(vm_index, index);

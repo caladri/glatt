@@ -9,7 +9,9 @@
 #include <core/string.h>
 #include <core/task.h>
 #include <core/thread.h>
+#ifdef VERBOSE
 #include <io/console/console.h>
+#endif
 #include <ipc/data.h>
 #include <ipc/ipc.h>
 #include <ipc/port.h>
@@ -35,8 +37,10 @@ struct ipc_service_context {
 	struct thread *ipcsc_thread;
 };
 
+#ifdef VERBOSE
 static void ipc_service_dump(struct ipc_service_context *, struct ipc_header *,
 			     struct ipc_data *);
+#endif
 static void ipc_service_main(void *);
 
 int
@@ -86,6 +90,7 @@ ipc_service(const char *name, ipc_port_t port, ipc_service_t *handler,
 	return (0);
 }
 
+#ifdef VERBOSE
 static void
 ipc_service_dump(struct ipc_service_context *ipcsc, struct ipc_header *ipch,
 		 struct ipc_data *ipcd)
@@ -103,6 +108,7 @@ ipc_service_dump(struct ipc_service_context *ipcsc, struct ipc_header *ipch,
 	}
 	kcprintf("\n");
 }
+#endif
 
 static void
 ipc_service_main(void *arg)
@@ -135,13 +141,17 @@ ipc_service_main(void *arg)
 
 		error = ipc_port_send(&ipch, &ipcd);
 		if (error != 0) {
+#ifdef VERBOSE
 			ipc_service_dump(ipcsc, &ipch, &ipcd);
+#endif
 			panic("%s: ipc_send failed: %m", __func__, error);
 		}
 
 		for (;;) {
+#ifdef VERBOSE
 			kcprintf("%s: waiting for registration with ns...\n",
 				 ipcsc->ipcsc_name);
+#endif
 
 			error = ipc_port_wait(ipcsc->ipcsc_port);
 			if (error != 0)
@@ -155,17 +165,23 @@ ipc_service_main(void *arg)
 					continue;
 			}
 
+#ifdef VERBOSE
 			ipc_service_dump(ipcsc, &ipch, ipcdp);
+#endif
 
 			if (ipch.ipchdr_src != IPC_PORT_NS) {
+#ifdef VERBOSE
 				kcprintf("%s: message from unexpected source.\n",
 					 ipcsc->ipcsc_name);
+#endif
 				continue;
 			}
 
 			if (ipch.ipchdr_msg != IPC_MSG_REPLY(NS_MESSAGE_REGISTER)) {
+#ifdef VERBOSE
 				kcprintf("%s: unexpected message type from ns.\n",
 					 ipcsc->ipcsc_name);
+#endif
 				continue;
 			}
 
@@ -174,8 +190,10 @@ ipc_service_main(void *arg)
 			    ipcdp->ipcd_addr == NULL ||
 			    ipcdp->ipcd_len != sizeof *nsresp ||
 			    ipcdp->ipcd_next != NULL) {
+#ifdef VERBOSE
 				kcprintf("%s: gibberish data from ns.\n",
 					 ipcsc->ipcsc_name);
+#endif
 				continue;
 			}
 
@@ -191,13 +209,17 @@ ipc_service_main(void *arg)
 			break;
 		}
 
+#ifdef VERBOSE
 		kcprintf("%s: registered with ns.\n", ipcsc->ipcsc_name);
+#endif
 	}
 
 	/* Receive real requests and responses.  */
 
 	for (;;) {
+#ifdef VERBOSE
 		kcprintf("%s: waiting...\n", ipcsc->ipcsc_name);
+#endif
 
 		error = ipc_port_wait(ipcsc->ipcsc_port);
 		if (error != 0)
@@ -211,7 +233,9 @@ ipc_service_main(void *arg)
 			      error);
 		}
 
+#ifdef VERBOSE
 		ipc_service_dump(ipcsc, &ipch, ipcdp);
+#endif
 
 		ipcsc->ipcsc_handler(ipcsc->ipcsc_arg, &ipch, ipcdp);
 		

@@ -2,7 +2,6 @@
 #include <core/error.h>
 #include <core/startup.h>
 #include <cpu/memory.h>
-#include <io/console/console.h>
 #include <io/console/consoledev.h>
 
 static int

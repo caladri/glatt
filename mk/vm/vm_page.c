@@ -6,7 +6,9 @@
 #ifdef DB
 #include <db/db_show.h>
 #endif
+#if defined(DB) || defined(VERBOSE)
 #include <io/console/console.h>
+#endif
 #include <vm/page.h>
 #include <vm/vm.h>
 

@@ -10,8 +10,6 @@
 #include <io/network/ethernet.h>
 #include <io/network/interface.h>
 
-#include <io/console/console.h>
-
 #define	TEST_ETHER_DEV_BASE	(0x14000000)
 #define	TEST_ETHER_DEV_IRQ	(3)
 

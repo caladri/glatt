@@ -1,16 +1,7 @@
 #include <core/types.h>
-#include <core/cv.h>
 #include <core/error.h>
-#include <core/mutex.h>
-#include <core/pool.h>
-#include <core/queue.h>
-#include <core/scheduler.h>
 #include <core/startup.h>
-#include <core/task.h>
-#include <core/thread.h>
-#include <io/console/console.h>
 #include <ipc/ipc.h>
-#include <ipc/port.h>
 #include <ipc/service.h>
 #include <fs/fs.h>
 

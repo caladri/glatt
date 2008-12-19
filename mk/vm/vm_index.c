@@ -7,8 +7,8 @@
 #include <core/thread.h>
 #ifdef DB
 #include <db/db_show.h>
-#endif
 #include <io/console/console.h>
+#endif
 #include <vm/index.h>
 #include <vm/page.h>
 #include <vm/vm.h>

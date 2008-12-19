@@ -52,7 +52,6 @@ pmap_unmap_direct(struct vm *vm, vaddr_t vaddr)
 }
 
 void pmap_bootstrap(void);
-void pmap_copy(struct vm_page *, struct vm_page *);
 int pmap_extract(struct vm *, vaddr_t, paddr_t *);
 int pmap_init(struct vm *, vaddr_t, vaddr_t);
 int pmap_map(struct vm *, vaddr_t, struct vm_page *);

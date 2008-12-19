@@ -42,38 +42,6 @@ vm_init(void)
 }
 
 int
-vm_page_copy(struct vm *vms, vaddr_t src, struct vm *vmd, vaddr_t *dstp)
-{
-	vaddr_t dst;
-	int error, error2;
-
-	if (dstp != NULL)
-		return (ERROR_INVALID);
-
-	if (vms == &kernel_vm || vmd == &kernel_vm)
-		return (ERROR_NOT_PERMITTED);
-
-	if (vms == vmd) {
-		*dstp = src;
-		return (0);
-	}
-
-	error = vm_alloc_page(vmd, &dst);
-	if (error != 0)
-		return (error);
-
-	error = page_copy(vms, src, vmd, dst);
-	if (error != 0) {
-		error2 = vm_free_page(vmd, dst);
-		if (error2 != 0)
-			panic("%s: vm_free_page failed: %m", __func__, error2);
-		return (error);
-	}
-
-	return (0);
-}
-
-int
 vm_setup(struct vm **vmp, vaddr_t base, vaddr_t end)
 {
 	struct vm *vm;

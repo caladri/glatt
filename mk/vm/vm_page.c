@@ -134,34 +134,6 @@ page_alloc_direct(struct vm *vm, unsigned flags, vaddr_t *vaddrp)
 }
 
 int
-page_copy(struct vm *vms, vaddr_t src, struct vm *vmd, vaddr_t dst)
-{
-	struct vm_page *spage, *dpage;
-	int error;
-
-	VM_LOCK(vms);
-	error = page_extract(vms, src, &spage);
-	if (error != 0) {
-		VM_UNLOCK(vms);
-		return (error);
-	}
-	page_ref_hold(spage); /* XXX Mark original busy?  */
-	VM_UNLOCK(vms);
-
-	VM_LOCK(vmd);
-	error = page_extract(vmd, dst, &dpage);
-	if (error != 0) {
-		VM_UNLOCK(vmd);
-		page_ref_drop(spage);
-		return (error);
-	}
-	pmap_copy(spage, dpage);
-	VM_UNLOCK(vmd);
-
-	return (0);
-}
-
-int
 page_extract(struct vm *vm, vaddr_t vaddr, struct vm_page **pagep)
 {
 	struct vm_page *page;

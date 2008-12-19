@@ -55,6 +55,5 @@ ns		ns/service_directory.c
 
 std		vm/vm.c
 std		vm/vm_alloc.c
-std		vm/vm_copy.c
 std		vm/vm_index.c
 std		vm/vm_page.c

@@ -1,7 +1,5 @@
 #include <core/types.h>
 #include <core/error.h>
-#include <core/pool.h>
-#include <core/startup.h>
 #include <io/storage/device.h>
 #include <io/storage/ufs/mount.h>
 #include <vm/vm.h>
@@ -23,13 +21,16 @@ struct ufs_superblock {
 	int32_t sb_unused3[8];
 	int32_t sb_nindir;
 	int32_t sb_inopb;
-	int32_t sb_unused4[219];
+	int32_t sb_unused4[15];
+	int32_t sb_ipg;
+	int32_t sb_fpg;
+	int32_t sb_unused5[202];
 	int64_t sb_sblockloc;
-	int32_t sb_unused5[18];
+	int32_t sb_unused6[18];
 	int64_t sb_fsblocks;
-	int32_t sb_unused6[62];
+	int32_t sb_unused7[62];
 	int64_t sb_bmask64;
-	int32_t sb_unused7[7];
+	int32_t sb_unused8[7];
 	int32_t sb_magic;
 };
 COMPILE_TIME_ASSERT(offsetof(struct ufs_superblock, sb_bsize) == 0x30);
@@ -37,6 +38,8 @@ COMPILE_TIME_ASSERT(offsetof(struct ufs_superblock, sb_fmask) == 0x4c);
 COMPILE_TIME_ASSERT(offsetof(struct ufs_superblock, sb_bshift) == 0x50);
 COMPILE_TIME_ASSERT(offsetof(struct ufs_superblock, sb_nindir) == 0x74);
 COMPILE_TIME_ASSERT(offsetof(struct ufs_superblock, sb_inopb) == 0x78);
+COMPILE_TIME_ASSERT(offsetof(struct ufs_superblock, sb_ipg) == 0xb8);
+COMPILE_TIME_ASSERT(offsetof(struct ufs_superblock, sb_fpg) == 0xbc);
 COMPILE_TIME_ASSERT(offsetof(struct ufs_superblock, sb_sblockloc) == 0x3e8);
 COMPILE_TIME_ASSERT(offsetof(struct ufs_superblock, sb_fsblocks) == 0x438);
 COMPILE_TIME_ASSERT(offsetof(struct ufs_superblock, sb_bmask64) == 0x538);
@@ -48,12 +51,13 @@ struct ufs_mount {
 	struct storage_device *um_sdev;
 
 	off_t um_sboff;
-	vaddr_t um_sbaddr;
-	/* Making this volatile because reads are done to um_sbaddr.  */
-	volatile struct ufs_superblock *um_sb;
+	union ufs_mount_superblock {
+		struct ufs_superblock ums_sb;
+		uint8_t ums_block[UFS_SUPERBLOCK_SIZE];
+	} um_sb;
 };
-
-static struct pool ufs_mount_pool;
+#define	UFS_MOUNT_SUPERBLOCK(um)					\
+	(&(um)->um_sb.ums_sb)
 
 static off_t ufs_superblock_offsets[] = {
 	65536, 8192, 0, 262144, -1
@@ -65,25 +69,20 @@ int
 ufs_mount(struct storage_device *sdev)
 {
 	struct ufs_mount *um;
+	vaddr_t umaddr;
 	int error, error2;
 
-	um = pool_allocate(&ufs_mount_pool);
+	error = vm_alloc(&kernel_vm, sizeof *um, &umaddr);
+	if (error != 0)
+		return (error);
+
+	um = (struct ufs_mount *)umaddr;
 	um->um_sdev = sdev;
 	um->um_sboff = -1;
-	um->um_sbaddr = 0;
-	um->um_sb = NULL;
-
-	error = vm_alloc(&kernel_vm, UFS_SUPERBLOCK_SIZE, &um->um_sbaddr);
-	if (error != 0) {
-		pool_free(um);
-		return (error);
-	}
-
-	um->um_sb = (volatile struct ufs_superblock *)um->um_sbaddr;
 
 	error = ufs_read_superblock(um);
 	if (error != 0) {
-		error2 = vm_free(&kernel_vm, UFS_SUPERBLOCK_SIZE, um->um_sbaddr);
+		error2 = vm_free(&kernel_vm, sizeof *um, umaddr);
 		if (error2 != 0)
 			panic("%s: vm_free failed: %m", __func__, error);
 		return (error);
@@ -99,7 +98,7 @@ ufs_read_superblock(struct ufs_mount *um)
 	int error;
 
 	for (i = 0; ufs_superblock_offsets[i] != -1; i++) {
-		error = storage_device_read(um->um_sdev, (void *)um->um_sbaddr,
+		error = storage_device_read(um->um_sdev, um->um_sb.ums_block,
 					    UFS_SUPERBLOCK_SIZE,
 					    ufs_superblock_offsets[i]);
 		if (error != 0)
@@ -107,13 +106,14 @@ ufs_read_superblock(struct ufs_mount *um)
 
 		/* Check superblock.  */
 
-		switch (um->um_sb->sb_magic) {
+		switch (UFS_MOUNT_SUPERBLOCK(um)->sb_magic) {
 		case UFS_SUPERBLOCK_MAGIC1:
+		case UFS_SUPERBLOCK_SWAP1:
+			return (ERROR_NOT_IMPLEMENTED);
 		case UFS_SUPERBLOCK_MAGIC2:
 			break;
-			/* XXX Do I want to do byte-swapping?  */
-		case UFS_SUPERBLOCK_SWAP1:
 		case UFS_SUPERBLOCK_SWAP2:
+			/* XXX Do I want to do byte-swapping?  */
 			return (ERROR_INVALID);
 		default:
 			continue;
@@ -128,15 +128,3 @@ ufs_read_superblock(struct ufs_mount *um)
 
 	return (0);
 }
-
-static void
-ufs_mount_startup(void *arg)
-{
-	int error;
-
-	error = pool_create(&ufs_mount_pool, "UFS Mount",
-			    sizeof (struct ufs_mount), POOL_VIRTUAL);
-	if (error != 0)
-		panic("%s: pool_create failed: %m", __func__, error);
-}
-STARTUP_ITEM(ufs_mount, STARTUP_POOL, STARTUP_FIRST, ufs_mount_startup, NULL);

@@ -23,6 +23,7 @@ KERNEL_FORMAT=	elf64-bigmips
 # for this to make sense, and we should be able to turn it back on.
 KERNEL_CFLAGS+=	-G0
 
+KERNEL_SIMFLAGS+=-S
 KERNEL_SIMFLAGS+=-E ${KERNEL_MACHINE}
 .if defined(KERNEL_SUBMACHINE)
 KERNEL_SIMFLAGS+=-e ${KERNEL_SUBMACHINE}

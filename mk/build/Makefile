@@ -1,6 +1,6 @@
 # $Id: Makefile,v 1.33 2008-06-01 01:17:48 juli Exp $
 
-KERNEL?=	mu-mk
+KERNEL?=	mk
 
 kernel: ${KERNEL}
 simulate: simulate-${KERNEL}
@@ -19,6 +19,9 @@ KERNEL_CPPFLAGS=-I${KERNEL_ROOT} -I${PLATFORM_ROOT} -I${CPU_ROOT}
 KERNEL_CPPFLAGS+=-DCONFIGSTR=${CONFIGSTR}
 .if defined(DB)
 KERNEL_CPPFLAGS+=-DDB
+.endif
+.if defined(INVARIANTS)
+KERNEL_CPPFLAGS+=-DINVARIANTS
 .endif
 .if defined(IPC)
 KERNEL_CPPFLAGS+=-DIPC

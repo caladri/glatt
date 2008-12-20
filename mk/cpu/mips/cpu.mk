@@ -1,5 +1,3 @@
-# $Id: cpu.mk,v 1.35 2008-05-31 23:44:50 juli Exp $
-
 KERNEL_CC=	mips64-gxemul-elf-gcc
 KERNEL_AS=	mips64-gxemul-elf-as
 KERNEL_LD=	mips64-gxemul-elf-ld

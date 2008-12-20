@@ -1,5 +1,3 @@
-# $Id: Makefile,v 1.33 2008-06-01 01:17:48 juli Exp $
-
 KERNEL?=	mk
 
 kernel: ${KERNEL}

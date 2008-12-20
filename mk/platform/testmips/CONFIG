@@ -7,6 +7,7 @@ std		requires: mp
 std		platform/testmips/device/testmips_console.c
 std		platform/testmips/device/testmips_mpbus.c
 
+tmdisk		requires: storage
 tmdisk		platform/testmips/device/testmips_disk.c
 tmdisk		platform/testmips/device/testmips_diskc.c
 

@@ -2,6 +2,9 @@ std		implies: ipc
 ipc		implies: ns
 fs		requires: ns
 ns		requires: ipc
+ufs		requires: storage
+# XXX for now.
+storage		requires: ufs
 
 std		core/core_assert.c
 std		core/core_cv.c
@@ -39,6 +42,10 @@ std		io/device/bus_root.c
 std		io/device/device_internal.c
 
 network		io/network/network_interface.c
+
+storage		io/storage/storage_device.c
+
+ufs		io/storage/ufs/ufs_mount.c
 
 pci		io/pci/pci.c
 pci		io/pci/pcidev.c

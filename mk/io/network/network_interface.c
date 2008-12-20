@@ -1,6 +1,4 @@
 #include <core/types.h>
-#include <core/error.h>
-#include <core/startup.h>
 #include <io/network/interface.h>
 
 int
@@ -12,6 +10,8 @@ network_interface_attach(struct network_interface *netif,
 	netif->ni_softc = softc;
 	netif->ni_type = type;
 	netif->ni_handler = handler;
+
 	/* XXX Set up based on type.  */
+
 	return (0);
 }

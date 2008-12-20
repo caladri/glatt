@@ -62,7 +62,7 @@ tmether_setup(struct device *device, void *busdata)
 	TMETHER_LOCK(sc);
 	error = network_interface_attach(&sc->sc_netif,
 					 NETWORK_INTERFACE_ETHERNET,
-					 tmether_request, device);
+					 tmether_request, sc);
 	if (error != 0) {
 		TMETHER_UNLOCK(sc);
 		return (error);
@@ -93,8 +93,8 @@ tmether_interrupt(void *arg, int interrupt)
 }
 
 static int
-tmether_request(void *softc, enum network_interface_request req,
-		void *data, size_t datalen)
+tmether_request(void *softc, enum network_interface_request req, void *data,
+		size_t datalen)
 {
 	struct tmether_softc *sc = softc;
 

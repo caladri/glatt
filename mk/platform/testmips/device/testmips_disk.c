@@ -50,7 +50,7 @@ tmdisk_size(struct tmdisk_softc *sc, uint64_t *sizep)
 		ogood = offset;
 		m++;
 	}
-	
+
 	return (ERROR_UNEXPECTED);
 }
 

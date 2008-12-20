@@ -41,7 +41,7 @@ typedef	uint64_t	pt_entry_t;
 #define	L1L0SHIFT	(PTEL1SHIFT + LOG2(NPTEL1))
 
 	/* Number of Level 0 pages required to map an entire address space.  */
-#define	NL0PMAP		(128) 
+#define	NL0PMAP		(128)
 #define	PMAPL0SHIFT	(L1L0SHIFT + LOG2(NL1PL0))
 
 struct pmap_lev1 {

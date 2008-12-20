@@ -50,7 +50,7 @@ platform_start(int32_t argc, int32_t argv, int32_t envp, uint32_t memsize)
 	 */
 	page_init();
 
-	/* 
+	/*
 	 * Add all global memory.  Processor-local memory will be added by
 	 * the processor that owns it.  We skip the first 5MB of physical
 	 * RAM because that's where the kernel will be loaded.  If we start

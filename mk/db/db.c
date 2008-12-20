@@ -46,7 +46,7 @@ again:		error = kcgetc(&ch);
 		default:
 			goto bad;
 		}
-		
+
 		switch (ch) {
 		case '\r':
 		case '\n':

@@ -84,7 +84,7 @@ mp_hokusai_exit(void)
 	mask = mp_cpu_running_mask();
 
 	cpu_bitmask_clear(&mask, mp_whoami());
-	
+
 	if (mp_hokusai_done_bitmask == mask) {
 		cpu_bitmask_set(&mp_hokusai_done_bitmask, mp_whoami());
 	} else {

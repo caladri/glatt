@@ -57,7 +57,7 @@ ipc_service(const char *name, ipc_port_t port, ipc_service_t *handler,
 	ipcsc->ipcsc_port = port;
 	ipcsc->ipcsc_task = NULL;
 	ipcsc->ipcsc_thread = NULL;
-	
+
 	error = task_create(&ipcsc->ipcsc_task, NULL, ipcsc->ipcsc_name,
 			    TASK_KERNEL);
 	if (error != 0)
@@ -238,7 +238,7 @@ ipc_service_main(void *arg)
 #endif
 
 		ipcsc->ipcsc_handler(ipcsc->ipcsc_arg, &ipch, ipcdp);
-		
+
 		if (ipcdp != NULL)
 			ipc_data_free(ipcdp);
 	}

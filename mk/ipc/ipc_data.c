@@ -82,7 +82,7 @@ ipc_data_free(struct ipc_data *ipcd)
 	if (ipcd == NULL) {
 		return;
 	}
-	
+
 	switch (ipcd->ipcd_type) {
 	case IPC_DATA_TYPE_DEAD:
 		break;

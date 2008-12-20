@@ -91,7 +91,7 @@ static void
 ns_startup(void *arg)
 {
 	int error;
-	
+
 	service_directory_init();
 
 	error = ipc_service("ns", IPC_PORT_NS, ns_handler, NULL);

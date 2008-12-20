@@ -7,7 +7,7 @@
 
 #define	MK_NAME								\
 	"Glatt MU/MK"
-	
+
 #define	MK_CONFIG							\
 	(STRING(CONFIGSTR))
 

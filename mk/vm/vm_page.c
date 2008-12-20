@@ -231,7 +231,7 @@ page_insert_pages(paddr_t base, size_t pages)
 	}
 	PAGE_TREE_UNLOCK();
 
-#if VERBOSE
+#ifdef VERBOSE
 	kcprintf("PAGE: inserted %zu page tree entries in %zu nodes.\n",
 		 ptpents, ptps);
 #endif

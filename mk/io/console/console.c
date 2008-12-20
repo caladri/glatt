@@ -65,7 +65,7 @@ kcprintf(const char *s, ...)
 }
 
 void
-kcvprintf(const char *s, va_list ap) 
+kcvprintf(const char *s, va_list ap)
 {
 	CONSOLE_LOCK(kernel_console);
 	kfvprintf(cputc_noflush, kernel_console, s, ap);

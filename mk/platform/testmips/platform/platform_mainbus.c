@@ -10,7 +10,7 @@ mainbus_enumerate_children(struct bus_instance *bi)
 	error = bus_enumerate_child_generic(bi, "mp");
 	if (error != 0)
 		return (error);
-	
+
 	return (0);
 }
 

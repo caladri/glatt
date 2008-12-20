@@ -70,7 +70,7 @@ vm_alloc_address(struct vm *vm, vaddr_t *vaddrp, size_t pages)
 		if (vmi->vmi_size > pages) {
 			error = vm_alloc_range(vm, vmi->vmi_base,
 					       vmi->vmi_base +
-					       PAGE_TO_ADDR(pages)); 
+					       PAGE_TO_ADDR(pages));
 			if (error != 0) {
 				VM_UNLOCK(vm);
 				return (error);

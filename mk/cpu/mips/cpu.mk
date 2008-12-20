@@ -51,6 +51,6 @@ simulate-${KERNEL}: ${KERNEL}
 	${KERNEL_SIM} ${KERNEL_SIMFLAGS} ${KERNEL}
 
 .if make(simulate-${KERNEL}) || make(simulate)
-.INTERRUPT: 
+.INTERRUPT:
 	killall ${KERNEL_SIM}
 .endif

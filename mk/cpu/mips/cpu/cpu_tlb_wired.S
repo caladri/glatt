@@ -20,7 +20,7 @@ next:	ld	t3, TWE_ENTRYHI(t2)
 	daddu	t3, TLB_WIRED_BASE
 	dmtc0	t3, CP0_TLBINDEX
 	tlbwi
-	
+
 	move	t3, t1
 	daddu	t3, TLB_WIRED_BASE
 	daddu	t3, 1

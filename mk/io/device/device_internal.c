@@ -141,7 +141,7 @@ device_attachment_find(struct device_attachment **attachment2p,
 
 	parent = bus_parent(bi);
 	busname = bus_name(parent);
-	
+
 	for (attachmentp = SET_BEGIN(device_attachments);
 	     attachmentp < SET_END(device_attachments); attachmentp++) {
 		struct device_attachment *attachment = *attachmentp;

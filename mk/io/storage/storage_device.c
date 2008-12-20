@@ -38,6 +38,7 @@ storage_device_read(struct storage_device *sdev, void *buf, size_t len,
 		if (error != 0)
 			return (error);
 
+		buf = (void *)((uintptr_t)buf + sdev->sd_bsize);
 		len -= sdev->sd_bsize;
 		off += sdev->sd_bsize;
 	}

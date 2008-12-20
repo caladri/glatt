@@ -45,7 +45,9 @@ network		io/network/network_interface.c
 
 storage		io/storage/storage_device.c
 
+ufs		io/storage/ufs/ufs_inode.c
 ufs		io/storage/ufs/ufs_mount.c
+ufs		io/storage/ufs/ufs_superblock.c
 
 pci		io/pci/pci.c
 pci		io/pci/pcidev.c

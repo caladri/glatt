@@ -1,16 +1,20 @@
 #! /bin/sh
 
-sum=0
+filterfilelist() {
+	grep -vE '(framebuffer_font|core/queue.h)'
+}
 
 lines() {
-	if [ -d $1 ]; then
-		filelist=`find $1 -type f -name '*.[chS]' | grep -v build | grep -v framebuffer_font | grep -v core/queue.h | grep -v _as.h | xargs`
-		if [ "${filelist}" != "" ]; then
-			wc -l $filelist | sort -n | sed 's;total$;'"$1"' - &;'
-		fi
-	else
-		wc -l $1
+	filelist=$1
+	if [ -d "${filelist}" ]; then
+		filelist=`makefilelist "${filelist}"`
 	fi
+	wc -l $filelist | sort -n | sed 's;total$;'"$1"' - &;'
+}
+
+makefilelist() {
+	directory=$1
+	find "${directory}" -type f -name '*.[chS]' |  filterfilelist | xargs
 }
 
 if [ $# -eq 0 ]; then

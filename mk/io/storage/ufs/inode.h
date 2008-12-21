@@ -18,7 +18,7 @@ struct ufs2_inode {
 	int32_t in_unused3[5];
 };
 
-uint64_t ufs_inode_block(struct ufs_superblock *sb, uint64_t inode);
+uint64_t ufs_inode_block(struct ufs_superblock *, uint32_t);
 int ufs_inode_map(struct ufs_superblock *, struct ufs2_inode *, off_t,
 		  uint64_t *);
 

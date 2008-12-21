@@ -10,7 +10,7 @@ COMPILE_TIME_ASSERT(offsetof(struct ufs2_inode, in_indirect) == 0xd0);
 COMPILE_TIME_ASSERT(sizeof (struct ufs2_inode) == 256);
 
 uint64_t
-ufs_inode_block(struct ufs_superblock *sb, uint64_t inode)
+ufs_inode_block(struct ufs_superblock *sb, uint32_t inode)
 {
 	uint64_t cg = inode / sb->sb_ipg;
 	uint64_t ig = (cg * sb->sb_fpg) + sb->sb_iboff;

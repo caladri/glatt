@@ -32,6 +32,9 @@ struct ufs_superblock {
 	int32_t sb_magic;
 };
 
+#define	UFS_BSIZE(sb)							\
+	((uint64_t)1 << (sb)->sb_bshift)
+
 #define	UFS_FSBN2DBA(sb, blkno)						\
 	((uint64_t)(blkno) << (sb)->sb_fsbtodb)
 

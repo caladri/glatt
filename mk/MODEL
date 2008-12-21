@@ -72,10 +72,6 @@ microkernel for centrally-managed resources (including the name service.)
 
 An incomplete list of the services provided in the microkernel:
 	o) ns -- the name server.
-	o) fs -- the filing server, which provides a central hierarchical
-	   filesystem-like namespace.
-	o) ms -- the microkernel server, which provides core microkernel
-	   services including task, thread, virtual memory and port management.
 
 A task contains at least one thread and whenever any thread (including the first
 thread in a task) starts, a single port is allocated to it and a hello message
@@ -89,9 +85,9 @@ rights on those ports may have some significance to the microkernel.
 Task creation needs to be further defined but includes some sequence wherein a
 task and thread are created, and the parent can perform virtual memory functions
 to handle, for example, image activation.  There will be an image activator in
-kernel which uses the fs service, and it may be required that all task creation
-works through that.  This is not a dire situation, though, as it is possible to
-create a "dummy" program to be run which awaits virtual memory and instructions
-from its parent task.  This makes it harder to provide Unix-like fork()
-semantics, but that may be acceptable as most programs are threaded these days
-rather than using fork(), and only perform a fork() to do an exec().
+kernel which uses the ufs read support, and it may be required that all task
+creation works through that.  This is not a dire situation, though, as it is
+possible to create a "dummy" program to be run which awaits virtual memory and
+instructions from its parent task.  This makes it harder to provide Unix-like
+fork() semantics, but that may be acceptable as most programs are threaded these
+days rather than using fork(), and only perform a fork() to do an exec().

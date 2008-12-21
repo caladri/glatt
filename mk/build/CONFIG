@@ -1,6 +1,5 @@
 std		implies: ipc
 ipc		implies: ns
-fs		requires: ns
 ns		requires: ipc
 ufs		requires: storage
 # XXX for now.
@@ -28,8 +27,6 @@ mp		core/core_mp_ipi.c
 db		db/db.c
 db		db/db_misc.c
 db		db/db_show.c
-
-fs		fs/fs.c
 
 std		io/console/console.c
 framebuffer	io/console/framebuffer.c

@@ -2,9 +2,10 @@
 #include <io/storage/ufs/param.h>
 #include <io/storage/ufs/superblock.h>
 
-COMPILE_TIME_ASSERT(offsetof(struct ufs_superblock, sb_bsize) == 0x30);
-COMPILE_TIME_ASSERT(offsetof(struct ufs_superblock, sb_fmask) == 0x4c);
+COMPILE_TIME_ASSERT(offsetof(struct ufs_superblock, sb_iboff) == 0x10);
 COMPILE_TIME_ASSERT(offsetof(struct ufs_superblock, sb_bshift) == 0x50);
+COMPILE_TIME_ASSERT(offsetof(struct ufs_superblock, sb_fshift) == 0x54);
+COMPILE_TIME_ASSERT(offsetof(struct ufs_superblock, sb_fsbtodb) == 0x64);
 COMPILE_TIME_ASSERT(offsetof(struct ufs_superblock, sb_nindir) == 0x74);
 COMPILE_TIME_ASSERT(offsetof(struct ufs_superblock, sb_inopb) == 0x78);
 COMPILE_TIME_ASSERT(offsetof(struct ufs_superblock, sb_ipg) == 0xb8);

@@ -1,6 +1,8 @@
 #ifndef	_IO_STORAGE_UFS_INODE_H_
 #define	_IO_STORAGE_UFS_INODE_H_
 
+struct ufs_superblock;
+
 #define	UFS_ROOT_INODE		(2)
 
 #define	UFS_INODE_NDIRECT	(12)
@@ -15,5 +17,9 @@ struct ufs2_inode {
 	int64_t in_indirect[UFS_INODE_NINDIRECT];
 	int32_t in_unused3[5];
 };
+
+uint64_t ufs_inode_block(struct ufs_superblock *sb, uint64_t inode);
+int ufs_inode_map(struct ufs_superblock *, struct ufs2_inode *, off_t,
+		  uint64_t *);
 
 #endif /* !_IO_STORAGE_UFS_INODE_H_*/

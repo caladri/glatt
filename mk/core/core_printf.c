@@ -58,6 +58,13 @@ again:
 			q = error_strings[val];
 			kfputs(put, arg, q);
 			break;
+		case 'o':
+			if (!lmod)
+				val = va_arg(ap, unsigned int);
+			if (alt && val != 0)
+				kfputs(put, arg, "0");
+			kfformat(put, arg, val, 010, false);
+			break;
 		case 's':
 			q = va_arg(ap, const char *);
 			if (q == NULL)
@@ -72,7 +79,7 @@ again:
 		case 'x':
 			if (!lmod)
 				val = va_arg(ap, unsigned int);
-			if (alt)
+			if (alt && val != 0)
 				kfputs(put, arg, "0x");
 			kfformat(put, arg, val, 0x10, false);
 			break;

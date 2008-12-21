@@ -34,19 +34,19 @@ COMPILE_TIME_ASSERT(sizeof (struct pmap) <= PAGE_SIZE);
 /*
  * Page-table indexing inlines.
  */
-static __inline vaddr_t
+static inline vaddr_t
 pmap_index_pte(vaddr_t vaddr)
 {
 	return ((vaddr >> PTEL1SHIFT) % NPTEL1);
 }
 
-static __inline vaddr_t
+static inline vaddr_t
 pmap_index1(vaddr_t vaddr)
 {
 	return ((vaddr >> L1L0SHIFT) % NL1PL0);
 }
 
-static __inline vaddr_t
+static inline vaddr_t
 pmap_index0(vaddr_t vaddr)
 {
 	return ((vaddr >> PMAPL0SHIFT) % NL0PMAP);

@@ -1,7 +1,7 @@
 #ifndef	_CORE_STRING_H_
 #define	_CORE_STRING_H_
 
-static __inline void
+static inline void
 memcpy(void *dst, const void *src, size_t len)
 {
 	char *d;
@@ -14,7 +14,7 @@ memcpy(void *dst, const void *src, size_t len)
 		*d++ = *s++;
 }
 
-static __inline void
+static inline void
 memset(void *dst, int val, size_t len)
 {
 	char *d = dst;
@@ -23,7 +23,7 @@ memset(void *dst, int val, size_t len)
 		*d++ = val;
 }
 
-static __inline const char *
+static inline const char *
 strchr(const char *str, char ch)
 {
 	const char *p;
@@ -36,7 +36,7 @@ strchr(const char *str, char ch)
 	return (NULL);
 }
 
-static __inline int
+static inline int
 strcmp(const char *a, const char *b)
 {
 	while (*a != '\0' && *a == *b) {
@@ -46,7 +46,7 @@ strcmp(const char *a, const char *b)
 	return (*a - *b);
 }
 
-static __inline size_t
+static inline size_t
 strlcpy(char *dst, const char *src, size_t len)
 {
 	const char *s = src++;
@@ -62,7 +62,7 @@ count:	while (*s++ != '\0')
 	return (s - src);
 }
 
-static __inline size_t
+static inline size_t
 strlen(const char *s)
 {
 	const char *p;
@@ -72,7 +72,7 @@ strlen(const char *s)
 	return (p - s);
 }
 
-static __inline int
+static inline int
 strncmp(const char *a, const char *b, size_t n)
 {
 	while (n-- != 0 && *a != '\0' && *a == *b) {

@@ -11,7 +11,7 @@ typedef	uint64_t	cpu_bitmask_t;
 #define	MAXCPUS		(1)
 #endif
 
-static __inline bool
+static inline bool
 cpu_bitmask_is_set(const volatile cpu_bitmask_t *maskp, cpu_id_t cpu)
 {
 	if (cpu >= MAXCPUS)
@@ -22,7 +22,7 @@ cpu_bitmask_is_set(const volatile cpu_bitmask_t *maskp, cpu_id_t cpu)
 	return (true);
 }
 
-static __inline void
+static inline void
 cpu_bitmask_set(volatile cpu_bitmask_t *maskp, cpu_id_t cpu)
 {
 	ASSERT(cpu < MAXCPUS, "CPU cannot exceed bounds of type.");
@@ -31,7 +31,7 @@ cpu_bitmask_set(volatile cpu_bitmask_t *maskp, cpu_id_t cpu)
 	atomic_set_64(maskp, (cpu_bitmask_t)1 << cpu);
 }
 
-static __inline void
+static inline void
 cpu_bitmask_clear(volatile cpu_bitmask_t *maskp, cpu_id_t cpu)
 {
 	ASSERT(cpu < MAXCPUS, "CPU cannot exceed bounds of type.");

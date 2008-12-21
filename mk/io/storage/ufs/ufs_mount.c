@@ -1,5 +1,6 @@
 #include <core/types.h>
 #include <core/error.h>
+#include <core/startup.h>
 #include <core/string.h>
 #include <io/storage/device.h>
 #include <io/storage/ufs/dir.h>
@@ -30,10 +31,15 @@ struct ufs_mount {
 	struct ufs_directory_context um_dc;
 
 	uint8_t um_block[UFS_MAX_BSIZE];
+
+	STAILQ_ENTRY(struct ufs_mount) um_link;
 };
 
 static off_t ufs_superblock_offsets[] = UFS_SUPERBLOCK_OFFSETS;
+static STAILQ_HEAD(, struct ufs_mount) ufs_mounts =
+	STAILQ_HEAD_INITIALIZER(ufs_mounts);
 
+static int ufs_lookup(struct ufs_mount *, const char *, uint32_t *);
 static int ufs_read_block(struct ufs_mount *, uint64_t);
 static int ufs_read_directory(struct ufs_mount *);
 static int ufs_read_inode(struct ufs_mount *, uint32_t);
@@ -62,32 +68,72 @@ ufs_mount(struct storage_device *sdev)
 		return (error);
 	}
 
-	/* Make sure we can read the root inode.  */
-	error = ufs_read_inode(um, UFS_ROOT_INODE);
-	if (error != 0) {
-		error2 = vm_free(&kernel_vm, sizeof *um, umaddr);
-		if (error2 != 0)
-			panic("%s: vm_free failed: %m", __func__, error);
-		return (error);
-	}
-
-	/* And read the contents of the root inode.  */
-	for (;;) {
-		error = ufs_read_directory(um);
-		if (error != 0) {
-			error2 = vm_free(&kernel_vm, sizeof *um, umaddr);
-			if (error2 != 0)
-				panic("%s: vm_free failed: %m", __func__,
-				      error);
-			return (error);
-		}
-		kcprintf("%s\n", um->um_dc.d_name);
-
-		if (um->um_dc.d_address == um->um_in.in_size)
-			break;
-	}
+	STAILQ_INSERT_TAIL(&ufs_mounts, um, um_link);
 
 	return (0);
+}
+
+static int
+ufs_lookup(struct ufs_mount *um, const char *path, uint32_t *inodep)
+{
+	const char *p, *q;
+	uint32_t inode;
+	size_t clen;
+	int error;
+
+	if (path[0] != '/') {
+		return (ERROR_INVALID);
+	}
+
+	for (p = path; *p == '/'; p++)
+		continue;
+
+	inode = UFS_ROOT_INODE;
+
+	for (;;) {
+		error = ufs_read_inode(um, inode);
+		if (error != 0)
+			return (error);
+
+		q = strchr(p, '/');
+		if (q == NULL)
+			clen = strlen(p);
+		else
+			clen = q - p;
+
+		for (;;) {
+			if (um->um_dc.d_address == um->um_in.in_size)
+				return (ERROR_NOT_FOUND);
+
+			error = ufs_read_directory(um);
+			if (error != 0)
+				return (error);
+
+			if (um->um_dc.d_entry.de_namelen != clen)
+				continue;
+
+			if (strncmp(um->um_dc.d_name, p, clen) != 0)
+				continue;
+
+			/* We've found our inode.  */
+			inode = um->um_dc.d_entry.de_inode;
+
+			p += clen;
+
+			/* XXX Check if this is a directory.  */
+			while (*p == '/')
+				p++;
+
+			/* Now look for the next component under inode.  */
+			if (*p != '\0')
+				break;
+
+			*inodep = inode;
+
+			return (0);
+		}
+	}
+	NOTREACHED();
 }
 
 static int
@@ -199,3 +245,33 @@ ufs_read_superblock(struct ufs_mount *um)
 
 	return (0);
 }
+
+static void
+ufs_autorun(void *arg)
+{
+	struct ufs_mount *um;
+	uint32_t inode;
+	int error;
+
+	STAILQ_FOREACH(um, &ufs_mounts, um_link) {
+		error = ufs_lookup(um, "/mu/servers/", &inode);
+		if (error != 0)
+			continue;
+
+		error = ufs_read_inode(um, inode);
+		if (error != 0)
+			continue;
+
+		for (;;) {
+			if (um->um_dc.d_address == um->um_in.in_size)
+				break;
+
+			error = ufs_read_directory(um);
+			if (error != 0)
+				break;
+
+			kcprintf("autorun %s\n", um->um_dc.d_name);
+		}
+	}
+}
+STARTUP_ITEM(ufs_autorun, STARTUP_SERVERS, STARTUP_SECOND, ufs_autorun, NULL);

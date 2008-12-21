@@ -23,6 +23,19 @@ memset(void *dst, int val, size_t len)
 		*d++ = val;
 }
 
+static __inline const char *
+strchr(const char *str, char ch)
+{
+	const char *p;
+
+	for (p = str; *p != '\0'; p++) {
+		if (*p != ch)
+			continue;
+		return (p);
+	}
+	return (NULL);
+}
+
 static __inline int
 strcmp(const char *a, const char *b)
 {

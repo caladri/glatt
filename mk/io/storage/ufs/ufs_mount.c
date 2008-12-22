@@ -164,16 +164,13 @@ ufs_map_block(struct ufs_mount *um, off_t logical, uint64_t *blknop)
 		lblock -= blocks;
 	}
 
-	panic("using indirect block handling code!");
+	if (level != 0)
+		panic("using untested indirect block handling code!");
 
 	if ((iblock = um->um_in.in_indirect[level]) == 0)
 		return (ERROR_NOT_FOUND);
 
-	while (level-- != 0) {
-		error = ufs_read_fsbn(um, iblock);
-		if (error != 0)
-			return (error);
-
+	for (;;) {
 		if (level == 0) {
 			off = lblock;
 		} else {
@@ -181,15 +178,21 @@ ufs_map_block(struct ufs_mount *um, off_t logical, uint64_t *blknop)
 			lblock %= UFS_INDIRECTBLOCKS(&um->um_sb, level);
 		}
 
+		error = ufs_read_fsbn(um, iblock);
+		if (error != 0)
+			return (error);
+
 		memcpy(&iblock, &um->um_block[sizeof iblock * off],
 		       sizeof iblock);
 
 		if (iblock == 0)
 			return (ERROR_NOT_FOUND);
-	}
 
-	*blknop = iblock;
-	return (0);
+		if (level-- == 0) {
+			*blknop = iblock;
+			return (0);
+		}
+	}
 }
 
 static int

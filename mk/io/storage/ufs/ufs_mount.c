@@ -40,8 +40,10 @@ static STAILQ_HEAD(, struct ufs_mount) ufs_mounts =
 	STAILQ_HEAD_INITIALIZER(ufs_mounts);
 
 static int ufs_lookup(struct ufs_mount *, const char *, uint32_t *);
+static int ufs_map_block(struct ufs_mount *, off_t, uint64_t *);
 static int ufs_read_block(struct ufs_mount *, uint64_t);
 static int ufs_read_directory(struct ufs_mount *);
+static int ufs_read_fsbn(struct ufs_mount *, uint64_t);
 static int ufs_read_inode(struct ufs_mount *, uint32_t);
 static int ufs_read_superblock(struct ufs_mount *);
 
@@ -137,22 +139,70 @@ ufs_lookup(struct ufs_mount *um, const char *path, uint32_t *inodep)
 }
 
 static int
-ufs_read_block(struct ufs_mount *um, uint64_t off)
+ufs_map_block(struct ufs_mount *um, off_t logical, uint64_t *blknop)
 {
-	uint64_t fsbn, diskblock;
-	unsigned dbshift = um->um_sb.sb_fshift - um->um_sb.sb_fsbtodb;
-	off_t physical;
+	uint64_t lblock = logical >> um->um_sb.sb_bshift;
+	uint64_t iblock, pblock;
+	unsigned level, off;
 	int error;
 
-	error = ufs_inode_map(&um->um_sb, &um->um_in, off, &fsbn);
+	if (lblock < UFS_INODE_NDIRECT) {
+		pblock = um->um_in.in_direct[lblock];
+		if (pblock == 0) {
+			return (ERROR_NOT_FOUND);
+		}
+		*blknop = pblock;
+		return (0);
+	}
+
+	lblock -= UFS_INODE_NDIRECT;
+
+	for (level = 0; level < UFS_INODE_NINDIRECT; level++) {
+		uint64_t blocks = UFS_INDIRECTBLOCKS(&um->um_sb, level);
+		if (lblock < blocks)
+			break;
+		lblock -= blocks;
+	}
+
+	panic("using indirect block handling code!");
+
+	if ((iblock = um->um_in.in_indirect[level]) == 0)
+		return (ERROR_NOT_FOUND);
+
+	while (level-- != 0) {
+		error = ufs_read_fsbn(um, iblock);
+		if (error != 0)
+			return (error);
+
+		if (level == 0) {
+			off = lblock;
+		} else {
+			off = lblock / UFS_INDIRECTBLOCKS(&um->um_sb, level);
+			lblock %= UFS_INDIRECTBLOCKS(&um->um_sb, level);
+		}
+
+		memcpy(&iblock, &um->um_block[sizeof iblock * off],
+		       sizeof iblock);
+
+		if (iblock == 0)
+			return (ERROR_NOT_FOUND);
+	}
+
+	*blknop = iblock;
+	return (0);
+}
+
+static int
+ufs_read_block(struct ufs_mount *um, uint64_t off)
+{
+	uint64_t fsbn;
+	int error;
+
+	error = ufs_map_block(um, off, &fsbn);
 	if (error != 0)
 		return (error);
 
-	diskblock = UFS_FSBN2DBA(&um->um_sb, fsbn);
-	physical = diskblock << dbshift;
-
-	error = storage_device_read(um->um_sdev, um->um_block,
-				    UFS_BSIZE(&um->um_sb), physical);
+	error = ufs_read_fsbn(um, fsbn);
 	if (error != 0)
 		return (error);
 
@@ -182,17 +232,32 @@ ufs_read_directory(struct ufs_mount *um)
 }
 
 static int
-ufs_read_inode(struct ufs_mount *um, uint32_t inode)
+ufs_read_fsbn(struct ufs_mount *um, uint64_t fsbn)
 {
-	uint64_t fsbn = ufs_inode_block(&um->um_sb, inode);
-	uint64_t diskblock = UFS_FSBN2DBA(&um->um_sb, fsbn);
-	unsigned dbshift = um->um_sb.sb_fshift - um->um_sb.sb_fsbtodb;
-	off_t physical = diskblock << dbshift;
-	unsigned i = inode % um->um_sb.sb_inopb;
+	uint64_t diskblock;
+	unsigned dbshift;
+	off_t physical;
 	int error;
+
+	diskblock = UFS_FSBN2DBA(&um->um_sb, fsbn);
+	dbshift = um->um_sb.sb_fshift - um->um_sb.sb_fsbtodb;
+	physical = diskblock << dbshift;
 
 	error = storage_device_read(um->um_sdev, um->um_block,
 				    UFS_BSIZE(&um->um_sb), physical);
+	if (error != 0)
+		return (error);
+
+	return (0);
+}
+
+static int
+ufs_read_inode(struct ufs_mount *um, uint32_t inode)
+{
+	unsigned i = inode % um->um_sb.sb_inopb;
+	int error;
+
+	error = ufs_read_fsbn(um, ufs_inode_block(&um->um_sb, inode));
 	if (error != 0)
 		return (error);
 

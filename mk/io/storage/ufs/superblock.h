@@ -38,6 +38,10 @@ struct ufs_superblock {
 #define	UFS_FSBN2DBA(sb, blkno)						\
 	((uint64_t)(blkno) << (sb)->sb_fsbtodb)
 
+/* XXX 8 is the size of the indirect block entries, the address width.  */
+#define	UFS_INDIRECTBLOCKS(sb, level)					\
+	((uint64_t)1 << ((sb)->sb_bshift - LOG2(8)) * ((level) + 1))
+
 #define	UFS_SUPERBLOCK_OFFSETS						\
 	{ 65536, 8192, 0, 262144, -1 }
 

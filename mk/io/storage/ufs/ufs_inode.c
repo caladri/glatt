@@ -18,24 +18,3 @@ ufs_inode_block(struct ufs_superblock *sb, uint32_t inode)
 
 	return (ig + (i << (sb->sb_bshift - sb->sb_fshift)));
 }
-
-int
-ufs_inode_map(struct ufs_superblock *sb, struct ufs2_inode *in, off_t logical,
-	      uint64_t *blknop)
-{
-	uint64_t lblock = logical >> sb->sb_bshift;
-	uint64_t pblock;
-
-	if (lblock < UFS_INODE_NDIRECT) {
-		pblock = in->in_direct[lblock];
-		if (pblock == 0) {
-			return (ERROR_NOT_FOUND);
-		}
-		*blknop = pblock;
-		return (0);
-	}
-
-	panic("%s: no indirect block support yet.", __func__);
-
-	return (ERROR_NOT_IMPLEMENTED);
-}

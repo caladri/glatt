@@ -88,7 +88,6 @@ static const char *cpu_exception_names[] = {
 	"Cache Coherency (Data)",
 };
 
-
 extern char utlb_vector[], utlb_vector_end[];
 extern char exception_vector[], exception_vector_end[];
 extern char xtlb_vector[], xtlb_vector_end[];

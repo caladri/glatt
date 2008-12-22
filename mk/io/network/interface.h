@@ -23,5 +23,4 @@ int network_interface_attach(struct network_interface *,
 			     enum network_interface_type,
 			     network_interface_request_handler_t *, void *);
 
-
 #endif /* !_IO_NETWORK_INTERFACE_H_ */

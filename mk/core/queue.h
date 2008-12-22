@@ -240,7 +240,6 @@ struct {								\
 	   (var);							\
 	   (var) = STAILQ_NEXT((var), field))
 
-
 #define	STAILQ_FOREACH_SAFE(var, head, field, tvar)			\
 	for ((var) = STAILQ_FIRST((head));				\
 	    (var) && ((tvar) = STAILQ_NEXT((var), field), 1);		\

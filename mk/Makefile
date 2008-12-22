@@ -1,15 +1,15 @@
-.if !defined(PLATFORM) || !defined(CONFIG)
-.error "Must define PLATFORM and CONFIG.  Try using the top-level Makefile."
+.if !defined(PLATFORM) || !defined(MK_CONFIG)
+.error "Must define PLATFORM and MK_CONFIG.  Try using the top-level Makefile."
 .endif
 
-BUILDDIR?=obj.${PLATFORM}.${CONFIG}
+BUILDDIR?=obj.${PLATFORM}.${MK_CONFIG}
 
 KERNEL_ROOT?=${.CURDIR}
 
 config:
 	@rm -rf ${BUILDDIR}
 	@mkdir -p ${BUILDDIR}
-	@(cd ${BUILDDIR} && mu-config ${KERNEL_ROOT} ${PLATFORM} ${CONFIG})
+	@(cd ${BUILDDIR} && mu-config ${KERNEL_ROOT} ${PLATFORM} ${MK_CONFIG})
 	@echo 'Build directory has been set up:' ${BUILDDIR}
 
 options:

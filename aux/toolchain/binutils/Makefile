@@ -20,11 +20,11 @@ configure:
 
 build:
 	@echo '>>> Building '${BINUTILS}
-	@cd ${BINUTILS_OBJ} && ${GNUMAKE} all
+	@cd ${BINUTILS_OBJ} && gnumake all
 
 install:
 	@echo '>>> Installing '${BINUTILS}
-	@cd ${BINUTILS_OBJ} && ${GNUMAKE} install
+	@cd ${BINUTILS_OBJ} && gnumake install
 
 clean:
 	@echo '>>> Cleaning '${BINUTILS}

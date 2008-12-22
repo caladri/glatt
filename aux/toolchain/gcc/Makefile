@@ -20,11 +20,11 @@ configure:
 
 build:
 	@echo '>>> Building '${GCC}
-	@cd ${GCC_OBJ} && ${GNUMAKE} all
+	@cd ${GCC_OBJ} && gnumake all
 
 install:
 	@echo '>>> Installing '${GCC}
-	@cd ${GCC_OBJ} && ${GNUMAKE} install
+	@cd ${GCC_OBJ} && gnumake install
 
 clean:
 	@echo '>>> Cleaning '${GCC}

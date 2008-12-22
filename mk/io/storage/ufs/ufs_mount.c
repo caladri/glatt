@@ -1,9 +1,10 @@
 #include <core/types.h>
+#include <core/endian.h>
 #include <core/error.h>
 #include <core/startup.h>
 #include <core/string.h>
 #include <io/storage/device.h>
-#include <io/storage/ufs/dir.h>
+#include <io/storage/ufs/directory.h>
 #include <io/storage/ufs/inode.h>
 #include <io/storage/ufs/mount.h>
 #include <io/storage/ufs/param.h>
@@ -13,6 +14,8 @@
 
 #include <io/console/console.h>
 
+#define	ufs_mount_swap64(x)	*(x) = bswap64((uint64_t)*(x))
+
 struct ufs_directory_context {
 	uint64_t d_address;
 	struct ufs_directory_entry d_entry;
@@ -20,12 +23,13 @@ struct ufs_directory_context {
 };
 
 struct ufs_mount {
+	unsigned um_flags;
+
 	struct storage_device *um_sdev;
 
 	off_t um_sboff;
 	struct ufs_superblock um_sb;
 
-	uint32_t um_inode;
 	struct ufs2_inode um_in;
 
 	struct ufs_directory_context um_dc;
@@ -34,6 +38,9 @@ struct ufs_mount {
 
 	STAILQ_ENTRY(struct ufs_mount) um_link;
 };
+
+#define	UFS_MOUNT_DEFAULT	(0x00000000)
+#define	UFS_MOUNT_SWAP		(0x00000001)
 
 static off_t ufs_superblock_offsets[] = UFS_SUPERBLOCK_OFFSETS;
 static STAILQ_HEAD(, struct ufs_mount) ufs_mounts =
@@ -59,6 +66,7 @@ ufs_mount(struct storage_device *sdev)
 		return (error);
 
 	um = (struct ufs_mount *)umaddr;
+	um->um_flags = UFS_MOUNT_DEFAULT;
 	um->um_sdev = sdev;
 	um->um_sboff = -1;
 
@@ -185,6 +193,9 @@ ufs_map_block(struct ufs_mount *um, off_t logical, uint64_t *blknop)
 		memcpy(&iblock, &um->um_block[sizeof iblock * off],
 		       sizeof iblock);
 
+		if ((um->um_flags & UFS_MOUNT_SWAP) != 0)
+			ufs_mount_swap64(&iblock);
+
 		if (iblock == 0)
 			return (ERROR_NOT_FOUND);
 
@@ -226,6 +237,10 @@ ufs_read_directory(struct ufs_mount *um)
 	}
 
 	memcpy(de, &um->um_block[offset], sizeof *de);
+
+	if ((um->um_flags & UFS_MOUNT_SWAP) != 0)
+		ufs_directory_entry_swap(de);
+
 	strlcpy(um->um_dc.d_name, (char *)&um->um_block[offset + sizeof *de],
 		sizeof um->um_dc.d_name);
 	/* XXX Bounds check; make sure it doesn't span blocks.  */
@@ -257,7 +272,7 @@ ufs_read_fsbn(struct ufs_mount *um, uint64_t fsbn)
 static int
 ufs_read_inode(struct ufs_mount *um, uint32_t inode)
 {
-	unsigned i = inode % um->um_sb.sb_inopb;
+	unsigned i = inode % UFS_INOPB(&um->um_sb);
 	int error;
 
 	error = ufs_read_fsbn(um, ufs_inode_block(&um->um_sb, inode));
@@ -265,9 +280,11 @@ ufs_read_inode(struct ufs_mount *um, uint32_t inode)
 		return (error);
 
 	um->um_dc.d_address = 0;
-	um->um_inode = inode;
 	memcpy(&um->um_in, &um->um_block[i * sizeof um->um_in],
 	       sizeof um->um_in);
+
+	if ((um->um_flags & UFS_MOUNT_SWAP) != 0)
+		ufs_inode_swap(&um->um_in);
 
 	return (0);
 }
@@ -295,8 +312,9 @@ ufs_read_superblock(struct ufs_mount *um)
 		case UFS_SUPERBLOCK_MAGIC2:
 			break;
 		case UFS_SUPERBLOCK_SWAP2:
-			/* XXX Do I want to do byte-swapping?  */
-			return (ERROR_INVALID);
+			um->um_flags |= UFS_MOUNT_SWAP;
+			ufs_superblock_swap(&um->um_sb);
+			break;
 		default:
 			continue;
 		}

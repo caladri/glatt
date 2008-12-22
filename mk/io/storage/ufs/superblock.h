@@ -26,9 +26,7 @@ struct ufs_superblock {
 	int64_t sb_sblockloc;
 	int32_t sb_unused7[18];
 	int64_t sb_fsblocks;
-	int32_t sb_unused8[62];
-	int64_t sb_bmask64;
-	int32_t sb_unused9[7];
+	int32_t sb_unused8[71];
 	int32_t sb_magic;
 };
 
@@ -38,11 +36,19 @@ struct ufs_superblock {
 #define	UFS_FSBN2DBA(sb, blkno)						\
 	((uint64_t)(blkno) << (sb)->sb_fsbtodb)
 
+#define	UFS_INOPB(sb)							\
+	(1 << UFS_LOG2INOPB((sb)))
+
 /* XXX 8 is the size of the indirect block entries, the address width.  */
 #define	UFS_INDIRECTBLOCKS(sb, level)					\
 	((uint64_t)1 << ((sb)->sb_bshift - LOG2(8)) * ((level) + 1))
 
+#define	UFS_LOG2INOPB(sb)						\
+	((sb)->sb_bshift - LOG2(sizeof (struct ufs2_inode)))
+
 #define	UFS_SUPERBLOCK_OFFSETS						\
 	{ 65536, 8192, 0, 262144, -1 }
+
+void ufs_superblock_swap(struct ufs_superblock *);
 
 #endif /* !_IO_STORAGE_UFS_SUPERBLOCK_H_*/

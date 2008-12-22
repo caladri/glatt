@@ -19,5 +19,6 @@ struct ufs2_inode {
 };
 
 uint64_t ufs_inode_block(struct ufs_superblock *, uint32_t);
+void ufs_inode_swap(struct ufs2_inode *);
 
 #endif /* !_IO_STORAGE_UFS_INODE_H_*/

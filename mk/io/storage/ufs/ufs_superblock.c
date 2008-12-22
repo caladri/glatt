@@ -7,8 +7,6 @@ COMPILE_TIME_ASSERT(offsetof(struct ufs_superblock, sb_iboff) == 0x10);
 COMPILE_TIME_ASSERT(offsetof(struct ufs_superblock, sb_bshift) == 0x50);
 COMPILE_TIME_ASSERT(offsetof(struct ufs_superblock, sb_fshift) == 0x54);
 COMPILE_TIME_ASSERT(offsetof(struct ufs_superblock, sb_fsbtodb) == 0x64);
-COMPILE_TIME_ASSERT(offsetof(struct ufs_superblock, sb_nindir) == 0x74);
-COMPILE_TIME_ASSERT(offsetof(struct ufs_superblock, sb_inopb) == 0x78);
 COMPILE_TIME_ASSERT(offsetof(struct ufs_superblock, sb_ipg) == 0xb8);
 COMPILE_TIME_ASSERT(offsetof(struct ufs_superblock, sb_fpg) == 0xbc);
 COMPILE_TIME_ASSERT(offsetof(struct ufs_superblock, sb_sblockloc) == 0x3e8);
@@ -29,8 +27,6 @@ ufs_superblock_swap(struct ufs_superblock *sb)
 	ufs_superblock_swap32(&sb->sb_bshift);
 	ufs_superblock_swap32(&sb->sb_fshift);
 	ufs_superblock_swap32(&sb->sb_fsbtodb);
-	ufs_superblock_swap32(&sb->sb_nindir);
-	ufs_superblock_swap32(&sb->sb_inopb);
 	ufs_superblock_swap32(&sb->sb_ipg);
 	ufs_superblock_swap32(&sb->sb_fpg);
 	ufs_superblock_swap64(&sb->sb_sblockloc);

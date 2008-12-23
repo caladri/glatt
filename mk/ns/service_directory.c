@@ -49,7 +49,7 @@ service_directory_enter(const char *service_name, ipc_port_t port)
 	SERVICE_DIRECTORY_LOCK();
 
 	BTREE_FIND(&old, iter, &service_directory, sde_tree,
-		   strcmp(sde->sde_name, iter->sde_name) == -1,
+		   strcmp(sde->sde_name, iter->sde_name) < 0,
 		   strcmp(sde->sde_name, iter->sde_name) == 0);
 
 	if (old != NULL) {
@@ -59,7 +59,7 @@ service_directory_enter(const char *service_name, ipc_port_t port)
 	}
 
 	BTREE_INSERT(sde, iter, &service_directory, sde_tree,
-		     strcmp(sde->sde_name, iter->sde_name) == -1);
+		     strcmp(sde->sde_name, iter->sde_name) < 0);
 
 	SERVICE_DIRECTORY_UNLOCK();
 
@@ -74,7 +74,7 @@ service_directory_lookup(const char *service_name, ipc_port_t *portp)
 	SERVICE_DIRECTORY_LOCK();
 
 	BTREE_FIND(&sde, iter, &service_directory, sde_tree,
-		   strcmp(service_name, iter->sde_name) == -1,
+		   strcmp(service_name, iter->sde_name) < 0,
 		   strcmp(service_name, iter->sde_name) == 0);
 
 	if (sde == NULL) {

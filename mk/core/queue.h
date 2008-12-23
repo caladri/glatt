@@ -83,17 +83,9 @@
  * _EMPTY			+	+	+
  * _FIRST			+	+	+
  * _NEXT			+	+	+
- * _PREV			-	-	+
- * _LAST			-	+	+
  * _FOREACH			+	+	+
- * _FOREACH_SAFE		+	+	+
- * _FOREACH_REVERSE		-	-	+
- * _FOREACH_REVERSE_SAFE	-	-	+
  * _INSERT_HEAD			+	+	+
- * _INSERT_BEFORE		-	-	+
- * _INSERT_AFTER		+	+	+
  * _INSERT_TAIL			-	+	+
- * _CONCAT			-	+	+
  * _REMOVE_HEAD			+	+	-
  * _REMOVE			+	+	+
  *
@@ -159,23 +151,8 @@ struct {								\
 	    (var);							\
 	    (var) = SLIST_NEXT((var), field))
 
-#define	SLIST_FOREACH_SAFE(var, head, field, tvar)			\
-	for ((var) = SLIST_FIRST((head));				\
-	    (var) && ((tvar) = SLIST_NEXT((var), field), 1);		\
-	    (var) = (tvar))
-
-#define	SLIST_FOREACH_PREVPTR(var, varp, head, field)			\
-	for ((varp) = &SLIST_FIRST((head));				\
-	    ((var) = *(varp)) != NULL;					\
-	    (varp) = &SLIST_NEXT((var), field))
-
 #define	SLIST_INIT(head) do {						\
 	SLIST_FIRST((head)) = NULL;					\
-} while (0)
-
-#define	SLIST_INSERT_AFTER(slistelm, elm, field) do {			\
-	SLIST_NEXT((elm), field) = SLIST_NEXT((slistelm), field);	\
-	SLIST_NEXT((slistelm), field) = (elm);				\
 } while (0)
 
 #define	SLIST_INSERT_HEAD(head, elm, field) do {			\
@@ -223,14 +200,6 @@ struct {								\
 /*
  * Singly-linked Tail queue functions.
  */
-#define	STAILQ_CONCAT(head1, head2) do {				\
-	if (!STAILQ_EMPTY((head2))) {					\
-		*(head1)->stqh_last = (head2)->stqh_first;		\
-		(head1)->stqh_last = (head2)->stqh_last;		\
-		STAILQ_INIT((head2));					\
-	}								\
-} while (0)
-
 #define	STAILQ_EMPTY(head)	((head)->stqh_first == NULL)
 
 #define	STAILQ_FIRST(head)	((head)->stqh_first)
@@ -240,26 +209,9 @@ struct {								\
 	   (var);							\
 	   (var) = STAILQ_NEXT((var), field))
 
-#define	STAILQ_FOREACH_SAFE(var, head, field, tvar)			\
-	for ((var) = STAILQ_FIRST((head));				\
-	    (var) && ((tvar) = STAILQ_NEXT((var), field), 1);		\
-	    (var) = (tvar))
-
 #define	STAILQ_INIT(head) do {						\
 	STAILQ_FIRST((head)) = NULL;					\
 	(head)->stqh_last = &STAILQ_FIRST((head));			\
-} while (0)
-
-#define	STAILQ_INSERT_AFTER(head, tqelm, elm, field) do {		\
-	if ((STAILQ_NEXT((elm), field) = STAILQ_NEXT((tqelm), field)) == NULL)\
-		(head)->stqh_last = &STAILQ_NEXT((elm), field);		\
-	STAILQ_NEXT((tqelm), field) = (elm);				\
-} while (0)
-
-#define	STAILQ_INSERT_HEAD(head, elm, field) do {			\
-	if ((STAILQ_NEXT((elm), field) = STAILQ_FIRST((head))) == NULL)	\
-		(head)->stqh_last = &STAILQ_NEXT((elm), field);		\
-	STAILQ_FIRST((head)) = (elm);					\
 } while (0)
 
 #define	STAILQ_INSERT_TAIL(head, elm, field) do {			\
@@ -267,12 +219,6 @@ struct {								\
 	*(head)->stqh_last = (elm);					\
 	(head)->stqh_last = &STAILQ_NEXT((elm), field);			\
 } while (0)
-
-#define	STAILQ_LAST(head, type, field)					\
-	(STAILQ_EMPTY((head)) ?						\
-		NULL :							\
-	        ((type *)						\
-		((char *)((head)->stqh_last) - offsetof(type, field))))
 
 #define	STAILQ_NEXT(elm, field)	((elm)->field.stqe_next)
 
@@ -294,11 +240,6 @@ struct {								\
 #define	STAILQ_REMOVE_HEAD(head, field) do {				\
 	if ((STAILQ_FIRST((head)) =					\
 	     STAILQ_NEXT(STAILQ_FIRST((head)), field)) == NULL)		\
-		(head)->stqh_last = &STAILQ_FIRST((head));		\
-} while (0)
-
-#define	STAILQ_REMOVE_HEAD_UNTIL(head, elm, field) do {			\
-	if ((STAILQ_FIRST((head)) = STAILQ_NEXT((elm), field)) == NULL)	\
 		(head)->stqh_last = &STAILQ_FIRST((head));		\
 } while (0)
 
@@ -325,17 +266,6 @@ struct {								\
 /*
  * Tail queue functions.
  */
-#define	TAILQ_CONCAT(head1, head2, field) do {				\
-	if (!TAILQ_EMPTY(head2)) {					\
-		*(head1)->tqh_last = (head2)->tqh_first;		\
-		(head2)->tqh_first->field.tqe_prev = (head1)->tqh_last;	\
-		(head1)->tqh_last = (head2)->tqh_last;			\
-		TAILQ_INIT((head2));					\
-		QMD_TRACE_HEAD(head1);					\
-		QMD_TRACE_HEAD(head2);					\
-	}								\
-} while (0)
-
 #define	TAILQ_EMPTY(head)	((head)->tqh_first == NULL)
 
 #define	TAILQ_FIRST(head)	((head)->tqh_first)
@@ -345,48 +275,10 @@ struct {								\
 	    (var);							\
 	    (var) = TAILQ_NEXT((var), field))
 
-#define	TAILQ_FOREACH_SAFE(var, head, field, tvar)			\
-	for ((var) = TAILQ_FIRST((head));				\
-	    (var) && ((tvar) = TAILQ_NEXT((var), field), 1);		\
-	    (var) = (tvar))
-
-#define	TAILQ_FOREACH_REVERSE(var, head, headname, field)		\
-	for ((var) = TAILQ_LAST((head), headname);			\
-	    (var);							\
-	    (var) = TAILQ_PREV((var), headname, field))
-
-#define	TAILQ_FOREACH_REVERSE_SAFE(var, head, headname, field, tvar)	\
-	for ((var) = TAILQ_LAST((head), headname);			\
-	    (var) && ((tvar) = TAILQ_PREV((var), headname, field), 1);	\
-	    (var) = (tvar))
-
 #define	TAILQ_INIT(head) do {						\
 	TAILQ_FIRST((head)) = NULL;					\
 	(head)->tqh_last = &TAILQ_FIRST((head));			\
 	QMD_TRACE_HEAD(head);						\
-} while (0)
-
-#define	TAILQ_INSERT_AFTER(head, listelm, elm, field) do {		\
-	if ((TAILQ_NEXT((elm), field) = TAILQ_NEXT((listelm), field)) != NULL)\
-		TAILQ_NEXT((elm), field)->field.tqe_prev = 		\
-		    &TAILQ_NEXT((elm), field);				\
-	else {								\
-		(head)->tqh_last = &TAILQ_NEXT((elm), field);		\
-		QMD_TRACE_HEAD(head);					\
-	}								\
-	TAILQ_NEXT((listelm), field) = (elm);				\
-	(elm)->field.tqe_prev = &TAILQ_NEXT((listelm), field);		\
-	QMD_TRACE_ELEM(&(elm)->field);					\
-	QMD_TRACE_ELEM(&listelm->field);				\
-} while (0)
-
-#define	TAILQ_INSERT_BEFORE(listelm, elm, field) do {			\
-	(elm)->field.tqe_prev = (listelm)->field.tqe_prev;		\
-	TAILQ_NEXT((elm), field) = (listelm);				\
-	*(listelm)->field.tqe_prev = (elm);				\
-	(listelm)->field.tqe_prev = &TAILQ_NEXT((elm), field);		\
-	QMD_TRACE_ELEM(&(elm)->field);					\
-	QMD_TRACE_ELEM(&listelm->field);				\
 } while (0)
 
 #define	TAILQ_INSERT_HEAD(head, elm, field) do {			\
@@ -410,13 +302,7 @@ struct {								\
 	QMD_TRACE_ELEM(&(elm)->field);					\
 } while (0)
 
-#define	TAILQ_LAST(head, headname)					\
-	(*(((headname *)((head)->tqh_last))->tqh_last))
-
 #define	TAILQ_NEXT(elm, field) ((elm)->field.tqe_next)
-
-#define	TAILQ_PREV(elm, headname, field)				\
-	(*(((headname *)((elm)->field.tqe_prev))->tqh_last))
 
 #define	TAILQ_REMOVE(head, elm, field) do {				\
 	if ((TAILQ_NEXT((elm), field)) != NULL)				\

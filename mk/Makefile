@@ -13,4 +13,4 @@ config:
 	@echo 'Build directory has been set up:' ${BUILDDIR}
 
 options:
-	@mu-config -s ${KERNEL_ROOT} ${PLATFORM} | grep '[-+]' | xargs
+	@mu-config -s ${KERNEL_ROOT} ${PLATFORM} ${MK_CONFIG} | grep '[-+]' | xargs

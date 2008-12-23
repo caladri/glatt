@@ -75,27 +75,27 @@
  * For details on the use of these macros, see the queue(3) manual page.
  *
  *
- *				SLIST	LIST	STAILQ	TAILQ
- * _HEAD			+	+	+	+
- * _HEAD_INITIALIZER		+	+	+	+
- * _ENTRY			+	+	+	+
- * _INIT			+	+	+	+
- * _EMPTY			+	+	+	+
- * _FIRST			+	+	+	+
- * _NEXT			+	+	+	+
- * _PREV			-	-	-	+
- * _LAST			-	-	+	+
- * _FOREACH			+	+	+	+
- * _FOREACH_SAFE		+	+	+	+
- * _FOREACH_REVERSE		-	-	-	+
- * _FOREACH_REVERSE_SAFE	-	-	-	+
- * _INSERT_HEAD			+	+	+	+
- * _INSERT_BEFORE		-	+	-	+
- * _INSERT_AFTER		+	+	+	+
- * _INSERT_TAIL			-	-	+	+
- * _CONCAT			-	-	+	+
- * _REMOVE_HEAD			+	-	+	-
- * _REMOVE			+	+	+	+
+ *				SLIST	STAILQ	TAILQ
+ * _HEAD			+	+	+
+ * _HEAD_INITIALIZER		+	+	+
+ * _ENTRY			+	+	+
+ * _INIT			+	+	+
+ * _EMPTY			+	+	+
+ * _FIRST			+	+	+
+ * _NEXT			+	+	+
+ * _PREV			-	-	+
+ * _LAST			-	+	+
+ * _FOREACH			+	+	+
+ * _FOREACH_SAFE		+	+	+
+ * _FOREACH_REVERSE		-	-	+
+ * _FOREACH_REVERSE_SAFE	-	-	+
+ * _INSERT_HEAD			+	+	+
+ * _INSERT_BEFORE		-	-	+
+ * _INSERT_AFTER		+	+	+
+ * _INSERT_TAIL			-	+	+
+ * _CONCAT			-	+	+
+ * _REMOVE_HEAD			+	+	-
+ * _REMOVE			+	+	+
  *
  */
 #ifdef QUEUE_MACRO_DEBUG
@@ -300,108 +300,6 @@ struct {								\
 #define	STAILQ_REMOVE_HEAD_UNTIL(head, elm, field) do {			\
 	if ((STAILQ_FIRST((head)) = STAILQ_NEXT((elm), field)) == NULL)	\
 		(head)->stqh_last = &STAILQ_FIRST((head));		\
-} while (0)
-
-/*
- * List declarations.
- */
-#define	LIST_HEAD(name, type)						\
-struct name {								\
-	type *lh_first;	/* first element */				\
-}
-
-#define	LIST_HEAD_INITIALIZER()						\
-	{ NULL }
-
-#define	LIST_ENTRY(type)						\
-struct {								\
-	type *le_next;	/* next element */				\
-	type **le_prev;	/* address of previous next element */		\
-}
-
-/*
- * List functions.
- */
-
-#if defined(QUEUE_MACRO_DEBUG)
-#define	QMD_LIST_CHECK_HEAD(head, field) do {				\
-	if (LIST_FIRST((head)) != NULL &&				\
-	    LIST_FIRST((head))->field.le_prev !=			\
-	     &LIST_FIRST((head)))					\
-		panic("Bad list head %p first->prev != head", (head));	\
-} while (0)
-
-#define	QMD_LIST_CHECK_NEXT(elm, field) do {				\
-	if (LIST_NEXT((elm), field) != NULL &&				\
-	    LIST_NEXT((elm), field)->field.le_prev !=			\
-	     &((elm)->field.le_next))					\
-	     	panic("Bad link elm %p next->prev != elm", (elm));	\
-} while (0)
-
-#define	QMD_LIST_CHECK_PREV(elm, field) do {				\
-	if (*(elm)->field.le_prev != (elm))				\
-		panic("Bad link elm %p prev->next != elm", (elm));	\
-} while (0)
-#else
-#define	QMD_LIST_CHECK_HEAD(head, field)
-#define	QMD_LIST_CHECK_NEXT(elm, field)
-#define	QMD_LIST_CHECK_PREV(elm, field)
-#endif /* QUEUE_MACRO_DEBUG */
-
-#define	LIST_EMPTY(head)	((head)->lh_first == NULL)
-
-#define	LIST_FIRST(head)	((head)->lh_first)
-
-#define	LIST_FOREACH(var, head, field)					\
-	for ((var) = LIST_FIRST((head));				\
-	    (var);							\
-	    (var) = LIST_NEXT((var), field))
-
-#define	LIST_FOREACH_SAFE(var, head, field, tvar)			\
-	for ((var) = LIST_FIRST((head));				\
-	    (var) && ((tvar) = LIST_NEXT((var), field), 1);		\
-	    (var) = (tvar))
-
-#define	LIST_INIT(head) do {						\
-	LIST_FIRST((head)) = NULL;					\
-} while (0)
-
-#define	LIST_INSERT_AFTER(listelm, elm, field) do {			\
-	QMD_LIST_CHECK_NEXT(listelm, field);				\
-	if ((LIST_NEXT((elm), field) = LIST_NEXT((listelm), field)) != NULL)\
-		LIST_NEXT((listelm), field)->field.le_prev =		\
-		    &LIST_NEXT((elm), field);				\
-	LIST_NEXT((listelm), field) = (elm);				\
-	(elm)->field.le_prev = &LIST_NEXT((listelm), field);		\
-} while (0)
-
-#define	LIST_INSERT_BEFORE(listelm, elm, field) do {			\
-	QMD_LIST_CHECK_PREV(listelm, field);				\
-	(elm)->field.le_prev = (listelm)->field.le_prev;		\
-	LIST_NEXT((elm), field) = (listelm);				\
-	*(listelm)->field.le_prev = (elm);				\
-	(listelm)->field.le_prev = &LIST_NEXT((elm), field);		\
-} while (0)
-
-#define	LIST_INSERT_HEAD(head, elm, field) do {				\
-	QMD_LIST_CHECK_HEAD((head), field);				\
-	if ((LIST_NEXT((elm), field) = LIST_FIRST((head))) != NULL)	\
-		LIST_FIRST((head))->field.le_prev = &LIST_NEXT((elm), field);\
-	LIST_FIRST((head)) = (elm);					\
-	(elm)->field.le_prev = &LIST_FIRST((head));			\
-} while (0)
-
-#define	LIST_NEXT(elm, field)	((elm)->field.le_next)
-
-#define	LIST_REMOVE(elm, field) do {					\
-	QMD_LIST_CHECK_NEXT(elm, field);				\
-	QMD_LIST_CHECK_PREV(elm, field);				\
-	if (LIST_NEXT((elm), field) != NULL)				\
-		LIST_NEXT((elm), field)->field.le_prev = 		\
-		    (elm)->field.le_prev;				\
-	*(elm)->field.le_prev = LIST_NEXT((elm), field);		\
-	TRASHIT((elm)->field.le_next);					\
-	TRASHIT((elm)->field.le_prev);					\
 } while (0)
 
 /*

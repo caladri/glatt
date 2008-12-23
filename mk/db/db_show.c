@@ -1,4 +1,5 @@
 #include <core/types.h>
+#include <core/btree.h>
 #include <core/error.h>
 #include <core/string.h>
 #include <db/db.h>
@@ -23,7 +24,7 @@ static void db_show_listing(struct db_show_tree *);
 static void db_show_listing_value(struct db_show_value *);
 static bool db_show_one(struct db_show_tree **, const char *);
 static void db_show_path(struct db_show_tree *);
-static void db_show_value(struct db_show_value *);
+static void db_show_value(struct db_show_value *, bool);
 static void db_show_value_ambiguous(struct db_show_tree *, const char *);
 static struct db_show_value *db_show_value_lookup(struct db_show_tree *,
 						  const char *);
@@ -31,20 +32,19 @@ static struct db_show_value *db_show_value_lookup(struct db_show_tree *,
 void
 db_show_init(void)
 {
-	struct db_show_tree *tree, **treep;
-	struct db_show_value *value, **valuep;
+	struct db_show_value **valuep, *iter;
 
-	for (treep = SET_BEGIN(db_show_trees);
-	     treep != SET_END(db_show_trees); treep++) {
-		tree = *treep;
-		SLIST_INIT(&tree->st_values);
-	}
 	for (valuep = SET_BEGIN(db_show_values);
 	     valuep != SET_END(db_show_values); valuep++) {
-		value = *valuep;
-		SLIST_INSERT_HEAD(&value->sv_parent->st_values, value, sv_link);
+		struct db_show_value *value = *valuep;
+		struct db_show_tree *parent = value->sv_parent;
+
+		kcprintf("inserting %s\n", value->sv_name);
+		BTREE_INSERT(value, iter, &parent->st_values, sv_tree,
+			     strcmp(value->sv_name, iter->sv_name) < 0);
+
 		if (value->sv_type == DB_SHOW_TYPE_TREE)
-			value->sv_value.sv_tree->st_parent = value->sv_parent;
+			value->sv_value.sv_tree->st_parent = parent;
 	}
 }
 
@@ -110,10 +110,8 @@ db_show_all(struct db_show_tree *tree)
 	db_show_path(tree);
 	kcprintf(":\n");
 
-	SLIST_FOREACH(value, &tree->st_values, sv_link) {
-		kcprintf("%s:\n", value->sv_name);
-		db_show_value(value);
-	}
+	BTREE_FOREACH(value, &tree->st_values, sv_tree,
+		      db_show_value(value, true));
 }
 
 static int
@@ -171,10 +169,8 @@ db_show_listing(struct db_show_tree *tree)
 	struct db_show_value *value;
 
 	kcprintf("Available values:");
-	SLIST_FOREACH(value, &tree->st_values, sv_link) {
-		kcprintf(" ");
-		db_show_listing_value(value);
-	}
+	BTREE_FOREACH(value, &tree->st_values, sv_tree,
+		      db_show_listing_value(value));
 	kcprintf("\n");
 }
 
@@ -192,7 +188,7 @@ db_show_listing_value(struct db_show_value *value)
 	default:
 		suffix = '?';
 	}
-	kcprintf("%s%c", value->sv_name, suffix);
+	kcprintf(" %s%c", value->sv_name, suffix);
 }
 
 static void
@@ -219,13 +215,16 @@ db_show_one(struct db_show_tree **currentp, const char *name)
 		*currentp = value->sv_value.sv_tree;
 		return (true);
 	}
-	db_show_value(value);
+	db_show_value(value, false);
 	return (true);
 }
 
 static void
-db_show_value(struct db_show_value *value)
+db_show_value(struct db_show_value *value, bool show_name)
 {
+	if (show_name)
+		kcprintf("%s:\n", value->sv_name);
+
 	switch (value->sv_type) {
 	case DB_SHOW_TYPE_TREE:
 		kcprintf("%s is a directory.\n", value->sv_name);
@@ -244,13 +243,17 @@ db_show_value_ambiguous(struct db_show_tree *tree, const char *name)
 	struct db_show_value *value;
 
 	kcprintf("DB: ambiguous component '%s' possible matches:", name);
-
-	SLIST_FOREACH(value, &tree->st_values, sv_link) {
+ 
+	BTREE_MIN(value, &tree->st_values, sv_tree);
+	while (value != NULL) {
 		if (strlen(name) < strlen(value->sv_name)) {
-			if (strncmp(name, value->sv_name, strlen(name)) != 0)
+			if (strncmp(name, value->sv_name, strlen(name)) != 0) {
+				BTREE_NEXT(value, sv_tree);
 				continue;
+			}
 			kcprintf(" %s", value->sv_name);
 		}
+		BTREE_NEXT(value, sv_tree);
 	}
 	kcprintf("\n");
 }
@@ -264,7 +267,8 @@ db_show_value_lookup(struct db_show_tree *tree, const char *name)
 	ambiguous = false;
 	match = NULL;
 
-	SLIST_FOREACH(value, &tree->st_values, sv_link) {
+	BTREE_MIN(value, &tree->st_values, sv_tree);
+	while (value != NULL) {
 		if (strlen(name) <= strlen(value->sv_name)) {
 			if (strcmp(name, value->sv_name) == 0)
 				return (value);
@@ -273,17 +277,22 @@ db_show_value_lookup(struct db_show_tree *tree, const char *name)
 			 * matter.  In this case, you can juse do
 			 * if (value->sv_name[strlen(name)] == '\0');
 			 */
-			if (strlen(name) == strlen(value->sv_name))
+			if (strlen(name) == strlen(value->sv_name)) {
+				BTREE_NEXT(value, sv_tree);
 				continue;
+			}
 			if (strncmp(name, value->sv_name, strlen(name)) == 0) {
 				if (match != NULL) {
 					ambiguous = true;
+					BTREE_NEXT(value, sv_tree);
 					continue;
 				}
 				match = value;
 			}
 		}
+		BTREE_NEXT(value, sv_tree);
 	}
+
 	/*
 	 * Delay this as we may have inexact matches before an exact match.
 	 */

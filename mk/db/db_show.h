@@ -5,20 +5,22 @@
 #error "Should not include this file unless the debugger is enabled."
 #endif
 
-#include <core/queue.h>
+#include <core/btree.h>
 
 struct db_show_value;
 
 struct db_show_tree {
 	const char *st_name;
 	struct db_show_tree *st_parent;
-	SLIST_HEAD(, struct db_show_value) st_values;
-	SLIST_ENTRY(struct db_show_tree) st_link;
+	BTREE_ROOT(struct db_show_value) st_values;
+	BTREE_NODE(struct db_show_tree) st_tree;
 };
 
 #define	DB_SHOW_TREE(symbol, name)					\
 	struct db_show_tree db_show_tree_ ## symbol = 	{		\
 		.st_name = #name,					\
+		.st_values = BTREE_ROOT_INITIALIZER(),			\
+		.st_tree = BTREE_INITIALIZER(),				\
 	};								\
 	SET_ADD(db_show_trees, db_show_tree_ ## symbol)
 
@@ -45,7 +47,7 @@ struct db_show_value {
 	struct db_show_tree *sv_parent;
 	enum db_show_type sv_type;
 	union db_show_value_union sv_value;
-	SLIST_ENTRY(struct db_show_value) sv_link;
+	BTREE_NODE(struct db_show_value) sv_tree;
 };
 
 #define	DB_SHOW_VALUE_TREE(name, parent, value)				\
@@ -54,6 +56,7 @@ struct db_show_value {
 		.sv_parent = DB_SHOW_TREE_POINTER(parent),		\
 		.sv_type = DB_SHOW_TYPE_TREE,				\
 		.sv_value.sv_tree = value,				\
+		.sv_tree = BTREE_INITIALIZER(),				\
 	};								\
 	SET_ADD(db_show_values, db_show_value_ ## parent ## _ ## name)
 
@@ -63,6 +66,7 @@ struct db_show_value {
 		.sv_parent = DB_SHOW_TREE_POINTER(parent),		\
 		.sv_type = DB_SHOW_TYPE_VOIDF,				\
 		.sv_value.sv_voidf = value,				\
+		.sv_tree = BTREE_INITIALIZER(),				\
 	};								\
 	SET_ADD(db_show_values, db_show_value_ ## parent ## _ ## name)
 

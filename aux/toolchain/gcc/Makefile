@@ -1,34 +1,15 @@
-GCC=gcc-4.2.4
-GCC_DIST=${VENDOR_SRC}/gnu/gcc/${GCC:S/-/-core-/}.tar.bz2
-GCC_SRC=${.OBJDIR}/work/${GCC}
-GCC_OBJ=${.OBJDIR}/build/${GCC}
-GCC_TARGET=mips64-gxemul-elf
+VENDOR=		gnu
+PACKAGE=	gcc
+VERSION=	4.2.4
+DISTFILE=	${PACKAGE}-core-${VERSION}.tar.bz2
+DISTDIR=	${PACKAGE}-${VERSION}
 
-# Things that belong elsewhere pt 2
-pre-configure: ${GCC_DIST}
-	@echo '>>> Unpacking '${GCC}
-	@rm -rf ${GCC_SRC}
-	@mkdir -p ${.OBJDIR}/work
-	@cd ${.OBJDIR}/work && tar jxf ${GCC_DIST}
-	@[ -d ${GCC_SRC} ]
+GCC_TARGET?=	mips64-gxemul-elf
 
-configure:
-	@echo '>>> Configuring '${GCC}
-	@rm -rf ${GCC_OBJ}
-	@mkdir -p ${GCC_OBJ}
-	@cd ${GCC_OBJ} && ${GCC_SRC}/configure --prefix=${PREFIX} --target=${GCC_TARGET} --disable-libssp
+CONFIGURE+=	--prefix=${PREFIX}
+CONFIGURE+=	--target=${GCC_TARGET}
+CONFIGURE+=	--disable-libssp
 
-build:
-	@echo '>>> Building '${GCC}
-	@cd ${GCC_OBJ} && gnumake all
-
-install:
-	@echo '>>> Installing '${GCC}
-	@cd ${GCC_OBJ} && gnumake install
-
-clean:
-	@echo '>>> Cleaning '${GCC}
-	@rm -rf ${.OBJDIR}/work
-	@rm -rf ${.OBJDIR}/build
+USE_GNUMAKE=	true
 
 .include "${GLATT_SRC}/aux/build/vendor.mk"

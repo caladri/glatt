@@ -1,34 +1,14 @@
-BINUTILS=binutils-2.18
-BINUTILS_DIST=${VENDOR_SRC}/gnu/binutils/${BINUTILS}.tar.bz2
-BINUTILS_SRC=${.OBJDIR}/work/${BINUTILS}
-BINUTILS_OBJ=${.OBJDIR}/build/${BINUTILS}
-BINUTILS_TARGET=mips64-gxemul-elf
+VENDOR=		gnu
+PACKAGE=	binutils
+VERSION=	2.18
+DISTFILE=	${PACKAGE}-${VERSION}.tar.bz2
+DISTDIR=	${PACKAGE}-${VERSION}
 
-# Things that belong elsewhere pt 2
-pre-configure: ${BINUTILS_DIST}
-	@echo '>>> Unpacking '${BINUTILS}
-	@rm -rf ${BINUTILS_SRC}
-	@mkdir -p ${.OBJDIR}/work
-	@cd ${.OBJDIR}/work && tar jxf ${BINUTILS_DIST}
-	@[ -d ${BINUTILS_SRC} ]
+BINUTILS_TARGET?=	mips64-gxemul-elf
 
-configure:
-	@echo '>>> Configuring '${BINUTILS}
-	@rm -rf ${BINUTILS_OBJ}
-	@mkdir -p ${BINUTILS_OBJ}
-	@cd ${BINUTILS_OBJ} && ${BINUTILS_SRC}/configure --prefix=${PREFIX} --target=${BINUTILS_TARGET}
+CONFIGURE+=	--prefix=${PREFIX}
+CONFIGURE+=	--target=${BINUTILS_TARGET}
 
-build:
-	@echo '>>> Building '${BINUTILS}
-	@cd ${BINUTILS_OBJ} && gnumake all
-
-install:
-	@echo '>>> Installing '${BINUTILS}
-	@cd ${BINUTILS_OBJ} && gnumake install
-
-clean:
-	@echo '>>> Cleaning '${BINUTILS}
-	@rm -rf ${.OBJDIR}/work
-	@rm -rf ${.OBJDIR}/build
+USE_GNUMAKE=	true
 
 .include "${GLATT_SRC}/aux/build/vendor.mk"

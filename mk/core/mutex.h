@@ -15,7 +15,8 @@ struct mutex {
 #define	MUTEX_FLAG_DEFAULT	(0x00000000)
 #define	MUTEX_FLAG_RECURSE	(0x00000001)
 
-#define	MTX_HELD(mtx)	((mtx)->mtx_owner != NULL && (mtx)->mtx_owner == current_thread())
+#define	MUTEX_HELD(mtx)							\
+	((mtx)->mtx_owner != NULL && (mtx)->mtx_owner == current_thread())
 
 void mutex_init(struct mutex *, const char *, unsigned);
 void mutex_lock(struct mutex *);

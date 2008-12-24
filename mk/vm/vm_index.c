@@ -239,7 +239,7 @@ vm_insert_index(struct vm *vm, struct vm_index **vmip, vaddr_t base,
 	vmi->vmi_base = base;
 	vmi->vmi_size = pages;
 	vmi->vmi_flags = VM_INDEX_FLAG_DEFAULT;
-	BTREE_INIT(&vmi->vmi_tree);
+	BTREE_NODE_INIT(&vmi->vmi_tree);
 
 	TAILQ_INSERT_TAIL(&vm->vm_index_free, vmi, vmi_free_link);
 	BTREE_INSERT(vmi, iter, &vm->vm_index, vmi_tree,

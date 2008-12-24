@@ -56,6 +56,8 @@ page_init(void)
 	spinlock_init(&page_tree_lock, "Page tree", SPINLOCK_FLAG_DEFAULT);
 	spinlock_init(&page_queue_lock, "Page queue", SPINLOCK_FLAG_DEFAULT);
 
+	BTREE_ROOT_INIT(&page_tree);
+
 	TAILQ_INIT(&page_free_queue);
 	TAILQ_INIT(&page_use_queue);
 
@@ -201,7 +203,7 @@ page_insert_pages(paddr_t base, size_t pages)
 
 		ptp = (struct vm_page_tree_page *)vaddr;
 		pt = &ptp->ptp_tree;
-		BTREE_INIT(&ptp->ptp_tree.pt_tree);
+		BTREE_NODE_INIT(&ptp->ptp_tree.pt_tree);
 
 		ptps++;
 

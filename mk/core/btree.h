@@ -13,19 +13,19 @@
 		type *child;						\
 	}
 
-#define	BTREE_INIT(node)						\
+#define	BTREE_NODE_INIT(node)						\
 	do {								\
 		(node)->left = NULL;					\
 		(node)->right = NULL;					\
 		(node)->parent = NULL;					\
 	} while (0)
 
-#define	BTREE_INIT_ROOT(root)						\
+#define	BTREE_ROOT_INIT(root)						\
 	do {								\
 		(root)->child = NULL;					\
 	} while (0)
 
-#define	BTREE_INITIALIZER()						\
+#define	BTREE_NODE_INITIALIZER()					\
 	{								\
 		.left = NULL,						\
 		.right = NULL,						\

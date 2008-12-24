@@ -36,7 +36,7 @@ struct startup_item {
 		.si_arg = arg,						\
 		.si_component = component,				\
 		.si_order = order,					\
-		.si_tree = BTREE_INITIALIZER(),				\
+		.si_tree = BTREE_NODE_INITIALIZER(),			\
 	};								\
 	SET_ADD(startup_items, startup_item_ ## name)
 

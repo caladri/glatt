@@ -319,7 +319,7 @@ ipc_port_alloc(void)
 	ipcp->ipcp_cv = cv_create(&ipcp->ipcp_mutex);
 	ipcp->ipcp_port = IPC_PORT_UNKNOWN;
 	TAILQ_INIT(&ipcp->ipcp_msgs);
-	BTREE_INIT(&ipcp->ipcp_link);
+	BTREE_NODE_INIT(&ipcp->ipcp_link);
 
 	return (ipcp);
 }

@@ -20,7 +20,7 @@ struct db_show_tree {
 	struct db_show_tree db_show_tree_ ## symbol = 	{		\
 		.st_name = #name,					\
 		.st_values = BTREE_ROOT_INITIALIZER(),			\
-		.st_tree = BTREE_INITIALIZER(),				\
+		.st_tree = BTREE_NODE_INITIALIZER(),			\
 	};								\
 	SET_ADD(db_show_trees, db_show_tree_ ## symbol)
 
@@ -56,7 +56,7 @@ struct db_show_value {
 		.sv_parent = DB_SHOW_TREE_POINTER(parent),		\
 		.sv_type = DB_SHOW_TYPE_TREE,				\
 		.sv_value.sv_tree = value,				\
-		.sv_tree = BTREE_INITIALIZER(),				\
+		.sv_tree = BTREE_NODE_INITIALIZER(),			\
 	};								\
 	SET_ADD(db_show_values, db_show_value_ ## parent ## _ ## name)
 
@@ -66,7 +66,7 @@ struct db_show_value {
 		.sv_parent = DB_SHOW_TREE_POINTER(parent),		\
 		.sv_type = DB_SHOW_TYPE_VOIDF,				\
 		.sv_value.sv_voidf = value,				\
-		.sv_tree = BTREE_INITIALIZER(),				\
+		.sv_tree = BTREE_NODE_INITIALIZER(),			\
 	};								\
 	SET_ADD(db_show_values, db_show_value_ ## parent ## _ ## name)
 

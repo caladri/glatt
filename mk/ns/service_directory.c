@@ -33,7 +33,7 @@ service_directory_init(void)
 		panic("%s: pool_create failed: %m", __func__, error);
 
 	mutex_init(&service_directory_lock, "Service Directory", MUTEX_FLAG_DEFAULT);
-	BTREE_INIT_ROOT(&service_directory);
+	BTREE_ROOT_INIT(&service_directory);
 }
 
 int
@@ -44,7 +44,7 @@ service_directory_enter(const char *service_name, ipc_port_t port)
 	sde = pool_allocate(&service_directory_entry_pool);
 	strlcpy(sde->sde_name, service_name, NS_SERVICE_NAME_LENGTH);
 	sde->sde_port = port;
-	BTREE_INIT(&sde->sde_tree);
+	BTREE_NODE_INIT(&sde->sde_tree);
 
 	SERVICE_DIRECTORY_LOCK();
 

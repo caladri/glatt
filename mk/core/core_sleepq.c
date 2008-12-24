@@ -112,7 +112,7 @@ sleepq_lookup(const void *cookie, bool create)
 	SQ_LOCK(sq);
 	sq->sq_cookie = cookie;
 	TAILQ_INIT(&sq->sq_entries);
-	BTREE_INIT(&sq->sq_tree);
+	BTREE_NODE_INIT(&sq->sq_tree);
 	BTREE_INSERT(sq, iter, &sleepq_queue_tree, sq_tree,
 		     (sq->sq_cookie < iter->sq_cookie));
 	SLEEPQ_UNLOCK();
@@ -144,6 +144,6 @@ sleepq_startup(void *arg)
 			    POOL_VIRTUAL);
 	if (error != 0)
 		panic("%s: pool_create failed: %m", __func__, error);
-	BTREE_INIT_ROOT(&sleepq_queue_tree);
+	BTREE_ROOT_INIT(&sleepq_queue_tree);
 }
 STARTUP_ITEM(sleepq, STARTUP_POOL, STARTUP_FIRST, sleepq_startup, NULL);

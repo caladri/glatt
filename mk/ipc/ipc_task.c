@@ -134,7 +134,7 @@ ipc_task_setup(struct task *task)
 {
 	struct ipc_task *ipct = &task->t_ipc;
 
-	BTREE_INIT_ROOT(&ipct->ipct_rights);
+	BTREE_ROOT_INIT(&ipct->ipct_rights);
 
 	/* Insert any default rights.  */
 
@@ -155,7 +155,7 @@ ipc_task_get_port_right(struct ipc_task *ipct, ipc_port_t port, bool create)
 		ipcpr = pool_allocate(&ipc_port_right_pool);
 		ipcpr->ipcpr_port = port;
 		ipcpr->ipcpr_rights = IPC_PORT_RIGHT_NONE;
-		BTREE_INIT(&ipcpr->ipcpr_tree);
+		BTREE_NODE_INIT(&ipcpr->ipcpr_tree);
 
 		BTREE_INSERT(ipcpr, iter, &ipct->ipct_rights, ipcpr_tree,
 			     (ipcpr->ipcpr_port < iter->ipcpr_port));

@@ -177,7 +177,9 @@
 			(dst) = (iter);					\
 			(iter)->field.parent = (var)->field.parent;	\
 		} else {						\
-			(dst) = (var)->field.right;			\
+			(iter) = (var)->field.right;			\
+			(dst) = (iter);					\
+			(iter)->field.parent = (var)->field.parent;	\
 			BTREE_MIN_SUB((iter), (var)->field.right,	\
 				      field);				\
 			(iter)->field.left = (var)->field.left;		\

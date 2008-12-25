@@ -1,8 +1,7 @@
 #include <core/types.h>
 #include <core/error.h>
 #include <core/mp.h>
-#include <core/startup.h>
-#include <core/string.h>
+#include <cpu/startup.h>
 #include <db/db.h>
 #include <db/db_action.h>
 #include <db/db_show.h>

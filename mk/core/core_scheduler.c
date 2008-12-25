@@ -35,6 +35,7 @@ scheduler_init(void)
 void
 scheduler_cpu_pin(struct thread *td)
 {
+#ifndef UNIPROCESSOR
 	struct scheduler_entry *se = &td->td_sched;
 
 	SCHEDULER_LOCK();
@@ -45,6 +46,7 @@ scheduler_cpu_pin(struct thread *td)
 	se->se_flags |= SCHEDULER_PINNED;
 	se->se_oncpu = mp_whoami();
 	SCHEDULER_UNLOCK();
+#endif
 }
 
 void
@@ -64,10 +66,12 @@ scheduler_schedule(struct thread *td, struct spinlock *lock)
 			continue;
 		if ((se->se_flags & SCHEDULER_RUNNING) != 0)
 			continue;
+#ifndef UNIPROCESSOR
 		if ((se->se_flags & SCHEDULER_PINNED) != 0) {
 			if (se->se_oncpu != mp_whoami())
 				continue;
 		}
+#endif
 		if (td != NULL && se->se_thread != td)
 			continue;
 		scheduler_switch(ose, se);
@@ -104,7 +108,9 @@ scheduler_thread_setup(struct thread *td)
 	SCHEDULER_LOCK();
 	se->se_thread = td;
 	se->se_flags = SCHEDULER_DEFAULT;
+#ifndef UNIPROCESSOR
 	se->se_oncpu = CPU_ID_INVALID;
+#endif
 	TAILQ_INSERT_TAIL(&scheduler_queue.sq_queue, se, se_link);
 	SCHEDULER_UNLOCK();
 }
@@ -134,11 +140,15 @@ scheduler_switch(struct scheduler_entry *ose, struct scheduler_entry *se)
 	TAILQ_INSERT_TAIL(&scheduler_queue.sq_queue, se, se_link);
 	if (ose != NULL) {
 		ose->se_flags &= ~SCHEDULER_RUNNING;
+#ifndef UNIPROCESSOR
 		if ((ose->se_flags & SCHEDULER_PINNED) == 0)
 			se->se_oncpu = CPU_ID_INVALID;
+#endif
 	}
 	se->se_flags |= SCHEDULER_RUNNING;
+#ifndef UNIPROCESSOR
 	se->se_oncpu = mp_whoami();
+#endif
 	SCHEDULER_UNLOCK();
 	if (otd != td)
 		thread_switch(otd, td);
@@ -155,17 +165,24 @@ scheduler_db_dump_queue(struct scheduler_queue *sq)
 
 		td = se->se_thread;
 
-		kcprintf("%p (thread %p, \"%s\")%s%s%s%s cpu%u\n",
+		kcprintf("%p (thread %p, \"%s\")%s%s%s%s",
 			 se, td, td->td_name,
 			 ((se->se_flags & SCHEDULER_RUNNING) ?
 			  " running" : ""),
+#ifndef UNIPROCESSOR
 			 ((se->se_flags & SCHEDULER_PINNED) ?
 			  " pinned" : ""),
+#else
+			 "",
+#endif
 			 ((se->se_flags & SCHEDULER_SLEEPING) ?
 			  " sleeping" : ""),
 			 ((se->se_flags & SCHEDULER_RUNNABLE) ?
-			  " runnable" : ""),
-			 se->se_oncpu);
+			  " runnable" : ""));
+#ifndef UNIPROCESSOR
+		kcprintf(" cpu%u", se->se_oncpu);
+#endif
+		kcprintf("\n");
 	}
 }
 

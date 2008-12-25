@@ -2,7 +2,6 @@
 #define	_CORE_STARTUP_H_
 
 #include <core/btree.h>
-#include <cpu/startup.h>
 
 enum startup_component {
 	STARTUP_PMAP,			/* Late-stage pmap setup.  */

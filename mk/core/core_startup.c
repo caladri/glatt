@@ -8,6 +8,7 @@
 #include <core/task.h>
 #include <core/thread.h>
 #include <core/ttk.h>
+#include <cpu/startup.h>
 #include <io/console/console.h>
 #include <ipc/system.h>
 #include <vm/vm.h>

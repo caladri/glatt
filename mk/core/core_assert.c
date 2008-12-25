@@ -1,7 +1,7 @@
 #include <core/types.h>
 #include <core/mp.h>
-#include <core/startup.h>
 #include <cpu/pcpu.h>
+#include <cpu/startup.h>
 #include <io/console/console.h>
 
 void

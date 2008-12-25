@@ -2,7 +2,7 @@
 #include <core/error.h>
 #include <core/pool.h>
 #ifdef DB
-#include <db/db_show.h>
+#include <db/db_command.h>
 #endif
 #include <io/console/console.h>
 #include <vm/alloc.h>
@@ -10,8 +10,8 @@
 #include <vm/vm.h>
 
 #ifdef DB
-DB_SHOW_TREE(pool, pool);
-DB_SHOW_VALUE_TREE(pool, root, DB_SHOW_TREE_POINTER(pool));
+DB_COMMAND_TREE_DEFINE(pool, pool);
+DB_COMMAND_TREE(pool, root, DB_COMMAND_TREE_POINTER(pool));
 #endif
 
 #define	POOL_LOCK(pool)		spinlock_lock(&(pool)->pool_lock)
@@ -300,7 +300,7 @@ db_pool_dump_all(void)
 	TAILQ_FOREACH(pool, &pool_list, pool_link)
 		db_pool_dump_pool(pool, true, true);
 }
-DB_SHOW_VALUE_VOIDF(all, pool, db_pool_dump_all);
+DB_COMMAND(all, pool, db_pool_dump_all);
 
 static void
 db_pool_dump_pages(void)
@@ -310,7 +310,7 @@ db_pool_dump_pages(void)
 	TAILQ_FOREACH(pool, &pool_list, pool_link)
 		db_pool_dump_pool(pool, true, false);
 }
-DB_SHOW_VALUE_VOIDF(pages, pool, db_pool_dump_pages);
+DB_COMMAND(pages, pool, db_pool_dump_pages);
 
 static void
 db_pool_dump_pools(void)
@@ -320,5 +320,5 @@ db_pool_dump_pools(void)
 	TAILQ_FOREACH(pool, &pool_list, pool_link)
 		db_pool_dump_pool(pool, false, false);
 }
-DB_SHOW_VALUE_VOIDF(pools, pool, db_pool_dump_pools);
+DB_COMMAND(pools, pool, db_pool_dump_pools);
 #endif

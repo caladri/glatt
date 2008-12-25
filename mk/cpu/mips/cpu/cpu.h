@@ -3,7 +3,7 @@
 
 #include <cpu/register.h>
 #ifdef DB
-#include <db/db_show.h>
+#include <db/db_command.h>
 #endif
 
 static inline void
@@ -86,7 +86,7 @@ CP0_RW32(prid, CP0_PRID);
 #undef CP0_RW32
 
 #ifdef DB
-DB_SHOW_TREE_DECLARE(cpu);
+DB_COMMAND_TREE_DECLARE(cpu);
 #endif
 
 #endif /* !_CPU_CPU_H_ */

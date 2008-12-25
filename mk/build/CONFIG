@@ -37,8 +37,8 @@ mp		core/core_mp_hokusai.c
 mp		core/core_mp_ipi.c
 
 db		db/db.c
+db		db/db_command.c
 db		db/db_misc.c
-db		db/db_show.c
 
 std		io/console/console.c
 framebuffer	io/console/framebuffer.c

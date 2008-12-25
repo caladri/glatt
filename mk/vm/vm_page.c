@@ -4,7 +4,7 @@
 #include <core/string.h>
 #include <cpu/pmap.h>
 #ifdef DB
-#include <db/db_show.h>
+#include <db/db_command.h>
 #endif
 #if defined(DB) || defined(VERBOSE)
 #include <io/console/console.h>
@@ -15,8 +15,8 @@
 struct vm_page_tree_page;
 
 #ifdef DB
-DB_SHOW_TREE(vm_page, page);
-DB_SHOW_VALUE_TREE(page, vm, DB_SHOW_TREE_POINTER(vm_page));
+DB_COMMAND_TREE_DEFINE(vm_page, page);
+DB_COMMAND_TREE(page, vm, DB_COMMAND_TREE_POINTER(vm_page));
 #endif
 
 struct vm_page_tree {
@@ -427,12 +427,12 @@ db_vm_page_dump_freeq(void)
 {
 	db_vm_page_dump_queue(&page_free_queue);
 }
-DB_SHOW_VALUE_VOIDF(freeq, vm_page, db_vm_page_dump_freeq);
+DB_COMMAND(freeq, vm_page, db_vm_page_dump_freeq);
 
 static void
 db_vm_page_dump_useq(void)
 {
 	db_vm_page_dump_queue(&page_use_queue);
 }
-DB_SHOW_VALUE_VOIDF(useq, vm_page, db_vm_page_dump_useq);
+DB_COMMAND(useq, vm_page, db_vm_page_dump_useq);
 #endif

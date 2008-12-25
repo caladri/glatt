@@ -10,7 +10,7 @@
 #include <cpu/pte.h>
 #include <cpu/tlb.h>
 #ifdef DB
-#include <db/db_show.h>
+#include <db/db_command.h>
 #endif
 #include <io/console/console.h>
 #include <vm/page.h>
@@ -334,5 +334,5 @@ db_cpu_dump_tlb(void)
 	}
 	kcprintf("Finished.\n");
 }
-DB_SHOW_VALUE_VOIDF(tlb, cpu, db_cpu_dump_tlb);
+DB_COMMAND(tlb, cpu, db_cpu_dump_tlb);
 #endif

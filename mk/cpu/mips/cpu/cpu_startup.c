@@ -8,14 +8,14 @@
 #include <cpu/startup.h>
 #include <cpu/tlb.h>
 #ifdef DB
-#include <db/db_show.h>
+#include <db/db_command.h>
 #endif
 #include <vm/page.h>
 #include <vm/vm.h>
 
 #ifdef DB
-DB_SHOW_TREE(cpu, cpu);
-DB_SHOW_VALUE_TREE(cpu, root, DB_SHOW_TREE_POINTER(cpu));
+DB_COMMAND_TREE_DEFINE(cpu, cpu);
+DB_COMMAND_TREE(cpu, root, DB_COMMAND_TREE_POINTER(cpu));
 #endif
 
 volatile bool startup_early = true;

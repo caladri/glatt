@@ -4,13 +4,13 @@
 #include <core/spinlock.h>
 #include <core/thread.h>
 #ifdef DB
-#include <db/db_show.h>
+#include <db/db_command.h>
 #endif
 #include <io/console/console.h>
 
 #ifdef DB
-DB_SHOW_TREE(scheduler, scheduler);
-DB_SHOW_VALUE_TREE(scheduler, root, DB_SHOW_TREE_POINTER(scheduler));
+DB_COMMAND_TREE_DEFINE(scheduler, scheduler);
+DB_COMMAND_TREE(scheduler, root, DB_COMMAND_TREE_POINTER(scheduler));
 #endif
 
 struct scheduler_queue {
@@ -192,5 +192,5 @@ scheduler_db_dump(void)
 	kcprintf("Dumping scheduler queue...\n");
 	scheduler_db_dump_queue(&scheduler_queue);
 }
-DB_SHOW_VALUE_VOIDF(queues, scheduler, scheduler_db_dump);
+DB_COMMAND(queues, scheduler, scheduler_db_dump);
 #endif

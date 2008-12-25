@@ -3,7 +3,7 @@
 #include <core/pool.h>
 #include <cpu/pmap.h>
 #ifdef DB
-#include <db/db_show.h>
+#include <db/db_command.h>
 #endif
 #include <vm/alloc.h>
 #include <vm/index.h>
@@ -11,8 +11,8 @@
 #include <vm/vm.h>
 
 #ifdef DB
-DB_SHOW_TREE(vm, vm);
-DB_SHOW_VALUE_TREE(vm, root, DB_SHOW_TREE_POINTER(vm));
+DB_COMMAND_TREE_DEFINE(vm, vm);
+DB_COMMAND_TREE(vm, root, DB_COMMAND_TREE_POINTER(vm));
 #endif
 
 struct vm kernel_vm;

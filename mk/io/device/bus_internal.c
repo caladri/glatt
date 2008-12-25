@@ -5,7 +5,7 @@
 #include <core/startup.h>
 #include <core/string.h>
 #ifdef DB
-#include <db/db_show.h>
+#include <db/db_command.h>
 #endif
 #include <io/device/bus.h>
 #include <io/device/bus_internal.h>
@@ -15,8 +15,8 @@
 #include <io/console/console.h>
 
 #ifdef DB
-DB_SHOW_TREE(bus, bus);
-DB_SHOW_VALUE_TREE(bus, root, DB_SHOW_TREE_POINTER(bus));
+DB_COMMAND_TREE_DEFINE(bus, bus);
+DB_COMMAND_TREE(bus, root, DB_COMMAND_TREE_POINTER(bus));
 #endif
 
 struct bus {
@@ -473,5 +473,5 @@ bus_db_instances(void)
 	}
 	bus_db_instance_tree(STAILQ_FIRST(&bus_root->bus_instances));
 }
-DB_SHOW_VALUE_VOIDF(instances, bus, bus_db_instances);
+DB_COMMAND(instances, bus, bus_db_instances);
 #endif

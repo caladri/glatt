@@ -6,7 +6,7 @@
 #include <core/task.h>
 #include <core/thread.h>
 #ifdef DB
-#include <db/db_show.h>
+#include <db/db_command.h>
 #include <io/console/console.h>
 #endif
 #include <vm/index.h>
@@ -24,8 +24,8 @@ struct vm_index {
 #define	VM_INDEX_FLAG_INUSE	(0x00000001)
 
 #ifdef DB
-DB_SHOW_TREE(vm_index, index);
-DB_SHOW_VALUE_TREE(index, vm, DB_SHOW_TREE_POINTER(vm_index));
+DB_COMMAND_TREE_DEFINE(vm_index, index);
+DB_COMMAND_TREE(index, vm, DB_COMMAND_TREE_POINTER(vm_index));
 #endif
 
 static struct pool vm_index_pool;
@@ -295,7 +295,7 @@ db_vm_index_dump_kvm(void)
 {
 	db_vm_index_dump_vm(&kernel_vm, db_vm_index_dump);
 }
-DB_SHOW_VALUE_VOIDF(kvm, vm_index, db_vm_index_dump_kvm);
+DB_COMMAND(kvm, vm_index, db_vm_index_dump_kvm);
 
 static void
 db_vm_index_dump_kvm_dot(void)
@@ -304,7 +304,7 @@ db_vm_index_dump_kvm_dot(void)
 	db_vm_index_dump_vm(&kernel_vm, db_vm_index_dump_dot);
 	kcprintf("};\n");
 }
-DB_SHOW_VALUE_VOIDF(dotkvm, vm_index, db_vm_index_dump_kvm_dot);
+DB_COMMAND(dotkvm, vm_index, db_vm_index_dump_kvm_dot);
 
 static void
 db_vm_index_dump_task(void)
@@ -318,5 +318,5 @@ db_vm_index_dump_task(void)
 		kcprintf("No running thread.\n");
 	}
 }
-DB_SHOW_VALUE_VOIDF(task, vm_index, db_vm_index_dump_task);
+DB_COMMAND(task, vm_index, db_vm_index_dump_task);
 #endif

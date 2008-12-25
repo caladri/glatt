@@ -5,9 +5,7 @@
 #ifdef DB
 #include <db/db_command.h>
 #endif
-#include <vm/alloc.h>
 #include <vm/index.h>
-#include <vm/page.h>
 #include <vm/vm.h>
 
 #ifdef DB
@@ -15,22 +13,28 @@ DB_COMMAND_TREE(vm, root, vm);
 #endif
 
 struct vm kernel_vm;
+
 static struct pool vm_pool;
+
+static int vm_setup2(struct vm *, const char *);
 
 void
 vm_init(void)
 {
 	int error;
 
-	/* XXX must initialize kernel_vm like vm_setup VMs.  */
-	spinlock_init(&kernel_vm.vm_lock, "Kernel VM lock", SPINLOCK_FLAG_DEFAULT | SPINLOCK_FLAG_RECURSE);
-
-	BTREE_ROOT_INIT(&kernel_vm.vm_index);
-	TAILQ_INIT(&kernel_vm.vm_index_free);
-
-	error = pool_create(&vm_pool, "VM", sizeof (struct vm), POOL_VIRTUAL);
+	/*
+	 * Set up kernel_vm.  Must happen before pmap_bootstrap or anything
+	 * else that might depend on validity of MI parts of the VM structure.
+	 */
+	error = vm_setup2(&kernel_vm, "Kernel VM");
 	if (error != 0)
-		panic("%s: pool_create failed: %m", __func__, error);
+		panic("%s: vm_setup2 failed: %m", __func__, error);
+
+	/*
+	 * Initialize vm_index module.  Must happen before pmap_bootstrap,
+	 * which calls pmap_init, which calls vm_insert_range.
+	 */
 	error = vm_init_index();
 	if (error != 0)
 		panic("%s: vm_init_index failed: %m", __func__, error);
@@ -39,6 +43,14 @@ vm_init(void)
 	 * Bring up PMAP.
 	 */
 	pmap_bootstrap();
+
+	/*
+	 * Set up pool to allocate user VM structures.  Must happen before any
+	 * tasks are created.
+	 */
+	error = pool_create(&vm_pool, "VM", sizeof (struct vm), POOL_VIRTUAL);
+	if (error != 0)
+		panic("%s: pool_create failed: %m", __func__, error);
 }
 
 int
@@ -51,11 +63,13 @@ vm_setup(struct vm **vmp, vaddr_t base, vaddr_t end)
 	if (vm == NULL)
 		return (ERROR_EXHAUSTED);
 
-	spinlock_init(&vm->vm_lock, "VM lock", SPINLOCK_FLAG_DEFAULT | SPINLOCK_FLAG_RECURSE);
+	error = vm_setup2(vm, "User VM");
+	if (error != 0) {
+		pool_free(vm);
+		return (error);
+	}
+
 	VM_LOCK(vm);
-	vm->vm_pmap = NULL;
-	BTREE_ROOT_INIT(&vm->vm_index);
-	TAILQ_INIT(&vm->vm_index_free);
 	error = pmap_init(vm, base, end);
 	if (error != 0) {
 		VM_UNLOCK(vm);
@@ -64,5 +78,17 @@ vm_setup(struct vm **vmp, vaddr_t base, vaddr_t end)
 	}
 	*vmp = vm;
 	VM_UNLOCK(vm);
+	return (0);
+}
+
+static int
+vm_setup2(struct vm *vm, const char *name)
+{
+	spinlock_init(&vm->vm_lock, name,
+		      SPINLOCK_FLAG_DEFAULT | SPINLOCK_FLAG_RECURSE);
+	vm->vm_pmap = NULL;
+	BTREE_ROOT_INIT(&vm->vm_index);
+	TAILQ_INIT(&vm->vm_index_free);
+
 	return (0);
 }

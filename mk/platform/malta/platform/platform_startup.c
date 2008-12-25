@@ -1,5 +1,6 @@
 #include <core/types.h>
 #include <core/startup.h>
+#include <cpu/startup.h>
 
 void
 platform_startup(void)

@@ -8,6 +8,7 @@
 #include <cpu/exception.h>
 #include <cpu/interrupt.h>
 #include <cpu/memory.h>
+#include <cpu/startup.h>
 #ifdef DB
 #include <db/db.h>
 #endif

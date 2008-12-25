@@ -278,12 +278,12 @@ pool_page_free_datum(struct pool_page *page, void *datum)
 
 #ifdef DB
 static void
-db_pool_dump_pool(struct pool *pool, bool pages, bool items)
+db_pool_dump_pool(struct pool *pool, bool pages)
 {
 	struct pool_page *page;
 
-	kcprintf("pool %p %s size %zu maxitems %zu\n", pool, pool->pool_name,
-		 pool->pool_size, pool->pool_maxitems);
+	kcprintf("pool %p \"%s\" size %zu maxitems %zu\n", pool,
+		 pool->pool_name, pool->pool_size, pool->pool_maxitems);
 	if (!pages)
 		return;
 	SLIST_FOREACH(page, &pool->pool_pages, pp_link) {
@@ -292,22 +292,12 @@ db_pool_dump_pool(struct pool *pool, bool pages, bool items)
 }
 
 static void
-db_pool_dump_all(void)
-{
-	struct pool *pool;
-
-	TAILQ_FOREACH(pool, &pool_list, pool_link)
-		db_pool_dump_pool(pool, true, true);
-}
-DB_COMMAND(all, pool, db_pool_dump_all);
-
-static void
 db_pool_dump_pages(void)
 {
 	struct pool *pool;
 
 	TAILQ_FOREACH(pool, &pool_list, pool_link)
-		db_pool_dump_pool(pool, true, false);
+		db_pool_dump_pool(pool, true);
 }
 DB_COMMAND(pages, pool, db_pool_dump_pages);
 
@@ -317,7 +307,7 @@ db_pool_dump_pools(void)
 	struct pool *pool;
 
 	TAILQ_FOREACH(pool, &pool_list, pool_link)
-		db_pool_dump_pool(pool, false, false);
+		db_pool_dump_pool(pool, false);
 }
 DB_COMMAND(pools, pool, db_pool_dump_pools);
 #endif

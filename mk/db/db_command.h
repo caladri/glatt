@@ -16,14 +16,6 @@ struct db_command_tree {
 	BTREE_NODE(struct db_command_tree) ct_tree;
 };
 
-#define	DB_COMMAND_TREE_DEFINE(symbol, name)				\
-	struct db_command_tree db_command_tree_ ## symbol = {		\
-		.ct_name = #name,					\
-		.ct_commands = BTREE_ROOT_INITIALIZER(),		\
-		.ct_tree = BTREE_NODE_INITIALIZER(),			\
-	};								\
-	SET_ADD(db_command_trees, db_command_tree_ ## symbol)
-
 #define	DB_COMMAND_TREE_DECLARE(symbol)					\
 	extern struct db_command_tree db_command_tree_ ## symbol
 
@@ -50,12 +42,19 @@ struct db_command {
 	BTREE_NODE(struct db_command) c_tree;
 };
 
-#define	DB_COMMAND_TREE(name, parent, tree)				\
+#define	DB_COMMAND_TREE(name, parent, symbol)				\
+	struct db_command_tree db_command_tree_ ## symbol = {		\
+		.ct_name = #name,					\
+		.ct_commands = BTREE_ROOT_INITIALIZER(),		\
+		.ct_tree = BTREE_NODE_INITIALIZER(),			\
+	};								\
+	SET_ADD(db_command_trees, db_command_tree_ ## symbol);		\
+									\
 	struct db_command db_command_ ## parent ## _ ## name = {	\
 		.c_name = #name,					\
 		.c_parent = DB_COMMAND_TREE_POINTER(parent),		\
 		.c_type = DB_COMMAND_TYPE_TREE,				\
-		.c_union.c_tree = (tree),				\
+		.c_union.c_tree = DB_COMMAND_TREE_POINTER(symbol),	\
 		.c_tree = BTREE_NODE_INITIALIZER(),			\
 	};								\
 	SET_ADD(db_commands, db_command_ ## parent ## _ ## name)

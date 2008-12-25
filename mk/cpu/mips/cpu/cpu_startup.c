@@ -14,8 +14,7 @@
 #include <vm/vm.h>
 
 #ifdef DB
-DB_COMMAND_TREE_DEFINE(cpu, cpu);
-DB_COMMAND_TREE(cpu, root, DB_COMMAND_TREE_POINTER(cpu));
+DB_COMMAND_TREE(cpu, root, cpu);
 #endif
 
 volatile bool startup_early = true;

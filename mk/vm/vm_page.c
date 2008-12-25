@@ -15,8 +15,7 @@
 struct vm_page_tree_page;
 
 #ifdef DB
-DB_COMMAND_TREE_DEFINE(vm_page, page);
-DB_COMMAND_TREE(page, vm, DB_COMMAND_TREE_POINTER(vm_page));
+DB_COMMAND_TREE(page, vm, vm_page);
 #endif
 
 struct vm_page_tree {

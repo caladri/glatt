@@ -24,8 +24,7 @@ struct vm_index {
 #define	VM_INDEX_FLAG_INUSE	(0x00000001)
 
 #ifdef DB
-DB_COMMAND_TREE_DEFINE(vm_index, index);
-DB_COMMAND_TREE(index, vm, DB_COMMAND_TREE_POINTER(vm_index));
+DB_COMMAND_TREE(index, vm, vm_index);
 #endif
 
 static struct pool vm_index_pool;

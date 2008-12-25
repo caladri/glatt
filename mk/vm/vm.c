@@ -11,8 +11,7 @@
 #include <vm/vm.h>
 
 #ifdef DB
-DB_COMMAND_TREE_DEFINE(vm, vm);
-DB_COMMAND_TREE(vm, root, DB_COMMAND_TREE_POINTER(vm));
+DB_COMMAND_TREE(vm, root, vm);
 #endif
 
 struct vm kernel_vm;

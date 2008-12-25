@@ -9,8 +9,7 @@
 #include <io/console/console.h>
 
 #ifdef DB
-DB_COMMAND_TREE_DEFINE(scheduler, scheduler);
-DB_COMMAND_TREE(scheduler, root, DB_COMMAND_TREE_POINTER(scheduler));
+DB_COMMAND_TREE(scheduler, root, scheduler);
 #endif
 
 struct scheduler_queue {

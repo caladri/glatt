@@ -15,8 +15,7 @@
 #include <io/console/console.h>
 
 #ifdef DB
-DB_COMMAND_TREE_DEFINE(bus, bus);
-DB_COMMAND_TREE(bus, root, DB_COMMAND_TREE_POINTER(bus));
+DB_COMMAND_TREE(bus, root, bus);
 #endif
 
 struct bus {

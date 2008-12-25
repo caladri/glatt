@@ -12,7 +12,7 @@
 SET(db_command_trees, struct db_command_tree);
 SET(db_commands, struct db_command);
 
-DB_COMMAND_TREE_DEFINE(root, root);
+DB_COMMAND_TREE(root, root, root);
 
 static const char *db_command_argv[DB_COMMAND_ARG_MAX];
 static char db_command_buffer[DB_COMMAND_ARG_MAX * DB_COMMAND_ARG_LIKELY_SIZE];
@@ -26,7 +26,7 @@ static void db_command_path(struct db_command_tree *);
 static void db_command(struct db_command *, bool);
 static void db_command_ambiguous(struct db_command_tree *, const char *);
 static struct db_command *db_command_lookup(struct db_command_tree *,
-						  const char *);
+					    const char *);
 
 void
 db_command_init(void)

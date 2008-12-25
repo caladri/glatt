@@ -10,8 +10,7 @@
 #include <vm/vm.h>
 
 #ifdef DB
-DB_COMMAND_TREE_DEFINE(pool, pool);
-DB_COMMAND_TREE(pool, root, DB_COMMAND_TREE_POINTER(pool));
+DB_COMMAND_TREE(pool, root, pool);
 #endif
 
 #define	POOL_LOCK(pool)		spinlock_lock(&(pool)->pool_lock)

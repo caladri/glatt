@@ -158,7 +158,6 @@ startup_main_thread(void *arg)
 	kcprintf("STARTUP: cpu%u starting main thread.\n", mp_whoami());
 #endif
 
-	panic("ho ho oh");
 	/* Become idle thread.  */
 	for (;;) {
 		ttk_idle();

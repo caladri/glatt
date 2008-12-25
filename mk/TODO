@@ -14,12 +14,8 @@ Fundamentals:
 	o) Timekeeping or defer it.
 
 Binaries and servers:
-	o) Filesystems
-		o) Simple FS server.
-		o) Link files into the kernel to present a MFS.
-		   XXX Perhaps UFS read support would be more productive.
-	o) ELF loader.
-		o) Trivial static ELF loading for servers and such.
+	o) Put a tiny, tiny VFS in front of UFS.
+	o) Trivial static ELF loading from UFS for servers and such.
 
 Device drivers:
 	o) Device/bus...

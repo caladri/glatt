@@ -88,7 +88,7 @@ vm_setup2(struct vm *vm, const char *name)
 		      SPINLOCK_FLAG_DEFAULT | SPINLOCK_FLAG_RECURSE);
 	vm->vm_pmap = NULL;
 	BTREE_ROOT_INIT(&vm->vm_index);
-	TAILQ_INIT(&vm->vm_index_free);
+	BTREE_ROOT_INIT(&vm->vm_index_free);
 
 	return (0);
 }

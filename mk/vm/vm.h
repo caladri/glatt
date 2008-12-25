@@ -21,7 +21,7 @@ struct vm {
 	struct spinlock vm_lock;
 	struct pmap *vm_pmap;
 	BTREE_ROOT(struct vm_index) vm_index;
-	TAILQ_HEAD(, struct vm_index) vm_index_free;
+	BTREE_ROOT(struct vm_index) vm_index_free;
 };
 #define	VM_LOCK(vm)	spinlock_lock(&(vm)->vm_lock)
 #define	VM_UNLOCK(vm)	spinlock_unlock(&(vm)->vm_lock)

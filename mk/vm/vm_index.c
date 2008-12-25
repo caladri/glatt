@@ -18,7 +18,7 @@ struct vm_index {
 	size_t vmi_size;
 	unsigned vmi_flags;
 	BTREE_NODE(struct vm_index) vmi_tree;
-	TAILQ_ENTRY(struct vm_index) vmi_free_link;
+	BTREE_NODE(struct vm_index) vmi_free_tree;
 };
 #define	VM_INDEX_FLAG_DEFAULT	(0x00000000)
 #define	VM_INDEX_FLAG_INUSE	(0x00000001)
@@ -53,20 +53,20 @@ vm_alloc_address(struct vm *vm, vaddr_t *vaddrp, size_t pages)
 	int error;
 
 	VM_LOCK(vm);
-	TAILQ_FOREACH(vmi, &vm->vm_index_free, vmi_free_link) {
+	BTREE_MIN(vmi, &vm->vm_index_free, vmi_free_tree);
+	while (vmi != NULL) {
+		if (vmi->vmi_size < pages) {
+			BTREE_NEXT(vmi, vmi_free_tree);
+			continue;
+		}
+
 		if (vmi->vmi_size == pages) {
 			error = vm_use_index(vm, vmi, pages);
 			if (error != 0) {
 				VM_UNLOCK(vm);
 				return (error);
 			}
-			*vaddrp = vmi->vmi_base;
-			VM_UNLOCK(vm);
-			return (0);
-		}
-	}
-	TAILQ_FOREACH(vmi, &vm->vm_index_free, vmi_free_link) {
-		if (vmi->vmi_size > pages) {
+		} else {
 			error = vm_alloc_range(vm, vmi->vmi_base,
 					       vmi->vmi_base +
 					       PAGE_TO_ADDR(pages));
@@ -74,10 +74,10 @@ vm_alloc_address(struct vm *vm, vaddr_t *vaddrp, size_t pages)
 				VM_UNLOCK(vm);
 				return (error);
 			}
-			*vaddrp = vmi->vmi_base;
-			VM_UNLOCK(vm);
-			return (0);
 		}
+		*vaddrp = vmi->vmi_base;
+		VM_UNLOCK(vm);
+		return (0);
 	}
 	/* XXX Look for adjacent entries, collapse, etc..  */
 	VM_UNLOCK(vm);
@@ -208,16 +208,17 @@ vm_find_index(struct vm *vm, vaddr_t vaddr)
 static void
 vm_free_index(struct vm *vm, struct vm_index *vmi)
 {
+	struct vm_index *iter;
+
 	ASSERT((vmi->vmi_flags & VM_INDEX_FLAG_INUSE) != 0,
 	       "VM Index must be in use.");
 	vmi->vmi_flags &= ~VM_INDEX_FLAG_INUSE;
+
 	/*
-	 * In theory this means the most-fragmented spaces will stay at the
-	 * front of the queue and the giant chunk o' free vm space will stay
-	 * at the back, the last to be considered for allocations.  Thrashes
-	 * the caches, que sera sera.
+	 * This would be a good place to consider merging adjacent indeces.
 	 */
-	TAILQ_INSERT_HEAD(&vm->vm_index_free, vmi, vmi_free_link);
+	BTREE_INSERT(vmi, iter, &vm->vm_index_free, vmi_free_tree,
+		     (vmi->vmi_size < iter->vmi_size));
 }
 
 static int
@@ -239,8 +240,10 @@ vm_insert_index(struct vm *vm, struct vm_index **vmip, vaddr_t base,
 	vmi->vmi_size = pages;
 	vmi->vmi_flags = VM_INDEX_FLAG_DEFAULT;
 	BTREE_NODE_INIT(&vmi->vmi_tree);
+	BTREE_NODE_INIT(&vmi->vmi_free_tree);
 
-	TAILQ_INSERT_TAIL(&vm->vm_index_free, vmi, vmi_free_link);
+	BTREE_INSERT(vmi, iter, &vm->vm_index_free, vmi_free_tree,
+		     (vmi->vmi_size < iter->vmi_size));
 	BTREE_INSERT(vmi, iter, &vm->vm_index, vmi_tree,
 		     (vmi->vmi_base < iter->vmi_base));
 
@@ -252,11 +255,16 @@ vm_insert_index(struct vm *vm, struct vm_index **vmip, vaddr_t base,
 static int
 vm_use_index(struct vm *vm, struct vm_index *vmi, size_t pages)
 {
+	struct vm_index *iter;
+
+	ASSERT(vmi->vmi_size == pages, "You must know how much you're using.");
+
 	ASSERT((vmi->vmi_flags & VM_INDEX_FLAG_INUSE) == 0,
 	       "VM Index must not be in use.");
 	vmi->vmi_flags |= VM_INDEX_FLAG_INUSE;
-	TAILQ_REMOVE(&vm->vm_index_free, vmi, vmi_free_link);
-	ASSERT(vmi->vmi_size == pages, "You must know how much you're using.");
+
+	BTREE_REMOVE(vmi, iter, &vm->vm_index_free, vmi_free_tree);
+
 	return (0);
 }
 

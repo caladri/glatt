@@ -71,5 +71,6 @@ struct db_show_value {
 	SET_ADD(db_show_values, db_show_value_ ## parent ## _ ## name)
 
 void db_show_init(void);
+void db_show(void);
 
 #endif /* !_DB_DB_SHOW_H_ */

@@ -3,7 +3,6 @@
 #include <core/error.h>
 #include <core/string.h>
 #include <db/db.h>
-#include <db/db_action.h>
 #include <db/db_show.h>
 #include <io/console/console.h>
 
@@ -48,7 +47,7 @@ db_show_init(void)
 	}
 }
 
-static void
+void
 db_show(void)
 {
 	struct db_show_tree *current;
@@ -94,7 +93,6 @@ db_show(void)
 		}
 	}
 }
-DB_ACTION(s, "Explore a maze of twisty values!", db_show);
 
 static void
 db_show_all(struct db_show_tree *tree)

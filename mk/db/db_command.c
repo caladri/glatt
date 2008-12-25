@@ -2,6 +2,7 @@
 #include <core/btree.h>
 #include <core/error.h>
 #include <core/string.h>
+#include <cpu/startup.h>
 #include <db/db.h>
 #include <db/db_command.h>
 #include <io/console/console.h>
@@ -60,13 +61,12 @@ db_command_enter(void)
 		db_command_path(current);
 		kcprintf(") ");
 		argc = db_command_input();
-		if (argc == -1)
-			return;
+		if (argc == -1) {
+			kcprintf("\nDB: Input not available.  Halting.\n");
+			cpu_halt();
+		}
 		for (i = 0; i < argc; i++) {
 			if (strcmp(db_command_argv[i], "..") == 0) {
-				if (current == &db_command_tree_root) {
-					return;
-				}
 				current = current->ct_parent;
 				continue;
 			}

@@ -1,7 +1,6 @@
 #include <core/types.h>
 #include <core/error.h>
 #include <core/mp.h>
-#include <cpu/startup.h>
 #include <db/db.h>
 #include <db/db_command.h>
 #include <io/console/console.h>
@@ -26,7 +25,4 @@ db_enter(void)
 #endif
 
 	db_command_enter();
-
-	kcprintf("DB: Debugger exited, halting...\n");
-	cpu_halt();
 }

@@ -1,7 +1,7 @@
-KERNEL_CC=	mips64-gxemul-elf-gcc
-KERNEL_AS=	mips64-gxemul-elf-as
-KERNEL_LD=	mips64-gxemul-elf-ld
-KERNEL_NM=	mips64-gxemul-elf-nm
+KERNEL_CC=	${TOOLCHAIN_TARGET}-gcc
+KERNEL_AS=	${TOOLCHAIN_TARGET}-as
+KERNEL_LD=	${TOOLCHAIN_TARGET}-ld
+KERNEL_NM=	${TOOLCHAIN_TARGET}-nm
 KERNEL_SIM=	gxemul
 
 KERNEL_ABI=	-mabi=64

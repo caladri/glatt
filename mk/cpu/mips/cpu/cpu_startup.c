@@ -5,6 +5,7 @@
 #include <cpu/cpu.h>
 #include <cpu/memory.h>
 #include <cpu/pcpu.h>
+#include <cpu/startup.h>
 #include <cpu/tlb.h>
 #ifdef DB
 #include <db/db_show.h>

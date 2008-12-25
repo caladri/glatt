@@ -1,7 +1,7 @@
 #include <core/types.h>
 #include <core/error.h>
-#include <core/startup.h>
 #include <cpu/memory.h>
+#include <cpu/startup.h>
 #include <io/console/consoledev.h>
 
 static int

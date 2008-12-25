@@ -8,6 +8,7 @@
 #include <cpu/interrupt.h>
 #include <cpu/memory.h>
 #include <cpu/pcpu.h>
+#include <cpu/startup.h>
 #include <cpu/tlb.h>
 #include <io/device/bus.h>
 #include <vm/page.h>

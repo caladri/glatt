@@ -8,6 +8,8 @@ SHARED_VARS+=	PATH
 .if defined(PLATFORM)
 .if ${PLATFORM} == "testmips" || ${PLATFORM} == "malta"
 TOOLCHAIN_TARGET=mips64-glatt-elf
+.elif ${PLATFORM} == "macppc"
+TOOLCHAIN_TARGET=powerpc-glatt-elf
 .else
 .error "Target not supported."
 .endif

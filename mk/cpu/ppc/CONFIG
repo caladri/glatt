@@ -1,0 +1,10 @@
+std		cpu/ppc/cpu/start.S
+
+std		cpu/ppc/cpu/cpu_context.S
+std		cpu/ppc/cpu/cpu_critical.c
+std		cpu/ppc/cpu/cpu_interrupt.c
+std		cpu/ppc/cpu/cpu_pmap.c
+std		cpu/ppc/cpu/cpu_quad.c
+std		cpu/ppc/cpu/cpu_startup.c
+std		cpu/ppc/cpu/cpu_task.c
+std		cpu/ppc/cpu/cpu_thread.c

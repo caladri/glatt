@@ -1,0 +1,7 @@
+cpu		ppc
+
+#std		platform/macppc/device/macppc_console.c
+
+std		platform/macppc/platform/start.S
+std		platform/macppc/platform/platform_start.c
+std		platform/macppc/platform/platform_startup.c

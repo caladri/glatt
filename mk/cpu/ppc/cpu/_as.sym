@@ -1,0 +1,26 @@
+#include <core/thread.h>
+#include <cpu/page.h>
+#include <cpu/pcpu.h>
+#include <cpu/segment.h>
+#include <vm/vm.h>
+#include <vm/page.h>
+
+	/* PCPU-related constants we might want.  */
+DEFINE(PC_THREAD,	offsetof(struct pcpu,	pc_thread));
+DEFINE(PCPU_SIZE,	sizeof(struct pcpu));
+
+#if 0
+	/* PMAP-related constants.  */
+DEFINE_CONSTANT(KERNEL_BASE);
+DEFINE_CONSTANT(KERNEL_END);
+#endif
+
+DEFINE(VM_PMAP,		offsetof(struct vm,	vm_pmap));
+DEFINE_CONSTANT(PAGE_FLAG_DEFAULT);
+
+	/* PAGE constants.  */
+DEFINE_CONSTANT(PAGE_SHIFT);
+DEFINE_CONSTANT(PAGE_SIZE);
+
+	/* THREAD-related constants we might want.  */
+DEFINE_CONSTANT(KSTACK_SIZE);

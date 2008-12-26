@@ -30,7 +30,9 @@ storage_device_read(struct storage_device *sdev, void *buf, size_t len,
 {
 	int error;
 
-	if (len % sdev->sd_bsize != 0 || off % sdev->sd_bsize != 0)
+	/* XXX bsize must be a power of two.  Call it bshift instead?  */
+	if ((len & (sdev->sd_bsize - 1)) != 0 ||
+	    (off & (sdev->sd_bsize - 1)) != 0)
 		return (ERROR_INVALID);
 
 	while (len != 0) {

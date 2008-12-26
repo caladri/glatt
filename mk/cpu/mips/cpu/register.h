@@ -13,6 +13,7 @@ typedef	uint64_t	register_t;
 
 	/* General-purpose registers.  */
 
+#ifdef ASSEMBLER
 #define	zero	_REGNUM(0)
 #define	AT	_REGNUM(at)
 #define	v0	_REGNUM(2)
@@ -45,6 +46,7 @@ typedef	uint64_t	register_t;
 #define	sp	_REGNUM(29)
 #define	s8	_REGNUM(30)
 #define	ra	_REGNUM(31)
+#endif
 
 	/* Coprocessor 0 registers.  */
 

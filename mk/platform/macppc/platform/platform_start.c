@@ -9,7 +9,9 @@
 #ifdef DB
 #include <db/db.h>
 #endif
+#include <device/ofw.h>
 #include <io/console/console.h>
+#include <io/ofw/ofw.h>
 #include <vm/page.h>
 #include <vm/vm.h>
 
@@ -23,7 +25,8 @@ platform_halt(void)
 }
 
 void
-platform_start(void)
+platform_start(register_t boot_args, register_t magic, register_t ofw_entry,
+	       register_t argv, register_t argc)
 {
 #if 0
 	int error;
@@ -34,9 +37,9 @@ platform_start(void)
 	 */
 	memset(__bss_start, 0, _end - __bss_start);
 
-#if 0
-	platform_console_init();
-#endif
+	platform_ofw_init(ofw_entry);
+
+	ofw_init(macppc_ofw_enter);
 
 #ifdef DB
 	db_init();

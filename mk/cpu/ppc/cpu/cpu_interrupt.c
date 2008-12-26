@@ -4,11 +4,10 @@
 register_t
 cpu_interrupt_disable(void)
 {
-	panic("%s: not yet implemented.", __func__);
+	return (0);
 }
 
 void
 cpu_interrupt_restore(register_t r)
 {
-	panic("%s: not yet implemented.", __func__);
 }

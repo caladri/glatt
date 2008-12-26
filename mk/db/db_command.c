@@ -39,7 +39,6 @@ db_command_init(void)
 		struct db_command *cmd = *cmdp;
 		struct db_command_tree *parent = cmd->c_parent;
 
-		kcprintf("inserting %s\n", cmd->c_name);
 		BTREE_INSERT(cmd, iter, &parent->ct_commands, c_tree,
 			     strcmp(cmd->c_name, iter->c_name) < 0);
 

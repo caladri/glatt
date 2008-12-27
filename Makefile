@@ -98,6 +98,15 @@ mk-simulate:
 		echo '>>> Please run '${MAKE}' mk-config first.' ;	\
 	fi
 
+TARGETS+=mk-universe
+mk-universe-help:
+	@echo 'Attempts to build the microkernel for all platforms.'
+	@echo 'usage: '${MAKE}' mk-universe'
+mk-universe:
+.for _platform in macppc malta testmips
+	@cd ${.CURDIR} && ${MAKE} mk mk-clean PLATFORM=${_platform}
+.endfor
+
 .PHONY: mk
 TARGETS+=mk
 mk-help:

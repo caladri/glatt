@@ -3,7 +3,7 @@
 
 void platform_halt(void) __noreturn;
 void platform_ofw_init(uintptr_t);
-void platform_start(uintptr_t, uint32_t, uintptr_t, uintptr_t, uint32_t);
+vaddr_t platform_start(uintptr_t, uint32_t, uintptr_t, uintptr_t, uint32_t);
 void platform_startup(void);
 void platform_startup_thread(void);
 

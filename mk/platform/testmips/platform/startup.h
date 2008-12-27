@@ -3,7 +3,7 @@
 
 void platform_console_init(void);
 void platform_halt(void) __noreturn;
-void platform_start(void);
+vaddr_t platform_start(void);
 void platform_startup(void);
 void platform_startup_thread(void);
 

@@ -25,10 +25,11 @@ platform_halt(void)
 	ofw_exit();
 }
 
-void
+vaddr_t
 platform_start(register_t boot_args, register_t magic, register_t ofw_entry,
 	       register_t argv, register_t argc)
 {
+	vaddr_t sp;
 	int error;
 
 	/*
@@ -83,4 +84,12 @@ platform_start(register_t boot_args, register_t magic, register_t ofw_entry,
 	 * Early system startup.
 	 */
 	startup_init();
+
+	/*
+	 * Allocate a small stack.
+	 */
+	error = page_alloc_direct(&kernel_vm, PAGE_FLAG_DEFAULT, &sp);
+	if (error != 0)
+		panic("%s: page_alloc_direct failed: %m", __func__, error);
+	return (sp + PAGE_SIZE);
 }

@@ -25,10 +25,11 @@ platform_halt(void)
 	NOTREACHED();
 }
 
-void
+vaddr_t
 platform_start(int32_t argc, int32_t argv, int32_t envp, uint32_t memsize)
 {
 	size_t membytes;
+	vaddr_t sp;
 	int error;
 
 	membytes = memsize;
@@ -89,4 +90,12 @@ platform_start(int32_t argc, int32_t argv, int32_t envp, uint32_t memsize)
 	 * Early system startup.
 	 */
 	startup_init();
+
+	/*
+	 * Allocate a small stack.
+	 */
+	error = page_alloc_direct(&kernel_vm, PAGE_FLAG_DEFAULT, &sp);
+	if (error != 0)
+		panic("%s: page_alloc_direct failed: %m", __func__, error);
+	return (sp + PAGE_SIZE);
 }

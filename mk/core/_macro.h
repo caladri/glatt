@@ -43,6 +43,9 @@
 #define	LOG2(x)								\
 	(POPCNT((x) - 1))
 
+#define	ISPOW2(x)							\
+	(((x) & ((x) - 1)) == 0)
+
 	/* Compile-time assertions.  (Only use in source files.)  */
 
 #define	COMPILE_TIME_ASSERT(p)					\

@@ -18,4 +18,6 @@ ENTRY(start)
 	/* XXX Save OFW SPRG[0..3].  */
 
 	bl	platform_start
+
+	bl	platform_startup
 END(start)

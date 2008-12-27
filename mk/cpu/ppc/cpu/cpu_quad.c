@@ -32,14 +32,24 @@ qdivrem(uint64_t n, uint64_t d, uint64_t *rp)
 	if (d == 0)
 		panic("%s: divide by zero.", __func__);
 
+	if (ISPOW2(d)) {
+		if (rp != NULL)
+			*rp = n & (d - 1);
+		return (n >> LOG2(d));
+	}
+
 	q = 0;
 	r = 0;
 
-	while (n >= d) {
-		q++;
-		n -= d;
+	if (n >= d) {
+		q = 1;
+
+		while ((q + 1) * d <= n)
+			q++;
+		r = n - (q * d);
+	} else {
+		r = n;
 	}
-	r = n;
 
 	if (rp != NULL)
 		*rp = r;

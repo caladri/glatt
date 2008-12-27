@@ -86,11 +86,7 @@ pmap_zero(struct vm_page *page)
 	size_t i;
 
 	paddr = page_address(page);
-#if 0
-	p = (uint64_t *)XKPHYS_MAP(XKPHYS_CNC, paddr);
-#else
-	panic("%s not yet implemented.", __func__);
-#endif
+	p = (uint64_t *)paddr;
 
 	for (i = 0; i < (PAGE_SIZE / sizeof *p) / 16; i++) {
 		p[0x0] = p[0x1] = p[0x2] = p[0x3] =

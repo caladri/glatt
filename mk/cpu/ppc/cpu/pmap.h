@@ -14,22 +14,28 @@ struct pmap {
 
 	/* Machine-independent PMAP API.  */
 
+/*
+ * XXX
+ * I've got BATs in the belfry.  This will definitely change.
+ */
 static inline int
 pmap_extract_direct(struct vm *vm, vaddr_t vaddr, paddr_t *paddrp)
 {
-	return (ERROR_NOT_IMPLEMENTED);
+	*paddrp = vaddr;
+	return (0);
 }
 
 static inline int
 pmap_map_direct(struct vm *vm, paddr_t paddr, vaddr_t *vaddrp)
 {
-	return (ERROR_NOT_IMPLEMENTED);
+	*vaddrp = paddr;
+	return (0);
 }
 
 static inline int
 pmap_unmap_direct(struct vm *vm, vaddr_t vaddr)
 {
-	return (ERROR_NOT_IMPLEMENTED);
+	return (0);
 }
 
 void pmap_bootstrap(void);

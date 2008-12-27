@@ -223,13 +223,17 @@ config(struct configuration *conf)
 	}
 
 	/*
-	 * First turn on things explicitly enabled by the user, then turn on
-	 * implicit things, then disable things disabled by the user.
+	 * First turn on things explicitly enabled by the user.  Second,
+	 * disable anything the user requested be disabled.  Third, turn on
+	 * anything implicitly-enabled by the remaining options.  Fourth,
+	 * disable anything which was turned on implicitly that the user
+	 * requested be disabled.
+	 *
+	 * NB: The first and second steps are both covered by this first loop.
 	 */
 	for (setting = conf->c_settings; setting != NULL;
 	     setting = setting->s_next) {
-		if (setting->s_enable)
-			setting->s_option->o_enable = true;
+		setting->s_option->o_enable = setting->s_enable;
 	}
 
 	imply(conf);

@@ -104,7 +104,7 @@ mk-universe-help:
 	@echo 'usage: '${MAKE}' mk-universe'
 mk-universe:
 .for _platform in macppc malta testmips
-	@cd ${.CURDIR} && ${MAKE} mk mk-clean PLATFORM=${_platform}
+	@cd ${.CURDIR} && ${MAKE} toolchain mk mk-clean PLATFORM=${_platform}
 .endfor
 
 .PHONY: mk

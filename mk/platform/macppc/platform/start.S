@@ -12,15 +12,15 @@ SYMBOL(tempstack)
 	 * r6, r7 = args
 	 */
 ENTRY(start)
-	lis	r1, tempstack@ha
-	ori	r1, r1, tempstack@l
+	lis	%r1, tempstack@ha
+	ori	%r1, %r1, tempstack@l
 
 	/* XXX Save OFW SPRG[0..3].  */
 
 	bl	platform_start
 	
 	/* Switch to stack pointer returned by platform_start and continue.  */
-	mr	r1, r3
+	mr	%r1, %r3
 
 	bl	platform_startup
 END(start)

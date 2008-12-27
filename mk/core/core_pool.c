@@ -139,7 +139,7 @@ pool_create(struct pool *pool, const char *name, size_t size, unsigned flags)
 #ifdef VERBOSE
 	if ((size % POOL_ALIGNMENT) != 0) {
 		kcprintf("POOL: Rounding up pool \"%s\" from %zu to %zu\n",
-			 size, ROUNDUP(size, POOL_ALIGNMENT));
+			 name, size, ROUNDUP(size, POOL_ALIGNMENT));
 	}
 #endif
 	size = ROUNDUP(size, POOL_ALIGNMENT);

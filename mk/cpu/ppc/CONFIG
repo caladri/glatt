@@ -1,5 +1,3 @@
-std		cpu/ppc/cpu/start.S
-
 std		cpu/ppc/cpu/cpu_context.S
 std		cpu/ppc/cpu/cpu_critical.c
 std		cpu/ppc/cpu/cpu_interrupt.c

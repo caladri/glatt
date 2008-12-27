@@ -54,6 +54,22 @@ ofw_getprop(ofw_package_t package, const char *propname, void *propval,
 }
 
 int
+ofw_getproplen(ofw_package_t package, const char *propname, size_t *proplenp)
+{
+	ofw_word_t proplen;
+	int error;
+
+	error = ofw_function("getproplen",
+			     2, (ofw_word_t)package, (ofw_word_t)propname,
+			     1, &proplen);
+	if (error != 0)
+		return (error);
+
+	*proplenp = proplen;
+	return (0);
+}
+
+int
 ofw_open(const char *name, ofw_instance_t *instancep)
 {
 	ofw_word_t instance;

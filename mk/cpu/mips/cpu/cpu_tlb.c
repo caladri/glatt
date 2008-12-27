@@ -31,28 +31,28 @@ struct tlb_shootdown_arg {
 static inline void
 tlb_probe(void)
 {
-	__asm __volatile ("tlbp" : : : "memory");
+	asm volatile ("tlbp" : : : "memory");
 	cpu_barrier();
 }
 
 static inline void
 tlb_read(void)
 {
-	__asm __volatile ("tlbr" : : : "memory");
+	asm volatile ("tlbr" : : : "memory");
 	cpu_barrier();
 }
 
 static inline void
 tlb_write_indexed(void)
 {
-	__asm __volatile ("tlbwi" : : : "memory");
+	asm volatile ("tlbwi" : : : "memory");
 	cpu_barrier();
 }
 
 static inline void
 tlb_write_random(void)
 {
-	__asm __volatile ("tlbwr" : : : "memory");
+	asm volatile ("tlbwr" : : : "memory");
 	cpu_barrier();
 }
 

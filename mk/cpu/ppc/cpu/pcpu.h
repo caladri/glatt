@@ -20,7 +20,7 @@ pcpu_get(void)
 {
 	struct pcpu *pcpu;
 
-	__asm __volatile ("mfsprg %[pcpu], 0" : [pcpu] "=&r"(pcpu));
+	asm volatile ("mfsprg %[pcpu], 0" : [pcpu] "=&r"(pcpu));
 
 	return (pcpu);
 }

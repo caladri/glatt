@@ -14,7 +14,7 @@ ttk_idle(void)
 
 	/* XXX cpu_ttk_wait();  */
 #if __mips__
-	__asm__ __volatile__ ("wait");
+	asm volatile ("wait");
 #endif
 
 	scheduler_schedule(NULL, NULL);

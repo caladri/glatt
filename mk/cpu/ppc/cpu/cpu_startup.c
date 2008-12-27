@@ -22,7 +22,7 @@ void
 cpu_break(void)
 {
 #if 0
-	__asm __volatile ("break 7" : : : "memory");
+	asm volatile ("break 7" : : : "memory");
 #else
 	platform_halt();
 #endif

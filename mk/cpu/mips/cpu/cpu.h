@@ -9,7 +9,7 @@
 static inline void
 cpu_barrier(void)
 {
-	__asm __volatile (".set noreorder\n\t"
+	asm volatile (".set noreorder\n\t"
 			  "nop\n\t"
 			  "nop\n\t"
 			  "nop\n\t"
@@ -29,7 +29,7 @@ static inline uint64_t							\
 cpu_read_ ## name(void)							\
 {									\
 	uint64_t result;						\
-	__asm __volatile ("dmfc0 %[result], $" STRING(number) "\n"	\
+	asm volatile ("dmfc0 %[result], $" STRING(number) "\n"	\
 		      : [result] "=&r"(result));			\
 	cpu_barrier();							\
 	return (result);						\
@@ -38,7 +38,7 @@ cpu_read_ ## name(void)							\
 static inline void							\
 cpu_write_ ## name(uint64_t value)					\
 {									\
-	__asm __volatile ("dmtc0 %[value], $" STRING(number) "\n"	\
+	asm volatile ("dmtc0 %[value], $" STRING(number) "\n"	\
 		      : : [value] "r"(value));				\
 	cpu_barrier();							\
 }									\
@@ -60,7 +60,7 @@ static inline uint32_t							\
 cpu_read_ ## name(void)							\
 {									\
 	uint32_t result;						\
-	__asm __volatile ("mfc0 %[result], $" STRING(number) "\n"	\
+	asm volatile ("mfc0 %[result], $" STRING(number) "\n"	\
 		      : [result] "=&r"(result));			\
 	cpu_barrier();							\
 	return (result);						\
@@ -69,7 +69,7 @@ cpu_read_ ## name(void)							\
 static inline void							\
 cpu_write_ ## name(uint32_t value)					\
 {									\
-	__asm __volatile ("mtc0 %[value], $" STRING(number) "\n"	\
+	asm volatile ("mtc0 %[value], $" STRING(number) "\n"	\
 		      : : [value] "r"(value));				\
 	cpu_barrier();							\
 }									\

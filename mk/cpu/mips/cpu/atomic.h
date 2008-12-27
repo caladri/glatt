@@ -21,7 +21,7 @@ atomic_compare_and_set_64(volatile uint64_t *p, uint64_t o, uint64_t v)
 	uint64_t temp;
 	int res;
 
-	__asm __volatile (
+	asm volatile (
 	"1:\n\t"
 	"move	%[res], $0\n\t"
 	"lld	%[temp], %[p]\n\t"

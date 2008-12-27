@@ -24,7 +24,7 @@ COMPILE_TIME_ASSERT(sizeof (struct pcpu) <= PAGE_SIZE);
 void
 cpu_break(void)
 {
-	__asm __volatile ("break 7" : : : "memory");
+	asm volatile ("break 7" : : : "memory");
 	for (;;) continue;
 }
 
@@ -45,7 +45,7 @@ cpu_startup(void)
 	/*
 	 * We don't use the gp, set it to NULL.
 	 */
-	__asm __volatile ("move $" STRING(gp) ", $" STRING(zero) : : : "memory");
+	asm volatile ("move $" STRING(gp) ", $" STRING(zero) : : : "memory");
 
 	/*
 	 * Set kernel mode.

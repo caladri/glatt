@@ -2,10 +2,10 @@
 #include <io/ofw/ofw.h>
 #include <io/ofw/ofw_console.h>
 
-static void (*ofw_entry)(void *);
+static ofw_return_t (*ofw_entry)(void *);
 
 void
-ofw_init(void (*entry)(void *))
+ofw_init(ofw_return_t (*entry)(void *))
 {
 	ofw_entry = entry;
 
@@ -13,8 +13,8 @@ ofw_init(void (*entry)(void *))
 	ofw_console_init();
 }
 
-void
-ofw_enter(void *args)
+ofw_return_t
+ofw_call(void *args)
 {
-	ofw_entry(args);
+	return (ofw_entry(args));
 }

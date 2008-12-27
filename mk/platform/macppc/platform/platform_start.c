@@ -12,6 +12,7 @@
 #include <device/ofw.h>
 #include <io/console/console.h>
 #include <io/ofw/ofw.h>
+#include <io/ofw/ofw_functions.h>
 #include <vm/page.h>
 #include <vm/vm.h>
 
@@ -20,8 +21,7 @@ extern char __bss_start[], _end[];
 void
 platform_halt(void)
 {
-	/* XXX */
-	NOTREACHED();
+	ofw_exit();
 }
 
 void
@@ -39,7 +39,7 @@ platform_start(register_t boot_args, register_t magic, register_t ofw_entry,
 
 	platform_ofw_init(ofw_entry);
 
-	ofw_init(macppc_ofw_enter);
+	ofw_init(macppc_ofw_call);
 
 #ifdef DB
 	db_init();

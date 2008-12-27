@@ -55,6 +55,7 @@ network		io/network/network_interface.c
 
 ofw		io/ofw/ofw.c
 ofw		io/ofw/ofw_console.c
+ofw		io/ofw/ofw_functions.c
 
 pci		io/pci/pci.c
 pci		io/pci/pcidev.c

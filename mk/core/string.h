@@ -84,6 +84,4 @@ strncmp(const char *a, const char *b, size_t n)
 	return (*a - *b);
 }
 
-void kfvprintf(void (*)(void *, char), void *, const char *, va_list);
-
 #endif /* !_CORE_STRING_H_ */

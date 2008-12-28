@@ -1,6 +1,5 @@
 #include <core/types.h>
-#include <core/error.h>
-#include <core/string.h>
+#include <core/printf.h>
 #include <io/console/console.h>
 #include <io/console/consoledev.h>
 

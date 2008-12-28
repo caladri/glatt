@@ -1,6 +1,6 @@
 #include <core/types.h>
 #include <core/error.h>
-#include <core/string.h>
+#include <core/printf.h>
 
 static void kfformat(void (*)(void *, char), void *, uintmax_t, unsigned, bool);
 static void kfputs(void (*)(void *, char), void *, const char *);

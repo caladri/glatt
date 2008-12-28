@@ -1,5 +1,5 @@
-#ifndef	_IO_STORAGE_UFS_SUPERBLOCK_H_
-#define	_IO_STORAGE_UFS_SUPERBLOCK_H_
+#ifndef	_IO_STORAGE_UFS_UFS_SUPERBLOCK_H_
+#define	_IO_STORAGE_UFS_UFS_SUPERBLOCK_H_
 
 #define	UFS_SUPERBLOCK_SIZE	(8192)
 
@@ -48,4 +48,4 @@ struct ufs_superblock {
 
 void ufs_superblock_swap(struct ufs_superblock *);
 
-#endif /* !_IO_STORAGE_UFS_SUPERBLOCK_H_*/
+#endif /* !_IO_STORAGE_UFS_UFS_SUPERBLOCK_H_*/

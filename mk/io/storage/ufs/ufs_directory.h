@@ -1,5 +1,5 @@
-#ifndef	_IO_STORAGE_UFS_DIRECTORY_H_
-#define	_IO_STORAGE_UFS_DIRECTORY_H_
+#ifndef	_IO_STORAGE_UFS_UFS_DIRECTORY_H_
+#define	_IO_STORAGE_UFS_UFS_DIRECTORY_H_
 
 struct ufs_directory_entry {
 	uint32_t de_inode;
@@ -10,4 +10,4 @@ struct ufs_directory_entry {
 
 void ufs_directory_entry_swap(struct ufs_directory_entry *);
 
-#endif /* !_IO_STORAGE_UFS_DIRECTORY_H_ */
+#endif /* !_IO_STORAGE_UFS_UFS_DIRECTORY_H_ */

@@ -1,7 +1,7 @@
 #include <core/types.h>
 #include <core/error.h>
 #include <io/storage/device.h>
-#include <io/storage/ufs/mount.h>
+#include <io/storage/ufs/ufs_mount.h>
 
 int
 storage_device_attach(struct storage_device *sdev, unsigned bsize,

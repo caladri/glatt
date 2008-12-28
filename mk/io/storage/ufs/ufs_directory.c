@@ -1,6 +1,6 @@
 #include <core/types.h>
 #include <core/endian.h>
-#include <io/storage/ufs/directory.h>
+#include <io/storage/ufs/ufs_directory.h>
 
 COMPILE_TIME_ASSERT(offsetof(struct ufs_directory_entry, de_inode) == 0);
 COMPILE_TIME_ASSERT(offsetof(struct ufs_directory_entry, de_entrylen) == 0x4);

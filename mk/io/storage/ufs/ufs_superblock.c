@@ -1,7 +1,7 @@
 #include <core/types.h>
 #include <core/endian.h>
-#include <io/storage/ufs/param.h>
-#include <io/storage/ufs/superblock.h>
+#include <io/storage/ufs/ufs_param.h>
+#include <io/storage/ufs/ufs_superblock.h>
 
 COMPILE_TIME_ASSERT(offsetof(struct ufs_superblock, sb_iboff) == 0x10);
 COMPILE_TIME_ASSERT(offsetof(struct ufs_superblock, sb_bshift) == 0x50);

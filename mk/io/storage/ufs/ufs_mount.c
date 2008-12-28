@@ -4,11 +4,11 @@
 #include <core/startup.h>
 #include <core/string.h>
 #include <io/storage/device.h>
-#include <io/storage/ufs/directory.h>
-#include <io/storage/ufs/inode.h>
-#include <io/storage/ufs/mount.h>
-#include <io/storage/ufs/param.h>
-#include <io/storage/ufs/superblock.h>
+#include <io/storage/ufs/ufs_directory.h>
+#include <io/storage/ufs/ufs_inode.h>
+#include <io/storage/ufs/ufs_mount.h>
+#include <io/storage/ufs/ufs_param.h>
+#include <io/storage/ufs/ufs_superblock.h>
 #include <vm/vm.h>
 #include <vm/vm_alloc.h>
 

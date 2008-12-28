@@ -1,10 +1,10 @@
 #include <core/types.h>
 #include <core/error.h>
 #include <core/pool.h>
-#include <vm/alloc.h>
-#include <vm/index.h>
-#include <vm/page.h>
 #include <vm/vm.h>
+#include <vm/vm_alloc.h>
+#include <vm/vm_index.h>
+#include <vm/vm_page.h>
 
 int
 vm_alloc(struct vm *vm, size_t size, vaddr_t *vaddrp)

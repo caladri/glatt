@@ -13,8 +13,8 @@
 #include <db/db_command.h>
 #endif
 #include <io/console/console.h>
-#include <vm/page.h>
 #include <vm/vm.h>
+#include <vm/vm_page.h>
 
 /*
  * PageMask must increment in steps of 2 bits.

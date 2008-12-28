@@ -2,9 +2,9 @@
 #include <core/error.h>
 #include <core/string.h>
 #include <io/console/framebuffer.h>
-#include <vm/alloc.h>
-#include <vm/page.h>
 #include <vm/vm.h>
+#include <vm/vm_alloc.h>
+#include <vm/vm_page.h>
 
 #define	FB_BYTE_RED	0
 #define	FB_BYTE_GREEN	1

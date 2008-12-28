@@ -1,7 +1,5 @@
 #include <core/types.h>
-#include <core/error.h>
 #include <core/task.h>
-#include <vm/page.h>
 #include <vm/vm.h>
 
 int

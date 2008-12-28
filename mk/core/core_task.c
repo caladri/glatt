@@ -3,7 +3,6 @@
 #include <core/pool.h>
 #include <core/string.h>
 #include <core/task.h>
-#include <vm/page.h>
 
 static struct pool task_pool;
 static STAILQ_HEAD(, struct task) task_list;

@@ -4,8 +4,8 @@
 #include <cpu/pmap.h>
 #include <cpu/startup.h>
 #include <io/console/consoledev.h>
-#include <vm/page.h>
 #include <vm/vm.h>
+#include <vm/vm_page.h>
 
 #define	YAMON_BASE		(0x1fc00500)
 #define	YAMON_PRINT_COUNT	(0x04)

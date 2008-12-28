@@ -1,5 +1,5 @@
-#ifndef	_VM_PAGE_H_
-#define	_VM_PAGE_H_
+#ifndef	_VM_VM_PAGE_H_
+#define	_VM_VM_PAGE_H_
 
 #include <core/queue.h>
 #include <cpu/page.h>
@@ -40,4 +40,4 @@ int page_release(struct vm_page *);
 int page_unmap(struct vm *, vaddr_t, struct vm_page *);
 int page_unmap_direct(struct vm *, struct vm_page *, vaddr_t);
 
-#endif /* !_VM_PAGE_H_ */
+#endif /* !_VM_VM_PAGE_H_ */

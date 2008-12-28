@@ -7,8 +7,8 @@
 #ifdef DB
 #include <db/db_command.h>
 #endif
-#include <vm/page.h>
 #include <vm/vm.h>
+#include <vm/vm_page.h>
 
 #ifdef DB
 DB_COMMAND_TREE(cpu, root, cpu);

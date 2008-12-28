@@ -3,7 +3,7 @@
 #include <cpu/pcpu.h>
 #include <cpu/segment.h>
 #include <vm/vm.h>
-#include <vm/page.h>
+#include <vm/vm_page.h>
 
 	/* PCPU-related constants we might want.  */
 DEFINE(PC_THREAD,	offsetof(struct pcpu,	pc_thread));

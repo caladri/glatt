@@ -14,8 +14,8 @@
 #include <io/ofw/ofw.h>
 #include <io/ofw/ofw_functions.h>
 #include <io/ofw/ofw_memory.h>
-#include <vm/page.h>
 #include <vm/vm.h>
+#include <vm/vm_page.h>
 
 extern char __bss_start[], _end[];
 

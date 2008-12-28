@@ -11,9 +11,9 @@
 #ifdef VERBOSE
 #include <io/console/console.h>
 #endif
-#include <vm/index.h>
-#include <vm/page.h>
 #include <vm/vm.h>
+#include <vm/vm_index.h>
+#include <vm/vm_page.h>
 
 #define	PMAP_ASID_RESERVED	(0)
 #define	PMAP_ASID_FIRST		(1)

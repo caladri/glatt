@@ -10,7 +10,7 @@
 #include <io/storage/ufs/param.h>
 #include <io/storage/ufs/superblock.h>
 #include <vm/vm.h>
-#include <vm/alloc.h>
+#include <vm/vm_alloc.h>
 
 #include <io/console/console.h>
 

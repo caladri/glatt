@@ -3,9 +3,9 @@
 #include <core/string.h>
 #include <core/task.h>
 #include <core/thread.h>
-#include <vm/alloc.h>
-#include <vm/page.h>
 #include <vm/vm.h>
+#include <vm/vm_alloc.h>
+#include <vm/vm_page.h>
 
 static void cpu_thread_exception(void *);
 

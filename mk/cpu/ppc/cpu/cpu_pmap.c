@@ -7,9 +7,9 @@
 #ifdef VERBOSE
 #include <io/console/console.h>
 #endif
-#include <vm/index.h>
-#include <vm/page.h>
 #include <vm/vm.h>
+#include <vm/vm_index.h>
+#include <vm/vm_page.h>
 
 /*
  * If it goes over PAGE_SIZE, we would need a way to allocate a contiguous

@@ -9,9 +9,9 @@
 #include <db/db_command.h>
 #include <io/console/console.h>
 #endif
-#include <vm/index.h>
-#include <vm/page.h>
 #include <vm/vm.h>
+#include <vm/vm_index.h>
+#include <vm/vm_page.h>
 
 struct vm_index {
 	vaddr_t vmi_base;

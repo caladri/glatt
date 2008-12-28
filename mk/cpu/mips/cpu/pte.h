@@ -1,7 +1,7 @@
 #ifndef	_CPU_PTE_H_
 #define	_CPU_PTE_H_
 
-#include <vm/page.h>
+#include <vm/vm_page.h>
 
 /*
  * MIPS implements a simple 3-level page table.  The first level is just a

@@ -4,7 +4,7 @@
 #include <io/ofw/ofw.h>
 #include <io/ofw/ofw_functions.h>
 #include <io/ofw/ofw_memory.h>
-#include <vm/page.h>
+#include <vm/vm_page.h>
 
 #define	OFW_REGION_MAX	(12)
 

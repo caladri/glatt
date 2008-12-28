@@ -11,7 +11,6 @@
 #include <ipc/data.h>
 #include <ipc/ipc.h>
 #include <ipc/port.h>
-#include <vm/page.h>
 
 struct ipc_message;
 struct ipc_port;

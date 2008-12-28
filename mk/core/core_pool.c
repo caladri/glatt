@@ -5,9 +5,9 @@
 #include <db/db_command.h>
 #endif
 #include <io/console/console.h>
-#include <vm/alloc.h>
-#include <vm/page.h>
 #include <vm/vm.h>
+#include <vm/vm_alloc.h>
+#include <vm/vm_page.h>
 
 #ifdef DB
 DB_COMMAND_TREE(pool, root, pool);

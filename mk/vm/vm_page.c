@@ -9,8 +9,8 @@
 #if defined(DB) || defined(VERBOSE)
 #include <io/console/console.h>
 #endif
-#include <vm/page.h>
 #include <vm/vm.h>
+#include <vm/vm_page.h>
 
 struct vm_page_tree_page;
 

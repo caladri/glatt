@@ -5,8 +5,8 @@
 #ifdef DB
 #include <db/db_command.h>
 #endif
-#include <vm/index.h>
 #include <vm/vm.h>
+#include <vm/vm_index.h>
 
 #ifdef DB
 DB_COMMAND_TREE(vm, root, vm);

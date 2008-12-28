@@ -6,7 +6,6 @@
 #include <cpu/interrupt.h>
 #include <cpu/memory.h>
 
-struct device;
 struct thread;
 
 #define	PCPU_VIRTUAL	(KERNEL_BASE)
@@ -20,11 +19,9 @@ struct pcpu {
 	/* Current running thread.  */
 	struct thread *pc_thread;
 
-	/* Information about this CPU (and its device in the tree.)  */
-	struct pcpu *pc_physaddr;
+	/* Information about this CPU.  */
 	cpu_id_t pc_cpuid;
 	struct cpuinfo pc_cpuinfo;
-	struct device *pc_device;
 	unsigned pc_flags;
 
 	/* Interrupt data.  */

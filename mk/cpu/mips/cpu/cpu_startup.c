@@ -59,9 +59,6 @@ cpu_startup(void)
 	pcpu_addr = page_address(pcpu_page);
 	pcpu = (struct pcpu *)XKPHYS_MAP(XKPHYS_CNC, pcpu_addr);
 
-	/* Keep our original physical address in the PCPU data, too.  */
-	pcpu->pc_physaddr = pcpu;
-
 	/* Identify the CPU.  */
 	pcpu->pc_cpuinfo = cpu_identify();
 	pcpu->pc_cpuid = mp_whoami();

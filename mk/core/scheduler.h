@@ -23,8 +23,10 @@ struct scheduler_entry {
 #endif
 };
 
-void scheduler_cpu_pin(struct thread *);
 void scheduler_init(void);
+
+void scheduler_activate(struct thread *);
+void scheduler_cpu_pin(struct thread *);
 void scheduler_schedule(struct thread *, struct spinlock *);
 void scheduler_thread_runnable(struct thread *);
 void scheduler_thread_setup(struct thread *);

@@ -1,13 +1,11 @@
 #include <core/types.h>
 #include <core/error.h>
 #include <core/pool.h>
-#include <core/spinlock.h>
 #include <core/string.h>
 #include <core/task.h>
 #include <core/thread.h>
 
 static struct pool thread_pool;
-static struct spinlock thread_lock;
 
 static void thread_error(void *);
 
@@ -20,8 +18,6 @@ thread_init(void)
 			    POOL_VIRTUAL);
 	if (error != 0)
 		panic("%s: pool_create failed: %m", __func__, error);
-
-	spinlock_init(&thread_lock, "THREAD", SPINLOCK_FLAG_DEFAULT);
 }
 
 int
@@ -61,28 +57,28 @@ thread_set_upcall(struct thread *td, void (*function)(void *), void *arg)
 void
 thread_switch(struct thread *otd, struct thread *td)
 {
+	ASSERT(critical_section(), "cannot switch outside a critical section.");
 	if (otd == NULL)
 		otd = current_thread();
 	ASSERT(otd != td, "cannot switch from a thread to itself.");
 	if (otd != NULL) {
 		if (cpu_context_save(otd)) {
 			thread_set_upcall(otd, thread_error, otd);
-			spinlock_unlock(&thread_lock);
 			/*
 			 * We've been restored by something, return.
 			 */
 			return;
 		}
 	}
-	spinlock_lock(&thread_lock);
 	cpu_context_restore(td);
 }
 
 void
 thread_trampoline(struct thread *td, void (*function)(void *), void *arg)
 {
-	spinlock_unlock(&thread_lock);
+	scheduler_activate(td);
 	ASSERT(td == current_thread(), "Thread must be current thread.");
+	ASSERT(function != NULL, "Function must not be NULL.");
 	function(arg);
 	panic("%s: function returned!", __func__);
 }

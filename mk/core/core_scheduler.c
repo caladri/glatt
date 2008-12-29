@@ -5,8 +5,8 @@
 #include <core/thread.h>
 #ifdef DB
 #include <db/db_command.h>
-#endif
 #include <io/console/console.h>
+#endif
 
 #ifdef DB
 DB_COMMAND_TREE(scheduler, root, scheduler);
@@ -21,6 +21,8 @@ static struct scheduler_queue scheduler_queue;
 
 #define	SCHEDULER_LOCK()	spinlock_lock(&scheduler_lock)
 #define	SCHEDULER_UNLOCK()	spinlock_unlock(&scheduler_lock)
+#define	SCHEDULER_ASSERT_LOCKED()					\
+	SPINLOCK_ASSERT_HELD(&scheduler_lock)
 
 static void scheduler_switch(struct scheduler_entry *, struct scheduler_entry *);
 
@@ -29,6 +31,16 @@ scheduler_init(void)
 {
 	spinlock_init(&scheduler_lock, "SCHEDULER", SPINLOCK_FLAG_DEFAULT);
 	TAILQ_INIT(&scheduler_queue.sq_queue);
+}
+
+void
+scheduler_activate(struct thread *td)
+{
+	/*
+	 * First execution, we have to unlock the spinlock by hand.  In future
+	 * calls, it will be handled by scheduler_switch().
+	 */
+	SCHEDULER_UNLOCK();
 }
 
 void
@@ -132,6 +144,8 @@ scheduler_switch(struct scheduler_entry *ose, struct scheduler_entry *se)
 {
 	struct thread *otd, *td;
 
+	SCHEDULER_ASSERT_LOCKED();
+
 	otd = ose == NULL ? NULL : ose->se_thread;
 	td = se == NULL ? NULL : se->se_thread;
 
@@ -148,9 +162,9 @@ scheduler_switch(struct scheduler_entry *ose, struct scheduler_entry *se)
 #ifndef UNIPROCESSOR
 	se->se_oncpu = mp_whoami();
 #endif
-	SCHEDULER_UNLOCK();
 	if (otd != td)
 		thread_switch(otd, td);
+	SCHEDULER_UNLOCK();
 }
 
 #ifdef DB

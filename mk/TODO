@@ -38,9 +38,4 @@ Ongoing / aesthetic:
 	   set.  On the other hand, VIRTUAL pools no longer really exist, and
 	   that may be desirable.
 
-Bugs:
-	o) The old core_test.c program with a large number of threads causes a
-	   panic seemingly due to reuse of memory or exhaustion of memory, or
-	   perhaps due to a write somewhere inappropriate.
-
 Current goal: December 2008 release.

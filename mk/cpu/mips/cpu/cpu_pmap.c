@@ -3,17 +3,28 @@
 #include <core/pool.h>
 #include <core/startup.h>
 #include <core/string.h>
+#ifdef DB
+#include <cpu/cpu.h>
+#endif
 #include <cpu/memory.h>
 #include <cpu/pcpu.h>
 #include <cpu/pmap.h>
 #include <cpu/pte.h>
 #include <cpu/tlb.h>
-#ifdef VERBOSE
+#ifdef DB
+#include <db/db_command.h>
+#endif
+#if defined(DB) || defined(VERBOSE)
 #include <io/console/console.h>
 #endif
 #include <vm/vm.h>
 #include <vm/vm_index.h>
 #include <vm/vm_page.h>
+
+#ifdef DB
+DB_COMMAND_TREE_DECLARE(pmap);
+DB_COMMAND_TREE(pmap, cpu, pmap);
+#endif
 
 #define	PMAP_ASID_RESERVED	(0)
 #define	PMAP_ASID_FIRST		(1)
@@ -228,7 +239,7 @@ pmap_zero(struct vm_page *page)
 		p[0x0] = p[0x1] = p[0x2] = p[0x3] =
 		p[0x4] = p[0x5] = p[0x6] = p[0x7] =
 		p[0x8] = p[0x9] = p[0xa] = p[0xb] =
-		p[0xc] = p[0xd] = p[0xe] = p[0xe] = 0x0;
+		p[0xc] = p[0xd] = p[0xe] = p[0xf] = 0x0;
 		p += 16;
 	}
 }
@@ -389,3 +400,93 @@ pmap_startup(void *arg)
 	PCPU_SET(asidnext, PMAP_ASID_FIRST);
 }
 STARTUP_ITEM(pmap, STARTUP_PMAP, STARTUP_FIRST, pmap_startup, NULL);
+
+#if defined(DB)
+static void
+db_pmap_dump_pte(pt_entry_t pte)
+{
+	if (pte == 0)
+		return;
+	kcprintf("\t\t\t%jx\n", (uintmax_t)pte);
+}
+
+static void
+db_pmap_dump_level1(struct pmap_lev1 *pml1, unsigned level)
+{
+	unsigned i;
+
+	if (level == 1) {
+		kcprintf("\t\t%p\n", pml1);
+		return;
+	}
+
+	kcprintf("\t\tpage table entries:\n");
+	for (i = 0; i < NPTEL1; i++) {
+		db_pmap_dump_pte(pml1->pml1_entries[i]);
+	}
+}
+
+static void
+db_pmap_dump_level0(struct pmap_lev0 *pml0, unsigned level)
+{
+	unsigned i;
+
+	if (level == 0) {
+		kcprintf("\t%p\n", pml0);
+		return;
+	}
+
+	kcprintf("\tlevel 1 pointers:\n");
+	for (i = 0; i < NL1PL0; i++) {
+		struct pmap_lev1 *pml1 = pml0->pml0_level1[i];
+
+		if (pml1 == NULL)
+			continue;
+		db_pmap_dump_level1(pml1, level);
+	}
+}
+
+static void
+db_pmap_dump_pmap(struct vm *vm, unsigned level)
+{
+	struct pmap *pm = vm->vm_pmap;
+	unsigned i;
+
+	kcprintf("VM %p PMAP %p\n", vm, pm);
+	if (pm == NULL)
+		return;
+
+	kcprintf("\tasid %u begin %p end %p\n", pm->pm_asid,
+		 (void *)pm->pm_base, (void *)pm->pm_end);
+
+	kcprintf("level 0 pointers:\n");
+	for (i = 0; i < NL0PMAP; i++) {
+		struct pmap_lev0 *pml0 = pm->pm_level0[i];
+
+		if (pml0 == NULL)
+			continue;
+		db_pmap_dump_level0(pml0, level);
+	}
+}
+
+static void
+db_pmap_dump_kvm_pte(void)
+{
+	db_pmap_dump_pmap(&kernel_vm, 2);
+}
+DB_COMMAND(kvm_pte, pmap, db_pmap_dump_kvm_pte);
+
+static void
+db_pmap_dump_kvm_l1(void)
+{
+	db_pmap_dump_pmap(&kernel_vm, 1);
+}
+DB_COMMAND(kvm_l1, pmap, db_pmap_dump_kvm_l1);
+
+static void
+db_pmap_dump_kvm_l0(void)
+{
+	db_pmap_dump_pmap(&kernel_vm, 0);
+}
+DB_COMMAND(kvm_l0, pmap, db_pmap_dump_kvm_l0);
+#endif

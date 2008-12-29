@@ -56,10 +56,6 @@ VECTOR_END(utlb)
 
 VECTOR_ENTRY(exception)
 	.set noat
-	mtc0	zero, CP0_STATUS
-	li	k0, KERNEL_STATUS
-	mtc0	k0, CP0_STATUS
-
 	mfc0	k0, CP0_CAUSE
 	dla	k1, exception_table
 
@@ -96,10 +92,6 @@ END(generic_exception)
 
 ENTRY(tlb_exception)
 	.set noat
-	mtc0	zero, CP0_STATUS
-	li	k0, KERNEL_STATUS
-	mtc0	k0, CP0_STATUS
-
 	dmfc0	k0, CP0_BADVADDR
 	dli	k1, KERNEL_END
 	tgeu	k0, k1
@@ -160,12 +152,12 @@ ENTRY(tlb_exception)
 	nop
 
 	/* Found!  Indexed write.  */
-	j	exception_return
 	tlbwi
+	eret
 
 	/* Not found.  Random write.  */
-1:	j	exception_return
-	tlbwr
+1:	tlbwr
+	eret
 	.set at
 END(tlb_exception)
 
@@ -233,10 +225,8 @@ ENTRY(exception_frame_save)		/* Return address is k0.  */
 	sd	t1, FRAME_HI(sp)
 	sd	t2, FRAME_LO(sp)
 
-	li	k1, KERNEL_STATUS
-
 	jr	k0
-	mtc0	k1, CP0_STATUS
+	nop
 	.set at
 END(exception_frame_save)
 
@@ -284,46 +274,6 @@ ENTRY(exception_frame_restore)		/* Does not return.  */
 
 	daddu	sp, FRAME_SIZE
 
-	j	exception_return
-	nop
+	eret
 	.set at
 END(exception_frame_restore)
-
-ENTRY(exception_return)
-	.set noat
-	/* XXX userland.  */
-	dmfc0	k0, CP0_EXCPC
-	dla	k1, exception_return_fixup
-	dmtc0	k1, CP0_EXCPC
-
-	eret
-
-	/* Should not be reached.  */
-	break
-exception_return_fixup:
-	/*
-	 * Restore kernel status, enable interrupts if needed.
-	 */
-	dla	k1, PCPU_VIRTUAL
-	ld	k1, PC_INTERRUPT_ENABLE(k1)
-	beqz	k1, 1f
-	nop
-
-	/* Interrupts enabled.  */
-	dla	k1, PCPU_VIRTUAL
-	ld	k1, PC_INTERRUPT_MASK(k1)
-	or	k1, CP0_STATUS_IE
-	b	2f
-	nop
-
-1:	/* Interrupts disabled.  */
-	dla	k1, PCPU_VIRTUAL
-	ld	k1, PC_INTERRUPT_MASK(k1)
-	/* Fallthrough.  */
-
-2:	/* Set the final bits and return from interrupt.  */
-	or	k1, KERNEL_STATUS
-	j	k0
-	mtc0	k1, CP0_STATUS
-	.set at
-END(exception_return)

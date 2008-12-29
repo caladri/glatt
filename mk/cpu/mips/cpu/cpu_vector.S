@@ -114,9 +114,8 @@ ENTRY(tlb_exception)
 	 * PMAP -> L0.
 	 */
 	dmfc0	k0, CP0_BADVADDR
-	dsrl	k0, PMAPL0SHIFT
-	andi	k0, 0x3ff		/* We just want the low 10 bits.  */
-	dsll	k0, 3			/* Get an 8-byte offset.  */
+	dsrl	k0, PMAPL0SHIFT - 3
+	andi	k0, PMAPL0MASK << 3
 	daddu	k1, k0
 	ld	k1, 0(k1)
 	teq	zero, k1		/* L0 pointer can't be NULL.  */
@@ -125,9 +124,8 @@ ENTRY(tlb_exception)
 	 * L0 -> L1.
 	 */
 	dmfc0	k0, CP0_BADVADDR
-	dsrl	k0, L1L0SHIFT
-	andi	k0, 0x3ff		/* We just want the low 10 bits.  */
-	dsll	k0, 3			/* Get an 8-byte offset.  */
+	dsrl	k0, L1L0SHIFT - 3
+	andi	k0, L1L0MASK << 3
 	daddu	k1, k0
 	ld	k1, 0(k1)
 	teq	zero, k1		/* L1 pointer can't be NULL.  */
@@ -136,9 +134,8 @@ ENTRY(tlb_exception)
 	 * L1 -> PTE.
 	 */
 	dmfc0	k0, CP0_BADVADDR
-	dsrl	k0, PTEL1SHIFT
-	andi	k0, 0x3ff		/* We just want the low 10 bits.  */
-	dsll	k0, 3			/* Get an 8-byte offset.  */
+	dsrl	k0, PTEL1SHIFT - 3
+	andi	k0, PTEL1MASK << 3
 	daddu	k1, k0
 	ld	k1, 0(k1)
 

@@ -35,14 +35,17 @@ typedef	uint64_t	pt_entry_t;
 	/* Number of PTEs in Level 1.  */
 #define	NPTEL1		(PAGE_SIZE / sizeof (pt_entry_t))
 #define	PTEL1SHIFT	(LOG2(PAGE_SIZE))
+#define	PTEL1MASK	(NPTEL1 - 1)
 
 	/* Number of Level 1 pointers in Level 0.  */
 #define	NL1PL0		(PAGE_SIZE / sizeof (struct pmap_lev1 *))
 #define	L1L0SHIFT	(PTEL1SHIFT + LOG2(NPTEL1))
+#define	L1L0MASK	(NL1PL0 - 1)
 
 	/* Number of Level 0 pages required to map an entire address space.  */
 #define	NL0PMAP		(128)
 #define	PMAPL0SHIFT	(L1L0SHIFT + LOG2(NL1PL0))
+#define	PMAPL0MASK	(NL0PMAP - 1)
 
 struct pmap_lev1 {
 	pt_entry_t pml1_entries[NPTEL1];

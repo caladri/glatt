@@ -123,8 +123,7 @@ startup_boot_thread(void *arg)
 	kcprintf("STARTUP: The system is coming up.\n");
 #endif
 	spinlock_lock(&startup_lock);
-	for (itemp = SET_BEGIN(startup_items); itemp < SET_END(startup_items);
-	     itemp++) {
+	SET_FOREACH(itemp, startup_items) {
 		item = *itemp;
 #define	LESS_THAN(a, b)							\
 		(((a)->si_component < (b)->si_component) ||		\

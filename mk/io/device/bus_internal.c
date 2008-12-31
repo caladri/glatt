@@ -55,8 +55,7 @@ bus_lookup(struct bus **busp, const char *name)
 {
 	struct bus_attachment **attachmentp;
 
-	for (attachmentp = SET_BEGIN(bus_attachments);
-	     attachmentp < SET_END(bus_attachments); attachmentp++) {
+	SET_FOREACH(attachmentp, bus_attachments) {
 		struct bus_attachment *attachment = *attachmentp;
 
 		if (strcmp(attachment->ba_name, name) != 0)
@@ -266,8 +265,7 @@ bus_attachment_find(struct bus_attachment **attachment2p, struct bus *parent,
 {
 	struct bus_attachment **attachmentp;
 
-	for (attachmentp = SET_BEGIN(bus_attachments);
-	     attachmentp < SET_END(bus_attachments); attachmentp++) {
+	SET_FOREACH(attachmentp, bus_attachments) {
 		struct bus_attachment *attachment = *attachmentp;
 
 		if (attachment->ba_bus == NULL) {
@@ -298,8 +296,7 @@ bus_attachment_find(struct bus_attachment **attachment2p, struct bus *parent,
 	/*
 	 * Now look for a wildcard match.
 	 */
-	for (attachmentp = SET_BEGIN(bus_attachments);
-	     attachmentp < SET_END(bus_attachments); attachmentp++) {
+	SET_FOREACH(attachmentp, bus_attachments) {
 		struct bus_attachment *attachment = *attachmentp;
 
 		if (attachment->ba_bus == NULL) {
@@ -368,8 +365,7 @@ bus_compile(void *arg)
 	if (error != 0)
 		panic("%s: pool_create failed: %m", __func__, error);
 
-	for (attachmentp = SET_BEGIN(bus_attachments);
-	     attachmentp < SET_END(bus_attachments); attachmentp++) {
+	SET_FOREACH(attachmentp, bus_attachments) {
 		struct bus_attachment *attachment = *attachmentp;
 
 		if (attachment->ba_parent == NULL &&
@@ -391,8 +387,7 @@ bus_compile(void *arg)
 	if (bus_root == NULL)
 		panic("%s: must have a root bus.", __func__);
 
-	for (attachmentp = SET_BEGIN(bus_attachments);
-	     attachmentp < SET_END(bus_attachments); attachmentp++) {
+	SET_FOREACH(attachmentp, bus_attachments) {
 		struct bus_attachment *attachment = *attachmentp;
 
 		error = bus_link(attachment);

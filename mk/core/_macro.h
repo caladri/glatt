@@ -69,4 +69,7 @@
 #define	SET_END(set)							\
 	(&SECTION_STOP(_CONCAT(set_, set)))
 
+#define	SET_FOREACH(v, set)						\
+	for ((v) = SET_BEGIN(set); (v) != SET_END(set); (v)++)
+
 #endif /* !_CORE__MACRO_H_ */

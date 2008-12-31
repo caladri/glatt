@@ -34,8 +34,7 @@ db_command_init(void)
 {
 	struct db_command **cmdp, *iter;
 
-	for (cmdp = SET_BEGIN(db_commands);
-	     cmdp != SET_END(db_commands); cmdp++) {
+	SET_FOREACH(cmdp, db_commands) {
 		struct db_command *cmd = *cmdp;
 		struct db_command_tree *parent = cmd->c_parent;
 

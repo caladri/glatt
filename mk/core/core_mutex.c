@@ -34,6 +34,8 @@ mutex_lock(struct mutex *mtx)
 	td = current_thread();
 	ASSERT(td != NULL, "Must have a thread.");
 	ASSERT(mtx != NULL, "Cannot lock NULL mutex.");
+	ASSERT(!critical_section(),
+	       "Cannot lock a mutex from within a critical section.");
 
 	tries = 0;
 

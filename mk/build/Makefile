@@ -40,7 +40,9 @@ KERNEL_CFLAGS+=	-Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wshadow
 KERNEL_CFLAGS+=	-Wcast-align -Winline -Wnested-externs -Wredundant-decls
 KERNEL_CFLAGS+=	-Wstrict-prototypes -Wmissing-prototypes -Wpointer-arith
 KERNEL_CFLAGS+=	-fstrict-aliasing -fno-builtin
-KERNEL_CFLAGS+=	--param inline-unit-growth=100 --param large-function-growth=1000
+KERNEL_CFLAGS+=	--param inline-unit-growth=100
+KERNEL_CFLAGS+=	--param large-function-growth=1000
+KERNEL_CFLAGS+=	--param max-inline-insns-single=100
 
 KERNEL_CFLAGS+=	-Wunused
 KERNEL_CFLAGS+=	-Wunused-function

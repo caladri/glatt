@@ -37,6 +37,7 @@ static ipc_port_t ipc_port_next		= IPC_PORT_UNRESERVED_START;
 
 #define	IPC_PORTS_LOCK()	mutex_lock(&ipc_ports_lock)
 #define	IPC_PORTS_UNLOCK()	mutex_unlock(&ipc_ports_lock)
+
 #define	IPC_PORT_LOCK(p)	mutex_lock(&(p)->ipcp_mutex)
 #define	IPC_PORT_UNLOCK(p)	mutex_unlock(&(p)->ipcp_mutex)
 

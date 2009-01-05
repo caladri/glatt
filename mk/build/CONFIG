@@ -24,6 +24,7 @@ std		core/core_mutex.c
 std		core/core_pool.c
 std		core/core_printf.c
 std		core/core_scheduler.c
+std		core/core_shlock.c
 std		core/core_sleepq.c
 std		core/core_spinlock.c
 std		core/core_startup.c

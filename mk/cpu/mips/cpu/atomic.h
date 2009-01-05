@@ -4,19 +4,19 @@
 	/* Dummy atomic functions!  */
 
 static inline uint64_t
-atomic_load_64(const volatile uint64_t *p)
+atomic_load64(const volatile uint64_t *p)
 {
 	return (*p);
 }
 
 static inline void
-atomic_store_64(volatile uint64_t *p, uint64_t v)
+atomic_store64(volatile uint64_t *p, uint64_t v)
 {
 	*p = v;
 }
 
 static inline bool
-atomic_compare_and_set_64(volatile uint64_t *p, uint64_t o, uint64_t v)
+atomic_cmpset64(volatile uint64_t *p, uint64_t o, uint64_t v)
 {
 	uint64_t temp;
 	int res;
@@ -40,43 +40,77 @@ atomic_compare_and_set_64(volatile uint64_t *p, uint64_t o, uint64_t v)
 }
 
 static inline void
-atomic_decrement_64(volatile uint64_t *p)
+atomic_decrement64(volatile uint64_t *p)
 {
-	uint64_t o;
+	uint64_t temp;
 
-	o = atomic_load_64(p);
-	while (!atomic_compare_and_set_64(p, o, o - 1))
-		o = atomic_load_64(p);
+	asm volatile (
+	"1:\n\t"
+	"lld	%[temp], %[p]\n\t"
+	"dsubu	%[temp], 1\n\t"
+	"scd	%[temp], %[p]\n\t"
+	"beqz	%[temp], 1b\n\t"
+	: [temp] "=&r"(temp), [p] "+m"(*p)
+	:
+	: "memory"
+	);
 }
 
 static inline void
-atomic_increment_64(volatile uint64_t *p)
+atomic_increment64(volatile uint64_t *p)
 {
-	uint64_t o;
+	uint64_t temp;
 
-	o = atomic_load_64(p);
-	while (!atomic_compare_and_set_64(p, o, o + 1))
-		o = atomic_load_64(p);
+	asm volatile (
+	"1:\n\t"
+	"lld	%[temp], %[p]\n\t"
+	"daddu	%[temp], 1\n\t"
+	"scd	%[temp], %[p]\n\t"
+	"beqz	%[temp], 1b\n\t"
+	: [temp] "=&r"(temp), [p] "+m"(*p)
+	:
+	: "memory"
+	);
 }
 
 static inline void
-atomic_clear_64(volatile uint64_t *p, uint64_t mask)
+atomic_mask64(volatile uint64_t *p, uint64_t mask)
 {
-	uint64_t o;
+	uint64_t temp;
 
-	o = atomic_load_64(p);
-	while (!atomic_compare_and_set_64(p, o, o & ~mask))
-		o = atomic_load_64(p);
+	asm volatile (
+	"1:\n\t"
+	"lld	%[temp], %[p]\n\t"
+	"and	%[temp], %[mask]\n\t"
+	"scd	%[temp], %[p]\n\t"
+	"beqz	%[temp], 1b\n\t"
+	: [temp] "=&r"(temp), [p] "+m"(*p)
+	: [mask] "r"(mask)
+	: "memory"
+	);
 }
 
 static inline void
-atomic_set_64(volatile uint64_t *p, uint64_t mask)
+atomic_clear64(volatile uint64_t *p, uint64_t mask)
 {
-	uint64_t o;
+	atomic_mask64(p, ~mask);
+}
 
-	o = atomic_load_64(p);
-	while (!atomic_compare_and_set_64(p, o, o | mask))
-		o = atomic_load_64(p);
+static inline void
+atomic_set64(volatile uint64_t *p, uint64_t mask)
+{
+	uint64_t temp;
+
+	asm volatile (
+	"1:\n\t"
+	"lld	%[temp], %[p]\n\t"
+	"or	%[temp], %[mask]\n\t"
+	"scd	%[temp], %[p]\n\t"
+	"beqz	%[temp], 1b\n\t"
+	: [temp] "=&r"(temp), [p] "+m"(*p)
+	: [mask] "r"(mask)
+	: "memory"
+	);
 }
 
 #endif /* !_CPU_ATOMIC_H_ */

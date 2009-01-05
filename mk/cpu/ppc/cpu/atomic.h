@@ -4,19 +4,19 @@
 	/* Dummy atomic functions!  */
 
 static inline uint64_t
-atomic_load_64(const volatile uint64_t *p)
+atomic_load64(const volatile uint64_t *p)
 {
 	return (*p);
 }
 
 static inline void
-atomic_store_64(volatile uint64_t *p, uint64_t v)
+atomic_store64(volatile uint64_t *p, uint64_t v)
 {
 	*p = v;
 }
 
 static inline bool
-atomic_compare_and_set_64(volatile uint64_t *p, uint64_t o, uint64_t v)
+atomic_cmpset64(volatile uint64_t *p, uint64_t o, uint64_t v)
 {
 	if (*p != o)
 		return (false);
@@ -25,43 +25,43 @@ atomic_compare_and_set_64(volatile uint64_t *p, uint64_t o, uint64_t v)
 }
 
 static inline void
-atomic_decrement_64(volatile uint64_t *p)
+atomic_decrement64(volatile uint64_t *p)
 {
 	uint64_t o;
 
-	o = atomic_load_64(p);
-	while (!atomic_compare_and_set_64(p, o, o - 1))
-		o = atomic_load_64(p);
+	o = atomic_load64(p);
+	while (!atomic_cmpset64(p, o, o - 1))
+		o = atomic_load64(p);
 }
 
 static inline void
-atomic_increment_64(volatile uint64_t *p)
+atomic_increment64(volatile uint64_t *p)
 {
 	uint64_t o;
 
-	o = atomic_load_64(p);
-	while (!atomic_compare_and_set_64(p, o, o + 1))
-		o = atomic_load_64(p);
+	o = atomic_load64(p);
+	while (!atomic_cmpset64(p, o, o + 1))
+		o = atomic_load64(p);
 }
 
 static inline void
-atomic_clear_64(volatile uint64_t *p, uint64_t mask)
+atomic_clear64(volatile uint64_t *p, uint64_t mask)
 {
 	uint64_t o;
 
-	o = atomic_load_64(p);
-	while (!atomic_compare_and_set_64(p, o, o & ~mask))
-		o = atomic_load_64(p);
+	o = atomic_load64(p);
+	while (!atomic_cmpset64(p, o, o & ~mask))
+		o = atomic_load64(p);
 }
 
 static inline void
-atomic_set_64(volatile uint64_t *p, uint64_t mask)
+atomic_set64(volatile uint64_t *p, uint64_t mask)
 {
 	uint64_t o;
 
-	o = atomic_load_64(p);
-	while (!atomic_compare_and_set_64(p, o, o | mask))
-		o = atomic_load_64(p);
+	o = atomic_load64(p);
+	while (!atomic_cmpset64(p, o, o | mask))
+		o = atomic_load64(p);
 }
 
 #endif /* !_CPU_ATOMIC_H_ */

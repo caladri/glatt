@@ -17,7 +17,7 @@ struct spinlock {
 #define	SPINLOCK_FLAG_RECURSE	(0x00000001)
 
 #define	SPINLOCK_ASSERT_HELD(lock)					\
-	ASSERT(atomic_load_64(&(lock)->s_owner) == (uint64_t)mp_whoami(),\
+	ASSERT(atomic_load64(&(lock)->s_owner) == (uint64_t)mp_whoami(),\
 	       "Lock must be held.")
 
 void spinlock_init(struct spinlock *, const char *, unsigned);

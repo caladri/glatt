@@ -221,7 +221,7 @@ pmap_unmap(struct vm *vm, vaddr_t vaddr)
 		return (0);
 	/* Invalidate by updating to not have PG_V set.  */
 	tlb_invalidate(pm, vaddr);
-	atomic_store_64(pte, 0);
+	atomic_store64(pte, 0);
 	return (0);
 }
 
@@ -388,7 +388,7 @@ pmap_update(struct pmap *pm, vaddr_t vaddr, struct vm_page *page, pt_entry_t fla
 		}
 		tlb_invalidate(pm, vaddr);
 	}
-	atomic_store_64(pte, TLBLO_PA_TO_PFN(paddr) | flags);
+	atomic_store64(pte, TLBLO_PA_TO_PFN(paddr) | flags);
 }
 
 static void

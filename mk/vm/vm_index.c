@@ -29,6 +29,7 @@ DB_COMMAND_TREE(index, vm, vm_index);
 
 static struct pool vm_index_pool;
 
+static int vm_claim_range(struct vm *, vaddr_t, vaddr_t);
 static struct vm_index *vm_find_index(struct vm *, vaddr_t);
 static void vm_free_index(struct vm *, struct vm_index *);
 static int vm_insert_index(struct vm *, struct vm_index **, vaddr_t, size_t);
@@ -67,7 +68,7 @@ vm_alloc_address(struct vm *vm, vaddr_t *vaddrp, size_t pages)
 				return (error);
 			}
 		} else {
-			error = vm_alloc_range(vm, vmi->vmi_base,
+			error = vm_claim_range(vm, vmi->vmi_base,
 					       vmi->vmi_base +
 					       PAGE_TO_ADDR(pages));
 			if (error != 0) {
@@ -87,63 +88,18 @@ vm_alloc_address(struct vm *vm, vaddr_t *vaddrp, size_t pages)
 int
 vm_alloc_range(struct vm *vm, vaddr_t begin, vaddr_t end)
 {
-	struct vm_index *vmi, *nvmi;
-	size_t leader, trailer;
-	size_t range;
-	size_t size;
 	int error;
 
-	range = end - begin;
-
 	VM_LOCK(vm);
-	vmi = vm_find_index(vm, begin);
-	if (vmi == NULL) {
+
+	error = vm_claim_range(vm, begin, end);
+	if (error != 0) {
 		VM_UNLOCK(vm);
-		return (ERROR_NOT_FOUND);
+		return (error);
 	}
-	if ((vmi->vmi_flags & VM_INDEX_FLAG_INUSE) != 0) {
-		VM_UNLOCK(vm);
-		return (ERROR_NOT_FREE);
-	}
-	size = PAGE_TO_ADDR(vmi->vmi_size);
-	if (vmi->vmi_base + size < end) {
-		/* XXX Compact entries.  */
-		VM_UNLOCK(vm);
-		return (ERROR_NOT_IMPLEMENTED);
-	}
-	leader = begin - vmi->vmi_base;
-	trailer = size - (leader + range);
-	ASSERT(range + leader + trailer == size,
-	       "Leader, trailer and range calculations incorrect.");
-	if (leader != 0) {
-		vmi->vmi_size = ADDR_TO_PAGE(leader);
-		error = vm_insert_index(vm, &nvmi, begin, ADDR_TO_PAGE(range));
-		if (error != 0) {
-			vmi->vmi_size = ADDR_TO_PAGE(size);
-			VM_UNLOCK(vm);
-			return (error);
-		}
-	} else {
-		nvmi = vmi;
-		nvmi->vmi_size = ADDR_TO_PAGE(range);
-	}
-	if (trailer != 0) {
-		error = vm_insert_index(vm, NULL, end, ADDR_TO_PAGE(trailer));
-		if (error != 0) {
-			/* XXX
-			 * We could just give the user more than they
-			 * wanted but that could turn out to be very bad.  For
-			 * now just fragment the map and error out.
-			 */
-			nvmi->vmi_size += ADDR_TO_PAGE(trailer);
-			VM_UNLOCK(vm);
-			return (error);
-		}
-	}
-	error = vm_use_index(vm, nvmi, ADDR_TO_PAGE(range));
-	if (error != 0)
-		panic("%s: vm_use_index failed: %m", __func__, error);
+
 	VM_UNLOCK(vm);
+
 	return (0);
 }
 
@@ -189,19 +145,76 @@ vm_insert_range(struct vm *vm, vaddr_t begin, vaddr_t end)
 	return (0);
 }
 
+static int
+vm_claim_range(struct vm *vm, vaddr_t begin, vaddr_t end)
+{
+	struct vm_index *vmi, *nvmi;
+	size_t leader, trailer;
+	size_t range;
+	size_t size;
+	int error;
+
+	range = end - begin;
+
+	vmi = vm_find_index(vm, begin);
+	if (vmi == NULL) {
+		return (ERROR_NOT_FOUND);
+	}
+	if ((vmi->vmi_flags & VM_INDEX_FLAG_INUSE) != 0) {
+		return (ERROR_NOT_FREE);
+	}
+	size = PAGE_TO_ADDR(vmi->vmi_size);
+	if (vmi->vmi_base + size < end) {
+		/* XXX Compact entries.  */
+		return (ERROR_NOT_IMPLEMENTED);
+	}
+	leader = begin - vmi->vmi_base;
+	trailer = size - (leader + range);
+	ASSERT(range + leader + trailer == size,
+	       "Leader, trailer and range calculations incorrect.");
+	if (leader != 0) {
+		vmi->vmi_size = ADDR_TO_PAGE(leader);
+		error = vm_insert_index(vm, &nvmi, begin, ADDR_TO_PAGE(range));
+		if (error != 0) {
+			vmi->vmi_size = ADDR_TO_PAGE(size);
+			return (error);
+		}
+	} else {
+		nvmi = vmi;
+		nvmi->vmi_size = ADDR_TO_PAGE(range);
+	}
+	if (trailer != 0) {
+		error = vm_insert_index(vm, NULL, end, ADDR_TO_PAGE(trailer));
+		if (error != 0) {
+			/* XXX
+			 * We could just give the user more than they
+			 * wanted but that could turn out to be very bad.  For
+			 * now just fragment the map and error out.
+			 */
+			nvmi->vmi_size += ADDR_TO_PAGE(trailer);
+			return (error);
+		}
+	}
+	error = vm_use_index(vm, nvmi, ADDR_TO_PAGE(range));
+	if (error != 0)
+		panic("%s: vm_use_index failed: %m", __func__, error);
+	return (0);
+}
+
+
 static struct vm_index *
 vm_find_index(struct vm *vm, vaddr_t vaddr)
 {
 	struct vm_index *iter;
 	struct vm_index *vmi;
 
-	VM_LOCK(vm);
+	SPINLOCK_ASSERT_HELD(&vm->vm_lock);
+
 	BTREE_FIND(&vmi, iter, &vm->vm_index, vmi_tree,
 		   (vaddr < iter->vmi_base),
 		   ((vaddr == iter->vmi_base) ||
 		    (vaddr > iter->vmi_base &&
 		     vaddr < (iter->vmi_base + PAGE_TO_ADDR(iter->vmi_size)))));
-	VM_UNLOCK(vm);
 	return (vmi);
 }
 

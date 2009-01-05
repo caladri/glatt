@@ -14,5 +14,3 @@ std		cpu/mips/cpu/cpu_thread.c
 std		cpu/mips/cpu/cpu_tlb.c
 std		cpu/mips/cpu/cpu_tlb_wired.S
 std		cpu/mips/cpu/cpu_vector.S
-
-mp		cpu/mips/cpu/cpu_mp.c

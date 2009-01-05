@@ -49,6 +49,7 @@ struct pool_page {
 static TAILQ_HEAD(, struct pool) pool_list = TAILQ_HEAD_INITIALIZER(pool_list);
 #endif
 
+static int pool_allocate_page(struct pool *);
 static struct pool_page *pool_datum_page(void *);
 static void *pool_get(struct pool *);
 static void pool_insert_page(struct pool *, struct pool_page *);
@@ -60,7 +61,6 @@ size_t pool_max_alloc = MAX_ALLOC_SIZE;
 void *
 pool_allocate(struct pool *pool)
 {
-	vaddr_t vaddr;
 	void *datum;
 	int error;
 
@@ -70,25 +70,13 @@ pool_allocate(struct pool *pool)
 	ASSERT(pool->pool_size <= MAX_ALLOC_SIZE, "pool must not be so big.");
 
 	POOL_LOCK(pool);
-	datum = pool_get(pool);
-	if (datum != NULL) {
-		POOL_UNLOCK(pool);
-		return (datum);
+	if (pool->pool_freeitems == 0) {
+		error = pool_allocate_page(pool);
+		if (error != 0)
+			panic("%s: pool_allocate_page failed: %m", __func__,
+			      error);
 	}
-
-	if ((pool->pool_flags & POOL_VIRTUAL) != 0) {
-		error = vm_alloc_page(&kernel_vm, &vaddr);
-	} else {
-		error = page_alloc_direct(&kernel_vm, PAGE_FLAG_DEFAULT, &vaddr);
-	}
-	if (error != 0)
-		panic("%s: can't map page for allocation: %m", __func__, error);
-
-	pool_insert_page(pool, (struct pool_page *)vaddr);
-
 	datum = pool_get(pool);
-	if (datum == NULL)
-		panic("%s: can't get memory but we just allocated!", __func__);
 	POOL_UNLOCK(pool);
 	return (datum);
 }
@@ -108,10 +96,12 @@ pool_free(void *m)
 	pool_page_free_datum(page, m);
 	if (page->pp_items == 0)
 		panic("%s: pool %s has no items.", __func__, pool->pool_name);
+	pool->pool_freeitems++;
 	if (page->pp_items-- != 1) {
 		POOL_UNLOCK(pool);
 		return;
 	}
+
 	/*
 	 * Last datum in page, unmap it, free any virtual addresses and put the
 	 * page itself back into the free pool.
@@ -119,8 +109,7 @@ pool_free(void *m)
 #ifdef INVARIANTS
 	page->pp_magic = ~POOL_PAGE_MAGIC;
 #endif
-	SLIST_REMOVE(&pool->pool_pages, page, struct pool_page,
-		     pp_link);
+	SLIST_REMOVE(&pool->pool_pages, page, struct pool_page, pp_link);
 	vaddr = (vaddr_t)page;
 	if ((pool->pool_flags & POOL_VIRTUAL) != 0) {
 		error = vm_free_page(&kernel_vm, vaddr);
@@ -148,13 +137,14 @@ pool_create(struct pool *pool, const char *name, size_t size, unsigned flags)
 		panic("%s: don't use pool %s for large allocations, use the VM"
 		      " allocation interfaces instead.", __func__, name);
 
-	spinlock_init(&pool->pool_lock, "DYNAMIC POOL", SPINLOCK_FLAG_DEFAULT);
+	spinlock_init(&pool->pool_lock, "POOL", SPINLOCK_FLAG_DEFAULT);
 	pool->pool_name = name;
 	pool->pool_size = size;
 	for (pool->pool_maxitems = 0;
 	     POOL_UTILIZATION(pool->pool_maxitems + 1, size) <= PAGE_SIZE;
 	     pool->pool_maxitems++)
 		continue;
+	pool->pool_freeitems = 0;
 	SLIST_INIT(&pool->pool_pages);
 	pool->pool_flags = flags | POOL_VALID;
 #ifdef VERBOSE
@@ -166,6 +156,29 @@ pool_create(struct pool *pool, const char *name, size_t size, unsigned flags)
 #endif
 	return (0);
 }
+
+static int
+pool_allocate_page(struct pool *pool)
+{
+	vaddr_t vaddr;
+	int error;
+
+	if ((pool->pool_flags & POOL_VIRTUAL) != 0) {
+		error = vm_alloc_page(&kernel_vm, &vaddr);
+		if (error != 0)
+			return (error);
+	} else {
+		error = page_alloc_direct(&kernel_vm, PAGE_FLAG_DEFAULT,
+					  &vaddr);
+		if (error != 0)
+			return (error);
+	}
+
+	pool_insert_page(pool, (struct pool_page *)vaddr);
+
+	return (0);
+}
+
 
 static struct pool_page *
 pool_datum_page(void *datum)
@@ -192,6 +205,8 @@ pool_get(struct pool *pool)
 	pool_map_t *map;
 	unsigned i, j, o;
 
+	ASSERT(pool->pool_freeitems != 0, "Can't get datum from empty pool.");
+
 	SLIST_FOREACH(page, &pool->pool_pages, pp_link) {
 		if (page->pp_items == pool->pool_maxitems)
 			continue;
@@ -204,6 +219,7 @@ pool_get(struct pool *pool)
 			     j < POOL_MAP_WORD_BITS; j++) {
 				if ((map[i] & (1ull << j)) != 0) {
 					map[i] &= ~(1ull << j);
+					pool->pool_freeitems--;
 					page->pp_items++;
 					return (pool_page_datum(page, o + j));
 				}
@@ -216,7 +232,7 @@ pool_get(struct pool *pool)
 		}
 		NOTREACHED();
 	}
-	return (NULL);
+	NOTREACHED();
 }
 
 static void
@@ -229,7 +245,6 @@ pool_insert_page(struct pool *pool, struct pool_page *page)
 	page->pp_magic = POOL_PAGE_MAGIC;
 #endif
 	page->pp_pool = pool;
-	SLIST_INSERT_HEAD(&pool->pool_pages, page, pp_link);
 	page->pp_items = 0;
 
 	/*
@@ -246,6 +261,9 @@ pool_insert_page(struct pool *pool, struct pool_page *page)
 	} else {
 		map[i] = (1ull << (o + 1)) - 1;
 	}
+
+	SLIST_INSERT_HEAD(&pool->pool_pages, page, pp_link);
+	pool->pool_freeitems += pool->pool_maxitems;
 }
 
 static void *

@@ -19,7 +19,7 @@ cpu_bitmask_is_set(const volatile cpu_bitmask_t *maskp, cpu_id_t cpu)
 		panic("%s: cpu%u exceeds system limit of %u CPUs.",
 		      __func__, cpu, MAXCPUS);
 #endif
-	if ((atomic_load_64(maskp) & ((cpu_bitmask_t)1 << cpu)) == 0)
+	if ((atomic_load64(maskp) & ((cpu_bitmask_t)1 << cpu)) == 0)
 		return (false);
 	return (true);
 }
@@ -32,7 +32,7 @@ cpu_bitmask_set(volatile cpu_bitmask_t *maskp, cpu_id_t cpu)
 	if (cpu_bitmask_is_set(maskp, cpu))
 		panic("%s: cannot set bit twice for cpu%u.", __func__, cpu);
 #endif
-	atomic_set_64(maskp, (cpu_bitmask_t)1 << cpu);
+	atomic_set64(maskp, (cpu_bitmask_t)1 << cpu);
 }
 
 static inline void
@@ -43,7 +43,7 @@ cpu_bitmask_clear(volatile cpu_bitmask_t *maskp, cpu_id_t cpu)
 	if (!cpu_bitmask_is_set(maskp, cpu))
 		panic("%s: cannot clear bit twice for cpu%u.", __func__, cpu);
 #endif
-	atomic_clear_64(maskp, (cpu_bitmask_t)1 << cpu);
+	atomic_clear64(maskp, (cpu_bitmask_t)1 << cpu);
 }
 
 enum ipi_type {

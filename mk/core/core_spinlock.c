@@ -8,8 +8,8 @@ spinlock_init(struct spinlock *lock, const char *name, unsigned flags)
 
 	crit = critical_enter();
 	lock->s_name = name;
-	atomic_store_64(&lock->s_owner, CPU_ID_INVALID);
-	atomic_store_64(&lock->s_nest, 0);
+	atomic_store64(&lock->s_owner, CPU_ID_INVALID);
+	atomic_store64(&lock->s_nest, 0);
 	lock->s_flags = flags;
 	critical_exit(crit);
 }
@@ -21,11 +21,10 @@ spinlock_lock(struct spinlock *lock)
 	critical_section_t crit;
 
 	crit = critical_enter();
-	while (!atomic_compare_and_set_64(&lock->s_owner, CPU_ID_INVALID,
-					  mp_whoami())) {
-		if (atomic_load_64(&lock->s_owner) == (uint64_t)mp_whoami()) {
+	while (!atomic_cmpset64(&lock->s_owner, CPU_ID_INVALID, mp_whoami())) {
+		if (atomic_load64(&lock->s_owner) == (uint64_t)mp_whoami()) {
 			if ((lock->s_flags & SPINLOCK_FLAG_RECURSE) != 0) {
-				atomic_increment_64(&lock->s_nest);
+				atomic_increment64(&lock->s_nest);
 				critical_exit(crit);
 				return;
 			}
@@ -62,16 +61,15 @@ spinlock_unlock(struct spinlock *lock)
 	critical_section_t saved;
 
 	crit = critical_enter();
-	if (atomic_load_64(&lock->s_owner) == (uint64_t)mp_whoami()) {
-		if (atomic_load_64(&lock->s_nest) != 0) {
-			atomic_decrement_64(&lock->s_nest);
+	if (atomic_load64(&lock->s_owner) == (uint64_t)mp_whoami()) {
+		if (atomic_load64(&lock->s_nest) != 0) {
+			atomic_decrement64(&lock->s_nest);
 			critical_exit(crit);
 			return;
 		} else {
 			saved = lock->s_crit;
-			if (atomic_compare_and_set_64(&lock->s_owner,
-						      mp_whoami(),
-						      CPU_ID_INVALID)) {
+			if (atomic_cmpset64(&lock->s_owner, mp_whoami(),
+					    CPU_ID_INVALID)) {
 				critical_exit(crit);
 				critical_exit(saved);
 				return;

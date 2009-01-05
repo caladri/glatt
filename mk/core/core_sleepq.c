@@ -3,14 +3,18 @@
 #include <core/pool.h>
 #include <core/queue.h>
 #include <core/scheduler.h>
+#include <core/shlock.h>
 #include <core/sleepq.h>
 #include <core/startup.h>
 #include <core/thread.h>
 
-static struct spinlock sleepq_lock;
+static struct shlock sleepq_shlock;
 
-#define	SLEEPQ_LOCK()	spinlock_lock(&sleepq_lock)
-#define	SLEEPQ_UNLOCK()	spinlock_unlock(&sleepq_lock)
+#define	SLEEPQ_SLOCK()		shlock_slock(&sleepq_shlock)
+#define	SLEEPQ_SUNLOCK()	shlock_sunlock(&sleepq_shlock)
+
+#define	SLEEPQ_XLOCK()		shlock_xlock(&sleepq_shlock)
+#define	SLEEPQ_XUNLOCK()	shlock_xunlock(&sleepq_shlock)
 
 struct sleepq_entry {
 	struct thread *se_thread;
@@ -93,30 +97,55 @@ sleepq_signal_one(const void *cookie)
 static struct sleepq *
 sleepq_lookup(const void *cookie, bool create)
 {
-	struct sleepq *sq, *iter;
+	struct sleepq *nsq, *sq, *iter;
 
-	SLEEPQ_LOCK();
+	SLEEPQ_SLOCK();
 	BTREE_FIND(&sq, iter, &sleepq_queue_tree, sq_tree,
 		   (cookie < iter->sq_cookie), (cookie == iter->sq_cookie));
 	if (sq != NULL) {
 		SQ_LOCK(sq);
-		SLEEPQ_UNLOCK();
+		SLEEPQ_SUNLOCK();
 		return (sq);
 	}
 	if (!create) {
-		SLEEPQ_UNLOCK();
+		SLEEPQ_SUNLOCK();
 		return (NULL);
 	}
-	sq = pool_allocate(&sleepq_pool);
-	spinlock_init(&sq->sq_lock, "SLEEP QUEUE", SPINLOCK_FLAG_DEFAULT);
-	SQ_LOCK(sq);
-	sq->sq_cookie = cookie;
-	TAILQ_INIT(&sq->sq_entries);
-	BTREE_NODE_INIT(&sq->sq_tree);
-	BTREE_INSERT(sq, iter, &sleepq_queue_tree, sq_tree,
-		     (sq->sq_cookie < iter->sq_cookie));
-	SLEEPQ_UNLOCK();
-	return (sq);
+	SLEEPQ_SUNLOCK();
+
+	/*
+	 * Lookup failed and we're being told to create a sleep queue if one
+	 * does not exist.  Allocate a sleep queue, acquire an exclusive lock,
+	 * make sure we haven't lost a race between the shared unlock and the
+	 * exclusive lock by doing another lookup with the exclusive lock
+	 * before inserting the allocated sleepq into the BTREE.
+	 */
+
+	nsq = pool_allocate(&sleepq_pool);
+	spinlock_init(&nsq->sq_lock, "SLEEP QUEUE", SPINLOCK_FLAG_DEFAULT);
+	nsq->sq_cookie = cookie;
+	TAILQ_INIT(&nsq->sq_entries);
+	BTREE_NODE_INIT(&nsq->sq_tree);
+
+	SLEEPQ_XLOCK();
+
+	BTREE_FIND(&sq, iter, &sleepq_queue_tree, sq_tree,
+		   (cookie < iter->sq_cookie), (cookie == iter->sq_cookie));
+	if (sq != NULL) {
+		SQ_LOCK(sq);
+		SLEEPQ_XUNLOCK();
+		pool_free(nsq);
+		return (sq);
+	}
+
+	SQ_LOCK(nsq);
+
+	BTREE_INSERT(nsq, iter, &sleepq_queue_tree, sq_tree,
+		     (nsq->sq_cookie < iter->sq_cookie));
+
+	SLEEPQ_XUNLOCK();
+
+	return (nsq);
 }
 
 static void
@@ -135,15 +164,18 @@ sleepq_startup(void *arg)
 {
 	int error;
 
-	spinlock_init(&sleepq_lock, "SLEEPQ", SPINLOCK_FLAG_DEFAULT);
 	error = pool_create(&sleepq_entry_pool, "SLEEPQ ENTRY",
 			    sizeof (struct sleepq_entry), POOL_VIRTUAL);
 	if (error != 0)
 		panic("%s: pool_create failed: %m", __func__, error);
+
 	error = pool_create(&sleepq_pool, "SLEEPQ", sizeof (struct sleepq),
 			    POOL_VIRTUAL);
 	if (error != 0)
 		panic("%s: pool_create failed: %m", __func__, error);
+
+	shlock_init(&sleepq_shlock, "SLEEPQ");
+
 	BTREE_ROOT_INIT(&sleepq_queue_tree);
 }
 STARTUP_ITEM(sleepq, STARTUP_POOL, STARTUP_FIRST, sleepq_startup, NULL);

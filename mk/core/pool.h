@@ -15,6 +15,7 @@ struct pool {
 	const char *pool_name;
 	size_t pool_size;
 	size_t pool_maxitems;
+	size_t pool_freeitems;
 	SLIST_HEAD(, struct pool_page) pool_pages;
 	unsigned pool_flags;
 #ifdef DB

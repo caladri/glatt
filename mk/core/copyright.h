@@ -12,7 +12,7 @@
 	(STRING(CONFIGSTR))
 
 #define	MK_COPYRIGHT							\
-	"Copyright (c) 2005-2008 Juli Mallett.  All rights reserved."
+	"Copyright (c) 2005-2009 Juli Mallett.  All rights reserved."
 
 #define	MK_VERSION							\
 	"Kailua"

@@ -41,6 +41,8 @@ struct pool_page {
 #define	POOL_OFFSET(n)		((n) % POOL_MAP_WORD_BITS)
 #define	POOL_UTILIZATION(n, s)						\
 	(sizeof (struct pool_page) + POOL_MAP_BYTES((n)) + ((s) * (n)))
+#define	POOL_MAP_ISSET(m, n)						\
+	(((m)[POOL_WORD((n))] & (1ull << POOL_OFFSET((n)))) != 0)
 
 #define	MAX_ALLOC_SIZE							\
 	((PAGE_SIZE / 2) - (POOL_MAP_BYTES(2) + sizeof (struct pool_page)))
@@ -296,18 +298,43 @@ pool_page_free_datum(struct pool_page *page, void *datum)
 
 #ifdef DB
 static void
-db_pool_dump_pool(struct pool *pool, bool pages)
+db_pool_dump_pool(struct pool *pool, bool pages, bool items)
 {
 	struct pool_page *page;
+	pool_map_t *map;
+	unsigned i;
 
-	kcprintf("pool %p \"%s\" size %zu maxitems %zu\n", pool,
-		 pool->pool_name, pool->pool_size, pool->pool_maxitems);
+	kcprintf("pool %p \"%s\" size %zu freeitems %zu maxitems %zu\n", pool,
+		 pool->pool_name, pool->pool_size, pool->pool_freeitems,
+		 pool->pool_maxitems);
 	if (!pages)
 		return;
 	SLIST_FOREACH(page, &pool->pool_pages, pp_link) {
-		kcprintf("\tpage %p items %zu\n", page, page->pp_items);
+		kcprintf("     page %p items %zu\n", page, page->pp_items);
+		if (!items)
+			continue;
+		map = (pool_map_t *)(void *)(page + 1);
+		for (i = 0; i < pool->pool_maxitems; i++) {
+			if (POOL_OFFSET(i) == 0)
+				kcprintf("          ");
+			kcprintf("%c", POOL_MAP_ISSET(map, i) ? 'F' : '_');
+			if (POOL_OFFSET(i + 1) == 0 ||
+			    i + 1 == pool->pool_maxitems)
+				kcprintf("\n");
+		}
 	}
 }
+
+static void
+db_pool_dump_items(void)
+{
+	struct pool *pool;
+
+	TAILQ_FOREACH(pool, &pool_list, pool_link)
+		db_pool_dump_pool(pool, true, true);
+
+}
+DB_COMMAND(items, pool, db_pool_dump_items);
 
 static void
 db_pool_dump_pages(void)
@@ -315,7 +342,7 @@ db_pool_dump_pages(void)
 	struct pool *pool;
 
 	TAILQ_FOREACH(pool, &pool_list, pool_link)
-		db_pool_dump_pool(pool, true);
+		db_pool_dump_pool(pool, true, false);
 }
 DB_COMMAND(pages, pool, db_pool_dump_pages);
 
@@ -325,7 +352,7 @@ db_pool_dump_pools(void)
 	struct pool *pool;
 
 	TAILQ_FOREACH(pool, &pool_list, pool_link)
-		db_pool_dump_pool(pool, false);
+		db_pool_dump_pool(pool, false, false);
 }
 DB_COMMAND(pools, pool, db_pool_dump_pools);
 #endif

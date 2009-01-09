@@ -98,8 +98,9 @@ again:
 static void
 kfformat(void (*put)(void *, char), void *arg, uintmax_t val, unsigned base, bool sign)
 {
-	char set[] = "0123456789abcdef";
-	char this;
+	static const char set[] = "0123456789abcdef";
+	char str[sizeof (val) * 8]; /* Worst case is binary, 1 byte per bit.  */
+	unsigned i = 0;
 
 	if (sign) {
 		sign = 0;
@@ -109,14 +110,14 @@ kfformat(void (*put)(void *, char), void *arg, uintmax_t val, unsigned base, boo
 			val = val + 1;
 		}
 	}
-	if (val == 0) {
-		(*put)(arg, '0');
-		return;
-	}
-	this = set[val % base];
-	if (val / base != 0)
-		kfformat(put, arg, val / base, base, sign);
-	(*put)(arg, this);
+
+	do {
+		str[i++] = set[val % base];
+		val /= base;
+	} while (val != 0);
+
+	while (i--)
+		(*put)(arg, str[i]);
 }
 
 static void

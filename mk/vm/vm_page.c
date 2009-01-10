@@ -18,6 +18,10 @@ struct vm_page_tree_page;
 DB_COMMAND_TREE(page, vm, vm_page);
 #endif
 
+struct vm_page_queue {
+	TAILQ_HEAD(, struct vm_page) pq_queue;
+};
+
 struct vm_page_tree {
 	BTREE_NODE(struct vm_page_tree_page) pt_tree;
 };
@@ -32,7 +36,7 @@ struct vm_page_tree_page {
 COMPILE_TIME_ASSERT(sizeof (struct vm_page_tree_page) <= PAGE_SIZE);
 
 static BTREE_ROOT(struct vm_page_tree_page) page_tree;
-static struct vm_pageq page_free_queue, page_use_queue;
+static struct vm_page_queue page_free_queue, page_use_queue;
 static struct spinlock page_tree_lock;
 static struct spinlock page_queue_lock;
 
@@ -57,8 +61,8 @@ page_init(void)
 
 	BTREE_ROOT_INIT(&page_tree);
 
-	TAILQ_INIT(&page_free_queue);
-	TAILQ_INIT(&page_use_queue);
+	TAILQ_INIT(&page_free_queue.pq_queue);
+	TAILQ_INIT(&page_use_queue.pq_queue);
 
 #ifdef VERBOSE
 	kcprintf("PAGE: page size is %uK, %lu pages per page tree.\n",
@@ -99,12 +103,12 @@ page_alloc(unsigned flags, struct vm_page **pagep)
 	struct vm_page *page;
 
 	PAGEQ_LOCK();
-	if (TAILQ_EMPTY(&page_free_queue)) {
+	if (TAILQ_EMPTY(&page_free_queue.pq_queue)) {
 		PAGEQ_UNLOCK();
 		return (ERROR_EXHAUSTED);
 	}
 
-	page = TAILQ_FIRST(&page_free_queue);
+	page = TAILQ_FIRST(&page_free_queue.pq_queue);
 	page_ref_hold(page);
 	PAGEQ_UNLOCK();
 
@@ -326,7 +330,7 @@ page_insert(struct vm_page *page, paddr_t paddr)
 {
 	SPINLOCK_ASSERT_HELD(&page_queue_lock);
 	page->pg_refcnt = 0;
-	TAILQ_INSERT_TAIL(&page_free_queue, page, pg_link);
+	TAILQ_INSERT_TAIL(&page_free_queue.pq_queue, page, pg_link);
 }
 
 static int
@@ -386,8 +390,8 @@ page_ref_drop(struct vm_page *page)
 	ASSERT(page->pg_refcnt != 0, "Cannot drop refcount on unheld page.");
 	page->pg_refcnt--;
 	if (page->pg_refcnt == 0) {
-		TAILQ_REMOVE(&page_use_queue, page, pg_link);
-		TAILQ_INSERT_TAIL(&page_free_queue, page, pg_link);
+		TAILQ_REMOVE(&page_use_queue.pq_queue, page, pg_link);
+		TAILQ_INSERT_TAIL(&page_free_queue.pq_queue, page, pg_link);
 	}
 }
 
@@ -397,8 +401,8 @@ page_ref_hold(struct vm_page *page)
 	SPINLOCK_ASSERT_HELD(&page_queue_lock);
 
 	if (page->pg_refcnt == 0) {
-		TAILQ_REMOVE(&page_free_queue, page, pg_link);
-		TAILQ_INSERT_TAIL(&page_use_queue, page, pg_link);
+		TAILQ_REMOVE(&page_free_queue.pq_queue, page, pg_link);
+		TAILQ_INSERT_TAIL(&page_use_queue.pq_queue, page, pg_link);
 	}
 	page->pg_refcnt++;
 	ASSERT(page->pg_refcnt != 0, "Refcount wrapped.");
@@ -413,11 +417,11 @@ db_vm_page_dump(struct vm_page *page)
 }
 
 static void
-db_vm_page_dump_queue(struct vm_pageq *pq)
+db_vm_page_dump_queue(struct vm_page_queue *pq)
 {
 	struct vm_page *page;
 
-	TAILQ_FOREACH(page, pq, pg_link)
+	TAILQ_FOREACH(page, &pq->pq_queue, pg_link)
 		db_vm_page_dump(page);
 }
 

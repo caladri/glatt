@@ -11,7 +11,6 @@ struct vm_page {
 	TAILQ_ENTRY(struct vm_page) pg_link;
 	unsigned pg_refcnt;
 };
-TAILQ_HEAD(vm_pageq, struct vm_page);
 
 #define	PAGE_SIZE		(1 << PAGE_SHIFT)
 #define	PAGE_MASK		(PAGE_SIZE - 1)

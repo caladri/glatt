@@ -28,6 +28,8 @@ Device drivers:
 	o) Simple storage stack.
 
 Ongoing / aesthetic:
+	o) Go over every bit of code and comment major functions and confusing
+	   sections.
 	o) Start threads and PCPU stuff much earlier to make it possible to use
 	   more mutexes than spinlocks, or otherwise enable using mutexes and
 	   not spinlocks for a larger number of things.  It would be nice to

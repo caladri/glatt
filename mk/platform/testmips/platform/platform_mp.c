@@ -36,12 +36,14 @@
 #define	TEST_MP_DEV_IPI_INTERRUPT	(6)
 
 static struct bus_instance *platform_mp_bus;
+static volatile paddr_t platform_mp_pcpu_addr;
 
 static void platform_mp_attach_cpu(bool);
 #ifndef	UNIPROCESSOR
 static void platform_mp_ipi_interrupt(void *, int);
 #endif
-static void platform_mp_start_one(cpu_id_t, void (*)(void));
+static void platform_mp_start_cpu(void);
+static void platform_mp_start_one(cpu_id_t);
 
 #ifndef	UNIPROCESSOR
 void
@@ -85,9 +87,10 @@ platform_mp_startup(void)
 	 * ourselves both present and running.  The boot CPU will mark all other
 	 * CPUs present, regardless of whether they run.
 	 */
-	if (platform_mp_bus == NULL)
+	if (platform_mp_bus == NULL) {
 		mp_cpu_present(mp_whoami());
-	mp_cpu_running(mp_whoami());
+		mp_cpu_running(mp_whoami());
+	}
 #endif
 
 	/*
@@ -148,8 +151,10 @@ platform_mp_start_all(void *arg)
 			if (cpu == mp_whoami())
 				platform_mp_attach_cpu(true);
 			else
-				platform_mp_start_one(cpu, platform_startup);
+				platform_mp_start_one(cpu);
 		}
+		while (mp_cpu_running_mask() != mp_cpu_present_mask())
+			continue;
 	} else {
 		platform_mp_attach_cpu(true);
 	}
@@ -158,22 +163,53 @@ STARTUP_ITEM(platform_mp, STARTUP_MP, STARTUP_SECOND,
 	     platform_mp_start_all, NULL);
 
 static void
-platform_mp_start_one(cpu_id_t cpu, void (*startup)(void))
+platform_mp_start_cpu(void)
 {
+	paddr_t pcpu_addr;
+	
+	pcpu_addr = platform_mp_pcpu_addr;
+	platform_mp_pcpu_addr = 0;
+
+	cpu_startup(pcpu_addr);
+
+	mp_cpu_running(mp_whoami());
+	while (mp_cpu_running_mask() != mp_cpu_present_mask())
+		continue;
+
+	startup_main();
+}
+
+static void
+platform_mp_start_one(cpu_id_t cpu)
+{
+	struct vm_page *pcpu_page;
 	vaddr_t stack;
 	int error;
-
-	error = page_alloc_direct(&kernel_vm, PAGE_FLAG_DEFAULT, &stack);
-	if (error != 0)
-		panic("%s: page_alloc_direct failed: %m", __func__, error);
 
 #ifdef VERBOSE
 	bus_printf(platform_mp_bus, "launching cpu%u...", cpu);
 #endif
 
-	startup_early = true;
+	error = page_alloc_direct(&kernel_vm, PAGE_FLAG_DEFAULT, &stack);
+	if (error != 0)
+		panic("%s: page_alloc_direct failed: %m", __func__, error);
 
-	TEST_MP_DEV_WRITE(TEST_MP_DEV_STARTADDR, (uintptr_t)startup);
+	error = page_alloc(PAGE_FLAG_DEFAULT, &pcpu_page);
+	if (error != 0)
+		panic("%s: page_alloc failed: %m", __func__, error);
+
+	ASSERT(platform_mp_pcpu_addr == 0,
+	       "Must not have a page pending for PCPU usage.");
+	platform_mp_pcpu_addr = page_address(pcpu_page);
+
+	startup_early = true;
+	TEST_MP_DEV_WRITE(TEST_MP_DEV_STARTADDR,
+			  (uintptr_t)platform_mp_start_cpu);
+	/*
+	 * TODO
+	 * Would like to use 'tempstack' for all CPUs, but that means waiting
+	 * until each is running threads, not just !startup_early.
+	 */
 	TEST_MP_DEV_WRITE(TEST_MP_DEV_STACK, stack + PAGE_SIZE);
 	TEST_MP_DEV_WRITE(TEST_MP_DEV_START, cpu);
 
@@ -198,7 +234,7 @@ platform_mp_attach_cpu(bool bootstrap)
 	if (bootstrap)
 		PCPU_SET(flags, PCPU_GET(flags) | PCPU_FLAG_BOOTSTRAP);
 
-	/* Add CPU device.  This also sets up interrupts.  */
+	/* Add CPU device.  */
 	error = bus_enumerate_child_generic(platform_mp_bus, "cpu");
 	if (error != 0)
 		panic("%s: bus_enumerate_child_generic failed: %m", __func__,

@@ -13,6 +13,10 @@ struct pcpu {
 
 	/* Information about this CPU (and its device in the tree.)  */
 	unsigned pc_flags;
+
+	/* Critical sections.  */
+	unsigned pc_critical_count;
+	unsigned pc_critical_section;
 };
 
 static inline struct pcpu *

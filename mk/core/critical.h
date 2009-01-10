@@ -3,16 +3,16 @@
 
 #include <cpu/critical.h>
 
-static inline critical_section_t
+static inline void
 critical_enter(void)
 {
-	return (cpu_critical_enter());
+	cpu_critical_enter();
 }
 
 static inline void
-critical_exit(critical_section_t crit)
+critical_exit(void)
 {
-	cpu_critical_exit(crit);
+	cpu_critical_exit();
 }
 
 static inline bool

@@ -247,7 +247,6 @@ pmap_zero(struct vm_page *page)
 static void
 pmap_alloc_asid(struct pmap *pm)
 {
-	critical_section_t crit;
 	unsigned asid;
 
 	if (pm == kernel_vm.vm_pmap) {
@@ -260,7 +259,7 @@ pmap_alloc_asid(struct pmap *pm)
 	 * current one, just reuse it rather than generating a new one and
 	 * possibly forcing a TLB flush.
 	 */
-	crit = critical_enter();
+	critical_enter();
 	asid = PCPU_GET(asidnext);
 	if (asid == PMAP_ASID_MAX) {
 		PCPU_SET(asidnext, PMAP_ASID_FIRST);
@@ -269,7 +268,7 @@ pmap_alloc_asid(struct pmap *pm)
 	} else {
 		PCPU_SET(asidnext, asid + 1);
 	}
-	critical_exit(crit);
+	critical_exit();
 }
 
 static int

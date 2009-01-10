@@ -30,6 +30,10 @@ struct pcpu {
 	register_t pc_interrupt_mask;
 	register_t pc_interrupt_enable;
 
+	/* Critical sections.  */
+	unsigned pc_critical_count;
+	register_t pc_critical_section;
+
 	/* For ASID allocator in page mapping code.  */
 	unsigned pc_asidnext;
 };

@@ -1,53 +1,51 @@
 #include <core/types.h>
 #include <core/spinlock.h>
+#include <core/startup.h>
+#include <core/string.h>
 
 void
 spinlock_init(struct spinlock *lock, const char *name, unsigned flags)
 {
-	critical_section_t crit;
-
-	crit = critical_enter();
+	ASSERT((flags & SPINLOCK_FLAG_VALID) == 0, "Must not set valid flag.");
 	lock->s_name = name;
-	atomic_store64(&lock->s_owner, CPU_ID_INVALID);
-	atomic_store64(&lock->s_nest, 0);
-	lock->s_flags = flags;
-	critical_exit(crit);
+	lock->s_owner = CPU_ID_INVALID;
+	lock->s_nest = 0;
+	lock->s_flags = flags | SPINLOCK_FLAG_VALID;
 }
 
 void
 spinlock_lock(struct spinlock *lock)
 {
-#ifndef	UNIPROCESSOR
-	critical_section_t crit;
+	ASSERT((lock->s_flags & SPINLOCK_FLAG_VALID) != 0,
+	       "Cowardly refusing to lock invalid spinlock.");
 
-	crit = critical_enter();
+	if (startup_early)
+		return;
+#ifndef	UNIPROCESSOR
+	critical_enter();
 	while (!atomic_cmpset64(&lock->s_owner, CPU_ID_INVALID, mp_whoami())) {
 		if (atomic_load64(&lock->s_owner) == (uint64_t)mp_whoami()) {
 			if ((lock->s_flags & SPINLOCK_FLAG_RECURSE) != 0) {
 				atomic_increment64(&lock->s_nest);
-				critical_exit(crit);
+				critical_exit();
 				return;
 			}
 			panic("%s: cannot recurse on spinlock (%s)", __func__,
 			      lock->s_name);
 		}
-		critical_exit(crit);
+		critical_exit();
 		/*
 		 * If we are not already in a critical section, allow interrupts
 		 * to fire while we spin.
 		 */
-		crit = critical_enter();
+		critical_enter();
 	}
-	lock->s_crit = crit;
 #else
-	critical_section_t crit;
-
-	crit = critical_enter();
+	critical_enter();
 	if (lock->s_owner == mp_whoami()) {
 		lock->s_nest++;
-		critical_exit(crit);
+		critical_exit();
 	} else {
-		lock->s_crit = crit;
 		lock->s_owner = mp_whoami();
 	}
 #endif
@@ -56,27 +54,24 @@ spinlock_lock(struct spinlock *lock)
 void
 spinlock_unlock(struct spinlock *lock)
 {
-#ifndef	UNIPROCESSOR
-	critical_section_t crit;
-	critical_section_t saved;
+	ASSERT((lock->s_flags & SPINLOCK_FLAG_VALID) != 0,
+	       "Cowardly refusing to unlock invalid spinlock.");
 
-	crit = critical_enter();
+	if (startup_early)
+		return;
+#ifndef	UNIPROCESSOR
 	if (atomic_load64(&lock->s_owner) == (uint64_t)mp_whoami()) {
 		if (atomic_load64(&lock->s_nest) != 0) {
 			atomic_decrement64(&lock->s_nest);
-			critical_exit(crit);
 			return;
 		} else {
-			saved = lock->s_crit;
 			if (atomic_cmpset64(&lock->s_owner, mp_whoami(),
 					    CPU_ID_INVALID)) {
-				critical_exit(crit);
-				critical_exit(saved);
+				critical_exit();
 				return;
 			}
 		}
 	}
-	critical_exit(crit);
 	panic("%s: not my lock to unlock (%s)", __func__, lock->s_name);
 #else
 	if (lock->s_owner != mp_whoami())
@@ -84,7 +79,7 @@ spinlock_unlock(struct spinlock *lock)
 		      lock->s_name, lock->s_owner);
 
 	if (lock->s_nest == 0) {
-		critical_exit(lock->s_crit);
+		critical_exit();
 		lock->s_owner = CPU_ID_INVALID;
 	} else
 		lock->s_nest--;

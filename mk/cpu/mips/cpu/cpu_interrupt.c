@@ -1,6 +1,7 @@
 #include <core/types.h>
 #include <core/mp.h>
 #include <core/pool.h>
+#include <core/startup.h>
 #include <cpu/cpu.h>
 #include <cpu/interrupt.h>
 #include <cpu/pcpu.h>
@@ -27,16 +28,10 @@ cpu_interrupt_establish(int interrupt, interrupt_t *func, void *arg)
 	ih->ih_func = func;
 	ih->ih_arg = arg;
 	STAILQ_INSERT_TAIL(&PCPU_GET(interrupt_table)[interrupt], ih, ih_link);
-	ASSERT(!STAILQ_EMPTY(&PCPU_GET(interrupt_table)[interrupt]),
-	       "Insert must work.");
 	PCPU_SET(interrupt_mask, PCPU_GET(interrupt_mask) |
 		 ((1 << interrupt) << CP0_STATUS_INTERRUPT_SHIFT));
 	cpu_write_status((cpu_read_status() & ~CP0_STATUS_INTERRUPT_MASK) |
 			 PCPU_GET(interrupt_mask));
-#if 0
-	kcprintf("cpu%u: %d established (mask %x).\n", mp_whoami(), interrupt,
-		 PCPU_GET(interrupt_mask) >> CP0_STATUS_INTERRUPT_SHIFT);
-#endif
 }
 
 void
@@ -99,17 +94,6 @@ cpu_interrupt_disable(void)
 }
 
 void
-cpu_interrupt_init(void)
-{
-	int error;
-
-	error = pool_create(&interrupt_handler_pool, "INTERRUPT HANDLER",
-			    sizeof (struct interrupt_handler), POOL_DEFAULT);
-	if (error != 0)
-		panic("%s: pool_created failed: %m", __func__, error);
-}
-
-void
 cpu_interrupt_restore(register_t r)
 {
 	ASSERT(r != CP0_STATUS_IE || (cpu_read_status() & CP0_STATUS_IE) == 0,
@@ -128,12 +112,27 @@ cpu_interrupt_setup(void)
 {
 	unsigned interrupt;
 
+	PCPU_SET(interrupt_enable, 1);
 	PCPU_SET(interrupt_mask, 0);
 	for (interrupt = 0; interrupt < CPU_INTERRUPT_COUNT; interrupt++)
 		STAILQ_INIT(&PCPU_GET(interrupt_table)[interrupt]);
 	ASSERT((cpu_read_status() & CP0_STATUS_IE) == 0,
 	       "Can't reenable interrupts.");
+	cpu_write_cause(0);
 	cpu_write_status((cpu_read_status() & ~CP0_STATUS_INTERRUPT_MASK) |
 			 PCPU_GET(interrupt_mask));
 	cpu_write_status(cpu_read_status() | CP0_STATUS_IE);
 }
+
+static void
+cpu_interrupt_init(void *arg)
+{
+	int error;
+
+	error = pool_create(&interrupt_handler_pool, "INTERRUPT HANDLER",
+			    sizeof (struct interrupt_handler), POOL_DEFAULT);
+	if (error != 0)
+		panic("%s: pool_created failed: %m", __func__, error);
+}
+STARTUP_ITEM(cpu_interrupt, STARTUP_POOL, STARTUP_FIRST, cpu_interrupt_init,
+	     NULL);

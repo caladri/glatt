@@ -35,12 +35,9 @@ cpu_halt(void)
 }
 
 void
-cpu_startup(void)
+cpu_startup(paddr_t pcpu_addr)
 {
 	struct pcpu *pcpu;
-	struct vm_page *pcpu_page;
-	paddr_t pcpu_addr;
-	int error;
 
 	/*
 	 * We don't use the gp, set it to NULL.
@@ -52,25 +49,23 @@ cpu_startup(void)
 	 */
 	cpu_write_status(KERNEL_STATUS);
 
-	/* Allocate a page for persistent per-CPU data.  */
-	error = page_alloc(PAGE_FLAG_DEFAULT | PAGE_FLAG_ZERO, &pcpu_page);
-	if (error != 0)
-		panic("cpu%u: page allocate failed: %m", mp_whoami(), error);
-	pcpu_addr = page_address(pcpu_page);
+	/* Direct-map the PCPU data until the TLB is up.  */
 	pcpu = (struct pcpu *)XKPHYS_MAP(XKPHYS_CNC, pcpu_addr);
+	memset(pcpu, 0, sizeof *pcpu);
 
 	/* Identify the CPU.  */
-	pcpu->pc_cpuinfo = cpu_identify();
+	cpu_identify(&pcpu->pc_cpuinfo);
 	pcpu->pc_cpuid = mp_whoami();
 
 	/* Clear the TLB and add a wired mapping for my per-CPU data.  */
-	tlb_init(kernel_vm.vm_pmap, pcpu_addr);
+	tlb_init(pcpu_addr, pcpu->pc_cpuinfo.cpu_ntlbs);
 
 	/* Now we can take VM-related exceptions appropriately.  */
 	pcpu->pc_flags = PCPU_FLAG_RUNNING;
 	startup_early = false;
 
-	/* Return to the platform code.  */
+	/* Set up interrupts.  */
+	cpu_interrupt_setup();
 }
 
 void

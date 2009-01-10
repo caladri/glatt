@@ -9,6 +9,6 @@ struct cpuinfo {
 	uint8_t cpu_revision_minor;	/* Revision minor number.  */
 };
 
-struct cpuinfo cpu_identify(void);
+void cpu_identify(struct cpuinfo *);
 
 #endif /* _CPU_CPUINFO_H_ */

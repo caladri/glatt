@@ -10,11 +10,11 @@ struct spinlock {
 	uint64_t s_owner;
 	uint64_t s_nest;
 	unsigned s_flags;
-	critical_section_t s_crit;
 };
 
 #define	SPINLOCK_FLAG_DEFAULT	(0x00000000)
 #define	SPINLOCK_FLAG_RECURSE	(0x00000001)
+#define	SPINLOCK_FLAG_VALID	(0x00000002)
 
 #define	SPINLOCK_ASSERT_HELD(lock)					\
 	ASSERT(atomic_load64(&(lock)->s_owner) == (uint64_t)mp_whoami(),\

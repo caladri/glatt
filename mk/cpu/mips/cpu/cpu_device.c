@@ -1,7 +1,6 @@
 #include <core/types.h>
 #include <cpu/cpu.h>
 #include <cpu/cpuinfo.h>
-#include <cpu/interrupt.h>
 #include <cpu/pcpu.h>
 #include <io/device/bus.h>
 #include <io/device/device.h>
@@ -32,8 +31,6 @@ cpu_enumerate_children(struct bus_instance *bi)
 static int
 cpu_setup(struct bus_instance *bi)
 {
-	cpu_interrupt_setup();
-
 	return (0);
 }
 

@@ -20,9 +20,7 @@ static void
 gt_pci_cs_read(struct pci_interface *pci, pci_tag_t tag,
 	       pci_offset_t offset, pci_cs_data_t *datap)
 {
-	critical_section_t crit;
-
-	crit = critical_enter();
+	critical_enter();
 
 	GT_WRITE32(pci->pci_cs_base, PCI_REG_CAUSE, 0);
 
@@ -34,7 +32,7 @@ gt_pci_cs_read(struct pci_interface *pci, pci_tag_t tag,
 		*datap = ~0;
 	}
 
-	critical_exit(crit);
+	critical_exit();
 }
 
 static void

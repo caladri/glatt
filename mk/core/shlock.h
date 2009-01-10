@@ -1,8 +1,6 @@
 #ifndef	_CORE_SHLOCK_H_
 #define	_CORE_SHLOCK_H_
 
-#include <core/critical.h>
-
 /*
  * Reader-writer/shared-exclusive spin-locks for short-use shared locking.
  * Doesn't support upgrading, since that requires adding a try_lock to spinlock,
@@ -17,7 +15,6 @@ struct shlock {
 	const char *shl_name;
 	uint64_t shl_sharecnt;
 	uint64_t shl_xowner;
-	critical_section_t shl_xcrit;
 };
 
 void shlock_init(struct shlock *, const char *);

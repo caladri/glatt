@@ -22,7 +22,7 @@ struct tlb_wired_context {
 };
 
 	/* An interface to the TLB.  */
-void tlb_init(struct pmap *, paddr_t);
+void tlb_init(paddr_t, unsigned);
 void tlb_invalidate(struct pmap *, vaddr_t);
 void tlb_modify(vaddr_t);
 void tlb_refill(vaddr_t);

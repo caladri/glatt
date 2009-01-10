@@ -71,6 +71,7 @@ startup_main(void)
 	int error;
 
 	spinlock_lock(&startup_lock);
+
 	bootstrap = !startup_booting;
 	startup_booting = true;
 
@@ -115,8 +116,7 @@ startup_bootstrap(void)
 static void
 startup_boot_thread(void *arg)
 {
-	static BTREE_ROOT(struct startup_item) sorted_items =
-		BTREE_ROOT_INITIALIZER();
+	BTREE_ROOT(struct startup_item) sorted_items = BTREE_ROOT_INITIALIZER();
 	struct startup_item **itemp, *item, *iter;
 
 #ifdef VERBOSE

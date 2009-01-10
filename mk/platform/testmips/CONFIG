@@ -21,4 +21,3 @@ std		platform/testmips/platform/platform_clock.c
 std		platform/testmips/platform/platform_mainbus.c
 std		platform/testmips/platform/platform_mp.c
 std		platform/testmips/platform/platform_start.c
-std		platform/testmips/platform/platform_startup.c

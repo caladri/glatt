@@ -14,4 +14,3 @@ gt		platform/malta/device/malta_gt.c
 
 std		platform/malta/platform/platform_mainbus.c
 std		platform/malta/platform/platform_start.c
-std		platform/malta/platform/platform_startup.c

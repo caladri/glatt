@@ -1,20 +1,29 @@
 #include <core/types.h>
 #include <core/critical.h>
 #include <core/startup.h>
-#include <cpu/cpu.h>
 #include <cpu/interrupt.h>
 #include <cpu/pcpu.h>
 
-critical_section_t
+void
 cpu_critical_enter(void)
 {
-	return (cpu_interrupt_disable());
+	ASSERT(!startup_early,
+	       "Cannot enter critical section during early startup.");
+
+	if (PCPU_GET(critical_count) == 0)
+		PCPU_SET(critical_section, cpu_interrupt_disable());
+	PCPU_SET(critical_count, PCPU_GET(critical_count) + 1);
 }
 
 void
-cpu_critical_exit(critical_section_t crit)
+cpu_critical_exit(void)
 {
-	cpu_interrupt_restore(crit);
+	ASSERT(!startup_early,
+	       "Cannot exit critical section during early startup.");
+
+	PCPU_SET(critical_count, PCPU_GET(critical_count) - 1);
+	if (PCPU_GET(critical_count) == 0)
+		cpu_interrupt_restore(PCPU_GET(critical_section));
 }
 
 bool
@@ -22,12 +31,5 @@ cpu_critical_section(void)
 {
 	ASSERT(!startup_early,
 	       "Cannot check critical section during early startup.");
-	if ((cpu_read_status() & CP0_STATUS_IE) == 0) {
-		ASSERT(PCPU_GET(interrupt_enable) == 0,
-		       "Interrupt enable bit not set but flag is.");
-		return (true);
-	}
-	ASSERT(PCPU_GET(interrupt_enable) == 1,
-	       "Interrupt enable bit set but flag is not.");
-	return (false);
+	return (PCPU_GET(critical_count) > 0);
 }

@@ -7,6 +7,7 @@ std		cpu/mips/cpu/cpu_device.c
 std		cpu/mips/cpu/cpu_exception.c
 std		cpu/mips/cpu/cpu_identify.c
 std		cpu/mips/cpu/cpu_interrupt.c
+std		cpu/mips/cpu/cpu_pcpu.c
 std		cpu/mips/cpu/cpu_pmap.c
 std		cpu/mips/cpu/cpu_startup.c
 std		cpu/mips/cpu/cpu_task.c

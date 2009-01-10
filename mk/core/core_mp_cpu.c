@@ -14,6 +14,12 @@ mp_cpu_present(cpu_id_t cpu)
 	cpu_bitmask_set(&mp_cpu_present_bitmask, cpu);
 }
 
+cpu_bitmask_t
+mp_cpu_present_mask(void)
+{
+	return (mp_cpu_present_bitmask);
+}
+
 void
 mp_cpu_running(cpu_id_t cpu)
 {

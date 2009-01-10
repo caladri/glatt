@@ -3,7 +3,7 @@
 	NOREORDER
 
 	.data
-	.space 1024
+	.space PAGE_SIZE
 SYMBOL(tempstack)
 
 	.text
@@ -37,13 +37,10 @@ ENTRY(start)
 	 */
 	move	gp, zero
 
-	/* Start platform rolling.  */
+	/* Start everything from C.  */
 	jal	platform_start
 	nop
 
-	/* Switch to stack pointer returned by platform_start and continue.  */
-	jal	platform_startup
-	move	sp, v0
-
 	/* NOTREACHED */
+	break
 END(start)

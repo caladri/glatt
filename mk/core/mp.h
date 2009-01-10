@@ -26,6 +26,7 @@ cpu_id_t mp_whoami(void);
 
 #ifndef	UNIPROCESSOR
 void mp_cpu_present(cpu_id_t);
+cpu_bitmask_t mp_cpu_present_mask(void);
 void mp_cpu_running(cpu_id_t);
 cpu_bitmask_t mp_cpu_running_mask(void);
 void mp_cpu_stopped(cpu_id_t);

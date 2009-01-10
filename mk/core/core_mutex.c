@@ -18,11 +18,9 @@ void
 mutex_init(struct mutex *mtx, const char *name, unsigned flags)
 {
 	spinlock_init(&mtx->mtx_lock, name, SPINLOCK_FLAG_DEFAULT);
-	MTX_SPINLOCK(mtx);
 	mtx->mtx_owner = NULL;
 	mtx->mtx_nested = 0;
 	mtx->mtx_flags = flags;
-	MTX_SPINUNLOCK(mtx);
 }
 
 void
@@ -34,8 +32,16 @@ mutex_lock(struct mutex *mtx)
 	td = current_thread();
 	ASSERT(td != NULL, "Must have a thread.");
 	ASSERT(mtx != NULL, "Cannot lock NULL mutex.");
+	/*
+	 * Don't check this assertion for now, since there's nothing wrong
+	 * with acquiring a mutex in a critical section if you're certain that
+	 * you will not block.  The sleepq code ought to be able to check this
+	 * more accurately?
+	 */
+#if 0
 	ASSERT(!critical_section(),
 	       "Cannot lock a mutex from within a critical section.");
+#endif
 
 	tries = 0;
 

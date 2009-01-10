@@ -57,7 +57,6 @@ tlb_write_random(void)
 }
 
 static void tlb_invalidate_addr(struct pmap *, vaddr_t);
-static void tlb_invalidate_all(void);
 static void tlb_invalidate_one(unsigned);
 #ifndef	UNIPROCESSOR
 static void tlb_shootdown(void *);
@@ -66,16 +65,19 @@ static void tlb_wired_entry(struct tlb_wired_entry *, vaddr_t, unsigned, pt_entr
 static void tlb_wired_insert(unsigned, struct tlb_wired_entry *);
 
 void
-tlb_init(struct pmap *pm, paddr_t pcpu_addr)
+tlb_init(paddr_t pcpu_addr, unsigned ntlbs)
 {
 	struct tlb_wired_entry twe;
+	unsigned i;
 
-	critical_section_t crit;
+	ASSERT(PAGE_ALIGNED(pcpu_addr), "PCPU address must be page-aligned.");
 
-	crit = critical_enter();
+	/* Invalidate all entries.  */
+	for (i = 0; i < ntlbs; i++)
+		tlb_invalidate_one(i);
 
-	/* Set address-space ID to the kernel's ASID.  */
-	cpu_write_tlb_entryhi(pmap_asid(pm));
+	/* XXX Set address-space ID to the kernel's ASID.  */
+	cpu_write_tlb_entryhi(0);
 
 	/* Don't keep any old wired entries.  */
 	cpu_write_tlb_wired(0);
@@ -89,15 +91,9 @@ tlb_init(struct pmap *pm, paddr_t pcpu_addr)
 	 * PCPU data to get the number of TLB entries, which needs to be
 	 * mapped to work.
 	 */
-	tlb_wired_entry(&twe, PCPU_VIRTUAL, pmap_asid(pm),
+	tlb_wired_entry(&twe, PCPU_VIRTUAL, 0,
 			TLBLO_PA_TO_PFN(pcpu_addr) | PG_V | PG_D | PG_G);
-	tlb_invalidate_addr(pm, PCPU_VIRTUAL);
 	tlb_wired_insert(TLB_WIRED_PCPU, &twe);
-
-	/* Invalidate all entries (except wired ones.)  */
-	tlb_invalidate_all();
-
-	critical_exit(crit);
 }
 
 void
@@ -160,12 +156,11 @@ tlb_refill(vaddr_t vaddr)
 void
 tlb_update(struct pmap *pm, vaddr_t vaddr)
 {
-	critical_section_t crit;
 	register_t asid;
 	pt_entry_t *pte;
 	int i;
 
-	crit = critical_enter();
+	critical_enter();
 	pte = pmap_find(pm, vaddr); /* XXX lock.  */
 	if (pte == NULL)
 		panic("%s: pmap_find returned NULL.", __func__);
@@ -180,7 +175,7 @@ tlb_update(struct pmap *pm, vaddr_t vaddr)
 	else
 		tlb_write_random();
 	cpu_write_tlb_entryhi(asid);
-	critical_exit(crit);
+	critical_exit();
 }
 
 void
@@ -224,36 +219,17 @@ tlb_wired_wire(struct tlb_wired_context *wired, struct pmap *pm, vaddr_t vaddr)
 static void
 tlb_invalidate_addr(struct pmap *pm, vaddr_t vaddr)
 {
-	critical_section_t crit;
 	int i;
 
 	vaddr &= ~PAGE_MASK;
 
-	crit = critical_enter();
+	critical_enter();
 	cpu_write_tlb_entryhi(TLBHI_ENTRY(vaddr, pmap_asid(pm)));
 	tlb_probe();
 	i = cpu_read_tlb_index();
 	if (i >= 0)
 		tlb_invalidate_one(i);
-	critical_exit(crit);
-}
-
-/*
- * Note that this skips wired entries.
- */
-static void
-tlb_invalidate_all(void)
-{
-	critical_section_t crit;
-	register_t asid;
-	unsigned i;
-
-	crit = critical_enter();
-	asid = cpu_read_tlb_entryhi();
-	for (i = cpu_read_tlb_wired(); i < PCPU_GET(cpuinfo).cpu_ntlbs; i++)
-		tlb_invalidate_one(i);
-	cpu_write_tlb_entryhi(asid);
-	critical_exit(crit);
+	critical_exit();
 }
 
 static void
@@ -290,9 +266,8 @@ tlb_wired_entry(struct tlb_wired_entry *twe, vaddr_t vaddr, unsigned asid,
 static void
 tlb_wired_insert(unsigned index, struct tlb_wired_entry *twe)
 {
-	critical_section_t crit;
+	ASSERT(startup_early, "Must be serialized for startup.");
 
-	crit = critical_enter();
 	cpu_write_tlb_entryhi(twe->twe_entryhi);
 	cpu_write_tlb_entrylo0(twe->twe_entrylo0);
 	cpu_write_tlb_entrylo1(twe->twe_entrylo1);
@@ -300,7 +275,6 @@ tlb_wired_insert(unsigned index, struct tlb_wired_entry *twe)
 	tlb_write_indexed();
 	if (index + 1 > cpu_read_tlb_wired())
 		cpu_write_tlb_wired(index + 1);
-	critical_exit(crit);
 }
 
 #ifdef DB

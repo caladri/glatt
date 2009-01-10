@@ -19,76 +19,11 @@
 
 #define	CLOCK_CALIBRATION_RUNS	(10)
 
-static unsigned platform_clock_msecond(void);
-
 /*
  * Calibrate R4K clock subsystem -- return the number of cycles in 1/hz seconds.
  */
 unsigned
 platform_clock_calibrate(unsigned hz)
 {
-	critical_section_t crit;
-	uint64_t sum;
-	unsigned run;
-
-	sum = 0;
-
-	/*
-	 * The calibration must happen in a critical section.
-	 */
-	crit = critical_enter();
-	for (run = 0; run < CLOCK_CALIBRATION_RUNS; run++) {
-		unsigned count[3], ms[3];
-
-		/*
-		 * XXX
-		 * Switch to useconds.
-		 */
-restart:	count[0] = cpu_read_count();
-		ms[0] = platform_clock_msecond();
-
-		for (;;) {
-			count[1] = cpu_read_count();
-			if ((ms[1] = platform_clock_msecond()) != ms[0])
-				break;
-		}
-
-		for (;;) {
-			count[2] = cpu_read_count();
-			if ((ms[2] = platform_clock_msecond()) != ms[1])
-				break;
-		}
-
-		/*
-		 * If we have more than a millisecond interval between samples,
-		 * start over.
-		 */
-		if (ms[1] != ms[0] + 1 || ms[2] != ms[1] + 1)
-			goto restart;
-
-		/*
-		 * If the clock wrapped between any samples, start over.
-		 */
-		if (count[1] < count[0] || count[2] < count[1])
-			goto restart;
-
-		/*
-		 * The difference between the last two samples should cover one
-		 * entire second.
-		 */
-		sum += count[2] - count[1];
-	}
-	critical_exit(crit);
-
-	/*
-	 * Take mean and convert to number of cycles in 1/hz seconds.
-	 */
-	return (((sum / CLOCK_CALIBRATION_RUNS) * 1000) / hz);
-}
-
-static unsigned
-platform_clock_msecond(void)
-{
-	TEST_RTC_DEV_WRITE(TEST_RTC_DEV_TRIGGER, 0);
-	return (TEST_RTC_DEV_READ(TEST_RTC_DEV_USECONDS) / 1000);
+	return (100000000 / hz);
 }

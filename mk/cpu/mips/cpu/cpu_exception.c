@@ -12,6 +12,7 @@
 #include <cpu/startup.h>
 #ifdef DB
 #include <db/db.h>
+#include <db/db_command.h>
 #endif
 #include <io/console/console.h>
 
@@ -93,7 +94,8 @@ extern char exception_vector[], exception_vector_end[];
 extern char xtlb_vector[], xtlb_vector_end[];
 
 static void cpu_exception_vector_install(void *, const char *, const char *);
-static void cpu_exception_frame_dump(struct thread *, struct frame *);
+static void cpu_exception_frame_dump(struct frame *);
+static void cpu_exception_state_dump(void);
 
 void
 cpu_exception_init(void)
@@ -110,11 +112,8 @@ cpu_exception_init(void)
 void
 exception(struct frame *frame)
 {
-	struct thread *td;
 	unsigned cause;
 	unsigned code;
-
-	td = current_thread();
 
 	cause = cpu_read_cause();
 	code = (cause & CP0_CAUSE_EXCEPTION) >> CP0_CAUSE_EXCEPTION_SHIFT;
@@ -130,7 +129,7 @@ exception(struct frame *frame)
 	return;
 debugger:
 	kcputs("\n\n");
-	cpu_exception_frame_dump(td, frame);
+	cpu_exception_frame_dump(frame);
 #ifdef DB
 	db_enter();
 #else
@@ -155,7 +154,7 @@ cpu_exception_vector_install(void *base, const char *start, const char *end)
 }
 
 static void
-cpu_exception_frame_dump(struct thread *td, struct frame *fp)
+cpu_exception_frame_dump(struct frame *fp)
 {
 	unsigned cause;
 	unsigned code;
@@ -169,14 +168,7 @@ cpu_exception_frame_dump(struct thread *td, struct frame *fp)
 	kcprintf("Fatal trap type %u (%s) on CPU %u:\n", code,
 		 cpu_exception_names[code] == NULL ? "Reserved" :
 		 cpu_exception_names[code], mp_whoami());
-	kcprintf("thread              = %p (%s)\n",
-		 (void *)td, td == NULL ? "nil" : td->td_name);
-	if (td != NULL) {
-		kcprintf("task                = %p (%s)\n", (void *)td->td_task,
-			 td->td_task == NULL ? "nil" : td->td_task->t_name);
-	}
-	kcprintf("status              = %x\n", cpu_read_status());
-	kcprintf("cause               = %x\n", cause);
+	cpu_exception_state_dump();
 	if (fp != NULL) {
 		kcprintf("pc                  = %p\n",
 			 (void *)fp->f_regs[FRAME_EPC]);
@@ -186,5 +178,23 @@ cpu_exception_frame_dump(struct thread *td, struct frame *fp)
 			 (void *)fp->f_regs[FRAME_SP]);
 	} else
 		kcprintf("[Frame unavailable.]\n");
+}
+
+static void
+cpu_exception_state_dump(void)
+{
+	struct thread *td;
+
+	td = current_thread();
+
+	kcprintf("thread              = %p (%s)\n",
+		 (void *)td, td == NULL ? "nil" : td->td_name);
+	if (td != NULL) {
+		kcprintf("task                = %p (%s)\n", (void *)td->td_task,
+			 td->td_task == NULL ? "nil" : td->td_task->t_name);
+	}
+	kcprintf("status              = %x\n", cpu_read_status());
+	kcprintf("cause               = %x\n", cpu_read_cause());
 	kcprintf("badvaddr            = %p\n", (void *)cpu_read_badvaddr());
 }
+DB_COMMAND(state, cpu, cpu_exception_state_dump);

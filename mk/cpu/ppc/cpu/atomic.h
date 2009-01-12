@@ -27,41 +27,25 @@ atomic_cmpset64(volatile uint64_t *p, uint64_t o, uint64_t v)
 static inline void
 atomic_decrement64(volatile uint64_t *p)
 {
-	uint64_t o;
-
-	o = atomic_load64(p);
-	while (!atomic_cmpset64(p, o, o - 1))
-		o = atomic_load64(p);
+	*p = *p - 1;
 }
 
 static inline void
 atomic_increment64(volatile uint64_t *p)
 {
-	uint64_t o;
-
-	o = atomic_load64(p);
-	while (!atomic_cmpset64(p, o, o + 1))
-		o = atomic_load64(p);
+	*p = *p + 1;
 }
 
 static inline void
 atomic_clear64(volatile uint64_t *p, uint64_t mask)
 {
-	uint64_t o;
-
-	o = atomic_load64(p);
-	while (!atomic_cmpset64(p, o, o & ~mask))
-		o = atomic_load64(p);
+	*p = *p & ~mask;
 }
 
 static inline void
 atomic_set64(volatile uint64_t *p, uint64_t mask)
 {
-	uint64_t o;
-
-	o = atomic_load64(p);
-	while (!atomic_cmpset64(p, o, o | mask))
-		o = atomic_load64(p);
+	*p = *p | mask;
 }
 
 #endif /* !_CPU_ATOMIC_H_ */

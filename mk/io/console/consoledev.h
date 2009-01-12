@@ -9,6 +9,7 @@ struct console {
 	void *c_softc;
 	int (*c_getc)(void *, char *);
 	void (*c_putc)(void *, char);
+	void (*c_puts)(void *, const char *, size_t);
 	void (*c_flush)(void *);
 };
 

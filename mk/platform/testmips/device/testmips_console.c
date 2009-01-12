@@ -35,6 +35,15 @@ testmips_console_putc(void *sc, char ch)
 }
 
 static void
+testmips_console_puts(void *sc, const char *s, size_t len)
+{
+	volatile char *putcp = sc;
+
+	while (len--)
+		*putcp = *s++;
+}
+
+static void
 testmips_console_flush(void *sc)
 {
 	(void)sc;
@@ -45,6 +54,7 @@ static struct console testmips_console = {
 	.c_softc = XKPHYS_MAP(XKPHYS_UC, 0x10000000),
 	.c_getc = testmips_console_getc,
 	.c_putc = testmips_console_putc,
+	.c_puts = testmips_console_puts,
 	.c_flush = testmips_console_flush,
 };
 

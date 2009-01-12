@@ -1,5 +1,6 @@
 #include <core/types.h>
 #include <core/printf.h>
+#include <core/string.h>
 #include <io/console/console.h>
 #include <io/console/consoledev.h>
 
@@ -7,7 +8,7 @@ static struct console *kernel_console;
 
 static void cflush(struct console *);
 static void cputc_noflush(void *, char);
-static void cputs_noflush(struct console *, const char *);
+static void cputs_noflush(void *, const char *, size_t);
 
 #define	CONSOLE_LOCK(c)		spinlock_lock(&(c)->c_lock)
 #define	CONSOLE_UNLOCK(c)	spinlock_unlock(&(c)->c_lock)
@@ -48,7 +49,7 @@ void
 kcputs(const char *s)
 {
 	CONSOLE_LOCK(kernel_console);
-	cputs_noflush(kernel_console, s);
+	cputs_noflush(kernel_console, s, strlen(s));
 	cflush(kernel_console);
 	CONSOLE_UNLOCK(kernel_console);
 }
@@ -67,7 +68,7 @@ void
 kcvprintf(const char *s, va_list ap)
 {
 	CONSOLE_LOCK(kernel_console);
-	kfvprintf(cputc_noflush, kernel_console, s, ap);
+	kfvprintf(cputc_noflush, cputs_noflush, kernel_console, s, ap);
 	cflush(kernel_console);
 	CONSOLE_UNLOCK(kernel_console);
 }
@@ -91,8 +92,16 @@ cputc_noflush(void *arg, char ch)
 }
 
 static void
-cputs_noflush(struct console *console, const char *s)
+cputs_noflush(void *arg, const char *s, size_t len)
 {
-	while (*s != '\0')
-		cputc_noflush(console, *s++);
+	struct console *console;
+
+	console = arg;
+
+	if (console->c_puts == NULL) {
+		while (len--)
+			cputc_noflush(console, *s++);
+		return;
+	}
+	console->c_puts(console->c_softc, s, len);
 }

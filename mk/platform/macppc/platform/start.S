@@ -18,9 +18,4 @@ ENTRY(start)
 	/* XXX Save OFW SPRG[0..3].  */
 
 	bl	platform_start
-	
-	/* Switch to stack pointer returned by platform_start and continue.  */
-	mr	%r1, %r3
-
-	bl	platform_startup
 END(start)

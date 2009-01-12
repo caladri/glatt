@@ -25,11 +25,10 @@ platform_halt(void)
 	ofw_exit();
 }
 
-vaddr_t
+void
 platform_start(register_t boot_args, register_t magic, register_t ofw_entry,
 	       register_t argv, register_t argc)
 {
-	vaddr_t sp;
 	int error;
 
 	/*
@@ -37,15 +36,38 @@ platform_start(register_t boot_args, register_t magic, register_t ofw_entry,
 	 */
 	memset(__bss_start, 0, _end - __bss_start);
 
+	/*
+	 * Set up OFW.  First set up the platform-specific bits and then tell
+	 * the generic OFW code how to make an OFW call on this platform.  The
+	 * generic OFW code will set up a console, too.
+	 */
 	platform_ofw_init(ofw_entry);
 
 	ofw_init(macppc_ofw_call);
 
+	/*
+	 * Announce ourselves to the world.
+	 */
+	startup_version();
+
+	/*
+	 * Set up PCPU data, etc.
+	 */
+	cpu_startup();
+
+	/*
+	 * Initialize the debugger internals before enabling exceptions.
+	 */
 #ifdef DB
 	db_init();
 #endif
 
-	startup_version();
+#if 0
+	/*
+	 * Turn on exception handlers.
+	 */
+	cpu_exception_init();
+#endif
 
 	/*
 	 * Startup our physical page pool.
@@ -53,10 +75,8 @@ platform_start(register_t boot_args, register_t magic, register_t ofw_entry,
 	page_init();
 
 	/*
-	 * Add all global memory.  Processor-local memory will be added by
-	 * the processor that owns it.  We skip the first 5MB of physical
-	 * RAM because that's where the kernel will be loaded.  If we start
-	 * to need more than 4MB, we're screwed.
+	 * Retrieve the amount of RAM available.  Skip where the kernel is
+	 * loaded.
 	 */
 #define	KERNEL_MAX_SIZE		(4ul * 1024 * 1024)
 #define	KERNEL_OFFSET		(1ul * 1024 * 1024)
@@ -68,28 +88,18 @@ platform_start(register_t boot_args, register_t magic, register_t ofw_entry,
 	if (error != 0)
 		panic("%s: ofw_memory_init failed: %m", __func__, error);
 
-#if 0
 	/*
-	 * Turn on exception handlers.
-	 */
-	cpu_exception_init();
-
-	/*
-	 * Set up data structures for later interrupt handling.
-	 */
-	cpu_interrupt_init();
-#endif
-
-	/*
-	 * Early system startup.
+	 * Start everything that needs done before threading.
 	 */
 	startup_init();
 
 	/*
-	 * Allocate a small stack.
+	 * Now go on to MI startup.
 	 */
-	error = page_alloc_direct(&kernel_vm, PAGE_FLAG_DEFAULT, &sp);
-	if (error != 0)
-		panic("%s: page_alloc_direct failed: %m", __func__, error);
-	return (sp + PAGE_SIZE);
+	startup_main();
+}
+
+void
+platform_startup_thread(void)
+{
 }

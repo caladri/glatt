@@ -7,6 +7,5 @@ std		requires: ofw
 
 std		platform/macppc/platform/start.S
 std		platform/macppc/platform/platform_start.c
-std		platform/macppc/platform/platform_startup.c
 
 ofw		platform/macppc/device/macppc_ofw.c

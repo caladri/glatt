@@ -197,4 +197,6 @@ cpu_exception_state_dump(void)
 	kcprintf("cause               = %x\n", cpu_read_cause());
 	kcprintf("badvaddr            = %p\n", (void *)cpu_read_badvaddr());
 }
+#ifdef DB
 DB_COMMAND(state, cpu, cpu_exception_state_dump);
+#endif

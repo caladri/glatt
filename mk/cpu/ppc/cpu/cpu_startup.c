@@ -1,4 +1,5 @@
 #include <core/types.h>
+#include <core/mp.h>
 #include <core/scheduler.h>
 #include <core/startup.h>
 #include <core/string.h>
@@ -14,9 +15,7 @@
 DB_COMMAND_TREE(cpu, root, cpu);
 #endif
 
-volatile bool startup_early = true;
-
-COMPILE_TIME_ASSERT(sizeof (struct pcpu) <= PAGE_SIZE);
+static struct pcpu pcpu_array[MAXCPUS];
 
 void
 cpu_break(void)
@@ -39,26 +38,30 @@ void
 cpu_startup(void)
 {
 	struct pcpu *pcpu;
-	struct vm_page *pcpu_page;
-	paddr_t pcpu_addr;
-	int error;
 
 	/*
 	 * Set kernel mode.
 	 */
 
-	/* Allocate a page for persistent per-CPU data.  */
-	error = page_alloc(PAGE_FLAG_DEFAULT | PAGE_FLAG_ZERO, &pcpu_page);
-	if (error != 0)
-		panic("cpu%u: page allocate failed: %m", mp_whoami(), error);
-	pcpu_addr = page_address(pcpu_page);
-	pcpu = (struct pcpu *)(void *)pcpu_page; /* XXX*/
+	/* Set up PCPU.  */
+	pcpu = &pcpu_array[mp_whoami()];
+	memset(pcpu, 0, sizeof *pcpu);
+	asm volatile ("mtsprg 0, %[pcpu]" : [pcpu] "=&r"(pcpu));
+
+	/* Identify the CPU.  */
+	/* XXX */
+
+	/* Actually set up the TLB.  */
+	/* XXX */
 
 	/* Now we can take VM-related exceptions appropriately.  */
 	pcpu->pc_flags = PCPU_FLAG_RUNNING;
 	startup_early = false;
 
-	/* Return to the platform code.  */
+	/* Set up interrupts.  */
+#if 0
+	cpu_interrupt_setup();
+#endif
 }
 
 void

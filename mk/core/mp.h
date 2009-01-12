@@ -13,6 +13,20 @@ mp_ncpus(void)
 #endif
 }
 
+/*
+ * A UNIPROCESSOR system must not define MAXCPUS.  A !UNIPROCESSOR system must.
+ */
+#if defined(UNIPROCESSOR) 
+#if defined(MAXCPUS)
+#error "Uniprocessor systems must not define MAXCPUS."
+#endif
+#define	MAXCPUS	1
+#else /* !defined(UNIPROCESSOR) */
+#if !defined(MAXCPUS)
+#error "Multiprocessor systems must define MAXCPUS."
+#endif
+#endif
+
 #ifndef	UNIPROCESSOR
 typedef	void (mp_ipi_handler_t)(void *, enum ipi_type);
 #endif

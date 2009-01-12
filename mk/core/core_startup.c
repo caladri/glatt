@@ -29,6 +29,8 @@ static bool startup_booting = false;
 static struct spinlock startup_lock;
 static struct task *main_task;
 
+volatile bool startup_early = true;
+
 void
 startup_init(void)
 {

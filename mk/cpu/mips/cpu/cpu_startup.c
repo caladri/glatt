@@ -17,8 +17,6 @@
 DB_COMMAND_TREE(cpu, root, cpu);
 #endif
 
-volatile bool startup_early = true;
-
 COMPILE_TIME_ASSERT(sizeof (struct pcpu) <= PAGE_SIZE);
 
 void

@@ -25,7 +25,7 @@ struct pool {
 
 extern size_t pool_max_alloc;
 
-void *pool_allocate(struct pool *);
+void *pool_allocate(struct pool *) __malloc;
 int pool_create(struct pool *, const char *, size_t, unsigned);
 void pool_free(void *);
 void pool_insert(struct pool *, vaddr_t);

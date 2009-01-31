@@ -31,6 +31,7 @@
 #define	__section(s)		__attribute__ ((__section__ (s)))
 #define	__unused		__attribute__ ((__unused__))
 #define	__used			__attribute__ ((__used__))
+#define	__malloc		__attribute__ ((__malloc__))
 
 	/* Bitmask helpers.  */
 

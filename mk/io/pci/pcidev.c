@@ -16,7 +16,6 @@ pcidev_describe(struct bus_instance *bi)
 static int
 pcidev_enumerate_children(struct bus_instance *bi)
 {
-	/* XXX */
 	return (0);
 }
 
@@ -31,4 +30,4 @@ BUS_INTERFACE(pcidevif) {
 	.bus_enumerate_children = pcidev_enumerate_children,
 	.bus_setup = pcidev_setup,
 };
-BUS_ATTACHMENT(pcidev, "pci", pcidevif);
+PCI_BRIDGE(pcidev, pcidevif, 0x0000, 0x0000);

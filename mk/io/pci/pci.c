@@ -14,7 +14,7 @@ struct pci_softc {
 	struct pci_interface *sc_interface;
 };
 
-static void pci_attachment_find(struct pci_attachment **, uint32_t, uint32_t);
+static void pci_attachment_find(struct pci_attachment **, uint16_t, uint16_t);
 static int pci_enumerate_child(struct pci_softc *, pci_bus_t, pci_slot_t,
 			       pci_function_t, pci_cs_data_t);
 static pci_tag_t pci_tag_make(pci_bus_t, pci_slot_t, pci_function_t);
@@ -101,8 +101,8 @@ BUS_INTERFACE(pciif) {
 BUS_ATTACHMENT(pci, NULL, pciif);
 
 static void
-pci_attachment_find(struct pci_attachment **attachment2p, uint32_t vendor,
-		    uint32_t device)
+pci_attachment_find(struct pci_attachment **attachment2p, uint16_t vendor,
+		    uint16_t device)
 {
 	struct pci_attachment **attachmentp;
 

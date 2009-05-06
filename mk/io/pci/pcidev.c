@@ -1,33 +1,30 @@
 #include <core/types.h>
 #include <core/error.h>
-#include <io/device/bus.h>
+#include <core/string.h>
+#include <io/device/device.h>
 #include <io/pci/pcidev.h>
 
 static void
-pcidev_describe(struct bus_instance *bi)
+pcidev_describe(struct device *device)
+{
+	struct pci_device *pcidev = device_softc(device);
+
+	device_printf(device, "PCI device (bus/slot/function=%u/%u/%u, vendor=%x, device=%x)", pcidev->pd_bus, pcidev->pd_slot, pcidev->pd_function, pcidev->pd_vendor, pcidev->pd_device);
+}
+
+static int
+pcidev_setup(struct device *device, void *busdata)
 {
 	struct pci_device *pcidev;
 
-	pcidev = bus_parent_data(bi);
+	pcidev = device_softc_allocate(device, sizeof *pcidev);
+	memcpy(pcidev, busdata, sizeof *pcidev);
 
-	bus_printf(bi, "PCI-device attachment (bus/slot/function=%u/%u/%u, vendor=%x, device=%x)", pcidev->pd_bus, pcidev->pd_slot, pcidev->pd_function, pcidev->pd_vendor, pcidev->pd_device);
-}
-
-static int
-pcidev_enumerate_children(struct bus_instance *bi)
-{
 	return (0);
 }
 
-static int
-pcidev_setup(struct bus_instance *bi)
-{
-	return (0);
-}
-
-BUS_INTERFACE(pcidevif) {
-	.bus_describe = pcidev_describe,
-	.bus_enumerate_children = pcidev_enumerate_children,
-	.bus_setup = pcidev_setup,
+DEVICE_INTERFACE(pcidevif) {
+	.device_describe = pcidev_describe,
+	.device_setup = pcidev_setup,
 };
-PCI_BRIDGE(pcidev, pcidevif, 0x0000, 0x0000);
+PCI_DEVICE(pcidev, pcidevif, 0x0000, 0x0000);

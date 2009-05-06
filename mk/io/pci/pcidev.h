@@ -16,7 +16,8 @@ struct pci_device {
 	unsigned pd_function;
 	unsigned pd_vendor;
 	unsigned pd_device;
-	/* XXX resources in use, etc.  */
+	unsigned pd_class;
+	unsigned pd_subclass;
 };
 
 enum pci_attachment_type {
@@ -24,9 +25,23 @@ enum pci_attachment_type {
 	PCI_ATTACHMENT_DEVICE,
 };
 
+/*
+ * <vendor, device> definitions.
+ */
+#define	PCIDEV_VENDOR_ANY	0xffff
+#define	PCIDEV_DEVICE_ANY	0xffff
+
+/*
+ * <class, subclass> definitions.
+ */
+#define	PCIDEV_CLASS_ANY	0xff
+#define	PCIDEV_SUBCLASS_ANY	0xff
+
 struct pci_attachment {
 	unsigned short pa_vendor;
 	unsigned short pa_device;
+	unsigned short pa_class;
+	unsigned short pa_subclass;
 	enum pci_attachment_type pa_type;
 	union pci_attachment_driver {
 		struct device_attachment *pad_device;
@@ -34,23 +49,27 @@ struct pci_attachment {
 	} pa_driver;
 };
 
-#define	PCI_BRIDGE(dev, ifname, vendor, device)				\
+#define	PCI_BRIDGE(dev, ifname, vendor, device, class, subclass)	\
 	BUS_ATTACHMENT(dev, "pci", ifname);				\
 									\
 	struct pci_attachment __pci_attachment_ ## dev= {		\
 		.pa_vendor = vendor,					\
 		.pa_device = device,					\
+		.pa_class = class,					\
+		.pa_subclass = subclass,				\
 		.pa_type = PCI_ATTACHMENT_BRIDGE,			\
 		.pa_driver.pad_bus = &__bus_attachment_ ## dev,		\
 	};								\
 	SET_ADD(pci_attachments, __pci_attachment_ ## dev)
 
-#define	PCI_DEVICE(dev, ifname, vendor, device)				\
+#define	PCI_DEVICE(dev, ifname, vendor, device, class, subclass)	\
 	DEVICE_ATTACHMENT(dev, "pci", ifname);				\
 									\
 	struct pci_attachment __pci_attachment_ ## dev = {		\
 		.pa_vendor = vendor,					\
 		.pa_device = device,					\
+		.pa_class = class,					\
+		.pa_subclass = subclass,				\
 		.pa_type = PCI_ATTACHMENT_DEVICE,			\
 		.pa_driver.pad_device = &__device_attachment_ ## dev,	\
 	};								\

@@ -9,7 +9,7 @@ pcidev_describe(struct device *device)
 {
 	struct pci_device *pcidev = device_softc(device);
 
-	device_printf(device, "PCI device (bus/slot/function=%u/%u/%u, vendor=%x, device=%x)", pcidev->pd_bus, pcidev->pd_slot, pcidev->pd_function, pcidev->pd_vendor, pcidev->pd_device);
+	device_printf(device, "PCI device (bus/slot/function=%u/%u/%u, vendor=%x, device=%x, class=%x, subclass=%x)", pcidev->pd_bus, pcidev->pd_slot, pcidev->pd_function, pcidev->pd_vendor, pcidev->pd_device, pcidev->pd_class, pcidev->pd_subclass);
 }
 
 static int
@@ -27,4 +27,5 @@ DEVICE_INTERFACE(pcidevif) {
 	.device_describe = pcidev_describe,
 	.device_setup = pcidev_setup,
 };
-PCI_DEVICE(pcidev, pcidevif, 0x0000, 0x0000);
+PCI_DEVICE(pcidev, pcidevif, PCIDEV_VENDOR_ANY, PCIDEV_DEVICE_ANY,
+	   PCIDEV_CLASS_ANY, PCIDEV_SUBCLASS_ANY);

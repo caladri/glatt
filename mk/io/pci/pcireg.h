@@ -10,5 +10,6 @@
 
 /* Device configuration registers.  */
 #define	PCI_REG_CS_DEVID	0x0000
+#define	PCI_REG_CS_CLASS	0x0008
 
 #endif /* !_IO_PCI_PCIREG_H_ */

@@ -14,9 +14,10 @@ struct pci_softc {
 	struct pci_interface *sc_interface;
 };
 
-static void pci_attachment_find(struct pci_attachment **, uint16_t, uint16_t);
+static void pci_attachment_find(struct pci_attachment **,
+				const struct pci_device *);
 static int pci_enumerate_child(struct pci_softc *, pci_bus_t, pci_slot_t,
-			       pci_function_t, pci_cs_data_t);
+			       pci_function_t);
 static pci_tag_t pci_tag_make(pci_bus_t, pci_slot_t, pci_function_t);
 
 static void
@@ -29,18 +30,10 @@ static int
 pci_slot_walk(struct pci_softc *sc, pci_bus_t bus, pci_slot_t slot)
 {
 	pci_function_t function;
-	pci_cs_data_t data;
-	pci_tag_t tag;
 	int error;
 
 	for (function = 0; function < 8; function++) {
-		tag = pci_tag_make(bus, slot, function);
-
-		sc->sc_interface->pci_cs_read(sc->sc_interface, tag,
-					      PCI_REG_CS_DEVID, &data);
-		if (data == (pci_cs_data_t)~0)
-			continue;
-		error = pci_enumerate_child(sc, bus, slot, function, data);
+		error = pci_enumerate_child(sc, bus, slot, function);
 		if (error != 0)
 			panic("%s: pci_enumerate_child failed: %m",
 			      __func__, error);
@@ -100,28 +93,49 @@ BUS_INTERFACE(pciif) {
 };
 BUS_ATTACHMENT(pci, NULL, pciif);
 
+
 static void
-pci_attachment_find(struct pci_attachment **attachment2p, uint16_t vendor,
-		    uint16_t device)
+pci_attachment_find(struct pci_attachment **attachment2p,
+		    const struct pci_device *pcidev)
 {
 	struct pci_attachment **attachmentp;
 
+	/*
+	 * First look for attachments by <vendor, device> tuple.
+	 */
 	SET_FOREACH(attachmentp, pci_attachments) {
 		struct pci_attachment *attachment = *attachmentp;
 
-		if (attachment->pa_vendor != vendor)
+		if (attachment->pa_vendor != pcidev->pd_vendor)
 			continue;
-		if (attachment->pa_device != device)
+		if (attachment->pa_device != pcidev->pd_device)
 			continue;
 		*attachment2p = attachment;
 		return;
 	}
 
 	/*
-	 * XXX
-	 * Scan for attachments by class?
+	 * If there are no exact matches, look for any wildcard
+	 * options by class.
 	 */
+	SET_FOREACH(attachmentp, pci_attachments) {
+		struct pci_attachment *attachment = *attachmentp;
 
+		if (attachment->pa_vendor != PCIDEV_VENDOR_ANY)
+			continue;
+		if (attachment->pa_device != PCIDEV_DEVICE_ANY)
+			continue;
+		if (attachment->pa_class != pcidev->pd_class)
+			continue;
+		if (attachment->pa_subclass != pcidev->pd_subclass)
+			continue;
+		*attachment2p = attachment;
+		return;
+	}
+
+	/*
+	 * Attach a dummy device.
+	 */
 	*attachment2p = &__pci_attachment_pcidev;
 	return;
 }
@@ -131,21 +145,35 @@ pci_attachment_find(struct pci_attachment **attachment2p, uint16_t vendor,
  */
 static int
 pci_enumerate_child(struct pci_softc *sc, pci_bus_t bus, pci_slot_t slot,
-		    pci_function_t function, pci_cs_data_t id)
+		    pci_function_t function)
 {
 	struct bus_instance *child;
 	struct pci_attachment *attachment;
 	struct pci_device pd, *pcidev;
+	pci_cs_data_t class, id;
 	const char *driver;
+	pci_tag_t tag;
 	int error;
+
+	tag = pci_tag_make(bus, slot, function);
+
+	sc->sc_interface->pci_cs_read(sc->sc_interface, tag,
+				      PCI_REG_CS_DEVID, &id);
+	if (id == (pci_cs_data_t)~0)
+		return (0);
+
+	sc->sc_interface->pci_cs_read(sc->sc_interface, tag,
+				      PCI_REG_CS_CLASS, &class);
 
 	pd.pd_bus = bus;
 	pd.pd_slot = slot;
 	pd.pd_function = function;
 	pd.pd_vendor = id & 0xffff;
 	pd.pd_device = (id >> 16) & 0xffff;
+	pd.pd_class = (class >> 24) & 0xff;
+	pd.pd_subclass = (class >> 16) & 0xff;
 
-	pci_attachment_find(&attachment, pd.pd_vendor, pd.pd_device);
+	pci_attachment_find(&attachment, &pd);
 
 	switch (attachment->pa_type) {
 	case PCI_ATTACHMENT_BRIDGE:

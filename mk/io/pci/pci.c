@@ -115,25 +115,6 @@ pci_attachment_find(struct pci_attachment **attachment2p,
 	}
 
 	/*
-	 * If there are no exact matches, look for any wildcard
-	 * options by class.
-	 */
-	SET_FOREACH(attachmentp, pci_attachments) {
-		struct pci_attachment *attachment = *attachmentp;
-
-		if (attachment->pa_vendor != PCIDEV_VENDOR_ANY)
-			continue;
-		if (attachment->pa_device != PCIDEV_DEVICE_ANY)
-			continue;
-		if (attachment->pa_class != pcidev->pd_class)
-			continue;
-		if (attachment->pa_subclass != pcidev->pd_subclass)
-			continue;
-		*attachment2p = attachment;
-		return;
-	}
-
-	/*
 	 * Attach a dummy device.
 	 */
 	*attachment2p = &__pci_attachment_pcidev;

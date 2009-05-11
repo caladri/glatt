@@ -6,7 +6,7 @@
 #include <core/string.h>
 #include <cpu/interrupt.h>
 #include <cpu/memory.h>
-#include <io/device/device.h>
+#include <io/device/bus.h>
 #include <io/network/ethernet.h>
 #include <io/network/interface.h>
 
@@ -46,18 +46,18 @@ static void tmether_interrupt(void *, int);
 static network_interface_request_handler_t tmether_request;
 
 static void
-tmether_describe(struct device *device)
+tmether_describe(struct bus_instance *bi)
 {
-	device_printf(device, "testmips simulated ethernet device.");
+	bus_printf(bi, "testmips simulated ethernet device.");
 }
 
 static int
-tmether_setup(struct device *device, void *busdata)
+tmether_setup(struct bus_instance *bi)
 {
 	struct tmether_softc *sc;
 	int error;
 
-	sc = device_softc_allocate(device, sizeof *sc);
+	sc = bus_softc_allocate(bi, sizeof *sc);
 	spinlock_init(&sc->sc_lock, "testmips ethernet", SPINLOCK_FLAG_DEFAULT);
 	TMETHER_LOCK(sc);
 	error = network_interface_attach(&sc->sc_netif,
@@ -111,8 +111,8 @@ tmether_request(void *softc, enum network_interface_request req, void *data,
 	}
 }
 
-DEVICE_INTERFACE(tmetherif) {
-	.device_describe = tmether_describe,
-	.device_setup = tmether_setup,
+BUS_INTERFACE(tmetherif) {
+	.bus_describe = tmether_describe,
+	.bus_setup = tmether_setup,
 };
-DEVICE_ATTACHMENT(tmether, "mpbus", tmetherif);
+BUS_ATTACHMENT(tmether, "mpbus", tmetherif);

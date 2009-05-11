@@ -3,7 +3,6 @@
 #include <cpu/cpuinfo.h>
 #include <cpu/pcpu.h>
 #include <io/device/bus.h>
-#include <io/device/device.h>
 
 static void
 cpu_describe(struct bus_instance *bi)
@@ -18,17 +17,6 @@ cpu_describe(struct bus_instance *bi)
 }
 
 static int
-cpu_enumerate_children(struct bus_instance *bi)
-{
-	int error;
-
-	error = device_enumerate(bi, "clock_r4k", NULL/*XXX*/);
-	if (error != 0)
-		return (error);
-	return (bus_enumerate_children(bi));
-}
-
-static int
 cpu_setup(struct bus_instance *bi)
 {
 	return (0);
@@ -36,7 +24,6 @@ cpu_setup(struct bus_instance *bi)
 
 BUS_INTERFACE(cpuif) {
 	.bus_describe = cpu_describe,
-	.bus_enumerate_children = cpu_enumerate_children,
 	.bus_setup = cpu_setup,
 };
 BUS_ATTACHMENT(cpu, NULL, cpuif);

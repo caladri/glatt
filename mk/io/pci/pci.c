@@ -2,7 +2,6 @@
 #include <core/critical.h>
 #include <core/error.h>
 #include <io/device/bus.h>
-#include <io/device/device.h>
 #include <io/pci/pci.h>
 #include <io/pci/pcidev.h>
 #include <io/pci/pcireg.h>
@@ -156,28 +155,17 @@ pci_enumerate_child(struct pci_softc *sc, pci_bus_t bus, pci_slot_t slot,
 
 	pci_attachment_find(&attachment, &pd);
 
-	switch (attachment->pa_type) {
-	case PCI_ATTACHMENT_BRIDGE:
-		driver = attachment->pa_driver.pad_bus->ba_name;
-		error = bus_enumerate_child(sc->sc_instance, driver, &child);
-		if (error != 0)
-			return (error);
+	driver = attachment->pa_attachment->ba_name;
+	error = bus_enumerate_child(sc->sc_instance, driver, &child);
+	if (error != 0)
+		return (error);
 
-		pcidev = bus_parent_data_allocate(child, sizeof *pcidev);
-		*pcidev = pd;
+	pcidev = bus_parent_data_allocate(child, sizeof *pcidev);
+	*pcidev = pd;
 
-		error = bus_setup_child(child);
-		if (error != 0)
-			return (error);
-		break;
-
-	case PCI_ATTACHMENT_DEVICE:
-		driver = attachment->pa_driver.pad_device->da_name;
-		error = device_enumerate(sc->sc_instance, driver, &pd);
-		if (error != 0)
-			return (error);
-		break;
-	}
+	error = bus_setup_child(child);
+	if (error != 0)
+		return (error);
 
 	return (0);
 }

@@ -4,7 +4,7 @@
 #include <cpu/cpu.h>
 #include <cpu/interrupt.h>
 #include <cpu/pcpu.h>
-#include <io/device/device.h>
+#include <io/device/bus.h>
 #include <platform/clock.h>
 
 #define	CLOCK_HZ	(100)
@@ -18,14 +18,14 @@ struct clock_r4k_softc {
 static void
 clock_r4k_interrupt(void *arg, int interrupt)
 {
-	struct device *device;
+	struct bus_instance *bi;
 	struct clock_r4k_softc *csc;
 	unsigned count, cycles;
 
 	ASSERT(interrupt == CLOCK_INTERRUPT, "stray interrupt");
 
-	device = arg;
-	csc = device_softc(device);
+	bi = arg;
+	csc = bus_softc(bi);
 
 	count = cpu_read_count();
 	if (count < csc->csc_last_count) {
@@ -42,16 +42,16 @@ clock_r4k_interrupt(void *arg, int interrupt)
 }
 
 static void
-clock_r4k_describe(struct device *device)
+clock_r4k_describe(struct bus_instance *bi)
 {
-	struct clock_r4k_softc *csc = device_softc(device);
+	struct clock_r4k_softc *csc = bus_softc(bi);
 
-	device_printf(device, "%u cycles/second (running at %uhz)",
-		      csc->csc_cycles_per_hz * CLOCK_HZ, CLOCK_HZ);
+	bus_printf(bi, "%u cycles/second (running at %uhz)",
+		   csc->csc_cycles_per_hz * CLOCK_HZ, CLOCK_HZ);
 }
 
 static int
-clock_r4k_setup(struct device *device, void *busdata)
+clock_r4k_setup(struct bus_instance *bi)
 {
 	struct clock_r4k_softc *csc;
 	unsigned cycles;
@@ -60,18 +60,18 @@ clock_r4k_setup(struct device *device, void *busdata)
 	if (cycles == 0)
 		return (ERROR_NOT_IMPLEMENTED);
 
-	csc = device_softc_allocate(device, sizeof *csc);
+	csc = bus_softc_allocate(bi, sizeof *csc);
 	csc->csc_cycles_per_hz = cycles;
 	csc->csc_last_count = cpu_read_count();
 
-	cpu_interrupt_establish(CLOCK_INTERRUPT, clock_r4k_interrupt, device);
+	cpu_interrupt_establish(CLOCK_INTERRUPT, clock_r4k_interrupt, bi);
 	cpu_write_compare(csc->csc_last_count + csc->csc_cycles_per_hz);
 
 	return (0);
 }
 
-DEVICE_INTERFACE(clockif) {
-	.device_describe = clock_r4k_describe,
-	.device_setup = clock_r4k_setup,
+BUS_INTERFACE(clockif) {
+	.bus_describe = clock_r4k_describe,
+	.bus_setup = clock_r4k_setup,
 };
-DEVICE_ATTACHMENT(clock_r4k, "cpu", clockif);
+BUS_ATTACHMENT(clock_r4k, "cpu", clockif);

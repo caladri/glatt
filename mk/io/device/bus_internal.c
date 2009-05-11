@@ -9,9 +9,6 @@
 #endif
 #include <io/device/bus.h>
 #include <io/device/bus_internal.h>
-#ifdef DB
-#include <io/device/leaf.h> /* for debugger only! */
-#endif
 #include <io/console/console.h>
 
 #ifdef DB
@@ -183,6 +180,11 @@ bus_instance_setup(struct bus_instance *bi)
 		error = bi->bi_attachment->ba_interface->bus_enumerate_children(bi);
 		if (error != 0) {
 			bus_instance_printf(bi, "bus_enumerate_children: %m", error);
+		}
+	} else {
+		error = bus_instance_enumerate_children(bi);
+		if (error != 0) {
+			bus_instance_printf(bi, "bus_instance_enumerate_children: %m", error);
 		}
 	}
 	return (0);
@@ -441,17 +443,7 @@ bus_db_instance_tree(struct bus_instance *bi)
 	struct bus_instance *child;
 
 	bus_db_instance_tree_leader(bi->bi_parent, bi, true);
-	kcprintf("%s", bus->bus_name);
-	if (strcmp(bus->bus_name, "leaf") == 0) {
-		/* Don't use accessor functions since they check for NULL.  */
-		struct leaf_device *ld = bi->bi_pdata;
-		if (ld == NULL) {
-			kcprintf(" <unattached>");
-		} else {
-			kcprintf(" *%s*", ld->ld_class);
-		}
-	}
-	kcprintf("\n");
+	kcprintf("%s\n", bus->bus_name);
 
 	STAILQ_FOREACH(child, &bi->bi_children, bi_peer) {
 		bus_db_instance_tree(child);

@@ -6,7 +6,7 @@
 #include <core/string.h>
 #include <cpu/memory.h>
 #include <device/tmdisk.h>
-#include <io/device/device.h>
+#include <io/device/bus.h>
 #include <io/storage/device.h>
 
 struct tmdisk_softc {
@@ -55,21 +55,21 @@ tmdisk_size(struct tmdisk_softc *sc, uint64_t *sizep)
 }
 
 static void
-tmdisk_describe(struct device *device)
+tmdisk_describe(struct bus_instance *bi)
 {
-	struct tmdisk_softc *sc = device_softc(device);
+	struct tmdisk_softc *sc = bus_softc(bi);
 
-	device_printf(device, "testmips simulated disk #%u (%lu bytes).", sc->sc_diskid, sc->sc_size);
+	bus_printf(bi, "testmips simulated disk #%u (%lu bytes).", sc->sc_diskid, sc->sc_size);
 }
 
 static int
-tmdisk_setup(struct device *device, void *busdata)
+tmdisk_setup(struct bus_instance *bi)
 {
-	struct test_disk_busdata *bd = busdata;
+	struct test_disk_busdata *bd = bus_parent_data(bi);
 	struct tmdisk_softc *sc;
 	int error;
 
-	sc = device_softc_allocate(device, sizeof *sc);
+	sc = bus_softc_allocate(bi, sizeof *sc);
 	sc->sc_diskid = bd->d_id;
 	sc->sc_size = (uint64_t)~0;
 	error = tmdisk_size(sc, &sc->sc_size);
@@ -113,8 +113,8 @@ tmdisk_read(void *softc, void *buf, off_t off)
 	return (0);
 }
 
-DEVICE_INTERFACE(tmdiskif) {
-	.device_describe = tmdisk_describe,
-	.device_setup = tmdisk_setup,
+BUS_INTERFACE(tmdiskif) {
+	.bus_describe = tmdisk_describe,
+	.bus_setup = tmdisk_setup,
 };
-DEVICE_ATTACHMENT(tmdisk, "tmdiskc", tmdiskif);
+BUS_ATTACHMENT(tmdisk, "tmdiskc", tmdiskif);

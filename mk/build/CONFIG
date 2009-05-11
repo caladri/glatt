@@ -47,10 +47,7 @@ framebuffer	io/console/framebuffer_font.c
 
 std		io/device/bus.c
 std		io/device/bus_internal.c
-std		io/device/bus_leaf.c
 std		io/device/bus_root.c
-std		io/device/device_internal.c
-std		io/device/device_null.c
 
 network		io/network/network_interface.c
 

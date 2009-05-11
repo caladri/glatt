@@ -254,6 +254,12 @@ platform_mp_attach_cpu(bool bootstrap)
 	}
 }
 
+static int
+platform_mp_enumerate(struct bus_instance *bi)
+{
+	return (0);
+}
+
 static void
 platform_mp_describe(struct bus_instance *bi)
 {
@@ -276,6 +282,7 @@ platform_mp_setup(struct bus_instance *bi)
 }
 
 BUS_INTERFACE(mpif) {
+	.bus_enumerate_children = platform_mp_enumerate,
 	.bus_describe = platform_mp_describe,
 	.bus_setup = platform_mp_setup,
 };

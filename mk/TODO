@@ -18,13 +18,11 @@ Binaries and servers:
 	o) Trivial static ELF loading from UFS for servers and such.
 
 Device drivers:
-	o) Device/bus...
-		o) Simplify the device/bus system dramatically.
-		o) Memory/interrupt allocation from busses.
-		o) Write mu-tune for device hints, perhaps other things.
-		o) Ports for device drivers.
-		o) Networking
-			o) Simple ethernet stack.
+	o) Memory/interrupt/ioport allocation from busses.
+	o) Write mu-tune for device hints, perhaps other things.
+	o) Ports for device drivers.
+	o) Networking
+		o) Simple ethernet stack.
 	o) Simple storage stack.
 
 Ongoing / aesthetic:

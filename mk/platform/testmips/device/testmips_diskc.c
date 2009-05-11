@@ -7,7 +7,6 @@
 #include <cpu/memory.h>
 #include <device/tmdisk.h>
 #include <io/device/bus.h>
-#include <io/device/device.h>
 
 static bool tmdiskc_disk_probe(struct bus_instance *, unsigned);
 
@@ -40,7 +39,8 @@ tmdiskc_setup(struct bus_instance *bi)
 static bool
 tmdiskc_disk_probe(struct bus_instance *bi, unsigned id)
 {
-	struct test_disk_busdata data;
+	struct test_disk_busdata *bd;
+	struct bus_instance *child;
 	int error;
 
 	/*
@@ -56,12 +56,16 @@ tmdiskc_disk_probe(struct bus_instance *bi, unsigned id)
 		break;
 	}
 
-	/* XXX Need parent_data management like with busses?  */
-	data.d_id = id;
-
-	error = device_enumerate(bi, "tmdisk", &data);
+	error = bus_enumerate_child(bi, "tmdisk", &child);
 	if (error != 0)
-		panic("%s: device_enumerate failed: %m", __func__, error);
+		panic("%s: bus_enumerate_child failed: %m", __func__, error);
+
+	bd = bus_parent_data_allocate(child, sizeof *bd);
+	bd->d_id = id;
+
+	error = bus_setup_child(child);
+	if (error != 0)
+		panic("%s: bus_setup_child failed: %m", __func__, error);
 	return (true);
 }
 

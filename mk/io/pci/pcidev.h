@@ -1,7 +1,6 @@
 #ifndef	_IO_PCI_PCIDEV_H_
 #define	_IO_PCI_PCIDEV_H_
 
-struct device_attachment;
 struct bus_attachment;
 
 /*
@@ -34,32 +33,16 @@ enum pci_attachment_type {
 struct pci_attachment {
 	unsigned short pa_vendor;
 	unsigned short pa_device;
-	enum pci_attachment_type pa_type;
-	union pci_attachment_driver {
-		struct device_attachment *pad_device;
-		struct bus_attachment *pad_bus;
-	} pa_driver;
+	struct bus_attachment *pa_attachment;
 };
 
-#define	PCI_BRIDGE(dev, ifname, vendor, device)				\
+#define	PCI_ATTACHMENT(dev, ifname, vendor, device)			\
 	BUS_ATTACHMENT(dev, "pci", ifname);				\
 									\
 	struct pci_attachment __pci_attachment_ ## dev= {		\
 		.pa_vendor = vendor,					\
 		.pa_device = device,					\
-		.pa_type = PCI_ATTACHMENT_BRIDGE,			\
-		.pa_driver.pad_bus = &__bus_attachment_ ## dev,		\
-	};								\
-	SET_ADD(pci_attachments, __pci_attachment_ ## dev)
-
-#define	PCI_DEVICE(dev, ifname, vendor, device)				\
-	DEVICE_ATTACHMENT(dev, "pci", ifname);				\
-									\
-	struct pci_attachment __pci_attachment_ ## dev = {		\
-		.pa_vendor = vendor,					\
-		.pa_device = device,					\
-		.pa_type = PCI_ATTACHMENT_DEVICE,			\
-		.pa_driver.pad_device = &__device_attachment_ ## dev,	\
+		.pa_attachment = &__bus_attachment_ ## dev,		\
 	};								\
 	SET_ADD(pci_attachments, __pci_attachment_ ## dev)
 

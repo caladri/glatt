@@ -10,12 +10,6 @@
 
 static bool tmdiskc_disk_probe(struct bus_instance *, unsigned);
 
-static void
-tmdiskc_describe(struct bus_instance *bi)
-{
-	bus_printf(bi, "testmips simulated disk controller.");
-}
-
 static int
 tmdiskc_enumerate_children(struct bus_instance *bi)
 {
@@ -33,6 +27,7 @@ tmdiskc_enumerate_children(struct bus_instance *bi)
 static int
 tmdiskc_setup(struct bus_instance *bi)
 {
+	bus_set_description(bi, "testmips simulated disk controller.");
 	return (0);
 }
 
@@ -70,7 +65,6 @@ tmdiskc_disk_probe(struct bus_instance *bi, unsigned id)
 }
 
 BUS_INTERFACE(tmdiskcif) {
-	.bus_describe = tmdiskc_describe,
 	.bus_enumerate_children = tmdiskc_enumerate_children,
 	.bus_setup = tmdiskc_setup,
 };

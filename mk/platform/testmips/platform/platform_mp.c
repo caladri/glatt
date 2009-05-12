@@ -260,30 +260,27 @@ platform_mp_enumerate(struct bus_instance *bi)
 	return (0);
 }
 
-static void
-platform_mp_describe(struct bus_instance *bi)
-{
-	uint64_t ncpus;
-
-	ncpus = TEST_MP_DEV_READ(TEST_MP_DEV_NCPUS);
-	if (ncpus == 1)
-		bus_printf(bi, "uniprocessor system");
-	else
-		bus_printf(bi, "multiprocessor system with %lu CPUs", ncpus);
-}
-
 static int
 platform_mp_setup(struct bus_instance *bi)
 {
+	uint64_t ncpus;
+
 	ASSERT(platform_mp_bus == NULL,
 	       "Can only have one mp instance.");
 	platform_mp_bus = bi;
+
+	ncpus = TEST_MP_DEV_READ(TEST_MP_DEV_NCPUS);
+	if (ncpus == 1)
+		bus_set_description(bi, "uniprocessor system");
+	else
+		bus_set_description(bi, "multiprocessor system with %lu CPUs",
+				    ncpus);
+
 	return (0);
 }
 
 BUS_INTERFACE(mpif) {
 	.bus_enumerate_children = platform_mp_enumerate,
-	.bus_describe = platform_mp_describe,
 	.bus_setup = platform_mp_setup,
 };
 BUS_ATTACHMENT(mp, "mainbus", mpif);

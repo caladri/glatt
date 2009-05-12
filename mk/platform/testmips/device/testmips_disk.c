@@ -54,14 +54,6 @@ tmdisk_size(struct tmdisk_softc *sc, uint64_t *sizep)
 	return (ERROR_UNEXPECTED);
 }
 
-static void
-tmdisk_describe(struct bus_instance *bi)
-{
-	struct tmdisk_softc *sc = bus_softc(bi);
-
-	bus_printf(bi, "testmips simulated disk #%u (%lu bytes).", sc->sc_diskid, sc->sc_size);
-}
-
 static int
 tmdisk_setup(struct bus_instance *bi)
 {
@@ -75,6 +67,9 @@ tmdisk_setup(struct bus_instance *bi)
 	error = tmdisk_size(sc, &sc->sc_size);
 	if (error != 0)
 		return (error);
+
+	bus_set_description(bi, "testmips simulated disk #%u (%lu bytes).",
+			    sc->sc_diskid, sc->sc_size);
 
 	error = storage_device_attach(&sc->sc_storagedev,
 				      TEST_DISK_DEV_BLOCKSIZE, tmdisk_read, sc);
@@ -114,7 +109,6 @@ tmdisk_read(void *softc, void *buf, off_t off)
 }
 
 BUS_INTERFACE(tmdiskif) {
-	.bus_describe = tmdisk_describe,
 	.bus_setup = tmdisk_setup,
 };
 BUS_ATTACHMENT(tmdisk, "tmdiskc", tmdiskif);

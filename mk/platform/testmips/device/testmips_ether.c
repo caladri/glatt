@@ -45,17 +45,13 @@ struct tmether_softc {
 static void tmether_interrupt(void *, int);
 static network_interface_request_handler_t tmether_request;
 
-static void
-tmether_describe(struct bus_instance *bi)
-{
-	bus_printf(bi, "testmips simulated ethernet device.");
-}
-
 static int
 tmether_setup(struct bus_instance *bi)
 {
 	struct tmether_softc *sc;
 	int error;
+
+	bus_set_description(bi, "testmips simulated ethernet device.");
 
 	sc = bus_softc_allocate(bi, sizeof *sc);
 	spinlock_init(&sc->sc_lock, "testmips ethernet", SPINLOCK_FLAG_DEFAULT);
@@ -112,7 +108,6 @@ tmether_request(void *softc, enum network_interface_request req, void *data,
 }
 
 BUS_INTERFACE(tmetherif) {
-	.bus_describe = tmether_describe,
 	.bus_setup = tmether_setup,
 };
 BUS_ATTACHMENT(tmether, "mpbus", tmetherif);

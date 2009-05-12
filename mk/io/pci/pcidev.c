@@ -30,4 +30,4 @@ BUS_INTERFACE(pcidevif) {
 	.bus_enumerate_children = pcidev_enumerate_children,
 	.bus_setup = pcidev_setup,
 };
-PCI_BRIDGE(pcidev, pcidevif, PCIDEV_VENDOR_ANY, PCIDEV_DEVICE_ANY);
+PCI_ATTACHMENT(pcidev, pcidevif, PCIDEV_VENDOR_ANY, PCIDEV_DEVICE_ANY);

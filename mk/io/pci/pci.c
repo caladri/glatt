@@ -19,12 +19,6 @@ static int pci_enumerate_child(struct pci_softc *, pci_bus_t, pci_slot_t,
 			       pci_function_t);
 static pci_tag_t pci_tag_make(pci_bus_t, pci_slot_t, pci_function_t);
 
-static void
-pci_describe(struct bus_instance *bi)
-{
-	bus_printf(bi, "pci bus");
-}
-
 static int
 pci_slot_walk(struct pci_softc *sc, pci_bus_t bus, pci_slot_t slot)
 {
@@ -82,11 +76,12 @@ pci_setup(struct bus_instance *bi)
 	sc->sc_instance = bi;
 	sc->sc_interface = bus_parent_data(bi);
 
+	bus_set_description(bi, "PCI bus");
+
 	return (0);
 }
 
 BUS_INTERFACE(pciif) {
-	.bus_describe = pci_describe,
 	.bus_enumerate_children = pci_enumerate_children,
 	.bus_setup = pci_setup,
 };

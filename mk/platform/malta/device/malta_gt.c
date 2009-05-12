@@ -35,12 +35,6 @@ gt_pci_cs_read(struct pci_interface *pci, pci_tag_t tag,
 	critical_exit();
 }
 
-static void
-gt_describe(struct bus_instance *bi)
-{
-	bus_printf(bi, "GT 64120");
-}
-
 static int
 gt_enumerate_children(struct bus_instance *bi)
 {
@@ -74,11 +68,11 @@ gt_enumerate_children(struct bus_instance *bi)
 static int
 gt_setup(struct bus_instance *bi)
 {
+	bus_set_description(bi, "GT 64120");
 	return (0);
 }
 
 BUS_INTERFACE(gtif) {
-	.bus_describe = gt_describe,
 	.bus_enumerate_children = gt_enumerate_children,
 	.bus_setup = gt_setup,
 };

@@ -7,7 +7,6 @@ struct bus;
 struct bus_instance;
 
 struct bus_interface {
-	void (*bus_describe)(struct bus_instance *);
 	int (*bus_enumerate_children)(struct bus_instance *);
 	int (*bus_setup)(struct bus_instance *);
 };
@@ -41,6 +40,7 @@ struct bus_instance *bus_parent(struct bus_instance *);
 void *bus_parent_data(struct bus_instance *);
 void *bus_parent_data_allocate(struct bus_instance *, size_t);
 void bus_printf(struct bus_instance *, const char *, ...);
+void bus_set_description(struct bus_instance *, const char *, ...);
 int bus_setup_child(struct bus_instance *);
 void *bus_softc(struct bus_instance *);
 void *bus_softc_allocate(struct bus_instance *, size_t);

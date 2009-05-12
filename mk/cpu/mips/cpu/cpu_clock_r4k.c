@@ -41,15 +41,6 @@ clock_r4k_interrupt(void *arg, int interrupt)
 	csc->csc_last_count = count;
 }
 
-static void
-clock_r4k_describe(struct bus_instance *bi)
-{
-	struct clock_r4k_softc *csc = bus_softc(bi);
-
-	bus_printf(bi, "%u cycles/second (running at %uhz)",
-		   csc->csc_cycles_per_hz * CLOCK_HZ, CLOCK_HZ);
-}
-
 static int
 clock_r4k_setup(struct bus_instance *bi)
 {
@@ -67,11 +58,13 @@ clock_r4k_setup(struct bus_instance *bi)
 	cpu_interrupt_establish(CLOCK_INTERRUPT, clock_r4k_interrupt, bi);
 	cpu_write_compare(csc->csc_last_count + csc->csc_cycles_per_hz);
 
+	bus_set_description(bi, "%u cycles/second (running at %uhz)",
+			    csc->csc_cycles_per_hz * CLOCK_HZ, CLOCK_HZ);
+
 	return (0);
 }
 
 BUS_INTERFACE(clockif) {
-	.bus_describe = clock_r4k_describe,
 	.bus_setup = clock_r4k_setup,
 };
 BUS_ATTACHMENT(clock_r4k, "cpu", clockif);

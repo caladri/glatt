@@ -3,6 +3,13 @@
 #include <core/printf.h>
 #include <core/string.h>
 
+struct sntring {
+	char *sn_p;
+	size_t sn_avail;
+};
+
+static void snputc(void *, char);
+static void snputs(void *, const char *, size_t);
 static void kfformat(void (*)(void *, char), void *, uintmax_t, unsigned, bool);
 
 void
@@ -105,6 +112,33 @@ again:
 	}
 }
 
+void
+snprintf(char *p, size_t len, const char *fmt, ...)
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+	vsnprintf(p, len, fmt, ap);
+	va_end(ap);
+}
+
+void
+vsnprintf(char *p, size_t len, const char *fmt, va_list ap)
+{
+	struct sntring sn;
+
+	sn.sn_p = p;
+	sn.sn_avail = len;
+
+	kfvprintf(snputc, snputs, &sn, fmt, ap);
+
+	if (sn.sn_avail != 0) {
+		*sn.sn_p = '\0';
+	} else {
+		p[len - 1] = '\0';
+	}
+}
+
 static void
 kfformat(void (*putc)(void *, char), void *arg, uintmax_t val, unsigned base,
 	 bool sign)
@@ -129,4 +163,28 @@ kfformat(void (*putc)(void *, char), void *arg, uintmax_t val, unsigned base,
 
 	while (i--)
 		(*putc)(arg, str[i]);
+}
+
+static void
+snputc(void *arg, char ch)
+{
+	struct sntring *sn = arg;
+
+	if (sn->sn_avail == 0)
+		return;
+	sn->sn_avail--;
+	*sn->sn_p++ = ch;
+}
+
+static void
+snputs(void *arg, const char *str, size_t len)
+{
+	struct sntring *sn = arg;
+
+	while (len--) {
+		if (sn->sn_avail == 0)
+			break;
+		sn->sn_avail--;
+		*sn->sn_p++ = *str++;
+	}
 }

@@ -84,4 +84,7 @@ strncmp(const char *a, const char *b, size_t n)
 	return (*a - *b);
 }
 
+void snprintf(char *, size_t, const char *, ...);
+void vsnprintf(char *, size_t, const char *, va_list);
+
 #endif /* !_CORE_STRING_H_ */

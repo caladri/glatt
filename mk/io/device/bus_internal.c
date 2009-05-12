@@ -31,6 +31,7 @@ struct bus_instance {
 	void *bi_softc;
 	STAILQ_ENTRY(struct bus_instance) bi_peer;
 	STAILQ_ENTRY(struct bus_instance) bi_link;
+	char bi_description[128];
 };
 static struct pool bus_instance_pool;
 
@@ -91,6 +92,7 @@ bus_instance_create(struct bus_instance **bip, struct bus_instance *parent,
 	if (parent != NULL)
 		STAILQ_INSERT_TAIL(&parent->bi_children, bi, bi_peer);
 	STAILQ_INSERT_TAIL(&attachment->ba_bus->bus_instances, bi, bi_link);
+	bi->bi_description[0] = '\0';
 	if (bip != NULL)
 		*bip = bi;
 	return (0);
@@ -161,6 +163,12 @@ bus_instance_parent_data_allocate(struct bus_instance *bi, size_t size)
 	ASSERT(bi->bi_pdata == NULL, "Can't create two parent datas.");
 	bi->bi_pdata = malloc(size);
 	return (bi->bi_pdata);
+}
+
+void
+bus_instance_set_description(struct bus_instance *bi, const char *fmt, va_list ap)
+{
+	vsnprintf(bi->bi_description, sizeof bi->bi_description, fmt, ap);
 }
 
 int
@@ -320,13 +328,13 @@ bus_attachment_find(struct bus_attachment **attachment2p, struct bus *parent,
 static void
 bus_instance_describe(struct bus_instance *bi)
 {
-	if (bi->bi_attachment->ba_interface->bus_describe == NULL) {
+	if (bi->bi_description[0] == '\0') {
 #ifdef VERBOSE
 		bus_instance_printf(bi, "<%m>", ERROR_NOT_IMPLEMENTED);
 #endif
 		return;
 	}
-	bi->bi_attachment->ba_interface->bus_describe(bi);
+	bus_instance_printf(bi, "%s", bi->bi_description);
 }
 
 static void

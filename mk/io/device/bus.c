@@ -110,6 +110,16 @@ bus_printf(struct bus_instance *bi, const char *fmt, ...)
 	va_end(ap);
 }
 
+void
+bus_set_description(struct bus_instance *bi, const char *fmt, ...)
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+	bus_instance_set_description(bi, fmt, ap);
+	va_end(ap);
+}
+
 int
 bus_setup_child(struct bus_instance *bi)
 {

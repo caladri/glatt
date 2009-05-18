@@ -3,8 +3,8 @@
 #include <core/pool.h>
 #include <core/startup.h>
 #include <core/string.h>
-#include <io/device/bus.h>
-#include <io/device/bus_internal.h>
+#include <io/bus/bus.h>
+#include <io/bus/bus_internal.h>
 
 /*
  * External interface to bus management.

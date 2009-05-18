@@ -1,6 +1,6 @@
 #include <core/types.h>
 #include <core/error.h>
-#include <io/device/bus.h>
+#include <io/bus/bus.h>
 
 static int
 root_enumerate_children(struct bus_instance *bi)

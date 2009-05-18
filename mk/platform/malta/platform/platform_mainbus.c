@@ -1,5 +1,5 @@
 #include <core/types.h>
-#include <io/device/bus.h>
+#include <io/bus/bus.h>
 
 static int
 mainbus_enumerate_children(struct bus_instance *bi)

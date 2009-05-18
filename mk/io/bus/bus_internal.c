@@ -7,8 +7,8 @@
 #ifdef DB
 #include <db/db_command.h>
 #endif
-#include <io/device/bus.h>
-#include <io/device/bus_internal.h>
+#include <io/bus/bus.h>
+#include <io/bus/bus_internal.h>
 #include <io/console/console.h>
 
 #ifdef DB

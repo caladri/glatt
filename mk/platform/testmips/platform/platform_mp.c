@@ -10,7 +10,7 @@
 #include <cpu/pcpu.h>
 #include <cpu/startup.h>
 #include <cpu/tlb.h>
-#include <io/device/bus.h>
+#include <io/bus/bus.h>
 #include <vm/vm.h>
 #include <vm/vm_page.h>
 

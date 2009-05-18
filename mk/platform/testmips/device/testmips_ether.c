@@ -6,7 +6,7 @@
 #include <core/string.h>
 #include <cpu/interrupt.h>
 #include <cpu/memory.h>
-#include <io/device/bus.h>
+#include <io/bus/bus.h>
 #include <io/network/ethernet.h>
 #include <io/network/interface.h>
 

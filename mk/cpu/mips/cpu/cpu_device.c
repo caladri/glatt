@@ -2,7 +2,7 @@
 #include <cpu/cpu.h>
 #include <cpu/cpuinfo.h>
 #include <cpu/pcpu.h>
-#include <io/device/bus.h>
+#include <io/bus/bus.h>
 
 static int
 cpu_setup(struct bus_instance *bi)

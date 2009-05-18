@@ -5,7 +5,7 @@
 #include <cpu/cpuinfo.h>
 #include <cpu/interrupt.h>
 #include <cpu/pcpu.h>
-#include <io/device/bus.h>
+#include <io/bus/bus.h>
 #include <io/pci/pci.h>
 #include <io/pci/pcireg.h>
 

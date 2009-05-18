@@ -3,7 +3,7 @@
 #include <core/startup.h>
 #include <core/string.h>
 #include <cpu/memory.h>
-#include <io/device/device.h>
+#include <io/bus/device.h>
 #include <io/console/framebuffer.h>
 
 static void

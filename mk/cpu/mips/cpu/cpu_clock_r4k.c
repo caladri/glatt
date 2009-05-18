@@ -4,7 +4,7 @@
 #include <cpu/cpu.h>
 #include <cpu/interrupt.h>
 #include <cpu/pcpu.h>
-#include <io/device/bus.h>
+#include <io/bus/bus.h>
 #include <platform/clock.h>
 
 #define	CLOCK_HZ	(100)

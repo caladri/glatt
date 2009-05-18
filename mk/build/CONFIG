@@ -45,9 +45,9 @@ std		io/console/console.c
 framebuffer	io/console/framebuffer.c
 framebuffer	io/console/framebuffer_font.c
 
-std		io/device/bus.c
-std		io/device/bus_internal.c
-std		io/device/bus_root.c
+std		io/bus/bus.c
+std		io/bus/bus_internal.c
+std		io/bus/bus_root.c
 
 network		io/network/network_interface.c
 

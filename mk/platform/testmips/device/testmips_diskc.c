@@ -6,7 +6,7 @@
 #include <core/string.h>
 #include <cpu/memory.h>
 #include <device/tmdisk.h>
-#include <io/device/bus.h>
+#include <io/bus/bus.h>
 
 static bool tmdiskc_disk_probe(struct bus_instance *, unsigned);
 

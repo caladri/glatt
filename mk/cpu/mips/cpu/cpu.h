@@ -29,7 +29,7 @@ static inline uint64_t							\
 cpu_read_ ## name(void)							\
 {									\
 	uint64_t result;						\
-	asm volatile ("dmfc0 %[result], $" STRING(number) "\n"	\
+	asm volatile ("dmfc0 %[result], $" STRING(number) "\n"		\
 		      : [result] "=&r"(result));			\
 	cpu_barrier();							\
 	return (result);						\
@@ -38,7 +38,7 @@ cpu_read_ ## name(void)							\
 static inline void							\
 cpu_write_ ## name(uint64_t value)					\
 {									\
-	asm volatile ("dmtc0 %[value], $" STRING(number) "\n"	\
+	asm volatile ("dmtc0 %[value], $" STRING(number) "\n"		\
 		      : : [value] "r"(value));				\
 	cpu_barrier();							\
 }									\
@@ -60,7 +60,7 @@ static inline uint32_t							\
 cpu_read_ ## name(void)							\
 {									\
 	uint32_t result;						\
-	asm volatile ("mfc0 %[result], $" STRING(number) "\n"	\
+	asm volatile ("mfc0 %[result], $" STRING(number) "\n"		\
 		      : [result] "=&r"(result));			\
 	cpu_barrier();							\
 	return (result);						\
@@ -69,7 +69,7 @@ cpu_read_ ## name(void)							\
 static inline void							\
 cpu_write_ ## name(uint32_t value)					\
 {									\
-	asm volatile ("mtc0 %[value], $" STRING(number) "\n"	\
+	asm volatile ("mtc0 %[value], $" STRING(number) "\n"		\
 		      : : [value] "r"(value));				\
 	cpu_barrier();							\
 }									\
@@ -84,6 +84,34 @@ CP0_RW32(tlb_wired, CP0_TLBWIRED);
 CP0_RW32(prid, CP0_PRID);
 
 #undef CP0_RW32
+
+#if defined(__mips_64)
+#define	CP0_S_RW32(name, number, s)					\
+static inline uint32_t							\
+cpu_read_ ## name ## s(void)						\
+{									\
+	uint32_t result;						\
+	asm volatile ("mfc0 %[result], $" STRING(number)		\
+		      ", $" STRING(s) "\n"				\
+		      : [result] "=&r"(result));			\
+	cpu_barrier();							\
+	return (result);						\
+}									\
+									\
+static inline void							\
+cpu_write_ ## name ## s(uint32_t value)					\
+{									\
+	asm volatile ("mtc0 %[value], $" STRING(number)			\
+		      ", $" STRING(s) "\n"				\
+		      : : [value] "r"(value));				\
+	cpu_barrier();							\
+}									\
+struct __hack
+
+CP0_S_RW32(config, CP0_CONFIG, 1);
+
+#undef CP0_RW32
+#endif
 
 #ifdef DB
 DB_COMMAND_TREE_DECLARE(cpu);

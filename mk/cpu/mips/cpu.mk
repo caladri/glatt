@@ -19,7 +19,11 @@ KERNEL_ABI=	-mabi=o64 -mlong64
 KERNEL_ABI=	-mabi=64
 .endif
 KERNEL_ENTRY=	start
+.if defined(MIPS3264ISA)
+KERNEL_CPU=	-mips64
+.else
 KERNEL_CPU=	-mips3
+.endif
 .if defined(LITTLE_ENDIAN)
 .if defined(MIPS_O64)
 KERNEL_FORMAT=	elf32-littlemips

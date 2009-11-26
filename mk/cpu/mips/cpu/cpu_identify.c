@@ -133,8 +133,13 @@ cpu_identify(struct cpuinfo *cpu)
 	if (cpu->cpu_company == NULL || cpu->cpu_type == NULL)
 		cpu_unknown(cpu);
 
-	if (cpu->cpu_mips3264isa)
+	if (cpu->cpu_mips3264isa) {
+#if defined(__mips64)
+		cpu->cpu_ntlbs = 32; /* XXX */
+#else
 		panic("MIPS32/64 ISA support not present.");
+#endif
+	}
 
 	if (cpu->cpu_ntlbs == 0)
 		panic("Unknown number of TLBs.");

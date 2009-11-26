@@ -1,3 +1,8 @@
+##
+# Global flags.  XXX
+##
+mips3264isa	requires: std
+
 std		cpu/mips/cpu/start.S
 
 std		cpu/mips/cpu/cpu_context.S

@@ -4,16 +4,37 @@ KERNEL_LD=	${TOOLCHAIN_TARGET}-ld
 KERNEL_NM=	${TOOLCHAIN_TARGET}-nm
 KERNEL_SIM=	gxemul
 
+MIPS_ABI?=	n64
+.if ${MIPS_ABI} == "o64"
+MIPS_O64=	1
+.elif ${MIPS_ABI} == "n64"
+MIPS_N64=	1
+.else
+.error "Unsupported ABI ${MIPS_ABI}."
+.endif
+
+.if defined(MIPS_O64)
+KERNEL_ABI=	-mabi=o64 -mlong64
+.else
 KERNEL_ABI=	-mabi=64
+.endif
 KERNEL_ENTRY=	start
 KERNEL_CPU=	-mips3
 .if defined(LITTLE_ENDIAN)
+.if defined(MIPS_O64)
+KERNEL_FORMAT=	elf32-littlemips
+.else
 KERNEL_FORMAT=	elf64-littlemips
+.endif
 KERNEL_CC+=	-EL
 KERNEL_AS+=	-EL
 KERNEL_LD+=	-EL
 .else
+.if defined(MIPS_O64)
+KERNEL_FORMAT=	elf32-bigmips
+.else
 KERNEL_FORMAT=	elf64-bigmips
+.endif
 .endif
 
 # Ask GCC to not use the GP, we may well end up with too much GP-relative

@@ -6,7 +6,7 @@ SHARED_VARS+=	VENDOR_SRC
 SHARED_VARS+=	PATH
 
 .if defined(PLATFORM)
-.if ${PLATFORM} == "testmips" || ${PLATFORM} == "malta"
+.if ${PLATFORM} == "testmips" || ${PLATFORM} == "malta" || ${PLATFORM} == "octeon"
 TOOLCHAIN_TARGET=mips64-glatt-elf
 .elif ${PLATFORM} == "macppc"
 TOOLCHAIN_TARGET=powerpc-glatt-elf

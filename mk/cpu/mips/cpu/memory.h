@@ -28,6 +28,8 @@
 
 	/* 32-bit kernel physical address space mapping.  */
 #define	KSEG0_MAP(a)	(0x80000000 | (a))
+#define	KSEG0_EXTRACT(a)						\
+	((uintptr_t)(a) & 0x7fffffff)
 
 	/* 64-bit kernel physical address space mapping.  */
 

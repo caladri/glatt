@@ -1,6 +1,6 @@
 VENDOR=		gnu
 PACKAGE=	gcc
-VERSION=	4.2.4
+VERSION=	4.4.2
 DISTFILE=	${PACKAGE}-core-${VERSION}.tar.bz2
 
 CONFIGURE+=	--prefix=${PREFIX}

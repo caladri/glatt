@@ -7,6 +7,7 @@ struct cpuinfo {
 	uint32_t cpu_ntlbs;		/* Number of TLB entries.  */
 	uint8_t cpu_revision_major;	/* Revision major number.  */
 	uint8_t cpu_revision_minor;	/* Revision minor number.  */
+	bool cpu_mips3264isa;		/* MIPS32/64 ISA.  */
 };
 
 void cpu_identify(struct cpuinfo *);

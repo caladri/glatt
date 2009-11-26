@@ -16,6 +16,7 @@
 
 #define	CP0_PRID_COMPANY_ANCIENT	(0x00)
 #define	CP0_PRID_COMPANY_MIPS		(0x01)
+#define	CP0_PRID_COMPANY_CAVIUM		(0x0d)
 
 	/* Coprocessor 0 types.  */
 
@@ -48,6 +49,7 @@ cpu_identify(struct cpuinfo *cpu)
 {
 	uint32_t prid;
 
+	cpu->cpu_mips3264isa = 0;
 	cpu->cpu_ntlbs = 0;
 
 	prid = cpu_read_prid();
@@ -108,6 +110,18 @@ cpu_identify(struct cpuinfo *cpu)
 			break;
 		}
 		break;
+	case CP0_PRID_COMPANY_CAVIUM:
+		cpu->cpu_company = "Cavium";
+		switch (CP0_PRID_TYPE(prid)) {
+		case 0x06:
+			cpu->cpu_type = "Octeon?";
+			cpu->cpu_mips3264isa = true;
+			break;
+		default:
+			cpu->cpu_type = NULL;
+			break;
+		}
+		break;
 	default:
 		cpu->cpu_company = NULL;
 		cpu->cpu_type = NULL;
@@ -118,6 +132,12 @@ cpu_identify(struct cpuinfo *cpu)
 
 	if (cpu->cpu_company == NULL || cpu->cpu_type == NULL)
 		cpu_unknown(cpu);
+
+	if (cpu->cpu_mips3264isa)
+		panic("MIPS32/64 ISA support not present.");
+
+	if (cpu->cpu_ntlbs == 0)
+		panic("Unknown number of TLBs.");
 }
 
 static void

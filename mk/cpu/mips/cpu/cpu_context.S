@@ -43,7 +43,7 @@ ENTRY(cpu_context_restore)
 	/*
 	 * Set thread pointer.
 	 */
-	dla	t3, PCPU_VIRTUAL
+	dli	t3, PCPU_VIRTUAL
 	sd	t0, PC_THREAD(t3)
 	/*
 	 * We'll be returning true from cpu_context_save().

@@ -9,4 +9,8 @@ CONFIGURE+=	--target=${TOOLCHAIN_TARGET}
 
 USE_GNUMAKE=	true
 
+.if ${TOOLCHAIN_TARGET} == "mips64-glatt-elf"
+PATCHES+=	${.CURDIR}/binutils-o64.diff
+.endif
+
 .include "${GLATT_SRC}/aux/build/vendor.mk"

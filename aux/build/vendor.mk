@@ -29,6 +29,7 @@ pre-configure: ${VENDOR_DIST}
 	@mkdir -p ${.OBJDIR}/work
 	@cd ${.OBJDIR}/work && tar jxf ${VENDOR_DIST}
 	@[ -d ${WORK_SRC} ]
+	@for _patch in ${PATCHES}; do echo '>>> Applying patch '$$_patch; cd ${.OBJDIR}/work && patch -p0 -i$$_patch; done
 
 configure:
 	@echo '>>> Configuring '${PACKAGE}

@@ -1,0 +1,12 @@
+diff -ur binutils-2.20.orig/gas/config/tc-mips.c binutils-2.20/gas/config/tc-mips.c
+--- binutils-2.20.orig/gas/config/tc-mips.c	2009-09-22 08:41:00.000000000 -0700
++++ binutils-2.20/gas/config/tc-mips.c	2009-11-25 19:31:23.000000000 -0800
+@@ -421,7 +421,7 @@
+ 
+ /* The ABI-derived address size.  */
+ #define HAVE_64BIT_ADDRESSES \
+-  (HAVE_64BIT_GPRS && (mips_abi == EABI_ABI || mips_abi == N64_ABI))
++  (HAVE_64BIT_GPRS && (mips_abi == EABI_ABI || mips_abi == N64_ABI || mips_abi == O64_ABI))
+ #define HAVE_32BIT_ADDRESSES (!HAVE_64BIT_ADDRESSES)
+ 
+ /* The size of symbolic constants (i.e., expressions of the form

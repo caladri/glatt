@@ -54,10 +54,17 @@ platform_start(void)
 	membytes = platform_mp_memory();
 	if (membytes <= KERNEL_PHYSICAL_BASE)
 		panic("%s: not enough attached memory.", __func__);
-	if (XKPHYS_EXTRACT(_end) >= KERNEL_PHYSICAL_BASE)
-		panic("%s: kernel end is beyond physical hole (%p >= %p).",
-		      __func__, (void *)XKPHYS_EXTRACT(_end),
-		      (void *)KERNEL_PHYSICAL_BASE);
+	if (((uintptr_t)_end & 0xffffffff00000000ul) != 0xffffffff00000000ul) {
+		if (XKPHYS_EXTRACT(_end) >= KERNEL_PHYSICAL_BASE)
+			panic("%s: kernel end is beyond physical hole (%p >= %p).",
+			      __func__, (void *)XKPHYS_EXTRACT(_end),
+			      (void *)KERNEL_PHYSICAL_BASE);
+	} else {
+		if (KSEG0_EXTRACT(_end) >= KERNEL_PHYSICAL_BASE)
+			panic("%s: kernel end is beyond physical hole (%p >= %p).",
+			      __func__, (void *)KSEG0_EXTRACT(_end),
+			      (void *)KERNEL_PHYSICAL_BASE);
+	}
 	membytes -= KERNEL_PHYSICAL_BASE;
 
 	/*

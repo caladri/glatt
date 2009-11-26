@@ -233,7 +233,7 @@ pmap_zero(struct vm_page *page)
 	size_t i;
 
 	paddr = page_address(page);
-	p = (uint64_t *)XKPHYS_MAP(XKPHYS_CNC, paddr);
+	p = (uint64_t *)XKPHYS_MAP(CCA_CNC, paddr);
 
 	for (i = 0; i < (PAGE_SIZE / sizeof *p) / 16; i++) {
 		p[0x0] = p[0x1] = p[0x2] = p[0x3] =

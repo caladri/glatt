@@ -27,7 +27,7 @@
 #define	TEST_MP_DEV_IPI_READ	0x00c0
 
 #define	TEST_MP_DEV_FUNCTION(f)						\
-	(volatile uint64_t *)XKPHYS_MAP(XKPHYS_UC, TEST_MP_DEV_BASE + (f))
+	(volatile uint64_t *)XKPHYS_MAP(CCA_UC, TEST_MP_DEV_BASE + (f))
 #define	TEST_MP_DEV_READ(f)						\
 	(volatile uint64_t)*TEST_MP_DEV_FUNCTION(f)
 #define	TEST_MP_DEV_WRITE(f, v)						\

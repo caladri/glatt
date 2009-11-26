@@ -98,7 +98,7 @@ platform_console_init(void)
 {
 	static struct malta_console_softc softc;
 
-	softc.sc_base = (uintptr_t)XKPHYS_MAP(XKPHYS_UC, YAMON_BASE);
+	softc.sc_base = (uintptr_t)XKPHYS_MAP(CCA_UC, YAMON_BASE);
 	softc.sc_putc_addr = malta_console_map(&softc.sc_putc_ch);
 	softc.sc_getc_addr = malta_console_map(&softc.sc_getc_ch);
 	malta_console.c_softc = &softc;

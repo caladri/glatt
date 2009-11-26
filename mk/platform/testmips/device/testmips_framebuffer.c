@@ -14,7 +14,7 @@ tmfb_load(struct framebuffer *fb, const uint8_t *buffer)
 }
 
 static struct framebuffer tmfb_softc = {
-	.fb_softc = XKPHYS_MAP(XKPHYS_UC, 0x12000000),
+	.fb_softc = XKPHYS_MAP(CCA_UC, 0x12000000),
 	.fb_load = tmfb_load,
 };
 

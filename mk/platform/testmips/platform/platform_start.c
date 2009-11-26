@@ -18,7 +18,7 @@ extern char __bss_start[], _end[];
 void
 platform_halt(void)
 {
-	*(volatile int *)XKPHYS_MAP(XKPHYS_UC, 0x10000000 | 0x10) = 1;
+	*(volatile int *)XKPHYS_MAP(CCA_UC, 0x10000000 | 0x10) = 1;
 	NOTREACHED();
 }
 
@@ -60,9 +60,9 @@ platform_start(void)
 			      __func__, (void *)XKPHYS_EXTRACT(_end),
 			      (void *)KERNEL_PHYSICAL_BASE);
 	} else {
-		if (KSEG0_EXTRACT(_end) >= KERNEL_PHYSICAL_BASE)
+		if (KSEG_EXTRACT(_end) >= KERNEL_PHYSICAL_BASE)
 			panic("%s: kernel end is beyond physical hole (%p >= %p).",
-			      __func__, (void *)KSEG0_EXTRACT(_end),
+			      __func__, (void *)KSEG_EXTRACT(_end),
 			      (void *)KERNEL_PHYSICAL_BASE);
 	}
 	membytes -= KERNEL_PHYSICAL_BASE;

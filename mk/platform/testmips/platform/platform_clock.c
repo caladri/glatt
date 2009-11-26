@@ -11,7 +11,7 @@
 #define	TEST_RTC_DEV_USECONDS	(0x0020)
 
 #define	TEST_RTC_DEV_FUNCTION(f)					\
-	(volatile uint64_t *)XKPHYS_MAP(XKPHYS_UC, TEST_RTC_DEV_BASE + (f))
+	(volatile uint64_t *)XKPHYS_MAP(CCA_UC, TEST_RTC_DEV_BASE + (f))
 #define	TEST_RTC_DEV_READ(f)						\
 	(volatile uint64_t)*TEST_RTC_DEV_FUNCTION(f)
 #define	TEST_RTC_DEV_WRITE(f, v)					\

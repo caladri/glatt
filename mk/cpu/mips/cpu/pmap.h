@@ -36,7 +36,7 @@ pmap_map_direct(struct vm *vm, paddr_t paddr, vaddr_t *vaddrp)
 	ASSERT(vm == &kernel_vm, "Only the kernel VM can direct-map.");
 #endif
 	/* XXX Ensure that we can direct-map this address.  */
-	*vaddrp = (vaddr_t)XKPHYS_MAP(XKPHYS_CNC, paddr);
+	*vaddrp = (vaddr_t)XKPHYS_MAP(CCA_CNC, paddr);
 	return (0);
 }
 

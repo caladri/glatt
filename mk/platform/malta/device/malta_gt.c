@@ -10,7 +10,7 @@
 #include <io/pci/pcireg.h>
 
 #define	GT_ADDR32(base, offset)						\
-	(volatile uint32_t *)XKPHYS_MAP(XKPHYS_UC, (base) | (offset))
+	(volatile uint32_t *)XKPHYS_MAP(CCA_UC, (base) | (offset))
 #define	GT_READ32(base, offset)						\
 	(volatile uint32_t)*GT_ADDR32((base), (offset))
 #define	GT_WRITE32(base, offset, value)					\

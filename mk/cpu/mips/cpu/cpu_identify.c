@@ -134,13 +134,20 @@ cpu_identify(struct cpuinfo *cpu)
 		cpu_unknown(cpu);
 
 	if (cpu->cpu_mips3264isa) {
-#if defined(__mips64)
+#if __mips == 64
 		uint32_t config1;
 
 		config1 = cpu_read_config1();
 
 		cpu->cpu_ntlbs = ((config1 & CP0_CONFIG1_MMUSIZE_MASK) >>
 				  CP0_CONFIG1_MMUSIZE_SHIFT) + 1;
+
+		/*
+		 * Disable the caches.
+		 */
+		config1 &= ~(CP0_CONFIG1_ICACHE_LSIZE_MASK | CP0_CONFIG1_DCACHE_LSIZE_MASK);
+
+		cpu_write_config1(config1);
 #else
 		panic("MIPS32/64 ISA support not present.");
 #endif

@@ -22,7 +22,7 @@
 #define	TEST_ETHER_DEV_MAC	(0x4040)
 
 #define	TEST_ETHER_DEV_FUNCTION(f)					\
-	(volatile uint64_t *)XKPHYS_MAP(XKPHYS_UC, TEST_ETHER_DEV_BASE + (f))
+	(volatile uint64_t *)XKPHYS_MAP(CCA_UC, TEST_ETHER_DEV_BASE + (f))
 #define	TEST_ETHER_DEV_READ(f)						\
 	(volatile uint64_t)*TEST_ETHER_DEV_FUNCTION(f)
 #define	TEST_ETHER_DEV_WRITE(f, v)					\

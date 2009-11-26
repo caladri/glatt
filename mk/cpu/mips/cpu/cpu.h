@@ -85,7 +85,7 @@ CP0_RW32(prid, CP0_PRID);
 
 #undef CP0_RW32
 
-#if defined(__mips64)
+#if __mips == 64
 #define	CP0_S_RW32(name, number, s)					\
 static inline uint32_t							\
 cpu_read_ ## name ## s(void)						\

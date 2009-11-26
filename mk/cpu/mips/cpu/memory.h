@@ -28,8 +28,9 @@
 
 	/* 32-bit kernel physical address space mapping.  */
 #define	KSEG0_MAP(a)	(0x80000000 | (a))
-#define	KSEG0_EXTRACT(a)						\
-	((uintptr_t)(a) & 0x7fffffff)
+#define	KSEG1_MAP(a)	(0xa0000000 | (a))
+#define	KSEG_EXTRACT(a)							\
+	((uintptr_t)(a) & 0x1fffffff)
 
 	/* 64-bit kernel physical address space mapping.  */
 
@@ -40,12 +41,10 @@
 #define	XKPHYS_EXTRACT(a)						\
 	((uintptr_t)(a) & 0x07ffffffffffffff)
 
-	/* 64-bit kernel physical address space cache modes.  */
+	/* Cache coherency attributes.  */
 
-#define	XKPHYS_UC	(2)	/* Uncached.  */
-#define	XKPHYS_CNC	(3)	/* Cacheable non-coherent.  */
-#define	XKPHYS_CCE	(4)	/* Cacheable coherent exclusive.  */
-#define	XKPHYS_CCEW	(5)	/* Cacheable coherent exclusive on write.  */
-#define	XKPHYS_CCUW	(6)	/* Cacheable coherent update on write.  */
+#define	CCA_UC		(0x02)	/* Uncached.  */
+#define	CCA_CNC		(0x03)	/* Cacheable non-coherent.  */
+#define	CCA_MASK	(0x07)
 
 #endif /* !_CPU_MEMORY_H_ */

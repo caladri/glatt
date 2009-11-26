@@ -43,12 +43,14 @@ cpu_startup(paddr_t pcpu_addr)
 	asm volatile ("move $" STRING(gp) ", $" STRING(zero) : : : "memory");
 
 	/*
-	 * Set kernel mode.
+	 * Set kernel mode.  We're still using BEVs.
+	 *
+	 * XXX Unless we're being called for a second CPU.
 	 */
-	cpu_write_status(KERNEL_STATUS);
+	cpu_write_status(KERNEL_STATUS | CP0_STATUS_BEV);
 
 	/* Direct-map the PCPU data until the TLB is up.  */
-	pcpu = (struct pcpu *)XKPHYS_MAP(XKPHYS_CNC, pcpu_addr);
+	pcpu = (struct pcpu *)XKPHYS_MAP(CCA_CNC, pcpu_addr);
 	memset(pcpu, 0, sizeof *pcpu);
 
 	/* Identify the CPU.  */

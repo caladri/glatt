@@ -51,7 +51,7 @@ testmips_console_flush(void *sc)
 
 static struct console testmips_console = {
 	.c_name = "testmips",
-	.c_softc = XKPHYS_MAP(XKPHYS_UC, 0x10000000),
+	.c_softc = XKPHYS_MAP(CCA_UC, 0x10000000),
 	.c_getc = testmips_console_getc,
 	.c_putc = testmips_console_putc,
 	.c_puts = testmips_console_puts,

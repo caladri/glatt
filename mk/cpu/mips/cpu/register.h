@@ -83,7 +83,7 @@ typedef	uint64_t	register_t;
 #define	CP0_CAUSE_INTERRUPT_SHIFT	(8)
 #define	CP0_CAUSE_INTERRUPT_MASK	(0xff00)
 
-	/* Coprocessor 0 status register bits.  */
+	/* Coprocessor 0 status register bits & shifts.  */
 
 #define	CP0_STATUS_IE	0x00000001	/* Interrupts enabled.  */
 #define	CP0_STATUS_EXL	0x00000002	/* Error level.  */
@@ -99,5 +99,10 @@ typedef	uint64_t	register_t;
 
 	/* Coprocessor 0 status register states.  */
 #define	KERNEL_STATUS	(CP0_STATUS_KX)
+
+	/* Coprocessor 0 config register selector 1 bits & shifts.  */
+
+#define	CP0_CONFIG1_MMUSIZE_SHIFT	(25)
+#define	CP0_CONFIG1_MMUSIZE_MASK	(0x7e000000)
 
 #endif /* !_CPU_REGISTER_H_ */

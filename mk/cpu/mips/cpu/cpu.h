@@ -85,14 +85,14 @@ CP0_RW32(prid, CP0_PRID);
 
 #undef CP0_RW32
 
-#if defined(__mips_64)
+#if defined(__mips64)
 #define	CP0_S_RW32(name, number, s)					\
 static inline uint32_t							\
 cpu_read_ ## name ## s(void)						\
 {									\
 	uint32_t result;						\
 	asm volatile ("mfc0 %[result], $" STRING(number)		\
-		      ", $" STRING(s) "\n"				\
+		      ", " STRING(s) "\n"				\
 		      : [result] "=&r"(result));			\
 	cpu_barrier();							\
 	return (result);						\
@@ -102,7 +102,7 @@ static inline void							\
 cpu_write_ ## name ## s(uint32_t value)					\
 {									\
 	asm volatile ("mtc0 %[value], $" STRING(number)			\
-		      ", $" STRING(s) "\n"				\
+		      ", " STRING(s) "\n"				\
 		      : : [value] "r"(value));				\
 	cpu_barrier();							\
 }									\

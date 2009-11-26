@@ -39,7 +39,9 @@ SUBDIRS+=	binutils
 ##
 # Build GCC after its dependencies.
 ##
-.if defined(WANT_BINUTILS)
+.if defined(WANT_GCC)
+SUBDIRS+=	gmp
+SUBDIRS+=	mpfr
 SUBDIRS+=	gcc
 .endif
 

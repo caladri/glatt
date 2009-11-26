@@ -12,11 +12,22 @@
 all::
 	@echo '>>> Building vendor software...'
 
-# XXX Check that variables are defined.
+.if !defined(PACKAGE)
+.error "PACKAGE must be defined."
+.endif
 
-VENDOR_DIST=${VENDOR_SRC}/${VENDOR}/${PACKAGE}/${DISTFILE}
-WORK_SRC=${.OBJDIR}/work/${DISTDIR}
-BUILD_OBJ=${.OBJDIR}/build/${PACKAGE}
+.if !defined(DISTFILE) || !defined(DISTDIR)
+.if defined(VERSION)
+DISTDIR?=	${PACKAGE}-${VERSION}
+DISTFILE?=	${PACKAGE}-${VERSION}.tar.bz2
+.else
+.error "DISTFILE and DISTDIR must be defined or inferrable."
+.endif
+.endif
+
+VENDOR_DIST=	${VENDOR_SRC}/${VENDOR}/${PACKAGE}/${DISTFILE}
+WORK_SRC=	${.OBJDIR}/work/${DISTDIR}
+BUILD_OBJ=	${.OBJDIR}/build/${PACKAGE}
 .if defined(USE_GNUMAKE)
 BUILD_MAKE=gnumake
 .else

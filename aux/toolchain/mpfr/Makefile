@@ -1,8 +1,9 @@
 VENDOR=		gnu
-PACKAGE=	make
-VERSION=	3.81
+PACKAGE=	mpfr
+VERSION=	2.4.1
 
 CONFIGURE+=	--prefix=${PREFIX}
-CONFIGURE+=	--program-prefix=gnu
+
+USE_GNUMAKE=	true
 
 .include "${GLATT_SRC}/aux/build/vendor.mk"

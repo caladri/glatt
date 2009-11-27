@@ -38,7 +38,7 @@ cpu_thread_setup(struct thread *td)
 			       kstack + off);
 	td->td_context.c_regs[CONTEXT_SP] = kstack + KSTACK_SIZE;
 
-	if ((td->td_task->t_flags & TASK_KERNEL) != 0) {
+	if ((td->td_task->t_flags & TASK_KERNEL) == 0) {
 		error = vm_alloc(td->td_task->t_vm, MAILBOX_SIZE, &mbox);
 		if (error != 0)
 			return (error);

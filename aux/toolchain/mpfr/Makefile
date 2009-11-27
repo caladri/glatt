@@ -3,6 +3,7 @@ PACKAGE=	mpfr
 VERSION=	2.4.1
 
 CONFIGURE+=	--prefix=${PREFIX}
+CONFIGURE+=	--with-gmp=${PREFIX}
 
 USE_GNUMAKE=	true
 

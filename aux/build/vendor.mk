@@ -46,7 +46,7 @@ configure:
 	@echo '>>> Configuring '${PACKAGE}
 	@rm -rf ${BUILD_OBJ}
 	@mkdir -p ${BUILD_OBJ}
-	@cd ${BUILD_OBJ} && ${WORK_SRC}/configure ${CONFIGURE}
+	@cd ${BUILD_OBJ} && env ${CONFIGURE_ENV} ${WORK_SRC}/configure ${CONFIGURE}
 
 build:
 	@echo '>>> Building '${PACKAGE}

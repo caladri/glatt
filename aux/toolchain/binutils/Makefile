@@ -4,6 +4,9 @@ VERSION=	2.20
 
 CONFIGURE+=	--prefix=${PREFIX}
 CONFIGURE+=	--target=${TOOLCHAIN_TARGET}
+CONFIGURE+=	--disable-werror
+
+CONFIGURE_ENV+=	CFLAGS='-Wno-format'
 
 USE_GNUMAKE=	true
 

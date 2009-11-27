@@ -6,6 +6,7 @@
 #include <cpu/cpu.h>
 #include <cpu/exception.h>
 #include <cpu/frame.h>
+#include <cpu/interrupt.h>
 #include <cpu/memory.h>
 #include <cpu/pcpu.h>
 #include <cpu/register.h>
@@ -107,6 +108,18 @@ cpu_exception_init(void)
 	cpu_exception_vector_install(EXCEPTION_BASE_XTLBMISS, xtlb_vector,
 				     xtlb_vector_end);
 	cpu_write_status(cpu_read_status() & ~CP0_STATUS_BEV);
+
+	/*
+	 * Now install the debugger.
+	 */
+#ifdef	DB
+	db_init();
+#endif
+
+	/*
+	 * Set up interrupts.
+	 */
+	cpu_interrupt_setup();
 }
 
 void

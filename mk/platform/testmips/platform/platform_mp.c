@@ -172,6 +172,8 @@ platform_mp_start_cpu(void)
 
 	cpu_startup(pcpu_addr);
 
+	cpu_interrupt_setup();
+
 	mp_cpu_running(mp_whoami());
 	while (mp_cpu_running_mask() != mp_cpu_present_mask())
 		continue;

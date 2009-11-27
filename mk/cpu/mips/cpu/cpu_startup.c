@@ -63,9 +63,6 @@ cpu_startup(paddr_t pcpu_addr)
 	/* Now we can take VM-related exceptions appropriately.  */
 	pcpu->pc_flags = PCPU_FLAG_RUNNING;
 	startup_early = false;
-
-	/* Set up interrupts.  */
-	cpu_interrupt_setup();
 }
 
 void

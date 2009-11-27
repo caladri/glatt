@@ -72,7 +72,7 @@ platform_start(void)
 	/*
 	 * Turn on exception handlers.
 	 */
-	cpu_exception_setup();
+	cpu_exception_init();
 
 	/*
 	 * Startup our physical page pool.

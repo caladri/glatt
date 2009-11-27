@@ -68,7 +68,7 @@ platform_start(int32_t argc, int32_t argv, int32_t envp, uint32_t memsize)
 	/*
 	 * Turn on exception handlers.
 	 */
-	cpu_exception_setup();
+	cpu_exception_init();
 
 	/*
 	 * Startup our physical page pool.

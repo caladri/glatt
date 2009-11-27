@@ -5,6 +5,11 @@
 GLATT_SRC?=	${.CURDIR}
 TOOLCHAIN_ROOT?=${.CURDIR}/../toolchain-root
 PATH:=		${PATH}:${TOOLCHAIN_ROOT}/bin
+.if defined(LD_LIBRARY_PATH)
+LD_LIBRARY_PATH:=${LD_LIBRARY_PATH}:${TOOLCHAIN_ROOT}/lib
+.else
+LD_LIBRARY_PATH:=/lib:/usr/lib:/usr/local/lib:${TOOLCHAIN_ROOT}/lib
+.endif
 
 all::
 	@echo '>>> Top-level Glatt build system.'

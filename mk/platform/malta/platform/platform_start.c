@@ -1,6 +1,5 @@
 #include <core/types.h>
 #include <core/error.h>
-#include <core/scheduler.h>
 #include <core/startup.h>
 #include <core/string.h>
 #include <core/mp.h>
@@ -9,8 +8,6 @@
 #include <cpu/interrupt.h>
 #include <cpu/memory.h>
 #include <cpu/startup.h>
-#include <io/console/console.h>
-#include <vm/vm.h>
 #include <vm/vm_page.h>
 
 extern char __bss_start[], _end[];

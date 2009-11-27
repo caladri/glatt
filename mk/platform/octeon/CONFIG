@@ -1,0 +1,16 @@
+cpu		mips
+
+# octeon enables MP by default and requires it.
+std		implies: mp
+std		requires: mp
+
+# octeon needs MIPS32/64 ISA support
+std		implies: mips3264isa
+std		requires: mips3264isa
+
+std		platform/octeon/device/octeon_console.c
+
+std		platform/octeon/platform/platform_clock.c
+std		platform/octeon/platform/platform_mainbus.c
+std		platform/octeon/platform/platform_mp.c
+std		platform/octeon/platform/platform_start.c

@@ -5,6 +5,7 @@
 #include <core/string.h>
 #include <core/mp.h>
 #include <cpu/cpu.h>
+#include <cpu/exception.h>
 #include <cpu/interrupt.h>
 #include <cpu/memory.h>
 #include <cpu/startup.h>
@@ -63,6 +64,11 @@ platform_start(int32_t argc, int32_t argv, int32_t envp, uint32_t memsize)
 	 * Set up PCPU data, etc.  We'd like to do this earlier but can't yet.
 	 */
 	cpu_startup(KERNEL_PHYSICAL_HOLE);
+
+	/*
+	 * Turn on exception handlers.
+	 */
+	cpu_exception_setup();
 
 	/*
 	 * Startup our physical page pool.

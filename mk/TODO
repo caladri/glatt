@@ -10,6 +10,7 @@ Fundamentals:
 		o) Think more about the rights model and rights passing.
 		o) More complete data model.
 	o) Clean up VM, pmap and exceptions.  Add vm objects and pv lists?
+		o) Worry about t_vm's validity.
 	o) Either implement preemption or declare preemption never.
 	o) Timekeeping or defer it.
 

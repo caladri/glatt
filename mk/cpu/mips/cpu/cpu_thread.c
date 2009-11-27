@@ -37,13 +37,15 @@ cpu_thread_setup(struct thread *td)
 			       kstack + off);
 	td->td_context.c_regs[CONTEXT_SP] = kstack + KSTACK_SIZE;
 
-	error = vm_alloc(td->td_task->t_vm, MAILBOX_SIZE, &mbox);
-	if (error != 0)
-		return (error);
-	td->td_cputhread.td_mbox = mbox;
-	for (off = 0; off < MAILBOX_SIZE; off += MAILBOX_SIZE)
-		tlb_wired_wire(&td->td_cputhread.td_tlbwired,
-			       td->td_task->t_vm->vm_pmap, mbox + off);
+	if ((td->td_task->t_flags & TASK_KERNEL) != 0) {
+		error = vm_alloc(td->td_task->t_vm, MAILBOX_SIZE, &mbox);
+		if (error != 0)
+			return (error);
+		td->td_cputhread.td_mbox = mbox;
+		for (off = 0; off < MAILBOX_SIZE; off += MAILBOX_SIZE)
+			tlb_wired_wire(&td->td_cputhread.td_tlbwired,
+				       td->td_task->t_vm->vm_pmap, mbox + off);
+	}
 
 	return (0);
 }

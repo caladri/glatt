@@ -29,6 +29,13 @@ static bool startup_booting = false;
 static struct spinlock startup_lock;
 static struct task *main_task;
 
+/*
+ * NB:
+ * startup_early determines all kinds of things about how spinlocks work, etc.
+ * There are some cases where e.g. startup_early will be set to false and you
+ * must not do things like call kcprintf() until some other steps have been
+ * taken, for instance setting up exception vectors.
+ */
 volatile bool startup_early = true;
 
 void

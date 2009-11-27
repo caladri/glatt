@@ -29,9 +29,9 @@ VENDOR_DIST=	${VENDOR_SRC}/${VENDOR}/${PACKAGE}/${DISTFILE}
 WORK_SRC=	${.OBJDIR}/work/${DISTDIR}
 BUILD_OBJ=	${.OBJDIR}/build/${PACKAGE}
 .if defined(USE_GNUMAKE)
-BUILD_MAKE=gnumake
+BUILD_MAKE=	gnumake
 .else
-BUILD_MAKE=make
+BUILD_MAKE=	${MAKE}
 .endif
 
 pre-configure: ${VENDOR_DIST}

@@ -4,6 +4,7 @@ VENDOR_SRC?=	${GLATT_SRC}/../vendor-src
 SHARED_VARS+=	VENDOR_SRC
 
 SHARED_VARS+=	PATH
+SHARED_VARS+=	LD_LIBRARY_PATH
 
 .if defined(PLATFORM)
 .if ${PLATFORM} == "testmips" || ${PLATFORM} == "malta" || ${PLATFORM} == "octeon"

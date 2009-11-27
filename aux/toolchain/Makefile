@@ -22,11 +22,38 @@ NEED_GNUMAKE=	t
 .endif
 .endif
 
+.if defined(WANT_GCC)
+.if !exists(${VENDOR_SRC}/gnu/gmp)
+.error "Building GNU binutils or GCC requires GMP!  Update vendor-src."
+.endif
+.if !exists(${PREFIX}/include/gmp.h)
+NEED_GMP=	t
+.endif
+
+.if !exists(${VENDOR_SRC}/gnu/mpfr)
+.error "Building GNU binutils or GCC requires MPFR!  Update vendor-src."
+.endif
+.if !exists(${PREFIX}/include/mpfr.h)
+NEED_MPFR=	t
+.endif
+.endif
+
 ##
 # GCC and Binutils require GNU Make, so build it first.
 ##
 .if defined(NEED_GNUMAKE)
 SUBDIRS+=	gnumake
+.endif
+
+##
+# GCC requires GMP and MPFR, so build them first.
+##
+.if defined(NEED_GMP)
+SUBDIRS+=	gmp
+.endif
+
+.if defined(NEED_MPFR)
+SUBDIRS+=	mpfr
 .endif
 
 ##
@@ -40,8 +67,6 @@ SUBDIRS+=	binutils
 # Build GCC after its dependencies.
 ##
 .if defined(WANT_GCC)
-SUBDIRS+=	gmp
-SUBDIRS+=	mpfr
 SUBDIRS+=	gcc
 .endif
 

@@ -30,7 +30,6 @@
 #define	CP0_PRID_TYPE_5KE		(0x89)
 
 	/* CP0_PRID_COMPANY_CAVIUM */
-#define	CP0_PRID_TYPE_CN30XX		(0x02)
 #define	CP0_PRID_TYPE_CN50XX		(0x06)
 
 	/* Coprocessor 0 revision major/minor.  */
@@ -117,10 +116,6 @@ cpu_identify(struct cpuinfo *cpu)
 	case CP0_PRID_COMPANY_CAVIUM:
 		cpu->cpu_company = "Cavium";
 		switch (CP0_PRID_TYPE(prid)) {
-		case CP0_PRID_TYPE_CN30XX:
-			cpu->cpu_type = "CN30XX";
-			cpu->cpu_mips3264isa = true;
-			break;
 		case CP0_PRID_TYPE_CN50XX:
 			cpu->cpu_type = "CN50XX";
 			cpu->cpu_mips3264isa = true;

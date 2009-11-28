@@ -10,6 +10,7 @@
 #define	SYMBOL(s)	.globl s; s:
 
 #define	ENTRY(s)	.p2align 4; .globl s; .ent s; s:
+#define	STATIC_ENTRY(s)	.p2align 4; .ent s; s:
 #define	END(s)		.end s
 
 #define	NOREORDER	.set noreorder

@@ -61,6 +61,7 @@ static void tlb_invalidate_one(unsigned);
 #ifndef	UNIPROCESSOR
 static void tlb_shootdown(void *);
 #endif
+static void tlb_update(struct pmap *, vaddr_t);
 static void tlb_wired_entry(struct tlb_wired_entry *, vaddr_t, unsigned, pt_entry_t);
 static void tlb_wired_insert(unsigned, struct tlb_wired_entry *);
 
@@ -140,45 +141,6 @@ tlb_modify(vaddr_t vaddr)
 }
 
 void
-tlb_refill(vaddr_t vaddr)
-{
-	struct vm *vm;
-
-	if (PAGE_FLOOR(vaddr) == 0)
-		panic("%s: accessing NULL.", __func__);
-	if (vaddr >= KERNEL_BASE && vaddr < KERNEL_END)
-		vm = &kernel_vm;
-	else
-		vm = current_task()->t_vm;
-	tlb_update(vm->vm_pmap, vaddr);
-}
-
-void
-tlb_update(struct pmap *pm, vaddr_t vaddr)
-{
-	register_t asid;
-	pt_entry_t *pte;
-	int i;
-
-	critical_enter();
-	pte = pmap_find(pm, vaddr); /* XXX lock.  */
-	if (pte == NULL)
-		panic("%s: pmap_find returned NULL.", __func__);
-	asid = cpu_read_tlb_entryhi();
-	cpu_write_tlb_entryhi(TLBHI_ENTRY(vaddr, pmap_asid(pm)));
-	tlb_probe();
-	i = cpu_read_tlb_index();
-	cpu_write_tlb_entrylo0(*pte);
-	cpu_write_tlb_entrylo1(*pte + TLBLO_PA_TO_PFN(TLB_PAGE_SIZE));
-	if (i >= 0)
-		tlb_write_indexed();
-	else
-		tlb_write_random();
-	cpu_write_tlb_entryhi(asid);
-	critical_exit();
-}
-
-void
 tlb_wired_init(struct tlb_wired_context *wired)
 {
 	struct tlb_wired_entry *twe;
@@ -253,6 +215,31 @@ tlb_shootdown(void *arg)
 	tlb_invalidate_addr(tsa->pmap, tsa->vaddr);
 }
 #endif
+
+static void
+tlb_update(struct pmap *pm, vaddr_t vaddr)
+{
+	register_t asid;
+	pt_entry_t *pte;
+	int i;
+
+	critical_enter();
+	pte = pmap_find(pm, vaddr); /* XXX lock.  */
+	if (pte == NULL)
+		panic("%s: pmap_find returned NULL.", __func__);
+	asid = cpu_read_tlb_entryhi();
+	cpu_write_tlb_entryhi(TLBHI_ENTRY(vaddr, pmap_asid(pm)));
+	tlb_probe();
+	i = cpu_read_tlb_index();
+	cpu_write_tlb_entrylo0(*pte);
+	cpu_write_tlb_entrylo1(*pte + TLBLO_PA_TO_PFN(TLB_PAGE_SIZE));
+	if (i >= 0)
+		tlb_write_indexed();
+	else
+		tlb_write_random();
+	cpu_write_tlb_entryhi(asid);
+	critical_exit();
+}
 
 static void
 tlb_wired_entry(struct tlb_wired_entry *twe, vaddr_t vaddr, unsigned asid,

@@ -78,7 +78,7 @@ VECTOR_ENTRY(xtlb)
 	.set at
 VECTOR_END(xtlb)
 
-ENTRY(generic_exception)
+STATIC_ENTRY(generic_exception)
 	.set noat
 	dla	k0, 1f
 	j	exception_frame_save
@@ -91,7 +91,7 @@ ENTRY(generic_exception)
 	.set at
 END(generic_exception)
 
-ENTRY(tlb_exception)
+STATIC_ENTRY(tlb_exception)
 	.set noat
 	dmfc0	k0, CP0_BADVADDR
 	dli	k1, KERNEL_END
@@ -162,7 +162,7 @@ ENTRY(tlb_exception)
 	.set at
 END(tlb_exception)
 
-ENTRY(tlbmod_exception)
+STATIC_ENTRY(tlbmod_exception)
 	.set noat
 	dla	k0, 1f
 	j	exception_frame_save
@@ -175,14 +175,14 @@ ENTRY(tlbmod_exception)
 	.set at
 END(tlbmod_exception)
 
-ENTRY(cache_exception)
+STATIC_ENTRY(cache_exception)
 	.set noat
 	j	generic_exception
 	nop
 	.set at
 END(cache_exception)
 
-ENTRY(exception_frame_save)		/* Return address is k0.  */
+STATIC_ENTRY(exception_frame_save)		/* Return address is k0.  */
 	.set noat
 	dsubu	sp, FRAME_SIZE
 
@@ -231,7 +231,7 @@ ENTRY(exception_frame_save)		/* Return address is k0.  */
 	.set at
 END(exception_frame_save)
 
-ENTRY(exception_frame_restore)		/* Does not return.  */
+STATIC_ENTRY(exception_frame_restore)		/* Does not return.  */
 	.set noat
 	ld      t2, FRAME_LO(sp)
 	ld      t1, FRAME_HI(sp)

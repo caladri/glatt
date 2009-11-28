@@ -9,6 +9,7 @@ std		implies: mips3264isa
 std		requires: mips3264isa
 
 std		platform/octeon/device/octeon_console.c
+std		platform/octeon/device/octeon_mio.c
 
 std		platform/octeon/platform/platform_clock.c
 std		platform/octeon/platform/platform_mainbus.c

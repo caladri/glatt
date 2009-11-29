@@ -22,6 +22,7 @@
 #define	EXCEPTION_BASE_UTLBMISS		(XKPHYS_MAP(CCA_UC, 0x00000000))
 #define	EXCEPTION_BASE_GENERAL		(XKPHYS_MAP(CCA_UC, 0x00000180))
 #define	EXCEPTION_BASE_XTLBMISS		(XKPHYS_MAP(CCA_UC, 0x00000080))
+#define	EXCEPTION_BASE_INTERRUPT	(XKPHYS_MAP(CCA_UC, 0x00000200))
 
 static const char *cpu_exception_names[] = {
 #define	EXCEPTION_INT			(0x00)
@@ -107,6 +108,8 @@ cpu_exception_init(void)
 				     exception_vector_end);
 	cpu_exception_vector_install(EXCEPTION_BASE_XTLBMISS, xtlb_vector,
 				     xtlb_vector_end);
+	cpu_exception_vector_install(EXCEPTION_BASE_INTERRUPT, exception_vector,
+				     exception_vector_end);
 	cpu_write_status(cpu_read_status() & ~CP0_STATUS_BEV);
 
 	/*

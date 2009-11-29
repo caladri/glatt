@@ -9,17 +9,13 @@
 void
 ttk_idle(void)
 {
-	struct thread *td;
-
 	ASSERT(!critical_section(),
 	       "Must not be idling in a critical section.");
 
-	td = current_thread();
-
-	/* XXX cpu_ttk_wait();  */
-#if __mips__
-	asm volatile ("wait");
-#endif
-
+	/*
+	 * XXX
+	 * Use a CPU wait instruction if there's nothing to run.
+	 * Does that need done in the scheduler?
+	 */
 	scheduler_schedule(NULL, NULL);
 }

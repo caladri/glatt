@@ -7,5 +7,5 @@
 unsigned
 platform_clock_calibrate(unsigned hz)
 {
-	return (500000000 / hz);
+	return (0);
 }

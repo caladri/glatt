@@ -5,7 +5,7 @@ PHDRS {
 
 SECTIONS
 {
-	. = 0xffffffff80102000;
+	. = 0xffffffff80110000;
 
 	. = ALIGN(8);
 	.text : { *(.text) } :text
@@ -16,11 +16,16 @@ SECTIONS
 	. = ALIGN(8);
 	.sdata : { *(.sdata) }
 
+	. = ALIGN(8);
 	__bss_start = .;
+
 	.bss : { *(.bss) }
 	.sbss  : { *(.sbss) }
+
+	. = ALIGN(8);
 	__bss_stop = .;
 
+	. = ALIGN(8192);
 	_end = . ;
 
 	/DISCARD/ : { *(.MIPS.options) }

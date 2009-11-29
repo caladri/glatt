@@ -51,9 +51,12 @@ KERNEL_CFLAGS+=	-Wno-unused-parameter
 KERNEL_CFLAGS+=	-Wunused-value
 KERNEL_CFLAGS+=	-Wunused-variable
 
-KERNEL_LDFLAGS=	-e ${KERNEL_ENTRY}
+KERNEL_LDFLAGS+=-e ${KERNEL_ENTRY}
 .if defined(KERNEL_TEXT)
 KERNEL_LDFLAGS+=-Ttext ${KERNEL_TEXT}
+.endif
+.if defined(KERNEL_LDSCRIPT)
+KERNEL_LDFLAGS+=-T ${KERNEL_LDSCRIPT}
 .endif
 
 KERNEL_OBJECTS=	${KERNEL_SOURCES:R:S/$/.o/g}

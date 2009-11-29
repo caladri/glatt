@@ -5,7 +5,7 @@ PHDRS {
 
 SECTIONS
 {
-	. = 0xffffffff80110000;
+	. = 0xffffffff80102000;
 
 	. = ALIGN(8);
 	.text : { *(.text) } :text

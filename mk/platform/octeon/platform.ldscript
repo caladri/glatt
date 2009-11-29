@@ -1,14 +1,11 @@
 OUTPUT_ARCH(mips)
-PHDRS {
-	text PT_LOAD FILEHDR PHDRS FLAGS(0x05);
-}
 
 SECTIONS
 {
 	. = 0xffffffff80110000;
 
 	. = ALIGN(8);
-	.text : { *(.text) } :text
+	.text : { *(.text) }
 
 	. = ALIGN(8);
 	.data : { *(.data) }
@@ -16,16 +13,13 @@ SECTIONS
 	. = ALIGN(8);
 	.sdata : { *(.sdata) }
 
-	. = ALIGN(8);
 	__bss_start = .;
-
-	.bss : { *(.bss) }
-	.sbss  : { *(.sbss) }
-
 	. = ALIGN(8);
+	.bss : { *(.bss) }
+	. = ALIGN(8);
+	.sbss  : { *(.sbss) }
 	__bss_stop = .;
 
-	. = ALIGN(8192);
 	_end = . ;
 
 	/DISCARD/ : { *(.MIPS.options) }

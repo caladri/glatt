@@ -31,4 +31,17 @@ struct octeon_boot_info {
 	uint8_t mac_count;
 };
 
+struct octeon_boot_memory_descriptor {
+	uint8_t unused1[8];
+	uint64_t head;
+	uint32_t major;
+	uint32_t minor;
+	uint8_t unused2[32];
+};
+
+struct octeon_memory_descriptor {
+	uint64_t next;
+	uint64_t size;
+};
+
 #endif /* !PLATFORM_BOOTINFO_H */

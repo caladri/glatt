@@ -8,6 +8,8 @@
 #include <cpu/interrupt.h>
 #include <cpu/memory.h>
 #include <cpu/startup.h>
+#include <io/console/console.h>
+#include <platform/bootinfo.h>
 #include <vm/vm_page.h>
 
 extern char __bss_start[], _end[];
@@ -20,8 +22,9 @@ platform_halt(void)
 }
 
 void
-platform_start(void)
+platform_start(int argc, char **argv, int initcore, struct octeon_boot_descriptor *boot_descriptor)
 {
+	struct octeon_boot_info *boot_info;
 	size_t membytes;
 	int error;
 
@@ -41,6 +44,24 @@ platform_start(void)
 	startup_version();
 
 	/*
+	 * Check the boot descriptor.
+	 */
+	if (boot_descriptor == NULL) {
+		panic("No boot descriptor.");
+	}
+	if (boot_descriptor->size != sizeof *boot_descriptor) {
+		panic("Boot descriptor has wrong size; got %u expected %zu.", boot_descriptor->size, sizeof *boot_descriptor);
+	}
+
+	/*
+	 * Extract the boot info.
+	 */
+	boot_info = (struct octeon_boot_info *)XKPHYS_MAP(CCA_CNC, boot_descriptor->info);
+	if (boot_info == NULL) {
+		panic("No boot info.");
+	}
+
+	/*
 	 * Retrieve the amount of RAM available and steal a page for the PCPU
 	 * data.  Skip the exception vectors and where the kernel is loaded.
 	 */
@@ -48,7 +69,7 @@ platform_start(void)
 #define	KERNEL_OFFSET		(1ul * 1024 * 1024)
 #define	KERNEL_PHYSICAL_HOLE	(KERNEL_MAX_SIZE + KERNEL_OFFSET)
 #define	KERNEL_PHYSICAL_BASE	(KERNEL_PHYSICAL_HOLE + PAGE_SIZE)
-	membytes = 128 * 1024 * 1024; /* XXX */
+	membytes = boot_info->dram_mb * 1024 * 1024;
 	if (membytes <= KERNEL_PHYSICAL_BASE)
 		panic("%s: not enough attached memory.", __func__);
 	if (KSEG_EXTRACT(_end) >= KERNEL_PHYSICAL_BASE)

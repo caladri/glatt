@@ -9,6 +9,9 @@
 #include <core/thread.h>
 #include <core/ttk.h>
 #include <cpu/startup.h>
+#ifdef ENTER_DEBUGGER
+#include <db/db.h>
+#endif
 #include <io/console/console.h>
 #include <ipc/system.h>
 #include <vm/vm.h>
@@ -164,6 +167,10 @@ startup_main_thread(void *arg)
 
 #ifdef VERBOSE
 	kcprintf("STARTUP: cpu%u starting main thread.\n", mp_whoami());
+#endif
+
+#ifdef ENTER_DEBUGGER
+	db_enter();
 #endif
 
 	/* Become idle thread.  */

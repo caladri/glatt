@@ -40,6 +40,7 @@ mp		core/core_mp_ipi.c
 db		db/db.c
 db		db/db_command.c
 db		db/db_misc.c
+enter_debugger	requires: db
 
 std		io/console/console.c
 framebuffer	io/console/framebuffer.c

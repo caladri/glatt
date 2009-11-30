@@ -1,4 +1,5 @@
 #include <core/types.h>
+#include <core/critical.h>
 #include <core/error.h>
 #include <core/mp.h>
 #include <db/db.h>
@@ -24,5 +25,7 @@ db_enter(void)
 	mp_ipi_send_but(mp_whoami(), IPI_STOP);
 #endif
 
+	critical_enter();
 	db_command_enter();
+	critical_exit();
 }

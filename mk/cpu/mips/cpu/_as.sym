@@ -22,7 +22,9 @@ DEFINE(CONTEXT_SP,	offsetof(struct context,	c_regs[CONTEXT_SP]));
 DEFINE(CONTEXT_RA,	offsetof(struct context,	c_regs[CONTEXT_RA]));
 
 	/* FRAME offsets.  */
-//DEFINE(FRAME_ZERO,	offsetof(struct frame,	f_regs[FRAME_ZERO]));
+#if 0
+DEFINE(FRAME_ZERO,	offsetof(struct frame,	f_regs[FRAME_ZERO]));
+#endif
 DEFINE(FRAME_AT,	offsetof(struct frame,	f_regs[FRAME_AT]));
 DEFINE(FRAME_V0,	offsetof(struct frame,	f_regs[FRAME_V0]));
 DEFINE(FRAME_V1,	offsetof(struct frame,	f_regs[FRAME_V1]));
@@ -48,8 +50,10 @@ DEFINE(FRAME_S6,	offsetof(struct frame,	f_regs[FRAME_S6]));
 DEFINE(FRAME_S7,	offsetof(struct frame,	f_regs[FRAME_S7]));
 DEFINE(FRAME_T8,	offsetof(struct frame,	f_regs[FRAME_T8]));
 DEFINE(FRAME_T9,	offsetof(struct frame,	f_regs[FRAME_T9]));
-//DEFINE(FRAME_K0,	offsetof(struct frame,	f_regs[FRAME_K0]));
-//DEFINE(FRAME_K1,	offsetof(struct frame,	f_regs[FRAME_K1]));
+#if 0
+DEFINE(FRAME_K0,	offsetof(struct frame,	f_regs[FRAME_K0]));
+DEFINE(FRAME_K1,	offsetof(struct frame,	f_regs[FRAME_K1]));
+#endif
 DEFINE(FRAME_GP,	offsetof(struct frame,	f_regs[FRAME_GP]));
 DEFINE(FRAME_SP,	offsetof(struct frame,	f_regs[FRAME_SP]));
 DEFINE(FRAME_S8,	offsetof(struct frame,	f_regs[FRAME_S8]));

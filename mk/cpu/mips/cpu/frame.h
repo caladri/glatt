@@ -11,7 +11,9 @@ struct frame {
 	register_t f_regs[FRAME_COUNT];
 };
 
-//#define	FRAME_ZERO	(0x00)
+#if 0
+#define	FRAME_ZERO	(0x00)
+#endif
 #define	FRAME_AT	(0x01)
 #define	FRAME_V0	(0x02)
 #define	FRAME_V1	(0x03)
@@ -37,8 +39,10 @@ struct frame {
 #define	FRAME_S7	(0x17)
 #define	FRAME_T8	(0x18)
 #define	FRAME_T9	(0x19)
-//#define	FRAME_K0	(0x1a)
-//#define	FRAME_K1	(0x1b)
+#if 0
+#define	FRAME_K0	(0x1a)
+#define	FRAME_K1	(0x1b)
+#endif
 #define	FRAME_GP	(0x1c)
 #define	FRAME_SP	(0x1d)
 #define	FRAME_S8	(0x1e)

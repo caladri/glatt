@@ -329,13 +329,16 @@ DB_COMMAND(dotkvm, vm_index, db_vm_index_dump_kvm_dot);
 static void
 db_vm_index_dump_task(void)
 {
-	if (current_task() != NULL) {
-		struct vm *vm;
+	struct task *task = current-task();
 
-		vm = current_task()->t_vm;
-		db_vm_index_dump_vm(vm, db_vm_index_dump_dot);
+	if (task != NULL) {
+		if ((task->t_flags & TASK_KERNEL) == 0) {
+			db_vm_index_dump_vm(task->t_vm, db_vm_index_dump_dot);
+		} else {
+			kcprintf("Kernel tasks do not have their own VM spaces.\n");
+		}
 	} else {
-		kcprintf("No running thread.\n");
+		kcprintf("No running task.\n");
 	}
 }
 DB_COMMAND(task, vm_index, db_vm_index_dump_task);

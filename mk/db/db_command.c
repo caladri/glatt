@@ -35,9 +35,19 @@ db_command_init(void)
 {
 	struct db_command **cmdp, *iter;
 
+	/*
+	 * Compile a command tree from the db_commands set.
+	 */
 	SET_FOREACH(cmdp, db_commands) {
 		struct db_command *cmd = *cmdp;
 		struct db_command_tree *parent = cmd->c_parent;
+
+		/*
+		 * The root is illusory, don't compile it in.
+		 */
+		if (cmd->c_type == DB_COMMAND_TYPE_TREE &&
+		    cmd->c_union.c_tree == &db_command_tree_root)
+			continue;
 
 		BTREE_INSERT(cmd, iter, &parent->ct_commands, c_tree,
 			     strcmp(cmd->c_name, iter->c_name) < 0);
@@ -176,6 +186,7 @@ static void
 db_command_listing_one(struct db_command *cmd)
 {
 	char suffix;
+
 	switch (cmd->c_type) {
 	case DB_COMMAND_TYPE_TREE:
 		suffix = '/';

@@ -1,3 +1,25 @@
+Octeon.
+
+Figure out of interrupts or any other exception handling is actually functional.
+
+Figure out why the clock wasn't working (possibly related to previous.)
+
+Figure out why panic from the debugger isn't working.
+
+PCI support.
+
+Gigabit support?
+
+Add a reset command to db.
+
+Add reset and halt support to Octeon.
+
+A richer set of CIU, MIO, etc., interfaces.
+
+Flash and CompactFlash support.
+
+Maybe the general device/ vs. platform/ distinction should be revisited.
+
 Tasks to do before release.
 
 Fundamentals:

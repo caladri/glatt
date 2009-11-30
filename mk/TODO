@@ -2,6 +2,8 @@ Octeon.
 
 Figure out of interrupts or any other exception handling is actually functional.
 
+Are any TLB refills being tested?
+
 Figure out why the clock wasn't working (possibly related to previous.)
 
 Figure out why panic from the debugger isn't working.

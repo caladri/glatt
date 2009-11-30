@@ -29,6 +29,7 @@ ENTRY(cpu_context_restore)
 	ld	s8, CONTEXT_S8(t1)
 	ld	sp, CONTEXT_SP(t1)
 	ld	ra, CONTEXT_RA(t1)
+
 	/*
 	 * Copy saved registers into argument registers for upcalls.
 	 */
@@ -40,15 +41,18 @@ ENTRY(cpu_context_restore)
 	move	a5, s5
 	move	a6, s6
 	move	a7, s7
+
 	/*
 	 * Set thread pointer.
 	 */
 	dli	t3, PCPU_VIRTUAL
 	sd	t0, PC_THREAD(t3)
+
 	/*
 	 * We'll be returning true from cpu_context_save().
 	 */
 	li	v0, TRUE
+
 	/*
 	 * Set status register to kernel with interrupt mask, but don't set the
 	 * interrupts-enabled bit, spinlocks will take care of that.
@@ -77,6 +81,7 @@ ENTRY(cpu_context_save)
 	sd	s8, CONTEXT_S8(t0)
 	sd	sp, CONTEXT_SP(t0)
 	sd	ra, CONTEXT_RA(t0)
+
 	/*
 	 * Return false to indicate this isn't a restore.
 	 */

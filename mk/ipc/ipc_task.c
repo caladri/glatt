@@ -72,7 +72,7 @@ ipc_task_check_port_right(struct task *task, ipc_port_right_t rights,
 		IPC_PORT_RIGHTS_UNLOCK();
 		return (ERROR_NO_RIGHT);
 	}
-	
+
 	/* A port with a receive right can do whatever it wants.  */
 	if ((ipcpr->ipcpr_rights & IPC_PORT_RIGHT_RECEIVE) != 0) {
 		IPC_PORT_RIGHTS_UNLOCK();

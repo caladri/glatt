@@ -16,7 +16,7 @@ mp_ncpus(void)
 /*
  * A UNIPROCESSOR system must not define MAXCPUS.  A !UNIPROCESSOR system must.
  */
-#if defined(UNIPROCESSOR) 
+#if defined(UNIPROCESSOR)
 #if defined(MAXCPUS)
 #error "Uniprocessor systems must not define MAXCPUS."
 #endif

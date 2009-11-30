@@ -166,7 +166,7 @@ static void
 platform_mp_start_cpu(void)
 {
 	paddr_t pcpu_addr;
-	
+
 	pcpu_addr = platform_mp_pcpu_addr;
 	platform_mp_pcpu_addr = 0;
 

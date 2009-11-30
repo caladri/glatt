@@ -89,7 +89,7 @@ octeon_mio_uart_write(unsigned unit, uint8_t ch)
 	/* Wait until the TX FIFO isn't full.  */
 	for (;;) {
 		uint64_t lsr, usr;
-		
+
 		lsr = OCTEON_MIO_READ(base, OCTEON_MIO_UART_REG_LSR);
 		if ((lsr & OCTEON_MIO_UART_REG_LSR_THRE) != 0)
 			break;

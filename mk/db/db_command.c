@@ -252,7 +252,7 @@ db_command_ambiguous(struct db_command_tree *tree, const char *name)
 	struct db_command *cmd;
 
 	kcprintf("DB: ambiguous component '%s' possible matches:", name);
- 
+
 	BTREE_MIN(cmd, &tree->ct_commands, c_tree);
 	while (cmd != NULL) {
 		if (strlen(name) < strlen(cmd->c_name)) {

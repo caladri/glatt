@@ -125,7 +125,7 @@ db_command_all(struct db_command_tree *tree)
 static int
 db_command_input(void)
 {
-	int argc;
+	unsigned argc;
 	int error;
 	unsigned c;
 

@@ -329,7 +329,7 @@ DB_COMMAND(dotkvm, vm_index, db_vm_index_dump_kvm_dot);
 static void
 db_vm_index_dump_task(void)
 {
-	struct task *task = current-task();
+	struct task *task = current_task();
 
 	if (task != NULL) {
 		if ((task->t_flags & TASK_KERNEL) == 0) {

@@ -71,6 +71,6 @@ struct db_command {
 
 void db_command_init(void);
 
-void db_command_enter(void) __noreturn;
+void db_command_enter(void);
 
 #endif /* !_DB_DB_COMMAND_H_ */

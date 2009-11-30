@@ -28,4 +28,9 @@ db_enter(void)
 	critical_enter();
 	db_command_enter();
 	critical_exit();
+
+	/*
+	 * XXX
+	 * Resume other CPUs.
+	 */
 }

@@ -17,6 +17,7 @@ DB_COMMAND_TREE(root, root, root);
 
 static const char *db_command_argv[DB_COMMAND_ARG_MAX];
 static char db_command_buffer[DB_COMMAND_ARG_MAX * DB_COMMAND_ARG_LIKELY_SIZE];
+static bool db_command_return;
 
 static void db_command_all(struct db_command_tree *);
 static int db_command_input(void);
@@ -53,8 +54,9 @@ db_command_enter(void)
 	int argc, i;
 
 	current = &db_command_tree_root;
+	db_command_return = false;
 
-	for (;;) {
+	while (!db_command_return) {
 		kcprintf("(db ");
 		db_command_path(current);
 		kcprintf(") ");
@@ -300,3 +302,13 @@ db_command_lookup(struct db_command_tree *tree, const char *name)
 		return (match);
 	return (NULL);
 }
+
+static void
+db_command_exit(void)
+{
+	ASSERT(!db_command_return, "Can't leave debugger twice.");
+	kcprintf("Leaving debugger.\n");
+	db_command_return = true;
+}
+DB_COMMAND(exit, root, db_command_exit);
+DB_COMMAND(quit, root, db_command_exit);

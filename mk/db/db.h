@@ -7,6 +7,6 @@
 
 void db_init(void);
 
-void db_enter(void) __noreturn;
+void db_enter(void);
 
 #endif /* !_DB_DB_H_ */

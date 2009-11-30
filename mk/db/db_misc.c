@@ -11,7 +11,6 @@ db_halt(void)
 	cpu_halt();
 }
 DB_COMMAND(halt, root, db_halt);
-DB_COMMAND(quit, root, db_halt);
 
 static void
 db_panic(void)

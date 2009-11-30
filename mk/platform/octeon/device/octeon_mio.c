@@ -1,4 +1,5 @@
 #include <core/types.h>
+#include <core/error.h>
 #include <cpu/memory.h>
 #include <cpu/startup.h>
 #include <device/mio.h>
@@ -18,11 +19,15 @@
 #define	OCTEON_MIO_UART0_DEV_BASE	(0x0800ul)
 #define	OCTEON_MIO_UART1_DEV_BASE	(0x0c00ul)
 
+	/* Receive Buffer.  */
+#define	OCTEON_MIO_UART_REG_RBR		(0x08)
+
 	/* Transmitter Holding.  */
 #define	OCTEON_MIO_UART_REG_THR		(0x08)
 
 	/* Line Status Register.  */
 #define	OCTEON_MIO_UART_REG_LSR		(0x05)
+#define	OCTEON_MIO_UART_REG_LSR_DR	(0x01)	/* Data Ready.  */
 #define	OCTEON_MIO_UART_REG_LSR_THRE	(0x20)	/* THR is Empty.  */
 
 	/* UART Status Register.  */
@@ -36,6 +41,33 @@ octeon_mio_bus_barrier(void)
 
 	val = OCTEON_MIO_READ(OCTEON_MIO_BARRIER, 0);
 	(void)val;
+}
+
+int
+octeon_mio_uart_read(unsigned unit, uint8_t *chp)
+{
+	uint64_t lsr, rbr;
+	paddr_t base;
+
+	switch (unit) {
+	case 0:
+		base = OCTEON_MIO_UART0_DEV_BASE;
+		break;
+	case 1:
+		base = OCTEON_MIO_UART1_DEV_BASE;
+		break;
+	default:
+		panic("%s: unsupported unit number %u", __func__, unit);
+	}
+
+	lsr = OCTEON_MIO_READ(base, OCTEON_MIO_UART_REG_LSR);
+	if ((lsr & OCTEON_MIO_UART_REG_LSR_DR) == 0)
+		return (ERROR_AGAIN);
+
+	rbr = OCTEON_MIO_READ(base, OCTEON_MIO_UART_REG_RBR);
+	*chp = rbr & 0xff;
+
+	return (0);
 }
 
 void

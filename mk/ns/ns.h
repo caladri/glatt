@@ -1,15 +1,15 @@
 #ifndef	_NS_NS_H_
 #define	_NS_NS_H_
 
-/* Constants.  */
+	/* Constants.  */
 
 #define	NS_SERVICE_NAME_LENGTH	(128)
 
-/* Common types.  */
+	/* Common types.  */
 
 typedef	uintmax_t ns_cookie_t;
 
-/* Message types.  */
+	/* Message types.  */
 
 #define	NS_MINIMAL_MESSAGE_FIELDS					\
 	int error;							\
@@ -32,7 +32,7 @@ typedef	uintmax_t ns_cookie_t;
 		_CONCAT(resptype, _MESSAGE_FIELDS);			\
 	}
 
-/* Message numbers and structures.  */
+	/* Message numbers and structures.  */
 
 #define	NS_MESSAGE_LOOKUP	(0x00000000)
 

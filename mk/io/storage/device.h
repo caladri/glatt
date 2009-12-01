@@ -10,7 +10,7 @@ struct storage_device {
 };
 
 int storage_device_attach(struct storage_device *, unsigned,
-			  storage_device_read_t *, void *);
-int storage_device_read(struct storage_device *, void *, size_t, off_t);
+			  storage_device_read_t *, void *) __non_null(1, 3);
+int storage_device_read(struct storage_device *, void *, size_t, off_t) __non_null(1, 2);
 
 #endif /* !_IO_STORAGE_DEVICE_H_ */

@@ -14,7 +14,7 @@ struct interrupt_handler {
 	STAILQ_ENTRY(struct interrupt_handler) ih_link;
 };
 
-void cpu_interrupt_establish(int, interrupt_t *, void *);
+void cpu_interrupt_establish(int, interrupt_t *, void *) __non_null(2);
 
 void cpu_interrupt(void);
 void cpu_interrupt_setup(void);

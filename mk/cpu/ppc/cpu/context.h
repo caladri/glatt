@@ -11,8 +11,7 @@ struct context {
 	register_t c_regs[CONTEXT_COUNT];
 };
 
-void cpu_context_restore(struct thread *);
-bool cpu_context_save(struct thread *);
-void cpu_context_switch(struct thread *, struct thread *);
+void cpu_context_restore(struct thread *) __non_null(1);
+bool cpu_context_save(struct thread *) __non_null(1);
 
 #endif /* !_CPU_CONTEXT_H_ */

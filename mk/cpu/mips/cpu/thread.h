@@ -15,7 +15,7 @@ struct cpu_thread {
 	vaddr_t td_mbox;
 };
 
-void cpu_thread_set_upcall(struct thread *, void (*)(void *), void *);
-int cpu_thread_setup(struct thread *);
+void cpu_thread_set_upcall(struct thread *, void (*)(void *), void *) __non_null(1, 2);
+int cpu_thread_setup(struct thread *) __non_null(1);
 
 #endif /* !_CPU_THREAD_H_ */

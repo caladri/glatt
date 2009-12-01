@@ -4,6 +4,6 @@
 struct frame;
 
 void cpu_exception_init(void);
-void exception(struct frame *);
+void exception(struct frame *) __non_null(1);
 
 #endif /* !_CPU_EXCEPTION_H_ */

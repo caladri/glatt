@@ -52,10 +52,10 @@ pmap_unmap_direct(struct vm *vm, vaddr_t vaddr)
 }
 
 void pmap_bootstrap(void);
-int pmap_extract(struct vm *, vaddr_t, paddr_t *);
-int pmap_init(struct vm *, vaddr_t, vaddr_t);
-int pmap_map(struct vm *, vaddr_t, struct vm_page *);
-int pmap_unmap(struct vm *, vaddr_t);
-void pmap_zero(struct vm_page *);
+int pmap_extract(struct vm *, vaddr_t, paddr_t *) __non_null(1, 3);
+int pmap_init(struct vm *, vaddr_t, vaddr_t) __non_null(1);
+int pmap_map(struct vm *, vaddr_t, struct vm_page *) __non_null(1, 3);
+int pmap_unmap(struct vm *, vaddr_t) __non_null(1);
+void pmap_zero(struct vm_page *) __non_null(1);
 
 #endif /* !_CPU_PMAP_H_ */

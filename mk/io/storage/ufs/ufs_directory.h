@@ -8,6 +8,6 @@ struct ufs_directory_entry {
 	uint8_t de_namelen;
 };
 
-void ufs_directory_entry_swap(struct ufs_directory_entry *);
+void ufs_directory_entry_swap(struct ufs_directory_entry *) __non_null(1);
 
 #endif /* !_IO_STORAGE_UFS_UFS_DIRECTORY_H_ */

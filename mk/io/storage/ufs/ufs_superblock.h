@@ -46,6 +46,6 @@ struct ufs_superblock {
 #define	UFS_SUPERBLOCK_OFFSETS						\
 	{ 65536, 8192, 0, 262144, -1 }
 
-void ufs_superblock_swap(struct ufs_superblock *);
+void ufs_superblock_swap(struct ufs_superblock *) __non_null(1);
 
 #endif /* !_IO_STORAGE_UFS_UFS_SUPERBLOCK_H_*/

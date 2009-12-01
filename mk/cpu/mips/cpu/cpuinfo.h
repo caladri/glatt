@@ -10,6 +10,6 @@ struct cpuinfo {
 	bool cpu_mips3264isa;		/* MIPS32/64 ISA.  */
 };
 
-void cpu_identify(struct cpuinfo *);
+void cpu_identify(struct cpuinfo *) __non_null(1);
 
 #endif /* _CPU_CPUINFO_H_ */

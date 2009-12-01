@@ -14,7 +14,7 @@ typedef	uint32_t	pci_cs_data_t;
 struct pci_interface {
 	/* Configuration space methods.  */
 	void (*pci_cs_read)(struct pci_interface *, pci_tag_t, pci_offset_t,
-			    pci_cs_data_t *);
+			    pci_cs_data_t *) __non_null(1, 4);
 
 	/* Addresses, etc.  */
 	bool pci_io_enable;

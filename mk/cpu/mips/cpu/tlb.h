@@ -23,12 +23,12 @@ struct tlb_wired_context {
 
 	/* An interface to the TLB.  */
 void tlb_init(paddr_t, unsigned);
-void tlb_invalidate(struct pmap *, vaddr_t);
+void tlb_invalidate(struct pmap *, vaddr_t) __non_null(1);
 void tlb_modify(vaddr_t);
 
 	/* An interface for managing wired TLB entries.  */
-void tlb_wired_init(struct tlb_wired_context *);
-void tlb_wired_load(struct tlb_wired_context *);
-void tlb_wired_wire(struct tlb_wired_context *, struct pmap *, vaddr_t);
+void tlb_wired_init(struct tlb_wired_context *) __non_null(1);
+void tlb_wired_load(struct tlb_wired_context *) __non_null(1);
+void tlb_wired_wire(struct tlb_wired_context *, struct pmap *, vaddr_t) __non_null(1, 2);
 
 #endif /* !_CPU_TLB_H_ */

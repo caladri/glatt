@@ -154,7 +154,7 @@ struct pmap {
 
 	/* Internal API for the MIPS PMAP.  */
 
-unsigned pmap_asid(struct pmap *);
-pt_entry_t *pmap_find(struct pmap *, vaddr_t);
+unsigned pmap_asid(struct pmap *) __non_null(1);
+pt_entry_t *pmap_find(struct pmap *, vaddr_t) __non_null(1);
 
 #endif /* !_CPU_PTE_H_ */

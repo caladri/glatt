@@ -1,6 +1,17 @@
 #ifndef	_CORE_STRING_H_
 #define	_CORE_STRING_H_
 
+/*
+ * Need declarations in order to set attributes.
+ */
+static inline void memcpy(void *, const void *, size_t) __non_null(1, 2);
+static inline void memset(void *, int, size_t) __non_null(1);
+static inline const char *strchr(const char *, char) __non_null(1);
+static inline int strcmp(const char *, const char *) __non_null(1, 2);
+static inline size_t strlcpy(char *, const char *, size_t) __non_null(1, 2);
+static inline size_t strlen(const char *) __non_null(1);
+static inline int strncmp(const char *, const char *, size_t) __non_null(1, 2);
+
 static inline void
 memcpy(void *dst, const void *src, size_t len)
 {
@@ -84,7 +95,7 @@ strncmp(const char *a, const char *b, size_t n)
 	return (*a - *b);
 }
 
-void snprintf(char *, size_t, const char *, ...);
-void vsnprintf(char *, size_t, const char *, va_list);
+void snprintf(char *, size_t, const char *, ...) __non_null(1, 3);
+void vsnprintf(char *, size_t, const char *, va_list) __non_null(1, 3);
 
 #endif /* !_CORE_STRING_H_ */

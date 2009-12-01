@@ -25,10 +25,10 @@ struct pool {
 
 extern size_t pool_max_alloc;
 
-void *pool_allocate(struct pool *) __malloc;
-int pool_create(struct pool *, const char *, size_t, unsigned);
-void pool_free(void *);
-void pool_insert(struct pool *, vaddr_t);
-int pool_destroy(struct pool *);
+void *pool_allocate(struct pool *) __malloc __non_null(1);
+int pool_create(struct pool *, const char *, size_t, unsigned) __non_null(1, 2);
+void pool_free(void *) __non_null(1);
+void pool_insert(struct pool *, vaddr_t) __non_null(1);
+int pool_destroy(struct pool *) __non_null(1);
 
 #endif /* _CORE_POOL_H_ */

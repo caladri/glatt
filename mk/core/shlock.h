@@ -17,10 +17,10 @@ struct shlock {
 	uint64_t shl_xowner;
 };
 
-void shlock_init(struct shlock *, const char *);
-void shlock_slock(struct shlock *);
-void shlock_sunlock(struct shlock *);
-void shlock_xlock(struct shlock *);
-void shlock_xunlock(struct shlock *);
+void shlock_init(struct shlock *, const char *) __non_null(1, 2);
+void shlock_slock(struct shlock *) __non_null(1);
+void shlock_sunlock(struct shlock *) __non_null(1);
+void shlock_xlock(struct shlock *) __non_null(1);
+void shlock_xunlock(struct shlock *) __non_null(1);
 
 #endif /* !_CORE_SHLOCK_H_ */

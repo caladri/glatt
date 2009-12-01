@@ -20,8 +20,8 @@ struct spinlock {
 	ASSERT(atomic_load64(&(lock)->s_owner) == (uint64_t)mp_whoami(),\
 	       "Lock must be held.")
 
-void spinlock_init(struct spinlock *, const char *, unsigned);
-void spinlock_lock(struct spinlock *);
-void spinlock_unlock(struct spinlock *);
+void spinlock_init(struct spinlock *, const char *, unsigned) __non_null(1, 2);
+void spinlock_lock(struct spinlock *) __non_null(1);
+void spinlock_unlock(struct spinlock *) __non_null(1);
 
 #endif /* !_CORE_SPINLOCK_H_ */

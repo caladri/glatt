@@ -31,6 +31,6 @@ struct task {
 
 void task_init(void);
 
-int task_create(struct task **, struct task *, const char *, unsigned);
+int task_create(struct task **, struct task *, const char *, unsigned) __non_null(1);
 
 #endif /* !_CORE_TASK_H_ */

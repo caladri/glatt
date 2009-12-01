@@ -27,16 +27,16 @@ struct vm_page {
 
 void page_init(void);
 
-paddr_t page_address(struct vm_page *);
-int page_alloc(unsigned, struct vm_page **);
-int page_alloc_direct(struct vm *, unsigned, vaddr_t *);
-int page_extract(struct vm *, vaddr_t, struct vm_page **);
-int page_free_direct(struct vm *, vaddr_t);
+paddr_t page_address(struct vm_page *) __non_null(1);
+int page_alloc(unsigned, struct vm_page **) __non_null(2);
+int page_alloc_direct(struct vm *, unsigned, vaddr_t *) __non_null(1, 3);
+int page_extract(struct vm *, vaddr_t, struct vm_page **) __non_null(1, 3);
+int page_free_direct(struct vm *, vaddr_t) __non_null(1);
 int page_insert_pages(paddr_t, size_t);
-int page_map(struct vm *, vaddr_t, struct vm_page *);
-int page_map_direct(struct vm *, struct vm_page *, vaddr_t *);
-int page_release(struct vm_page *);
-int page_unmap(struct vm *, vaddr_t, struct vm_page *);
-int page_unmap_direct(struct vm *, struct vm_page *, vaddr_t);
+int page_map(struct vm *, vaddr_t, struct vm_page *) __non_null(1, 3);
+int page_map_direct(struct vm *, struct vm_page *, vaddr_t *) __non_null(1, 2, 3);
+int page_release(struct vm_page *) __non_null(1);
+int page_unmap(struct vm *, vaddr_t, struct vm_page *) __non_null(1, 3);
+int page_unmap_direct(struct vm *, struct vm_page *, vaddr_t) __non_null(1, 2);
 
 #endif /* !_VM_VM_PAGE_H_ */

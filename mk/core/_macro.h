@@ -32,6 +32,9 @@
 #define	__unused		__attribute__ ((__unused__))
 #define	__used			__attribute__ ((__used__))
 #define	__malloc		__attribute__ ((__malloc__))
+#if !defined(ASSEMBLER) /* XXX GCC doesn't respect -std=c99 for preprocessing assembly.  */
+#define	__non_null(...)		__attribute__ ((__nonnull__ (__VA_ARGS__)))
+#endif
 
 	/* Bitmask helpers.  */
 

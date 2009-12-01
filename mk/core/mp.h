@@ -45,11 +45,11 @@ void mp_cpu_running(cpu_id_t);
 cpu_bitmask_t mp_cpu_running_mask(void);
 void mp_cpu_stopped(cpu_id_t);
 
-void mp_hokusai_master(void (*)(void *), void *, void (*)(void *), void *);
-void mp_hokusai_synchronize(void (*)(void *), void *);
+void mp_hokusai_master(void (*)(void *), void *, void (*)(void *), void *) __non_null(3);
+void mp_hokusai_synchronize(void (*)(void *), void *) __non_null(1);
 
 void mp_ipi_receive(enum ipi_type);
-void mp_ipi_register(enum ipi_type, mp_ipi_handler_t, void *);
+void mp_ipi_register(enum ipi_type, mp_ipi_handler_t, void *) __non_null(2);
 void mp_ipi_send(cpu_id_t, enum ipi_type);
 void mp_ipi_send_all(enum ipi_type);
 void mp_ipi_send_but(cpu_id_t, enum ipi_type);

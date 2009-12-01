@@ -18,8 +18,8 @@ struct mutex {
 #define	MUTEX_HELD(mtx)							\
 	((mtx)->mtx_owner != NULL && (mtx)->mtx_owner == current_thread())
 
-void mutex_init(struct mutex *, const char *, unsigned);
-void mutex_lock(struct mutex *);
-void mutex_unlock(struct mutex *);
+void mutex_init(struct mutex *, const char *, unsigned) __non_null(1, 2);
+void mutex_lock(struct mutex *) __non_null(1);
+void mutex_unlock(struct mutex *) __non_null(1);
 
 #endif	/* !_CORE_MUTEX_H_ */

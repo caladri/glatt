@@ -25,11 +25,11 @@ struct scheduler_entry {
 
 void scheduler_init(void);
 
-void scheduler_activate(struct thread *);
-void scheduler_cpu_pin(struct thread *);
+void scheduler_activate(struct thread *) __non_null(1);
+void scheduler_cpu_pin(struct thread *) __non_null(1);
 void scheduler_schedule(struct thread *, struct spinlock *);
-void scheduler_thread_runnable(struct thread *);
-void scheduler_thread_setup(struct thread *);
-void scheduler_thread_sleeping(struct thread *);
+void scheduler_thread_runnable(struct thread *) __non_null(1);
+void scheduler_thread_setup(struct thread *) __non_null(1);
+void scheduler_thread_sleeping(struct thread *) __non_null(1);
 
 #endif /* _CORE_SCHEDULER_H_ */

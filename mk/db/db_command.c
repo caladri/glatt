@@ -59,7 +59,7 @@ db_command_enter(void)
 {
 	char cmdbuf[DB_COMMAND_ARG_MAX * DB_COMMAND_ARG_LIKELY_SIZE];
 	const char *argv[DB_COMMAND_ARG_MAX];
-	struct db_command_tree *current;
+	struct db_command_tree *current, *old;
 	unsigned argc, i;
 	int error;
 
@@ -78,6 +78,8 @@ db_command_enter(void)
 			kcprintf("\nDB: Input not available.  Halting.\n");
 			cpu_halt();
 		}
+
+		old = current;
 
 		for (i = 0; i < argc; i++) {
 			if (strcmp(argv[i], "..") == 0) {
@@ -102,6 +104,7 @@ db_command_enter(void)
 			 */
 			if (!db_command_one(&current, argv[i])) {
 				kcprintf("DB: command failed.\n");
+				current = old;
 				break;
 			}
 		}

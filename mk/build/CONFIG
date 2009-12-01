@@ -5,14 +5,10 @@ invariants	requires: std
 verbose		requires: std
 
 ##
-# Requirements.
+# Defaults.
 ##
 std		implies: ipc
 ipc		implies: ns
-ns		requires: ipc
-ufs		requires: storage
-# XXX for now.
-storage		requires: ufs
 
 ###
 # Files sorted by directory grouped by option, std always first, then sorted.
@@ -61,11 +57,14 @@ pci		io/pci/pci.c
 pci		io/pci/pcidev.c
 
 storage		io/storage/storage_device.c
+# XXX for now.
+storage		requires: ufs
 
 ufs		io/storage/ufs/ufs_directory.c
 ufs		io/storage/ufs/ufs_inode.c
 ufs		io/storage/ufs/ufs_mount.c
 ufs		io/storage/ufs/ufs_superblock.c
+ufs		requires: storage
 
 ipc		ipc/ipc_data.c
 ipc		ipc/ipc_port.c
@@ -76,6 +75,7 @@ ipc		ipc/ipc_task.c
 
 ns		ns/ns.c
 ns		ns/service_directory.c
+ns		requires: ipc
 
 std		vm/vm.c
 std		vm/vm_alloc.c

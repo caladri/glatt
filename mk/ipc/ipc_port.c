@@ -140,8 +140,12 @@ ipc_port_receive(ipc_port_t port, struct ipc_header *ipch,
 {
 	struct ipc_message *ipcmsg;
 	struct ipc_port *ipcp;
+	struct task *task;
 	int error;
 
+	task = current_task();
+
+	ASSERT(task != NULL, "Must have a running task.");
 	ASSERT(ipch != NULL, "Must be able to copy out header.");
 
 	IPC_PORTS_LOCK();
@@ -151,8 +155,7 @@ ipc_port_receive(ipc_port_t port, struct ipc_header *ipch,
 		return (ERROR_NOT_FOUND);
 	}
 
-	error = ipc_task_check_port_right(current_task(),
-					  IPC_PORT_RIGHT_RECEIVE, port);
+	error = ipc_task_check_port_right(task, IPC_PORT_RIGHT_RECEIVE, port);
 	if (error != 0) {
 		IPC_PORT_UNLOCK(ipcp);
 		IPC_PORTS_UNLOCK();
@@ -179,7 +182,7 @@ ipc_port_receive(ipc_port_t port, struct ipc_header *ipch,
 		ipcp = ipc_port_lookup(ipcmsg->ipcmsg_header.ipchdr_src);
 		if (ipcp == NULL)
 			panic("%s: port disappeared.", __func__);
-		error = ipc_task_insert_port_right(current_task(),
+		error = ipc_task_insert_port_right(task,
 						   ipcmsg->ipcmsg_header.ipchdr_right,
 						   ipcmsg->ipcmsg_header.ipchdr_src);
 		if (error != 0)
@@ -210,8 +213,12 @@ ipc_port_send(struct ipc_header *ipch, struct ipc_data *ipcd)
 {
 	struct ipc_message *ipcmsg;
 	struct ipc_port *ipcp;
+	struct task *task;
 	int error;
 
+	task = current_task();
+
+	ASSERT(task != NULL, "Must have a running task.");
 	ASSERT(ipch != NULL, "Must have a header.");
 
 	IPC_PORTS_LOCK();
@@ -226,8 +233,7 @@ ipc_port_send(struct ipc_header *ipch, struct ipc_data *ipcd)
 		return (ERROR_INVALID);
 	}
 
-	error = ipc_task_check_port_right(current_task(),
-					  IPC_PORT_RIGHT_RECEIVE,
+	error = ipc_task_check_port_right(task, IPC_PORT_RIGHT_RECEIVE,
 					  ipch->ipchdr_src);
 	if (error != 0) {
 		IPC_PORT_UNLOCK(ipcp);
@@ -246,8 +252,7 @@ ipc_port_send(struct ipc_header *ipch, struct ipc_data *ipcd)
 		return (ERROR_NOT_FOUND);
 	}
 
-	error = ipc_task_check_port_right(current_task(),
-					  IPC_PORT_RIGHT_SEND,
+	error = ipc_task_check_port_right(task, IPC_PORT_RIGHT_SEND,
 					  ipch->ipchdr_dst);
 	if (error != 0) {
 		IPC_PORT_UNLOCK(ipcp);
@@ -282,7 +287,12 @@ int
 ipc_port_wait(ipc_port_t port)
 {
 	struct ipc_port *ipcp;
+	struct task *task;
 	int error;
+
+	task = current_task();
+
+	ASSERT(task != NULL, "Must have a running task.");
 
 	IPC_PORTS_LOCK();
 	ipcp = ipc_port_lookup(port);
@@ -293,7 +303,7 @@ ipc_port_wait(ipc_port_t port)
 		return (0);
 	}
 
-	error = ipc_task_check_port_right(current_task(),
+	error = ipc_task_check_port_right(task,
 					  IPC_PORT_RIGHT_RECEIVE, port);
 	if (error != 0) {
 		IPC_PORT_UNLOCK(ipcp);

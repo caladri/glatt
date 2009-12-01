@@ -15,12 +15,9 @@ SET(db_commands, struct db_command);
 
 DB_COMMAND_TREE(root, root, root);
 
-static const char *db_command_argv[DB_COMMAND_ARG_MAX];
-static char db_command_buffer[DB_COMMAND_ARG_MAX * DB_COMMAND_ARG_LIKELY_SIZE];
 static bool db_command_return;
 
 static void db_command_all(struct db_command_tree *);
-static int db_command_input(void);
 static void db_command_listing(struct db_command_tree *);
 static void db_command_listing_one(struct db_command *);
 static bool db_command_one(struct db_command_tree **, const char *);
@@ -60,8 +57,11 @@ db_command_init(void)
 void
 db_command_enter(void)
 {
+	char cmdbuf[DB_COMMAND_ARG_MAX * DB_COMMAND_ARG_LIKELY_SIZE];
+	const char *argv[DB_COMMAND_ARG_MAX];
 	struct db_command_tree *current;
-	int argc, i;
+	unsigned argc, i;
+	int error;
 
 	current = &db_command_tree_root;
 	db_command_return = false;
@@ -70,24 +70,28 @@ db_command_enter(void)
 		kcprintf("(db ");
 		db_command_path(current);
 		kcprintf(") ");
-		argc = db_command_input();
-		if (argc == -1) {
+
+
+		error = db_getargs(cmdbuf, sizeof cmdbuf, &argc, argv,
+				   DB_COMMAND_ARG_MAX, " \t/");
+		if (error != 0) {
 			kcprintf("\nDB: Input not available.  Halting.\n");
 			cpu_halt();
 		}
+
 		for (i = 0; i < argc; i++) {
-			if (strcmp(db_command_argv[i], "..") == 0) {
+			if (strcmp(argv[i], "..") == 0) {
 				current = current->ct_parent;
 				continue;
 			}
-			if (strcmp(db_command_argv[i], "") == 0 ||
-			    strcmp(db_command_argv[i], ".") == 0 ||
-			    strcmp(db_command_argv[i], "?") == 0 ||
-			    strcmp(db_command_argv[i], "help") == 0) {
+			if (strcmp(argv[i], "") == 0 ||
+			    strcmp(argv[i], ".") == 0 ||
+			    strcmp(argv[i], "?") == 0 ||
+			    strcmp(argv[i], "help") == 0) {
 				db_command_listing(current);
 				continue;
 			}
-			if (strcmp(db_command_argv[i], "*") == 0) {
+			if (strcmp(argv[i], "*") == 0) {
 				db_command_all(current);
 				continue;
 			}
@@ -96,7 +100,7 @@ db_command_enter(void)
 			 * in the tree, in which case we should give up on this
 			 * set of arguments.
 			 */
-			if (!db_command_one(&current, db_command_argv[i])) {
+			if (!db_command_one(&current, argv[i])) {
 				kcprintf("DB: command failed.\n");
 				break;
 			}
@@ -120,77 +124,6 @@ db_command_all(struct db_command_tree *tree)
 
 	BTREE_FOREACH(cmd, &tree->ct_commands, c_tree,
 		      db_command(cmd, true));
-}
-
-static int
-db_command_input(void)
-{
-	unsigned argc;
-	int error;
-	unsigned c;
-
-	error = db_getline(db_command_buffer, sizeof db_command_buffer);
-	if (error != 0)
-		return (-1);
-
-	argc = 0;
-	db_command_argv[0] = db_command_buffer;
-	c = 0;
-
-	for (;;) {
-		/*
-		 * Skip leading non-blanks.
-		 */
-		for (;;) {
-			switch (db_command_buffer[c]) {
-			case '\t':
-			case ' ':
-			case '/':
-			case '\0':
-				break;
-			default:
-				c++;
-				continue;
-			}
-			break;
-		}
-
-		/*
-		 * Nullify any argument separators.
-		 */
-		for (;;) {
-			switch (db_command_buffer[c]) {
-			case '\t':
-			case ' ':
-			case '/':
-				db_command_buffer[c++] = '\0';
-				continue;
-			default:
-				break;
-			}
-			break;
-		}
-
-		/*
-		 * If this argument is not empty, increment
-		 * the argument count.
-		 */
-		if (db_command_argv[argc][0] != '\0') {
-			db_command_argv[++argc] = &db_command_buffer[c];
-		} else {
-			/*
-			 * Just adjust the start of the current argument.
-			 */
-			db_command_argv[argc] = &db_command_buffer[c];
-		}
-
-		/*
-		 * If this is the end of the line, return.
-		 */
-		if (db_command_buffer[c] == '\0') {
-			return (argc);
-		}
-	}
 }
 
 static void

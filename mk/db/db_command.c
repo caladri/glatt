@@ -129,46 +129,68 @@ db_command_input(void)
 	int error;
 	unsigned c;
 
+	error = db_getline(db_command_buffer, sizeof db_command_buffer);
+	if (error != 0)
+		return (-1);
+
 	argc = 0;
-
 	db_command_argv[0] = db_command_buffer;
+	c = 0;
 
-	for (c = 0; c < sizeof db_command_buffer; c++) {
-again:		do {
-			error = kcgetc(&db_command_buffer[c]);
-		} while (error == ERROR_AGAIN);
-		if (error != 0)
-			return (-1);
-		switch (db_command_buffer[c]) {
-		case '\010':
-			if (c != 0) {
-				db_command_buffer[c--] = '\0';
-				if (db_command_buffer[c] == '\0')
-					argc--;
-				kcputc('\010');
-				kcputc(' ');
-				kcputc('\010');
+	for (;;) {
+		/*
+		 * Skip leading non-blanks.
+		 */
+		for (;;) {
+			switch (db_command_buffer[c]) {
+			case '\t':
+			case ' ':
+			case '/':
+			case '\0':
+				break;
+			default:
+				c++;
+				continue;
 			}
-			goto again;
-		case '\n':
-			db_command_buffer[c] = '\0';
-			argc++;
-			kcprintf("\n");
-			return (argc);
-		case '\t':
-		case ' ':
-		case '/':
-			db_command_buffer[c] = '\0';
-			db_command_argv[++argc] = &db_command_buffer[c + 1];
-			kcputc(' ');
-			break;
-		default:
-			kcputc(db_command_buffer[c]);
 			break;
 		}
+
+		/*
+		 * Nullify any argument separators.
+		 */
+		for (;;) {
+			switch (db_command_buffer[c]) {
+			case '\t':
+			case ' ':
+			case '/':
+				db_command_buffer[c++] = '\0';
+				continue;
+			default:
+				break;
+			}
+			break;
+		}
+
+		/*
+		 * If this argument is not empty, increment
+		 * the argument count.
+		 */
+		if (db_command_argv[argc][0] != '\0') {
+			db_command_argv[++argc] = &db_command_buffer[c];
+		} else {
+			/*
+			 * Just adjust the start of the current argument.
+			 */
+			db_command_argv[argc] = &db_command_buffer[c];
+		}
+
+		/*
+		 * If this is the end of the line, return.
+		 */
+		if (db_command_buffer[c] == '\0') {
+			return (argc);
+		}
 	}
-	kcprintf("DB: buffer overflow.\n");
-	return (-1);
 }
 
 static void

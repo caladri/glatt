@@ -8,5 +8,6 @@
 void db_init(void);
 
 void db_enter(void);
+int db_getline(char *, size_t) __non_null(1);
 
 #endif /* !_DB_DB_H_ */

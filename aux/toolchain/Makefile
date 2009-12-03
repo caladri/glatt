@@ -20,18 +20,25 @@ WANT_GCC=	t
 .if !exists(${PREFIX}/bin/gnumake)
 NEED_GNUMAKE=	t
 .endif
+
+.if !exists(${VENDOR_SRC}/gnu/libiconv)
+.error "Building GNU binutils or GCC requires libiconv!  Update vendor-src."
+.endif
+.if !exists(${PREFIX}/include/iconv.h)
+NEED_LIBICONV=	t
+.endif
 .endif
 
 .if defined(WANT_GCC)
 .if !exists(${VENDOR_SRC}/gnu/gmp)
-.error "Building GNU binutils or GCC requires GMP!  Update vendor-src."
+.error "Building GCC requires GMP!  Update vendor-src."
 .endif
 .if !exists(${PREFIX}/include/gmp.h)
 NEED_GMP=	t
 .endif
 
 .if !exists(${VENDOR_SRC}/gnu/mpfr)
-.error "Building GNU binutils or GCC requires MPFR!  Update vendor-src."
+.error "Building GCC requires MPFR!  Update vendor-src."
 .endif
 .if !exists(${PREFIX}/include/mpfr.h)
 NEED_MPFR=	t
@@ -39,10 +46,14 @@ NEED_MPFR=	t
 .endif
 
 ##
-# GCC and Binutils require GNU Make, so build it first.
+# GCC and Binutils require GNU Make and libiconv, so build them first.
 ##
 .if defined(NEED_GNUMAKE)
 SUBDIRS+=	gnumake
+.endif
+
+.if defined(NEED_LIBICONV)
+SUBDIRS+=	libiconv
 .endif
 
 ##

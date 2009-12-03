@@ -38,7 +38,11 @@ pre-configure: ${VENDOR_DIST}
 	@echo '>>> Unpacking '${PACKAGE}
 	@rm -rf ${WORK_SRC}
 	@mkdir -p ${.OBJDIR}/work
+.if ${DISTFILE:T} == "bz2"
 	@cd ${.OBJDIR}/work && tar jxf ${VENDOR_DIST}
+.else
+	@cd ${.OBJDIR}/work && tar zxf ${VENDOR_DIST}
+.endif
 	@[ -d ${WORK_SRC} ]
 	@for _patch in ${PATCHES}; do echo '>>> Applying patch '$$_patch; cd ${.OBJDIR}/work && patch -p0 -i$$_patch; done
 

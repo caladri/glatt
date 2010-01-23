@@ -20,6 +20,9 @@ ipc_data_init(void)
 		panic("%s: pool_create failed: %m", __func__, error);
 }
 
+/*
+ * XXX Easy to make this iterate, so do it!
+ */
 int
 ipc_data_copyin(struct ipc_data *srcp, struct ipc_data **dstp)
 {

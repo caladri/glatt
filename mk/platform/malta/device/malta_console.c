@@ -36,7 +36,7 @@ malta_console_map(char *p)
 	error = pmap_extract(&kernel_vm, PAGE_FLOOR(vaddr), &paddr);
 	if (error != 0)
 		panic("%s: pmap_extract failed: %m", __func__, error);
-	return (KSEG0_MAP(paddr | PAGE_OFFSET(vaddr)));
+	return ((int32_t)(intptr_t)KSEG0_BASE | paddr | PAGE_OFFSET(vaddr));
 }
 
 static int

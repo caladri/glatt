@@ -54,18 +54,6 @@ ipc_task_check_port_right(struct task *task, ipc_port_right_t rights,
 
 	ASSERT(rights != 0, "Must be requesting a right.");
 
-	/*
-	 * Always grant a send-right to the reserved ports.  Perhaps this
-	 * ought to be opt-in.
-	 */
-	if (port > IPC_PORT_UNKNOWN && port < IPC_PORT_UNRESERVED_START) {
-		if ((rights & IPC_PORT_RIGHT_SEND) != 0) {
-			rights &= ~IPC_PORT_RIGHT_SEND;
-			if (rights == IPC_PORT_RIGHT_NONE)
-				return (0);
-		}
-	}
-
 	IPC_PORT_RIGHTS_LOCK();
 	ipcpr = ipc_task_get_port_right(ipct, port, false);
 	if (ipcpr == NULL) {

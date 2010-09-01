@@ -25,6 +25,7 @@ struct ipc_port {
 	struct mutex ipcp_mutex;
 	struct cv *ipcp_cv;
 	ipc_port_t ipcp_port;
+	ipc_port_flags_t ipcp_flags;
 	TAILQ_HEAD(, struct ipc_message) ipcp_msgs;
 	BTREE_NODE(struct ipc_port) ipcp_link;
 	/* XXX Need a list of tasks which are holding rights and a refcnt.  */
@@ -43,7 +44,7 @@ static ipc_port_t ipc_port_next		= IPC_PORT_UNRESERVED_START;
 
 static struct ipc_port *ipc_port_alloc(void);
 static struct ipc_port *ipc_port_lookup(ipc_port_t);
-static int ipc_port_register(struct task *, struct ipc_port *, ipc_port_t);
+static int ipc_port_register(struct task *, struct ipc_port *, ipc_port_t, ipc_port_flags_t);
 
 void
 ipc_port_init(void)
@@ -60,7 +61,7 @@ ipc_port_init(void)
 }
 
 int
-ipc_port_allocate(struct task *task, ipc_port_t *portp)
+ipc_port_allocate(struct task *task, ipc_port_t *portp, ipc_port_flags_t flags)
 {
 	struct ipc_port *ipcp, *old;
 	ipc_port_t port;
@@ -85,7 +86,7 @@ ipc_port_allocate(struct task *task, ipc_port_t *portp)
 		}
 
 		IPC_PORT_LOCK(ipcp);
-		error = ipc_port_register(task, ipcp, port);
+		error = ipc_port_register(task, ipcp, port, flags);
 		if (error != 0)
 			panic("%s: ipc_port_register failed: %m", __func__,
 			      error);
@@ -100,7 +101,7 @@ ipc_port_allocate(struct task *task, ipc_port_t *portp)
 }
 
 int
-ipc_port_allocate_reserved(struct task *task, ipc_port_t port)
+ipc_port_allocate_reserved(struct task *task, ipc_port_t port, ipc_port_flags_t flags)
 {
 	struct ipc_port *ipcp, *old;
 	int error;
@@ -124,7 +125,7 @@ ipc_port_allocate_reserved(struct task *task, ipc_port_t port)
 	}
 
 	IPC_PORT_LOCK(ipcp);
-	error = ipc_port_register(task, ipcp, port);
+	error = ipc_port_register(task, ipcp, port, flags);
 	if (error != 0)
 		panic("%s: ipc_port_register failed: %m", __func__, error);
 	IPC_PORT_UNLOCK(ipcp);
@@ -244,7 +245,8 @@ ipc_port_send(struct ipc_header *ipch, struct ipc_data *ipcd)
 
 	/*
 	 * Step 2:
-	 * Check that the sending task has a send right on the destination port.
+	 * Check that the sending task has a send right on the destination port
+	 * unless the destination port is providing a public service.
 	 */
 	ipcp = ipc_port_lookup(ipch->ipchdr_dst);
 	if (ipcp == NULL) {
@@ -252,12 +254,14 @@ ipc_port_send(struct ipc_header *ipch, struct ipc_data *ipcd)
 		return (ERROR_NOT_FOUND);
 	}
 
-	error = ipc_task_check_port_right(task, IPC_PORT_RIGHT_SEND,
-					  ipch->ipchdr_dst);
-	if (error != 0) {
-		IPC_PORT_UNLOCK(ipcp);
-		IPC_PORTS_UNLOCK();
-		return (error);
+	if ((ipcp->ipcp_flags & IPC_PORT_FLAG_PUBLIC) == 0) {
+		error = ipc_task_check_port_right(task, IPC_PORT_RIGHT_SEND,
+						  ipch->ipchdr_dst);
+		if (error != 0) {
+			IPC_PORT_UNLOCK(ipcp);
+			IPC_PORTS_UNLOCK();
+			return (error);
+		}
 	}
 
 	ipcmsg = malloc(sizeof *ipcmsg);
@@ -328,6 +332,7 @@ ipc_port_alloc(void)
 	mutex_init(&ipcp->ipcp_mutex, "IPC Port", MUTEX_FLAG_DEFAULT);
 	ipcp->ipcp_cv = cv_create(&ipcp->ipcp_mutex);
 	ipcp->ipcp_port = IPC_PORT_UNKNOWN;
+	ipcp->ipcp_flags = IPC_PORT_FLAG_NEW;
 	TAILQ_INIT(&ipcp->ipcp_msgs);
 	BTREE_NODE_INIT(&ipcp->ipcp_link);
 
@@ -349,7 +354,7 @@ ipc_port_lookup(ipc_port_t port)
 }
 
 static int
-ipc_port_register(struct task *task, struct ipc_port *ipcp, ipc_port_t port)
+ipc_port_register(struct task *task, struct ipc_port *ipcp, ipc_port_t port, ipc_port_flags_t flags)
 {
 	struct ipc_port *old, *iter;
 	int error;
@@ -377,6 +382,9 @@ ipc_port_register(struct task *task, struct ipc_port *ipcp, ipc_port_t port)
 	if (error != 0)
 		panic("%s: ipc_task_insert_port_right failed: %m", __func__,
 		      error);
+
+	ipcp->ipcp_flags &= ~IPC_PORT_FLAG_NEW;
+	ipcp->ipcp_flags |= flags;
 
 	return (0);
 }

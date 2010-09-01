@@ -44,8 +44,8 @@ static void ipc_service_dump(struct ipc_service_context *, struct ipc_header *,
 static void ipc_service_main(void *);
 
 int
-ipc_service(const char *name, ipc_port_t port, ipc_service_t *handler,
-	    void *arg)
+ipc_service(const char *name, ipc_port_t port, ipc_port_flags_t flags,
+	    ipc_service_t *handler, void *arg)
 {
 	struct ipc_service_context *ipcsc;
 	int error;
@@ -71,13 +71,13 @@ ipc_service(const char *name, ipc_port_t port, ipc_service_t *handler,
 	switch (ipcsc->ipcsc_port) {
 	case IPC_PORT_UNKNOWN:
 		error = ipc_port_allocate(ipcsc->ipcsc_task,
-					  &ipcsc->ipcsc_port);
+					  &ipcsc->ipcsc_port, flags);
 		if (error != 0)
 			panic("%s: ipc_allocate failed: %m", __func__, error);
 		break;
 	default:
 		error = ipc_port_allocate_reserved(ipcsc->ipcsc_task,
-						   ipcsc->ipcsc_port);
+						   ipcsc->ipcsc_port, flags);
 		if (error != 0)
 			panic("%s: ipc_allocate_reserved failed: %m", __func__,
 			      error);

@@ -147,7 +147,7 @@ scheduler_switch(struct scheduler_entry *ose, struct scheduler_entry *se)
 	SCHEDULER_ASSERT_LOCKED();
 
 	otd = ose == NULL ? NULL : ose->se_thread;
-	td = se == NULL ? NULL : se->se_thread;
+	td = se->se_thread;
 
 	TAILQ_REMOVE(&scheduler_queue.sq_queue, se, se_link);
 	TAILQ_INSERT_TAIL(&scheduler_queue.sq_queue, se, se_link);

@@ -187,7 +187,6 @@ int
 page_insert_pages(paddr_t base, size_t pages)
 {
 	struct vm_page_tree_page *ptp, *iter;
-	struct vm_page_tree *pt;
 	size_t ptps, ptpents;
 	vaddr_t vaddr;
 	unsigned i;
@@ -205,7 +204,6 @@ page_insert_pages(paddr_t base, size_t pages)
 			      error);
 
 		ptp = (struct vm_page_tree_page *)vaddr;
-		pt = &ptp->ptp_tree;
 		BTREE_NODE_INIT(&ptp->ptp_tree.pt_tree);
 
 		ptps++;

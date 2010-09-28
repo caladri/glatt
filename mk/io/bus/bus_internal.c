@@ -251,12 +251,11 @@ bus_create(struct bus **busp, struct bus_attachment *attachment)
 static int
 bus_link(struct bus_attachment *attachment)
 {
-	struct bus *bus, *parent;
+	struct bus *parent;
 	int error;
 
 	ASSERT(attachment->ba_bus != NULL,
 	       "Attachment must already have a bus.");
-	bus = attachment->ba_bus;
 
 	if (attachment->ba_parent == NULL) {
 		return (0);

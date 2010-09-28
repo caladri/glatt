@@ -148,7 +148,6 @@ kfformat(void (*putc)(void *, char), void *arg, uintmax_t val, unsigned base,
 	unsigned i = 0;
 
 	if (sign) {
-		sign = 0;
 		if ((int64_t)val < 0) {
 			(*putc)(arg, '-');
 			val = (~val);

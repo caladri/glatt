@@ -74,9 +74,11 @@ mutex_lock(struct mutex *mtx)
 void
 mutex_unlock(struct mutex *mtx)
 {
+#ifdef INVARIANTS
 	struct thread *td;
 
 	td = current_thread();
+#endif
 
 	ASSERT(td != NULL, "Must have a thread.");
 

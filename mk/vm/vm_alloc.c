@@ -17,7 +17,7 @@ vm_alloc(struct vm *vm, size_t size, vaddr_t *vaddrp)
 	if (size < pool_max_alloc)
 		panic("%s: allocation too small, use pool instead.", __func__);
 
-	pages = ADDR_TO_PAGE(size + (PAGE_SIZE - 1));
+	pages = PAGE_COUNT(size);
 
 #if !defined(VM_ALLOC_NO_DIRECT)
 	if (vm == &kernel_vm && pages == 1) {
@@ -60,7 +60,7 @@ vm_free(struct vm *vm, size_t size, vaddr_t vaddr)
 	struct vm_page *page;
 	int error;
 
-	pages = ADDR_TO_PAGE(size + (PAGE_SIZE - 1));
+	pages = PAGE_COUNT(size);
 
 #if !defined(VM_ALLOC_NO_DIRECT)
 	if (vm == &kernel_vm && pages == 1) {

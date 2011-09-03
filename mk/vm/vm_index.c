@@ -92,7 +92,7 @@ vm_alloc_range(struct vm *vm, vaddr_t begin, vaddr_t end)
 
 	VM_LOCK(vm);
 
-	error = vm_claim_range(vm, begin, end);
+	error = vm_claim_range(vm, PAGE_FLOOR(begin), PAGE_ROUNDUP(end));
 	if (error != 0) {
 		VM_UNLOCK(vm);
 		return (error);

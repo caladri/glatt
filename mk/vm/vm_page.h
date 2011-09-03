@@ -17,6 +17,7 @@ struct vm_page {
 #define	ADDR_TO_PAGE(a)		((a) >> PAGE_SHIFT)
 #define	PAGE_TO_ADDR(a)		((a) << PAGE_SHIFT)
 #define	PAGE_FLOOR(a)		((a) & ~PAGE_MASK)
+#define	PAGE_ROUNDUP(a)		(PAGE_FLOOR((a) + (PAGE_SIZE - 1)))
 #define	PAGE_OFFSET(a)		((a) & PAGE_MASK)
 #define	PAGE_ALIGNED(a)		(PAGE_OFFSET(a) == 0)
 #define	PAGE_COUNT(a)		(ADDR_TO_PAGE((a) + (PAGE_SIZE - 1)))

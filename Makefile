@@ -25,6 +25,9 @@ MK_FLAGS+=BUILDDIR="${MK_OBJ}"
 .if defined(PLATFORM)
 MK_FLAGS+=PLATFORM="${PLATFORM}"
 .endif
+.if defined(KERNEL_SIMDISKS)
+MK_FLAGS+=KERNEL_SIMDISKS="${KERNEL_SIMDISKS}"
+.endif
 
 TARGETS+=mk-config
 mk-config-help:
@@ -96,6 +99,9 @@ mk-simulate-help:
 	@echo 'variables:'
 	@echo '    MK_OBJ       Directory to build in, e.g.'
 	@echo '                 MK_OBJ=/usr/obj/mk.testmips'
+	@echo '    KERNEL_SIMDISKS
+	@echo '                 Disk images to use with simulator, e.g.'
+	@echo '                 KERNEL_SIMDISKS=/usr/obj/mu.img'
 mk-simulate:
 	@if [ -e ${MK_OBJ}/Makefile ]; then				\
 		${GO_MAKE:S,DST,${MK_OBJ},:S,TGT,simulate,} ${MK_FLAGS} ;\
@@ -124,6 +130,21 @@ mk-help:
 	@echo 'usage: '${MAKE}' mk'
 	@echo 'See mk-config-help and mk-build-help for more information.'
 mk: mk-config mk-build
+
+###
+# mu section
+###
+mu-build:
+	@${GO_MAKE:S,DST,mu,:S,TGT,all,}
+
+.if make(mu-install) && !defined(DESTDIR)
+.error "Must set DESTDIR for mu-install."
+.endif
+mu-install:
+	@${GO_MAKE:S,DST,mu,:S,TGT,install,} DESTDIR=${DESTDIR}
+
+mu-image:
+	(cd ${.CURDIR} && sh mu-image.sh)
 
 ###
 # toolchain section

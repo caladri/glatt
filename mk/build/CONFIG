@@ -28,6 +28,8 @@ std		core/core_task.c
 std		core/core_thread.c
 std		core/core_ttk.c
 
+exec		core/core_exec.c
+
 mp		core/core_mp.c
 mp		core/core_mp_cpu.c
 mp		core/core_mp_hokusai.c

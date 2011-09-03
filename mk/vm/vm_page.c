@@ -141,6 +141,26 @@ page_alloc_direct(struct vm *vm, unsigned flags, vaddr_t *vaddrp)
 }
 
 int
+page_alloc_map(struct vm *vm, unsigned flags, vaddr_t vaddr)
+{
+	struct vm_page *page;
+	int error, error2;
+
+	error = page_alloc(flags, &page);
+	if (error != 0)
+		return (error);
+
+	error = page_map(vm, vaddr, page);
+	if (error != 0) {
+		error2 = page_release(page);
+		if (error2 != 0)
+			panic("%s: can't release page: %m", __func__, error);
+		return (error);
+	}
+	return (0);
+}
+
+int
 page_extract(struct vm *vm, vaddr_t vaddr, struct vm_page **pagep)
 {
 	struct vm_page *page;
@@ -173,6 +193,29 @@ page_free_direct(struct vm *vm, vaddr_t vaddr)
 		return (error);
 
 	error = page_unmap_direct(vm, page, vaddr);
+	if (error != 0)
+		return (error);
+
+	error = page_release(page);
+	if (error != 0)
+		return (error);
+
+	return (0);
+}
+
+int
+page_free_map(struct vm *vm, vaddr_t vaddr)
+{
+	struct vm_page *page;
+	int error;
+
+	ASSERT(PAGE_ALIGNED(vaddr), "must be a page address");
+
+	error = page_extract(vm, vaddr, &page);
+	if (error != 0)
+		return (error);
+
+	error = page_unmap(vm, vaddr, page);
 	if (error != 0)
 		return (error);
 

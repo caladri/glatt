@@ -94,13 +94,35 @@ END(generic_exception)
 STATIC_ENTRY(tlb_exception)
 	.set noat
 	dmfc0	k0, CP0_BADVADDR
+
+	/*
+	 * Check whether this is a kernel or user address.
+	 */
+	bltz	k0, 1f
+	nop
+
+	/*
+	 * User address, load vm pointer.
+	 */
+	dli	k1, PCPU_VIRTUAL
+	ld	k1, PC_THREAD(k1)
+	teq	k1, zero		/* Must have a current thread.  */
+	ld	k1, TD_TASK(k1)
+	teq	k1, zero		/* Must have a parent task.  */
+	ld	k1, T_VM(k1)
+	teq	k1, zero		/* Must have a VM.  */
+
+	b	2f			/* Continue.  */
+	nop
+
+1:	/*
+	 * Kernel address -- bounds check and continue.
+	 */
 	dli	k1, KERNEL_END
 	tgeu	k0, k1
-	dli	k1, KERNEL_BASE
-	tltu	k0, k1
-
 	dla	k1, kernel_vm
-	ld	k1, VM_PMAP(k1)
+
+2:	ld	k1, VM_PMAP(k1)
 	daddu	k1, PM_LEVEL0
 
 	/*

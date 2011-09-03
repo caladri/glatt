@@ -9,5 +9,6 @@ DEFINE(FALSE,	false);
 DEFINE(T_VM,	offsetof(struct task, t_vm));
 
 	/* THREAD fields we might want.  */
+DEFINE(TD_TASK,		offsetof(struct thread, td_task));
 DEFINE(TD_CONTEXT,	offsetof(struct thread,	td_context));
 DEFINE(TD_CPUTHREAD,	offsetof(struct thread,	td_cputhread));

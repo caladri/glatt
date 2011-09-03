@@ -88,6 +88,7 @@ typedef	uint64_t	register_t;
 #define	CP0_STATUS_IE	0x00000001	/* Interrupts enabled.  */
 #define	CP0_STATUS_EXL	0x00000002	/* Error level.  */
 #define	CP0_STATUS_ERL	0x00000004	/* Exception level.  */
+#define	CP0_STATUS_U	0x00000010	/* User privileges.  */
 #define	CP0_STATUS_UX	0x00000020	/* User extended mode.  */
 #define	CP0_STATUS_SX	0x00000040	/* Supervisor extended mode.  */
 #define	CP0_STATUS_KX	0x00000080	/* Kernel extended mode.  */
@@ -98,7 +99,8 @@ typedef	uint64_t	register_t;
 #define	CP0_STATUS_INTERRUPT_MASK	(0xff00)
 
 	/* Coprocessor 0 status register states.  */
-#define	KERNEL_STATUS	(CP0_STATUS_KX)
+#define	KERNEL_STATUS	(CP0_STATUS_UX | CP0_STATUS_KX)
+#define	USER_STATUS	(CP0_STATUS_U | CP0_STATUS_UX)
 
 	/* Coprocessor 0 config register selector 1 bits & shifts.  */
 

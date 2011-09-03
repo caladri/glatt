@@ -88,3 +88,16 @@ ENTRY(cpu_context_save)
 	jr	ra
 	li	v0, FALSE
 END(cpu_context_save)
+
+	/*
+	 * void cpu_thread_user_trampoline(void *a0);
+	 * a0 = entry.
+	 */
+ENTRY(cpu_thread_user_trampoline)
+	dli	t0, PCPU_VIRTUAL
+	ld	t0, PC_INTERRUPT_MASK(t0)
+	ori	t0, USER_STATUS
+	mtc0	t0, CP0_STATUS
+	jr	a0
+	nop
+END(cpu_thread_user_trampoline)

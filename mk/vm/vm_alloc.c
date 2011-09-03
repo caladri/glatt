@@ -10,7 +10,6 @@ int
 vm_alloc(struct vm *vm, size_t size, vaddr_t *vaddrp)
 {
 	size_t o, pages;
-	struct vm_page *page;
 	vaddr_t vaddr;
 	int error;
 
@@ -29,14 +28,9 @@ vm_alloc(struct vm *vm, size_t size, vaddr_t *vaddrp)
 	if (error != 0)
 		return (error);
 	for (o = 0; o < pages; o++) {
-		error = page_alloc(PAGE_FLAG_DEFAULT, &page);
-		if (error != 0) {
-			panic("%s: out of memory.", __func__);
-		}
-		error = page_map(vm, vaddr + o * PAGE_SIZE, page);
-		if (error != 0) {
-			panic("%s: must free pages for failed mapping.", __func__);
-		}
+		error = page_alloc_map(vm, PAGE_FLAG_DEFAULT, vaddr + o * PAGE_SIZE);
+		if (error != 0)
+			panic("%s: page_alloc_map failed: %m", __func__, error);
 	}
 	*vaddrp = vaddr;
 	return (0);
@@ -45,11 +39,67 @@ vm_alloc(struct vm *vm, size_t size, vaddr_t *vaddrp)
 int
 vm_alloc_page(struct vm *vm, vaddr_t *vaddrp)
 {
+	vaddr_t vaddr;
 	int error;
 
-	error = vm_alloc(vm, PAGE_SIZE, vaddrp);
+#if !defined(VM_ALLOC_NO_DIRECT)
+	if (vm == &kernel_vm) {
+		return (page_alloc_direct(vm, PAGE_FLAG_DEFAULT, vaddrp));
+	}
+#endif
+
+	error = vm_alloc_address(vm, &vaddr, 1);
 	if (error != 0)
 		return (error);
+
+	error = page_alloc_map(vm, PAGE_FLAG_DEFAULT, vaddr);
+	if (error != 0)
+		panic("%s: page_alloc_map failed: %m", __func__, error);
+
+	*vaddrp = vaddr;
+
+	return (0);
+}
+
+int
+vm_alloc_range_wire(struct vm *vm, vaddr_t begin, vaddr_t end, vaddr_t *kvaddrp)
+{
+	struct vm_page *page;
+	size_t o, pages;
+	vaddr_t kvaddr;
+	vaddr_t vaddr;
+	int error;
+
+	vaddr = PAGE_FLOOR(begin);
+	pages = PAGE_COUNT(end - vaddr);
+
+	if (vm == &kernel_vm)
+		panic("%s: can't wire from kernel to kernel.", __func__);
+
+	error = vm_alloc_range(vm, begin, end);
+	if (error != 0)
+		return (error);
+
+	error = vm_alloc_address(&kernel_vm, &kvaddr, pages);
+	if (error != 0)
+		panic("%s: vm_alloc_address failed: %m", __func__, error);
+
+	for (o = 0; o < pages; o++) {
+		error = page_alloc(PAGE_FLAG_DEFAULT, &page);
+		if (error != 0)
+			panic("%s: out of memory.", __func__);
+
+		error = page_map(vm, vaddr + o * PAGE_SIZE, page);
+		if (error != 0)
+			panic("%s: page_map failed: %m", __func__, error);
+
+		error = page_map(&kernel_vm, kvaddr + o * PAGE_SIZE, page);
+		if (error != 0)
+			panic("%s: page_map (kernel_vm) failed: %m", __func__, error);
+	}
+
+	*kvaddrp = kvaddr;
+
 	return (0);
 }
 

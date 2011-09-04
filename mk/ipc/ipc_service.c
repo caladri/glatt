@@ -237,7 +237,9 @@ ipc_service_main(void *arg)
 		ipc_service_dump(ipcsc, &ipch, ipcdp);
 #endif
 
-		ipcsc->ipcsc_handler(ipcsc->ipcsc_arg, &ipch, ipcdp);
+		error = ipcsc->ipcsc_handler(ipcsc->ipcsc_arg, &ipch, ipcdp);
+		if (error != 0)
+			kcprintf("%s: service handler failed: %m", __func__, error);
 
 		if (ipcdp != NULL)
 			ipc_data_free(ipcdp);

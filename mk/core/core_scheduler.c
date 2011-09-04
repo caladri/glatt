@@ -14,6 +14,7 @@ DB_COMMAND_TREE(scheduler, root, scheduler);
 
 struct scheduler_queue {
 	TAILQ_HEAD(, struct scheduler_entry) sq_queue;
+	TAILQ_HEAD(, struct scheduler_entry) sq_exiting;
 };
 
 static struct spinlock scheduler_lock;
@@ -31,6 +32,7 @@ scheduler_init(void)
 {
 	spinlock_init(&scheduler_lock, "SCHEDULER", SPINLOCK_FLAG_DEFAULT);
 	TAILQ_INIT(&scheduler_queue.sq_queue);
+	TAILQ_INIT(&scheduler_queue.sq_exiting);
 }
 
 void
@@ -72,13 +74,23 @@ scheduler_schedule(struct thread *td, struct spinlock *lock)
 		(ose->se_flags & SCHEDULER_RUNNABLE) != 0;
 	if (lock != NULL)
 		spinlock_unlock(lock);
-	TAILQ_FOREACH(se, &scheduler_queue.sq_queue, se_link) {
-		if ((se->se_flags & SCHEDULER_EXITING) != 0) {
-			if ((se->se_flags & SCHEDULER_RUNNING) != 0)
-				continue;
-			thread_free(se->se_thread);
+
+	/*
+	 * Free exiting threads which are no longer running.
+	 */
+restart:
+	TAILQ_FOREACH(se, &scheduler_queue.sq_exiting, se_link) {
+		ASSERT((se->se_flags & SCHEDULER_EXITING) != 0,
+		       "exiting thread must not be in queue.");
+		if ((se->se_flags & SCHEDULER_RUNNING) != 0)
 			continue;
-		}
+		thread_free(se->se_thread);
+		goto restart;
+	}
+
+	TAILQ_FOREACH(se, &scheduler_queue.sq_queue, se_link) {
+		ASSERT((se->se_flags & SCHEDULER_EXITING) == 0,
+		       "exiting thread must not be in queue.");
 		if ((se->se_flags & SCHEDULER_RUNNABLE) == 0)
 			continue;
 		if ((se->se_flags & SCHEDULER_RUNNING) != 0)
@@ -115,6 +127,10 @@ scheduler_thread_exiting(void)
 		panic("%s: thread already exiting.", __func__);
 	se->se_flags &= ~SCHEDULER_RUNNABLE;
 	se->se_flags |= SCHEDULER_EXITING;
+
+	TAILQ_REMOVE(&scheduler_queue.sq_queue, se, se_link);
+	TAILQ_INSERT_TAIL(&scheduler_queue.sq_exiting, se, se_link);
+
 	SCHEDULER_UNLOCK();
 }
 
@@ -129,7 +145,7 @@ scheduler_thread_free(struct thread *td)
 
 	if ((se->se_flags & SCHEDULER_EXITING) == 0)
 		panic("%s: thread not exiting.", __func__);
-	TAILQ_REMOVE(&scheduler_queue.sq_queue, se, se_link);
+	TAILQ_REMOVE(&scheduler_queue.sq_exiting, se, se_link);
 }
 
 void

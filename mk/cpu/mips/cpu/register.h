@@ -100,7 +100,7 @@ typedef	uint64_t	register_t;
 
 	/* Coprocessor 0 status register states.  */
 #define	KERNEL_STATUS	(CP0_STATUS_UX | CP0_STATUS_KX)
-#define	USER_STATUS	(CP0_STATUS_U | CP0_STATUS_UX)
+#define	USER_STATUS	(CP0_STATUS_U | CP0_STATUS_UX | CP0_STATUS_IE)
 
 	/* Coprocessor 0 config register selector 1 bits & shifts.  */
 

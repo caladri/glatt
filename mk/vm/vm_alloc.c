@@ -19,9 +19,8 @@ vm_alloc(struct vm *vm, size_t size, vaddr_t *vaddrp)
 	pages = PAGE_COUNT(size);
 
 #if !defined(VM_ALLOC_NO_DIRECT)
-	if (vm == &kernel_vm && pages == 1) {
+	if (vm == &kernel_vm && pages == 1)
 		return (page_alloc_direct(vm, PAGE_FLAG_DEFAULT, vaddrp));
-	}
 #endif
 
 	error = vm_alloc_address(vm, &vaddr, pages);
@@ -43,9 +42,8 @@ vm_alloc_page(struct vm *vm, vaddr_t *vaddrp)
 	int error;
 
 #if !defined(VM_ALLOC_NO_DIRECT)
-	if (vm == &kernel_vm) {
+	if (vm == &kernel_vm)
 		return (page_alloc_direct(vm, PAGE_FLAG_DEFAULT, vaddrp));
-	}
 #endif
 
 	error = vm_alloc_address(vm, &vaddr, 1);
@@ -113,9 +111,8 @@ vm_free(struct vm *vm, size_t size, vaddr_t vaddr)
 	pages = PAGE_COUNT(size);
 
 #if !defined(VM_ALLOC_NO_DIRECT)
-	if (vm == &kernel_vm && pages == 1) {
+	if (vm == &kernel_vm && pages == 1)
 		return (page_free_direct(vm, vaddr));
-	}
 #endif
 
 	for (o = 0; o < pages; o++) {

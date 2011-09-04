@@ -186,14 +186,12 @@ bus_instance_setup(struct bus_instance *bi)
 	bus_instance_describe(bi);
 	if (bi->bi_attachment->ba_interface->bus_enumerate_children != NULL) {
 		error = bi->bi_attachment->ba_interface->bus_enumerate_children(bi);
-		if (error != 0) {
+		if (error != 0)
 			bus_instance_printf(bi, "bus_enumerate_children: %m", error);
-		}
 	} else {
 		error = bus_instance_enumerate_children(bi);
-		if (error != 0) {
+		if (error != 0)
 			bus_instance_printf(bi, "bus_instance_enumerate_children: %m", error);
-		}
 	}
 	return (0);
 }
@@ -257,9 +255,8 @@ bus_link(struct bus_attachment *attachment)
 	ASSERT(attachment->ba_bus != NULL,
 	       "Attachment must already have a bus.");
 
-	if (attachment->ba_parent == NULL) {
+	if (attachment->ba_parent == NULL)
 		return (0);
-	}
 
 	error = bus_lookup(&parent, attachment->ba_parent);
 	if (error != 0)
@@ -452,9 +449,8 @@ bus_db_instance_tree(struct bus_instance *bi)
 	bus_db_instance_tree_leader(bi->bi_parent, bi, true);
 	kcprintf("%s\n", bus->bus_name);
 
-	STAILQ_FOREACH(child, &bi->bi_children, bi_peer) {
+	STAILQ_FOREACH(child, &bi->bi_children, bi_peer)
 		bus_db_instance_tree(child);
-	}
 }
 
 static void

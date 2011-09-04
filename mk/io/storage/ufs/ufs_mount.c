@@ -101,9 +101,8 @@ ufs_lookup(struct ufs_mount *um, const char *path, uint32_t *inodep)
 	size_t clen;
 	int error;
 
-	if (path[0] != '/') {
+	if (path[0] != '/')
 		return (ERROR_INVALID);
-	}
 
 	for (p = path; *p == '/'; p++)
 		continue;
@@ -168,9 +167,8 @@ ufs_map_block(struct ufs_mount *um, struct ufs2_inode *in, off_t logical, uint64
 
 	if (lblock < UFS_INODE_NDIRECT) {
 		pblock = in->in_direct[lblock];
-		if (pblock == 0) {
+		if (pblock == 0)
 			return (ERROR_NOT_FOUND);
-		}
 		*blknop = pblock;
 		return (0);
 	}

@@ -81,9 +81,8 @@ ipc_task_check_port_right(struct task *task, ipc_port_right_t rights,
 	IPC_PORT_RIGHTS_UNLOCK();
 
 	/* If there are any remaining rights which were not granted, fail.  */
-	if (rights != IPC_PORT_RIGHT_NONE) {
+	if (rights != IPC_PORT_RIGHT_NONE)
 		return (ERROR_NO_RIGHT);
-	}
 
 	return (0);
 
@@ -103,9 +102,8 @@ ipc_task_insert_port_right(struct task *task, ipc_port_right_t rights,
 	struct ipc_task *ipct = &task->t_ipc;
 	struct ipc_port_right *ipcpr;
 
-	if (rights == 0) {
+	if (rights == 0)
 		return (0);
-	}
 
 	IPC_PORT_RIGHTS_LOCK();
 	ipcpr = ipc_task_get_port_right(ipct, port, true);
@@ -152,9 +150,8 @@ ipc_task_get_port_right(struct ipc_task *ipct, ipc_port_t port, bool create)
 	BTREE_FIND(&ipcpr, iter, &ipct->ipct_rights, ipcpr_tree,
 		   (port < iter->ipcpr_port), (port == iter->ipcpr_port));
 	if (ipcpr == NULL) {
-		if (!create) {
+		if (!create)
 			return (NULL);
-		}
 		ipcpr = pool_allocate(&ipc_port_right_pool);
 		ipcpr->ipcpr_port = port;
 		ipcpr->ipcpr_rights = IPC_PORT_RIGHT_NONE;

@@ -253,9 +253,8 @@ pool_insert_page(struct pool *pool, struct pool_page *page)
 	 * Set all bits in N-1 words, where N is the number of words.  Then
 	 * set only the remaining bits in the final word.
 	 */
-	for (i = 0; i < POOL_MAP_WORDS(pool->pool_maxitems) - 1; i++) {
+	for (i = 0; i < POOL_MAP_WORDS(pool->pool_maxitems) - 1; i++)
 		map[i] = ~(pool_map_t)0;
-	}
 
 	o = POOL_OFFSET(pool->pool_maxitems - 1);
 	if (o == POOL_MAP_WORD_BITS - 1) {

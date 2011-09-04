@@ -73,9 +73,8 @@ sleepq_signal(const void *cookie)
 	sq = sleepq_lookup(cookie, false);
 	if (sq == NULL)
 		return;
-	TAILQ_FOREACH(se, &sq->sq_entries, se_link) {
+	TAILQ_FOREACH(se, &sq->sq_entries, se_link)
 		sleepq_signal_entry(sq, se);
-	}
 	SQ_UNLOCK(sq);
 }
 
@@ -87,9 +86,8 @@ sleepq_signal_one(const void *cookie)
 	sq = sleepq_lookup(cookie, false);
 	if (sq == NULL)
 		return;
-	if (!TAILQ_EMPTY(&sq->sq_entries)) {
+	if (!TAILQ_EMPTY(&sq->sq_entries))
 		sleepq_signal_entry(sq, TAILQ_FIRST(&sq->sq_entries));
-	}
 	SQ_UNLOCK(sq);
 }
 

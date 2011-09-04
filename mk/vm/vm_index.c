@@ -157,12 +157,10 @@ vm_claim_range(struct vm *vm, vaddr_t begin, vaddr_t end)
 	range = end - begin;
 
 	vmi = vm_find_index(vm, begin);
-	if (vmi == NULL) {
+	if (vmi == NULL)
 		return (ERROR_NOT_FOUND);
-	}
-	if ((vmi->vmi_flags & VM_INDEX_FLAG_INUSE) != 0) {
+	if ((vmi->vmi_flags & VM_INDEX_FLAG_INUSE) != 0)
 		return (ERROR_NOT_FREE);
-	}
 	size = PAGE_TO_ADDR(vmi->vmi_size);
 	if (vmi->vmi_base + size < end) {
 		/* XXX Compact entries.  */

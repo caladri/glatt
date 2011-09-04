@@ -174,8 +174,7 @@ startup_main_thread(void *arg)
 #endif
 
 	/* Become idle thread.  */
-	for (;;) {
+	for (;;)
 		ttk_idle();
-	}
 }
 STARTUP_ITEM(main, STARTUP_MAIN, STARTUP_FIRST, startup_main_thread, &startup_lock);

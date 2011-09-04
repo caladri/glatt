@@ -31,17 +31,15 @@ ipc_data_copyin(struct ipc_data *srcp, struct ipc_data **dstp)
 
 	ASSERT(dstp != NULL, "Destination pointer must not be NULL.");
 
-	if (srcp == NULL) {
+	if (srcp == NULL)
 		return (0);
-	}
 
 	/* XXX copyin */
 	src = *srcp;
 
 	if (src.ipcd_type == IPC_DATA_TYPE_DEAD ||
-	    src.ipcd_len == 0) {
+	    src.ipcd_len == 0)
 		return (ipc_data_copyin(src.ipcd_next, dstp));
-	}
 
 	ipcd = pool_allocate(&ipc_data_pool);
 	ipcd->ipcd_type = IPC_DATA_TYPE_DEAD;
@@ -82,17 +80,15 @@ ipc_data_free(struct ipc_data *ipcd)
 {
 	struct ipc_data *next;
 
-	if (ipcd == NULL) {
+	if (ipcd == NULL)
 		return;
-	}
 
 	switch (ipcd->ipcd_type) {
 	case IPC_DATA_TYPE_DEAD:
 		break;
 	case IPC_DATA_TYPE_SMALL:
-		if (ipcd->ipcd_addr != NULL) {
+		if (ipcd->ipcd_addr != NULL)
 			free(ipcd->ipcd_addr);
-		}
 
 		ipcd->ipcd_addr = NULL;
 		ipcd->ipcd_len = 0;

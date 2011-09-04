@@ -198,9 +198,8 @@ ipc_port_receive(ipc_port_t port, struct ipc_header *ipch,
 	if (ipcdp != NULL) {
 		*ipcdp = ipcmsg->ipcmsg_data;
 	} else {
-		if (ipcmsg->ipcmsg_data != NULL) {
+		if (ipcmsg->ipcmsg_data != NULL)
 			ipc_data_free(ipcmsg->ipcmsg_data);
-		}
 	}
 	ipcmsg->ipcmsg_data = NULL;
 

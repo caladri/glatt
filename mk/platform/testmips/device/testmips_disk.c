@@ -73,9 +73,8 @@ tmdisk_setup(struct bus_instance *bi)
 
 	error = storage_device_attach(&sc->sc_storagedev,
 				      TEST_DISK_DEV_BLOCKSIZE, tmdisk_read, sc);
-	if (error != 0) {
+	if (error != 0)
 		return (error);
-	}
 
 	return (0);
 }

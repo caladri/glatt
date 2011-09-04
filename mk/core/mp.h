@@ -3,7 +3,7 @@
 
 #include <cpu/mp.h>
 
-static inline unsigned
+static inline unsigned __check_result
 mp_ncpus(void)
 {
 #ifndef	UNIPROCESSOR
@@ -32,7 +32,7 @@ typedef	void (mp_ipi_handler_t)(void *, enum ipi_type);
 #endif
 
 #ifndef	UNIPROCESSOR
-cpu_id_t mp_whoami(void);
+cpu_id_t mp_whoami(void) __check_result;
 #else
 #define	mp_whoami()	((cpu_id_t)0)
 #define	CPU_ID_INVALID	((cpu_id_t)~0)
@@ -40,9 +40,9 @@ cpu_id_t mp_whoami(void);
 
 #ifndef	UNIPROCESSOR
 void mp_cpu_present(cpu_id_t);
-cpu_bitmask_t mp_cpu_present_mask(void);
+cpu_bitmask_t mp_cpu_present_mask(void) __check_result;
 void mp_cpu_running(cpu_id_t);
-cpu_bitmask_t mp_cpu_running_mask(void);
+cpu_bitmask_t mp_cpu_running_mask(void) __check_result;
 void mp_cpu_stopped(cpu_id_t);
 
 void mp_hokusai_master(void (*)(void *), void *, void (*)(void *), void *) __non_null(3);

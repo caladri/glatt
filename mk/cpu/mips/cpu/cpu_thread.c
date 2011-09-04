@@ -12,10 +12,17 @@ static void cpu_thread_exception(void *);
 void
 cpu_thread_free(struct thread *td)
 {
-	vm_free(&kernel_vm, KSTACK_SIZE, td->td_kstack);
+	int error;
 
-	if ((td->td_task->t_flags & TASK_KERNEL) == 0)
-		vm_free(td->td_task->t_vm, MAILBOX_SIZE, td->td_cputhread.td_mbox);
+	error = vm_free(&kernel_vm, KSTACK_SIZE, td->td_kstack);
+	if (error != 0)
+		panic("%s: vm_free of kstack failed: %m", __func__, error);
+
+	if ((td->td_task->t_flags & TASK_KERNEL) == 0) {
+		error = vm_free(td->td_task->t_vm, MAILBOX_SIZE, td->td_cputhread.td_mbox);
+		if (error != 0)
+			panic("%s: vm_free of mboxfailed: %m", __func__, error);
+	}
 }
 
 void

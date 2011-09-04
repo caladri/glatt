@@ -4,7 +4,7 @@
 struct cv;
 struct mutex;
 
-struct cv *cv_create(struct mutex *) __non_null(1);
+struct cv *cv_create(struct mutex *) __non_null(1) __check_result;
 void cv_signal(struct cv *) __non_null(1);
 void cv_signal_broadcast(struct cv *) __non_null(1);
 void cv_wait(struct cv *) __non_null(1);

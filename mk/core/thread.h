@@ -24,7 +24,7 @@ struct thread {
 
 void thread_init(void);
 
-int thread_create(struct thread **, struct task *, const char *, unsigned) __non_null(1, 2, 3);
+int thread_create(struct thread **, struct task *, const char *, unsigned) __non_null(1, 2, 3) __check_result;
 void thread_exit(void) __noreturn;
 void thread_free(struct thread *) __non_null(1);
 void thread_set_upcall(struct thread *, void (*)(void *), void *) __non_null(1, 2);

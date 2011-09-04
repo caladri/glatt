@@ -15,7 +15,7 @@ critical_exit(void)
 	cpu_critical_exit();
 }
 
-static inline bool
+static inline bool __check_result
 critical_section(void)
 {
 	return (cpu_critical_section());

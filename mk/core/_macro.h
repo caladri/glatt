@@ -35,6 +35,7 @@
 #if !defined(ASSEMBLER) /* XXX GCC doesn't respect -std=c99 for preprocessing assembly.  */
 #define	__non_null(...)		__attribute__ ((__nonnull__ (__VA_ARGS__)))
 #endif
+#define	__check_result		__attribute__ ((__warn_unused_result__))
 
 	/* Bitmask helpers.  */
 

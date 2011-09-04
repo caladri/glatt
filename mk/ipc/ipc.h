@@ -13,7 +13,7 @@ typedef	uint32_t	ipc_port_right_t;
 #define	IPC_PORT_RIGHT_NONE		(0x00000000)
 #define	IPC_PORT_RIGHT_SEND		(0x00000001)
 #define	IPC_PORT_RIGHT_SEND_ONCE	(0x00000002)
-#define	IPC_PORT_RIGHT_RECEIVE	(0x00000004)
+#define	IPC_PORT_RIGHT_RECEIVE		(0x00000004)
 
 struct ipc_header {
 	ipc_port_t ipchdr_src;

@@ -15,7 +15,7 @@ struct ipc_data {
 
 void ipc_data_init(void);
 
-int ipc_data_copyin(struct ipc_data *, struct ipc_data **) __non_null(1, 2);
+int ipc_data_copyin(struct ipc_data *, struct ipc_data **) __non_null(1, 2) __check_result;
 void ipc_data_free(struct ipc_data *) __non_null(1);
 
 #endif /* !_IPC_DATA_H_ */

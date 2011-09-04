@@ -73,6 +73,12 @@ scheduler_schedule(struct thread *td, struct spinlock *lock)
 	if (lock != NULL)
 		spinlock_unlock(lock);
 	TAILQ_FOREACH(se, &scheduler_queue.sq_queue, se_link) {
+		if ((se->se_flags & SCHEDULER_EXITING) != 0) {
+			if ((se->se_flags & SCHEDULER_RUNNING) != 0)
+				continue;
+			thread_free(se->se_thread);
+			continue;
+		}
 		if ((se->se_flags & SCHEDULER_RUNNABLE) == 0)
 			continue;
 		if ((se->se_flags & SCHEDULER_RUNNING) != 0)
@@ -94,6 +100,36 @@ scheduler_schedule(struct thread *td, struct spinlock *lock)
 	}
 	SCHEDULER_UNLOCK();
 	panic("%s: no threads are runnable.", __func__);
+}
+
+void
+scheduler_thread_exiting(void)
+{
+	struct thread *td = current_thread();
+	struct scheduler_entry *se = &td->td_sched;
+
+	kcprintf("%s(%p)\n", __func__, td);
+
+	SCHEDULER_LOCK();
+	if ((se->se_flags & SCHEDULER_EXITING) != 0)
+		panic("%s: thread already exiting.", __func__);
+	se->se_flags &= ~SCHEDULER_RUNNABLE;
+	se->se_flags |= SCHEDULER_EXITING;
+	SCHEDULER_UNLOCK();
+}
+
+void
+scheduler_thread_free(struct thread *td)
+{
+	struct scheduler_entry *se = &td->td_sched;
+
+	kcprintf("%s(%p)\n", __func__, td);
+
+	SCHEDULER_ASSERT_LOCKED();
+
+	if ((se->se_flags & SCHEDULER_EXITING) == 0)
+		panic("%s: thread not exiting.", __func__);
+	TAILQ_REMOVE(&scheduler_queue.sq_queue, se, se_link);
 }
 
 void

@@ -49,6 +49,33 @@ thread_create(struct thread **tdp, struct task *task, const char *name,
 }
 
 void
+thread_exit(void)
+{
+	scheduler_thread_exiting();
+	scheduler_schedule(NULL, NULL);
+	NOTREACHED();
+}
+
+void
+thread_free(struct thread *td)
+{
+	struct task *task;
+
+	task = td->td_task;
+
+	STAILQ_REMOVE(&task->t_threads, td, struct thread, td_link);
+
+	scheduler_thread_free(td);
+
+	cpu_thread_free(td);
+
+	pool_free(td);
+
+	if (STAILQ_EMPTY(&task->t_threads))
+		task_free(task);
+}
+
+void
 thread_set_upcall(struct thread *td, void (*function)(void *), void *arg)
 {
 	cpu_thread_set_upcall(td, function, arg);

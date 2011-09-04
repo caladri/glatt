@@ -53,6 +53,15 @@ vm_init(void)
 		panic("%s: pool_create failed: %m", __func__, error);
 }
 
+void
+vm_exit(struct vm *vm)
+{
+	/*
+	 * XXX
+	 * Needs to be implemented.
+	 */
+}
+
 int
 vm_setup(struct vm **vmp, vaddr_t base, vaddr_t end)
 {

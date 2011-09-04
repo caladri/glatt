@@ -30,6 +30,7 @@ extern struct vm kernel_vm;
 
 void vm_init(void);
 
-int vm_setup(struct vm **, vaddr_t, vaddr_t);
+void vm_exit(struct vm *) __non_null(1);
+int vm_setup(struct vm **, vaddr_t, vaddr_t) __non_null(1);
 
 #endif /* !_VM_VM_H_ */

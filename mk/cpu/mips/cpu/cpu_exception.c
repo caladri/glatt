@@ -11,6 +11,7 @@
 #include <cpu/pcpu.h>
 #include <cpu/register.h>
 #include <cpu/startup.h>
+#include <cpu/syscall.h>
 #ifdef DB
 #include <db/db.h>
 #include <db/db_command.h>
@@ -138,6 +139,9 @@ exception(struct frame *frame)
 	case EXCEPTION_INT:
 		cpu_interrupt();
 		break;
+	case EXCEPTION_SYSCALL:
+		cpu_syscall(frame);
+		break;
 	default:
 		goto debugger;
 	}
@@ -181,9 +185,11 @@ cpu_exception_frame_dump(struct frame *fp)
 	cause = cpu_read_cause();
 	code = (cause & CP0_CAUSE_EXCEPTION) >> CP0_CAUSE_EXCEPTION_SHIFT;
 
-	kcprintf("Fatal trap type %u (%s) on CPU %u:\n", code,
+	kcprintf("Fatal trap type %u (%s) in %s mode on CPU %u:\n", code,
 		 cpu_exception_names[code] == NULL ? "Reserved" :
-		 cpu_exception_names[code], mp_whoami());
+		 cpu_exception_names[code],
+		 (cpu_read_status() & CP0_STATUS_U) == 0 ? "kernel" : "user",
+		 mp_whoami());
 	cpu_exception_state_dump();
 	if (fp != NULL) {
 		kcprintf("pc                  = %p\n",

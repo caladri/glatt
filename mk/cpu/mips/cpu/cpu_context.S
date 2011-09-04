@@ -99,5 +99,5 @@ ENTRY(cpu_thread_user_trampoline)
 	ori	t0, USER_STATUS
 	mtc0	t0, CP0_STATUS
 	jr	a0
-	nop
+	move	ra, a0
 END(cpu_thread_user_trampoline)

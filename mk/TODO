@@ -1,3 +1,5 @@
+Need better locking around tasks and threads.
+
 Octeon.
 
 Figure out of interrupts or any other exception handling is actually functional.

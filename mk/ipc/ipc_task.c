@@ -123,6 +123,15 @@ ipc_task_insert_port_right(struct task *task, ipc_port_right_t rights,
 	return (0);
 }
 
+void
+ipc_task_free(struct task *task)
+{
+	/*
+	 * XXX
+	 * Needs to be implemented.
+	 */
+}
+
 int
 ipc_task_setup(struct task *task)
 {

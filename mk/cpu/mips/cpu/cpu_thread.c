@@ -10,6 +10,15 @@
 static void cpu_thread_exception(void *);
 
 void
+cpu_thread_free(struct thread *td)
+{
+	vm_free(&kernel_vm, KSTACK_SIZE, td->td_kstack);
+
+	if ((td->td_task->t_flags & TASK_KERNEL) == 0)
+		vm_free(td->td_task->t_vm, MAILBOX_SIZE, td->td_cputhread.td_mbox);
+}
+
+void
 cpu_thread_set_upcall(struct thread *td, void (*function)(void *), void *arg)
 {
 	td->td_context.c_regs[CONTEXT_RA] = (uintptr_t)&thread_trampoline;
@@ -31,7 +40,7 @@ cpu_thread_setup(struct thread *td)
 	error = vm_alloc(&kernel_vm, KSTACK_SIZE, &kstack);
 	if (error != 0)
 		return (error);
-	td->td_kstack = (void *)kstack;
+	td->td_kstack = kstack;
 	for (off = 0; off < KSTACK_SIZE; off += PAGE_SIZE)
 		tlb_wired_wire(&td->td_cputhread.td_tlbwired, kernel_vm.vm_pmap,
 			       kstack + off);

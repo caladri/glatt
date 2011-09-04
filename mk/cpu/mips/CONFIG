@@ -15,6 +15,7 @@ std		cpu/mips/cpu/cpu_interrupt.c
 std		cpu/mips/cpu/cpu_pcpu.c
 std		cpu/mips/cpu/cpu_pmap.c
 std		cpu/mips/cpu/cpu_startup.c
+std		cpu/mips/cpu/cpu_syscall.c
 std		cpu/mips/cpu/cpu_task.c
 std		cpu/mips/cpu/cpu_thread.c
 std		cpu/mips/cpu/cpu_tlb.c

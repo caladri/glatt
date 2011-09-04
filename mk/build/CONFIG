@@ -24,6 +24,7 @@ std		core/core_shlock.c
 std		core/core_sleepq.c
 std		core/core_spinlock.c
 std		core/core_startup.c
+std		core/core_syscall.c
 std		core/core_task.c
 std		core/core_thread.c
 std		core/core_ttk.c

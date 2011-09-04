@@ -64,3 +64,37 @@ task_create(struct task **taskp, struct task *parent, const char *name,
 	*taskp = task;
 	return (0);
 }
+
+void
+task_free(struct task *task)
+{
+	struct task *parent;
+
+	if (!STAILQ_EMPTY(&task->t_children))
+		return;
+
+	parent = task->t_parent;
+
+	if (parent == NULL)
+		STAILQ_REMOVE(&task_list, task, struct task, t_link);
+	else
+		STAILQ_REMOVE(&parent->t_children, task, struct task, t_link);
+
+	cpu_task_free(task);
+
+#ifdef IPC
+	ipc_task_free(task);
+#endif
+
+	pool_free(task);
+
+	if (parent != NULL) {
+		if (!STAILQ_EMPTY(&parent->t_children))
+			return;
+
+		if (!STAILQ_EMPTY(&parent->t_threads))
+			return;
+
+		task_free(task);
+	}
+}

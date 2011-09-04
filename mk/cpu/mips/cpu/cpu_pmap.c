@@ -360,9 +360,8 @@ pmap_pinit(struct pmap *pm, vaddr_t base, vaddr_t end)
 	ASSERT(pmap_index_pte(base) == 0, "Base must be aligned.");
 	pm->pm_base = base;
 	pm->pm_end = end;
-	for (l0 = 0; l0 < NL0PMAP; l0++) {
+	for (l0 = 0; l0 < NL0PMAP; l0++)
 		pm->pm_level0[l0] = NULL;
-	}
 }
 
 static void
@@ -420,9 +419,8 @@ db_pmap_dump_level1(struct pmap_lev1 *pml1, unsigned level)
 	}
 
 	kcprintf("\t\tpage table entries:\n");
-	for (i = 0; i < NPTEL1; i++) {
+	for (i = 0; i < NPTEL1; i++)
 		db_pmap_dump_pte(pml1->pml1_entries[i]);
-	}
 }
 
 static void

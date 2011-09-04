@@ -28,6 +28,9 @@ MK_FLAGS+=PLATFORM="${PLATFORM}"
 .if defined(KERNEL_SIMDISKS)
 MK_FLAGS+=KERNEL_SIMDISKS="${KERNEL_SIMDISKS}"
 .endif
+.if defined(KERNEL_SIMVERBOSE)
+MK_FLAGS+=KERNEL_SIMVERBOSE="${KERNEL_SIMVERBOSE}"
+.endif
 
 TARGETS+=mk-config
 mk-config-help:
@@ -99,9 +102,11 @@ mk-simulate-help:
 	@echo 'variables:'
 	@echo '    MK_OBJ       Directory to build in, e.g.'
 	@echo '                 MK_OBJ=/usr/obj/mk.testmips'
-	@echo '    KERNEL_SIMDISKS
+	@echo '    KERNEL_SIMDISKS'
 	@echo '                 Disk images to use with simulator, e.g.'
 	@echo '                 KERNEL_SIMDISKS=/usr/obj/mu.img'
+	@echo '    KERNEL_SIMVERBOSE'
+	@echo '                 If set, enables verbose simulation.'
 mk-simulate:
 	@if [ -e ${MK_OBJ}/Makefile ]; then				\
 		${GO_MAKE:S,DST,${MK_OBJ},:S,TGT,simulate,} ${MK_FLAGS} ;\
@@ -144,6 +149,7 @@ mu-install:
 	@${GO_MAKE:S,DST,mu,:S,TGT,install,} DESTDIR=${DESTDIR}
 
 mu-image:
+	@${GO_MAKE:S,DST,${.CURDIR},:S,TGT,mu-build,}
 	(cd ${.CURDIR} && sh mu-image.sh)
 
 ###

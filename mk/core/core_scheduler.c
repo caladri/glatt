@@ -120,8 +120,6 @@ scheduler_thread_exiting(void)
 	struct thread *td = current_thread();
 	struct scheduler_entry *se = &td->td_sched;
 
-	kcprintf("%s(%p)\n", __func__, td);
-
 	SCHEDULER_LOCK();
 	if ((se->se_flags & SCHEDULER_EXITING) != 0)
 		panic("%s: thread already exiting.", __func__);
@@ -138,8 +136,6 @@ void
 scheduler_thread_free(struct thread *td)
 {
 	struct scheduler_entry *se = &td->td_sched;
-
-	kcprintf("%s(%p)\n", __func__, td);
 
 	SCHEDULER_ASSERT_LOCKED();
 

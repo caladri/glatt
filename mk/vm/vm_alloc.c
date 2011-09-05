@@ -105,7 +105,6 @@ int
 vm_free(struct vm *vm, size_t size, vaddr_t vaddr)
 {
 	size_t o, pages;
-	struct vm_page *page;
 	int error;
 
 	pages = PAGE_COUNT(size);
@@ -116,17 +115,9 @@ vm_free(struct vm *vm, size_t size, vaddr_t vaddr)
 #endif
 
 	for (o = 0; o < pages; o++) {
-		error = page_extract(vm, vaddr + o * PAGE_SIZE, &page);
+		error = page_free_map(vm, vaddr + o * PAGE_SIZE);
 		if (error != 0)
-			panic("%s: failed to extract from mapping: %m",
-			      __func__, error);
-		error = page_unmap(vm, vaddr + o * PAGE_SIZE, page);
-		if (error != 0)
-			panic("%s: failed to release mapping: %m",
-			      __func__, error);
-		error = page_release(page);
-		if (error != 0)
-			panic("%s: failed to release page: %m", __func__,
+			panic("%s: page_free_map failed: %m", __func__,
 			      error);
 	}
 	error = vm_free_address(vm, vaddr);

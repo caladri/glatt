@@ -250,7 +250,7 @@ cpu_exception_frame_dump(struct frame *fp)
 	else
 		mode = "user";
 
-	kcprintf("Fatal trap type %u (%s) in %s mode on CPU %u:\n", code,
+	kcprintf("Trap type %u (%s) in %s mode on CPU %u:\n", code,
 		 cpu_exception_names[code] == NULL ? "Reserved" :
 		 cpu_exception_names[code], mode, mp_whoami());
 	kcprintf("status              = %x\n",

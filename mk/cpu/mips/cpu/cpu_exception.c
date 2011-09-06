@@ -134,6 +134,8 @@ exception(struct frame *frame)
 	unsigned cause;
 	unsigned code;
 
+	ASSERT(frame != NULL, "exception must have a frame.");
+
 	td = current_thread();
 	cause = cpu_read_cause();
 	code = (cause & CP0_CAUSE_EXCEPTION) >> CP0_CAUSE_EXCEPTION_SHIFT;
@@ -150,11 +152,15 @@ exception(struct frame *frame)
 		cpu_interrupt();
 		break;
 	case EXCEPTION_SYSCALL:
+		__asm __volatile("break");
 		cpu_syscall(frame);
 		break;
 	default:
 		kcputs("\n\n");
-		cpu_exception_frame_dump(frame);
+		if (td == NULL)
+			cpu_exception_frame_dump(frame);
+		else
+			cpu_exception_state_dump();
 #ifdef DB
 		db_enter();
 #else
@@ -187,45 +193,37 @@ cpu_exception_vector_install(void *base, const char *start, const char *end)
 static void
 cpu_exception_frame_dump(struct frame *fp)
 {
-	struct thread *td;
 	const char *mode;
 	unsigned cause;
 	unsigned code;
 
-	td = current_thread();
+	if (fp == NULL) {
+		kcprintf("[Frame unavailable.]\n");
+		return;
+	}
+
 	/*
-	 * XXX Get cause from frame?
+	 * XXX Get cause from frame.
 	 */
 	cause = cpu_read_cause();
 	code = (cause & CP0_CAUSE_EXCEPTION) >> CP0_CAUSE_EXCEPTION_SHIFT;
 
-	if (fp == NULL && td != NULL)
-		fp = td->td_cputhread.td_frame;
-
-	if (fp == NULL) {
-		mode = "(unknown)";
-	} else {
-		if ((fp->f_regs[FRAME_STATUS] & CP0_STATUS_U) == 0)
-			mode = "kernel";
-		else
-			mode = "user";
-	}
+	if ((fp->f_regs[FRAME_STATUS] & CP0_STATUS_U) == 0)
+		mode = "kernel";
+	else
+		mode = "user";
 
 	kcprintf("Fatal trap type %u (%s) in %s mode on CPU %u:\n", code,
 		 cpu_exception_names[code] == NULL ? "Reserved" :
 		 cpu_exception_names[code], mode, mp_whoami());
-	cpu_exception_state_dump();
-	if (fp != NULL) {
-		kcprintf("status              = %x\n",
-			 (unsigned)fp->f_regs[FRAME_STATUS]);
-		kcprintf("pc                  = %p\n",
-			 (void *)fp->f_regs[FRAME_EPC]);
-		kcprintf("ra                  = %p\n",
-			 (void *)fp->f_regs[FRAME_RA]);
-		kcprintf("sp                  = %p\n",
-			 (void *)fp->f_regs[FRAME_SP]);
-	} else
-		kcprintf("[Frame unavailable.]\n");
+	kcprintf("status              = %x\n",
+		 (unsigned)fp->f_regs[FRAME_STATUS]);
+	kcprintf("pc                  = %p\n",
+		 (void *)fp->f_regs[FRAME_EPC]);
+	kcprintf("ra                  = %p\n",
+		 (void *)fp->f_regs[FRAME_RA]);
+	kcprintf("sp                  = %p\n",
+		 (void *)fp->f_regs[FRAME_SP]);
 }
 
 static void
@@ -235,12 +233,17 @@ cpu_exception_state_dump(void)
 
 	td = current_thread();
 
-	kcprintf("thread              = %p (%s)\n",
-		 (void *)td, td == NULL ? "nil" : td->td_name);
 	if (td != NULL) {
+		cpu_exception_frame_dump(td->td_cputhread.td_frame);
+
+		kcprintf("thread              = %p (%s)\n",
+			 (void *)td, td->td_name);
 		kcprintf("task                = %p (%s)\n", (void *)td->td_task,
 			 td->td_task == NULL ? "nil" : td->td_task->t_name);
+	} else {
+		kcprintf("[Thread unavailable.]\n");
 	}
+	/* XXX Push into frame?  */
 	kcprintf("cause               = %x\n", cpu_read_cause());
 	kcprintf("badvaddr            = %p\n", (void *)cpu_read_badvaddr());
 }

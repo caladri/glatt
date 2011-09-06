@@ -41,6 +41,8 @@ cpu_thread_setup(struct thread *td)
 	unsigned off;
 	int error;
 
+	td->td_cputhread.td_frame = NULL;
+
 	tlb_wired_init(&td->td_cputhread.td_tlbwired);
 	cpu_thread_set_upcall(td, cpu_thread_exception, td);
 

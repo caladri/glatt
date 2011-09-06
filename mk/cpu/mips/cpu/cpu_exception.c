@@ -129,11 +129,21 @@ cpu_exception_init(void)
 void
 exception(struct frame *frame)
 {
+	struct frame *oframe;
+	struct thread *td;
 	unsigned cause;
 	unsigned code;
 
+	td = current_thread();
 	cause = cpu_read_cause();
 	code = (cause & CP0_CAUSE_EXCEPTION) >> CP0_CAUSE_EXCEPTION_SHIFT;
+
+	if (td != NULL) {
+		oframe = td->td_cputhread.td_frame;
+		td->td_cputhread.td_frame = frame;
+	} else {
+		oframe = NULL; /* XXX GCC -Wuinitialized.  */
+	}
 
 	switch (code) {
 	case EXCEPTION_INT:
@@ -143,19 +153,20 @@ exception(struct frame *frame)
 		cpu_syscall(frame);
 		break;
 	default:
-		goto debugger;
+		kcputs("\n\n");
+		cpu_exception_frame_dump(frame);
+#ifdef DB
+		db_enter();
+#else
+		kcputs("Debugger not present, halting...\n");
+		cpu_halt();
+#endif
+		break;
 	}
 
-	return;
-debugger:
-	kcputs("\n\n");
-	cpu_exception_frame_dump(frame);
-#ifdef DB
-	db_enter();
-#else
-	kcputs("Debugger not present, halting...\n");
-	cpu_halt();
-#endif
+	if (td != NULL) {
+		td->td_cputhread.td_frame = oframe;
+	}
 }
 
 static void
@@ -176,15 +187,20 @@ cpu_exception_vector_install(void *base, const char *start, const char *end)
 static void
 cpu_exception_frame_dump(struct frame *fp)
 {
+	struct thread *td;
 	const char *mode;
 	unsigned cause;
 	unsigned code;
 
+	td = current_thread();
 	/*
 	 * XXX Get cause from frame?
 	 */
 	cause = cpu_read_cause();
 	code = (cause & CP0_CAUSE_EXCEPTION) >> CP0_CAUSE_EXCEPTION_SHIFT;
+
+	if (fp == NULL && td != NULL)
+		fp = td->td_cputhread.td_frame;
 
 	if (fp == NULL) {
 		mode = "(unknown)";
@@ -200,6 +216,8 @@ cpu_exception_frame_dump(struct frame *fp)
 		 cpu_exception_names[code], mode, mp_whoami());
 	cpu_exception_state_dump();
 	if (fp != NULL) {
+		kcprintf("status              = %x\n",
+			 (unsigned)fp->f_regs[FRAME_STATUS]);
 		kcprintf("pc                  = %p\n",
 			 (void *)fp->f_regs[FRAME_EPC]);
 		kcprintf("ra                  = %p\n",
@@ -223,7 +241,6 @@ cpu_exception_state_dump(void)
 		kcprintf("task                = %p (%s)\n", (void *)td->td_task,
 			 td->td_task == NULL ? "nil" : td->td_task->t_name);
 	}
-	kcprintf("status              = %x\n", cpu_read_status());
 	kcprintf("cause               = %x\n", cpu_read_cause());
 	kcprintf("badvaddr            = %p\n", (void *)cpu_read_badvaddr());
 }

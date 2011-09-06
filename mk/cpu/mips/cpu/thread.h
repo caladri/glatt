@@ -11,6 +11,7 @@ struct thread;
 #define	current_thread()	PCPU_GET(thread)
 
 struct cpu_thread {
+	struct frame *td_frame;
 	struct tlb_wired_context td_tlbwired;
 	vaddr_t td_mbox;
 };

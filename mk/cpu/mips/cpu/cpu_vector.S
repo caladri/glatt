@@ -213,7 +213,10 @@ STATIC_ENTRY(exception_frame_save)		/* Return address is k0.  */
 	nop
 
 	/* User mode.  */
-	li	k1, KERNEL_STATUS
+	mfc0	k1, CP0_STATUS
+	andi	k1, CP0_STATUS_IE	/* Preserve interrupt status.  */
+	ori	k1, KERNEL_STATUS
+	ori	k1, CP0_STATUS_EXL	/* Still in exception handler.  */
 	mtc0	k1, CP0_STATUS		/* Enter kernel mode.  */
 
 	/* Look up kernel stack.  */
@@ -229,8 +232,9 @@ STATIC_ENTRY(exception_frame_save)		/* Return address is k0.  */
 	move	sp, k1			/* Switch to kernel stack.  */
 
 	/* Save status to return to after exception.  */
-	b	2f			/* Continue with normal frame save.  */
 	li	k1, USER_STATUS
+	b	2f			/* Continue with normal frame save.  */
+	ori	k1, CP0_STATUS_EXL	/* Still in exception handler.  */
 
 	/* Kernel mode.  */
 1:	dsubu	k1, sp, FRAME_SIZE
@@ -240,6 +244,7 @@ STATIC_ENTRY(exception_frame_save)		/* Return address is k0.  */
 	mfc0	k1, CP0_STATUS
 	andi	k1, CP0_STATUS_IE	/* Preserve interrupt status.  */
 	ori	k1, KERNEL_STATUS
+	ori	k1, CP0_STATUS_EXL	/* Still in exception handler.  */
 
 2:	sd	k1, FRAME_STATUS(sp)
 
@@ -338,7 +343,6 @@ STATIC_ENTRY(exception_frame_restore)		/* Does not return.  */
 	ld	sp, FRAME_SP(sp)
 
 	/* Restore status.  */
-	or	k0, CP0_STATUS_EXL	/* Still in exception handler.  */
 	mtc0	k0, CP0_STATUS
 
 	/* Return from exception.  */

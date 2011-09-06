@@ -94,6 +94,8 @@ END(cpu_context_save)
 	 * a0 = entry.
 	 */
 ENTRY(cpu_thread_user_trampoline)
+	move	sp, zero
+
 	dli	t0, PCPU_VIRTUAL
 	ld	t0, PC_INTERRUPT_MASK(t0)
 	ori	t0, USER_STATUS

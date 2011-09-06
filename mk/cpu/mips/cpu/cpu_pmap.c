@@ -271,6 +271,8 @@ pmap_alloc_asid(struct pmap *pm)
 		PCPU_SET(asidnext, asid + 1);
 	}
 	critical_exit();
+
+	pm->pm_asid = asid;
 }
 
 static int

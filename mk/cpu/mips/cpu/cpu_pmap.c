@@ -3,6 +3,8 @@
 #include <core/pool.h>
 #include <core/startup.h>
 #include <core/string.h>
+#include <core/task.h>
+#include <core/thread.h>
 #ifdef DB
 #include <cpu/cpu.h>
 #endif
@@ -486,4 +488,64 @@ db_pmap_dump_kvm_l0(void)
 	db_pmap_dump_pmap(&kernel_vm, 0);
 }
 DB_COMMAND(kvm_l0, pmap, db_pmap_dump_kvm_l0);
+
+static void
+db_pmap_dump_task_pte(void)
+{
+	struct task *task;
+	
+	task = current_task();
+
+	if (task == NULL) {
+		kcprintf("No current task.\n");
+		return;
+	}
+
+	if (task->t_vm == NULL) {
+		kcprintf("Current task has no VM.\n");
+		return;
+	}
+	db_pmap_dump_pmap(task->t_vm, 2);
+}
+DB_COMMAND(task_pte, pmap, db_pmap_dump_task_pte);
+
+static void
+db_pmap_dump_task_l1(void)
+{
+	struct task *task;
+	
+	task = current_task();
+
+	if (task == NULL) {
+		kcprintf("No current task.\n");
+		return;
+	}
+
+	if (task->t_vm == NULL) {
+		kcprintf("Current task has no VM.\n");
+		return;
+	}
+	db_pmap_dump_pmap(task->t_vm, 1);
+}
+DB_COMMAND(task_l1, pmap, db_pmap_dump_task_l1);
+
+static void
+db_pmap_dump_task_l0(void)
+{
+	struct task *task;
+	
+	task = current_task();
+
+	if (task == NULL) {
+		kcprintf("No current task.\n");
+		return;
+	}
+
+	if (task->t_vm == NULL) {
+		kcprintf("Current task has no VM.\n");
+		return;
+	}
+	db_pmap_dump_pmap(task->t_vm, 0);
+}
+DB_COMMAND(task_l0, pmap, db_pmap_dump_task_l0);
 #endif

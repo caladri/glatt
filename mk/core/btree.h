@@ -187,6 +187,8 @@
 		}							\
 									\
 		(var)->field.parent = NULL;				\
+		(var)->field.left = NULL;				\
+		(var)->field.right = NULL;				\
 	} while (0)
 
 #endif /* !_CORE_BTREE_H_ */

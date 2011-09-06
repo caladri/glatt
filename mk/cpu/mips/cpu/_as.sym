@@ -84,6 +84,8 @@ DEFINE_CONSTANT(PMAPL0MASK);
 
 DEFINE(TLB_LO1_PAGE_OFFSET,	TLBLO_PA_TO_PFN(TLB_PAGE_SIZE));
 
+DEFINE_CONSTANT(PG_V);
+
 DEFINE(PM_LEVEL0,	offsetof(struct pmap,	pm_level0));
 
 DEFINE(VM_PMAP,		offsetof(struct vm,	vm_pmap));

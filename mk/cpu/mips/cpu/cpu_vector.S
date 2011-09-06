@@ -133,7 +133,8 @@ STATIC_ENTRY(tlb_exception)
 	andi	k0, PMAPL0MASK << 3
 	daddu	k1, k0
 	ld	k1, 0(k1)
-	teq	zero, k1		/* L0 pointer can't be NULL.  */
+	beqz	k1, 3f			/* L0 pointer is NULL.  */
+	nop
 
 	/*
 	 * L0 -> L1.
@@ -143,7 +144,8 @@ STATIC_ENTRY(tlb_exception)
 	andi	k0, L1L0MASK << 3
 	daddu	k1, k0
 	ld	k1, 0(k1)
-	teq	zero, k1		/* L1 pointer can't be NULL.  */
+	beqz	k1, 3f			/* L1 pointer is NULL.  */
+	nop
 
 	/*
 	 * L1 -> PTE.
@@ -153,6 +155,13 @@ STATIC_ENTRY(tlb_exception)
 	andi	k0, PTEL1MASK << 3
 	daddu	k1, k0
 	ld	k1, 0(k1)
+
+	/*
+	 * Check that the PTE is valid.
+	 */
+	andi	k0, k1, PG_V
+	beqz	k0, 3f			/* Invalid PTE.  */
+	nop
 
 	/*
 	 * Load the PTE into lo0, add the lo1 offset and load into lo1.
@@ -181,6 +190,12 @@ STATIC_ENTRY(tlb_exception)
 	/* Not found.  Random write.  */
 1:	tlbwr
 	eret
+
+	/*
+	 * Could not be handled here, go to C.
+	 */
+3:	j	generic_exception
+	nop
 	.set at
 END(tlb_exception)
 

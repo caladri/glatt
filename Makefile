@@ -28,6 +28,9 @@ MK_FLAGS+=PLATFORM="${PLATFORM}"
 .if defined(KERNEL_SIMDISKS)
 MK_FLAGS+=KERNEL_SIMDISKS="${KERNEL_SIMDISKS}"
 .endif
+.if defined(KERNEL_SIMRAM)
+MK_FLAGS+=KERNEL_SIMRAM="${KERNEL_SIMRAM}"
+.endif
 .if defined(KERNEL_SIMVERBOSE)
 MK_FLAGS+=KERNEL_SIMVERBOSE="${KERNEL_SIMVERBOSE}"
 .endif
@@ -105,6 +108,9 @@ mk-simulate-help:
 	@echo '    KERNEL_SIMDISKS'
 	@echo '                 Disk images to use with simulator, e.g.'
 	@echo '                 KERNEL_SIMDISKS=/usr/obj/mu.img'
+	@echo '    KERNEL_SIMRAM'
+	@echo '                 Amount of RAM (in MB) to use with simulator, e.g.'
+	@echo '                 KERNEL_SIMRAM=128'
 	@echo '    KERNEL_SIMVERBOSE'
 	@echo '                 If set, enables verbose simulation.'
 mk-simulate:

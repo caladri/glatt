@@ -17,6 +17,9 @@
 #include <db/db_command.h>
 #endif
 #include <io/console/console.h>
+#include <vm/vm.h>
+#include <vm/vm_fault.h>
+#include <vm/vm_page.h>
 
 #define	EXCEPTION_SPACE			(0x80)
 
@@ -133,12 +136,17 @@ exception(struct frame *frame)
 	struct thread *td;
 	unsigned cause;
 	unsigned code;
+	vaddr_t vaddr;
+	bool handled;
+	bool user;
+	int error;
 
 	ASSERT(frame != NULL, "exception must have a frame.");
 
 	td = current_thread();
 	cause = cpu_read_cause();
 	code = (cause & CP0_CAUSE_EXCEPTION) >> CP0_CAUSE_EXCEPTION_SHIFT;
+	user = (frame->f_regs[FRAME_STATUS] & CP0_STATUS_U) != 0;
 
 	if (td != NULL) {
 		oframe = td->td_cputhread.td_frame;
@@ -147,14 +155,45 @@ exception(struct frame *frame)
 		oframe = NULL; /* XXX GCC -Wuinitialized.  */
 	}
 
+	handled = false;
+
 	switch (code) {
 	case EXCEPTION_INT:
 		cpu_interrupt();
+		handled = true;
 		break;
 	case EXCEPTION_SYSCALL:
+		if (!user) {
+			kcprintf("Kernel-originated system call.\n");
+			break;
+		}
 		cpu_syscall(frame);
+		handled = true;
+		break;
+	case EXCEPTION_TLB_LOAD:
+	case EXCEPTION_TLB_STORE:
+		if (!user) {
+			kcprintf("Kernel page fault.\n");
+			break;
+		}
+		vaddr = cpu_read_badvaddr();
+		if (vaddr > USER_STACK_BOT && vaddr <= USER_STACK_TOP) {
+			error = vm_fault_stack(td, vaddr);
+			if (error != 0) {
+				kcprintf("%s: vm_fault_stack failed: %m", __func__, error);
+				break;
+			}
+			handled = true;
+			break;
+		}
+		kcprintf("Userland page fault.  Not yet implemented.\n");
 		break;
 	default:
+		kcprintf("Unhandled exception.\n");
+		break;
+	}
+
+	if (!handled) {
 		kcputs("\n\n");
 		if (td == NULL)
 			cpu_exception_frame_dump(frame);
@@ -166,7 +205,6 @@ exception(struct frame *frame)
 		kcputs("Debugger not present, halting...\n");
 		cpu_halt();
 #endif
-		break;
 	}
 
 	if (td != NULL) {

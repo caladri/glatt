@@ -83,4 +83,5 @@ ns		requires: ipc
 std		vm/vm.c
 std		vm/vm_alloc.c
 std		vm/vm_index.c
+std		vm/vm_fault.c
 std		vm/vm_page.c

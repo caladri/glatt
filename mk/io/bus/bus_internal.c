@@ -214,7 +214,8 @@ bus_instance_softc_allocate(struct bus_instance *bi, size_t size)
 void
 bus_instance_vprintf(struct bus_instance *bi, const char *fmt, va_list ap)
 {
-	kcprintf("%p: ", bi);
+	bus_instance_print(bi);
+	kcprintf(": ");
 	kcvprintf(fmt, ap);
 	kcprintf("\n");
 }
@@ -323,34 +324,22 @@ bus_attachment_find(struct bus_attachment **attachment2p, struct bus *parent,
 static void
 bus_instance_describe(struct bus_instance *bi)
 {
-	if (bi->bi_description[0] == '\0') {
-#ifdef VERBOSE
-		snprintf(bi->bi_description, sizeof bi->bi_description,
-			 "<%m>", ERROR_NOT_IMPLEMENTED);
-#else
-		return;
-#endif
+	bus_instance_print(bi);
+	if (bi->bi_parent != NULL) {
+		kcprintf(" at ");
+		bus_instance_print(bi->bi_parent);
 	}
-	if (bi->bi_parent != NULL)
-		bus_instance_printf(bi, "[%s at %s %p] %s",
-				    bi->bi_attachment->ba_bus->bus_name,
-				    bi->bi_parent->bi_attachment->ba_bus->bus_name,
-				    bi->bi_parent, bi->bi_description);
-	else
-		bus_instance_printf(bi, "[%s] %s",
-				    bi->bi_attachment->ba_bus->bus_name,
-				    bi->bi_description);
+	kcprintf("\n");
+	if (bi->bi_description[0] == '\0')
+		return;
+	bus_instance_printf(bi, "%s", bi->bi_description);
 }
 
 static void
 bus_instance_print(struct bus_instance *bi)
 {
 	/* XXX Unit numbers, or similar.  */
-	kcprintf("%s", bi->bi_attachment->ba_bus->bus_name);
-	if (bi->bi_parent != NULL) {
-		kcprintf("@");
-		bus_instance_print(bi->bi_parent);
-	}
+	kcprintf("%p [%s]", bi, bi->bi_attachment->ba_bus->bus_name);
 }
 
 static void

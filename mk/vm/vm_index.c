@@ -331,7 +331,7 @@ db_vm_index_dump_task(void)
 
 	if (task != NULL) {
 		if ((task->t_flags & TASK_KERNEL) == 0) {
-			db_vm_index_dump_vm(task->t_vm, db_vm_index_dump_dot);
+			db_vm_index_dump_vm(task->t_vm, db_vm_index_dump);
 		} else {
 			kcprintf("Kernel tasks do not have their own VM spaces.\n");
 		}
@@ -340,4 +340,23 @@ db_vm_index_dump_task(void)
 	}
 }
 DB_COMMAND(task, vm_index, db_vm_index_dump_task);
+
+static void
+db_vm_index_dump_task_dot(void)
+{
+	struct task *task = current_task();
+
+	if (task != NULL) {
+		if ((task->t_flags & TASK_KERNEL) == 0) {
+			kcprintf("digraph %s {\n", task->t_name);
+			db_vm_index_dump_vm(task->t_vm, db_vm_index_dump_dot);
+			kcprintf("};\n");
+		} else {
+			kcprintf("Kernel tasks do not have their own VM spaces.\n");
+		}
+	} else {
+		kcprintf("No running task.\n");
+	}
+}
+DB_COMMAND(dottask, vm_index, db_vm_index_dump_task_dot);
 #endif

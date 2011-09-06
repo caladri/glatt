@@ -3,7 +3,8 @@
 
 #include <cpu/register.h>
 
-#define	SYSCALL_EXIT	(0)
+#define	SYSCALL_EXIT		(0)
+#define	SYSCALL_CONSOLE_WRITE	(1)
 
 int syscall(unsigned, register_t *, register_t *);
 

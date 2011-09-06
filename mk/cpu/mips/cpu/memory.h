@@ -14,6 +14,8 @@
 	/* Top of user stack.  */
 
 #define	USER_STACK_TOP	(USER_END - (PAGE_SIZE + 65536))
+#define	USER_STACK_SIZE	(128 * PAGE_SIZE)
+#define	USER_STACK_BOT	(USER_STACK_TOP - USER_STACK_SIZE)
 
 	/* 64-bit direct-mapped kernel address space.  */
 

@@ -188,6 +188,8 @@ exception(struct frame *frame)
 		}
 		kcprintf("Userland page fault.  Not yet implemented.\n");
 		break;
+	case EXCEPTION_BREAKPOINT:
+		break;
 	default:
 		kcprintf("Unhandled exception.\n");
 		break;

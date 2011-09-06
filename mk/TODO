@@ -28,8 +28,6 @@ Tasks to do before release.
 
 Fundamentals:
 	o) Trap functionality.
-	o) Userland -- start by just copying some instructions out to userland,
-	   then move into all of the ELF stuff below.
 	o) IPC
 		o) Mailbox structure.
 		o) System call.
@@ -43,7 +41,6 @@ Fundamentals:
 
 Binaries and servers:
 	o) Put a tiny, tiny VFS in front of UFS.
-	o) Trivial static ELF loading from UFS for servers and such.
 
 Device drivers:
 	o) Memory/interrupt/ioport allocation from busses.

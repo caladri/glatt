@@ -176,6 +176,7 @@ cpu_exception_vector_install(void *base, const char *start, const char *end)
 static void
 cpu_exception_frame_dump(struct frame *fp)
 {
+	const char *mode;
 	unsigned cause;
 	unsigned code;
 
@@ -185,11 +186,18 @@ cpu_exception_frame_dump(struct frame *fp)
 	cause = cpu_read_cause();
 	code = (cause & CP0_CAUSE_EXCEPTION) >> CP0_CAUSE_EXCEPTION_SHIFT;
 
+	if (fp == NULL) {
+		mode = "(unknown)";
+	} else {
+		if ((fp->f_regs[FRAME_STATUS] & CP0_STATUS_U) == 0)
+			mode = "kernel";
+		else
+			mode = "user";
+	}
+
 	kcprintf("Fatal trap type %u (%s) in %s mode on CPU %u:\n", code,
 		 cpu_exception_names[code] == NULL ? "Reserved" :
-		 cpu_exception_names[code],
-		 (cpu_read_status() & CP0_STATUS_U) == 0 ? "kernel" : "user",
-		 mp_whoami());
+		 cpu_exception_names[code], mode, mp_whoami());
 	cpu_exception_state_dump();
 	if (fp != NULL) {
 		kcprintf("pc                  = %p\n",

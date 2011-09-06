@@ -189,6 +189,7 @@ STATIC_ENTRY(tlbmod_exception)
 	dla	k0, 1f
 	j	exception_frame_save
 	nop
+
 1:	dmfc0	a0, CP0_BADVADDR
 	jal	tlb_modify
 	nop
@@ -206,7 +207,41 @@ END(cache_exception)
 
 STATIC_ENTRY(exception_frame_save)		/* Return address is k0.  */
 	.set noat
-	dsubu	sp, FRAME_SIZE
+	mfc0	k1, CP0_STATUS
+	andi	k1, CP0_STATUS_U
+	beqz	k1, 1f
+	nop
+
+	/* User mode.  */
+	li	k1, KERNEL_STATUS
+	mtc0	k1, CP0_STATUS		/* Enter kernel mode.  */
+
+	/* Look up kernel stack.  */
+	dli	k1, PCPU_VIRTUAL
+	ld	k1, PC_THREAD(k1)
+	teq	k1, zero		/* Must have a current thread.  */
+	ld	k1, TD_KSTACK(k1)
+	teq	k1, zero		/* Must have a kernel stack.  */
+
+	/* Save and replace stack pointer.  */
+	daddu	k1, KSTACK_SIZE - FRAME_SIZE	/* Frame at top of kstack.  */
+	sd	sp, FRAME_SP(k1)
+	move	sp, k1			/* Switch to kernel stack.  */
+
+	/* Save status to return to after exception.  */
+	b	2f			/* Continue with normal frame save.  */
+	li	k1, USER_STATUS
+
+	/* Kernel mode.  */
+1:	dsubu	k1, sp, FRAME_SIZE
+	sd	sp, FRAME_SP(k1)
+	move	sp, k1
+
+	mfc0	k1, CP0_STATUS
+	andi	k1, CP0_STATUS_IE	/* Preserve interrupt status.  */
+	ori	k1, KERNEL_STATUS
+
+2:	sd	k1, FRAME_STATUS(sp)
 
 	sd	AT, FRAME_AT(sp)
 	sd	v0, FRAME_V0(sp)
@@ -240,7 +275,6 @@ STATIC_ENTRY(exception_frame_save)		/* Return address is k0.  */
 	sd	t8, FRAME_T8(sp)
 	sd	t9, FRAME_T9(sp)
 	sd	gp, FRAME_GP(sp)
-	sd	sp, FRAME_SP(sp)
 	sd	s8, FRAME_S8(sp)
 	sd	ra, FRAME_RA(sp)
 
@@ -255,48 +289,59 @@ END(exception_frame_save)
 
 STATIC_ENTRY(exception_frame_restore)		/* Does not return.  */
 	.set noat
-	ld      t2, FRAME_LO(sp)
-	ld      t1, FRAME_HI(sp)
-	ld      t0, FRAME_EPC(sp)
+	ld	t2, FRAME_LO(sp)
+	ld	t1, FRAME_HI(sp)
+	ld	t0, FRAME_EPC(sp)
 
-	ld      ra, FRAME_RA(sp)
-	ld      s8, FRAME_S8(sp)
-	ld      sp, FRAME_SP(sp)
-	ld      gp, FRAME_GP(sp)
-	ld      t9, FRAME_T9(sp)
-	ld      t8, FRAME_T8(sp)
-	ld      s7, FRAME_S7(sp)
-	ld      s6, FRAME_S6(sp)
-	ld      s5, FRAME_S5(sp)
-	ld      s4, FRAME_S4(sp)
-	ld      s3, FRAME_S3(sp)
-	ld      s2, FRAME_S2(sp)
-	ld      s1, FRAME_S1(sp)
-	ld      s0, FRAME_S0(sp)
+	ld	ra, FRAME_RA(sp)
+	ld	s8, FRAME_S8(sp)
+	ld	gp, FRAME_GP(sp)
+	ld	t9, FRAME_T9(sp)
+	ld	t8, FRAME_T8(sp)
+	ld	s7, FRAME_S7(sp)
+	ld	s6, FRAME_S6(sp)
+	ld	s5, FRAME_S5(sp)
+	ld	s4, FRAME_S4(sp)
+	ld	s3, FRAME_S3(sp)
+	ld	s2, FRAME_S2(sp)
+	ld	s1, FRAME_S1(sp)
+	ld	s0, FRAME_S0(sp)
 
 	/* Before we nuke temporaries, restore externals.  */
 	mtlo	t2
 	mthi	t1
 	dmtc0	t0, CP0_EXCPC
 
-	ld      t3, FRAME_T3(sp)
-	ld      t2, FRAME_T2(sp)
-	ld      t1, FRAME_T1(sp)
-	ld      t0, FRAME_T0(sp)
-	ld      a7, FRAME_A7(sp)
-	ld      a6, FRAME_A6(sp)
-	ld      a5, FRAME_A5(sp)
-	ld      a4, FRAME_A4(sp)
-	ld      a3, FRAME_A3(sp)
-	ld      a2, FRAME_A2(sp)
-	ld      a1, FRAME_A1(sp)
-	ld      a0, FRAME_A0(sp)
-	ld      v1, FRAME_V1(sp)
-	ld      v0, FRAME_V0(sp)
-	ld      AT, FRAME_AT(sp)
+	ld	t3, FRAME_T3(sp)
+	ld	t2, FRAME_T2(sp)
+	ld	t1, FRAME_T1(sp)
+	ld	t0, FRAME_T0(sp)
+	ld	a7, FRAME_A7(sp)
+	ld	a6, FRAME_A6(sp)
+	ld	a5, FRAME_A5(sp)
+	ld	a4, FRAME_A4(sp)
+	ld	a3, FRAME_A3(sp)
+	ld	a2, FRAME_A2(sp)
+	ld	a1, FRAME_A1(sp)
+	ld	a0, FRAME_A0(sp)
+	ld	v1, FRAME_V1(sp)
+	ld	v0, FRAME_V0(sp)
+	ld	AT, FRAME_AT(sp)
 
-	daddu	sp, FRAME_SIZE
+	/* Get original status.  */
+	ld	k0, FRAME_STATUS(sp)
+	dli	k1, PCPU_VIRTUAL
+	ld	k1, PC_INTERRUPT_MASK(k1)
+	or	k0, k1			/* Set interrupt mask.  */
 
+	/* Load original stack pointer.  */
+	ld	sp, FRAME_SP(sp)
+
+	/* Restore status.  */
+	or	k0, CP0_STATUS_EXL	/* Still in exception handler.  */
+	mtc0	k0, CP0_STATUS
+
+	/* Return from exception.  */
 	eret
 	.set at
 END(exception_frame_restore)

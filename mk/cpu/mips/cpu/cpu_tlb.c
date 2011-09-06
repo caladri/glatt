@@ -61,7 +61,7 @@ static void tlb_invalidate_one(unsigned);
 #ifndef	UNIPROCESSOR
 static void tlb_shootdown(void *);
 #endif
-static void tlb_update(struct pmap *, vaddr_t);
+static void tlb_update(struct pmap *, vaddr_t, pt_entry_t);
 static void tlb_wired_entry(struct tlb_wired_entry *, vaddr_t, unsigned, pt_entry_t);
 static void tlb_wired_insert(unsigned, struct tlb_wired_entry *);
 
@@ -139,7 +139,7 @@ tlb_modify(vaddr_t vaddr)
 	if (pte_test(pte, PG_D))
 		panic("%s: modifying already dirty page.", __func__);
 	pte_set(pte, PG_D);	/* Mark page dirty.  */
-	tlb_update(vm->vm_pmap, vaddr);
+	tlb_update(vm->vm_pmap, vaddr, *pte);
 }
 
 void
@@ -219,22 +219,18 @@ tlb_shootdown(void *arg)
 #endif
 
 static void
-tlb_update(struct pmap *pm, vaddr_t vaddr)
+tlb_update(struct pmap *pm, vaddr_t vaddr, pt_entry_t pte)
 {
 	register_t asid;
-	pt_entry_t *pte;
 	int i;
 
 	critical_enter();
-	pte = pmap_find(pm, vaddr); /* XXX lock.  */
-	if (pte == NULL)
-		panic("%s: pmap_find returned NULL.", __func__);
 	asid = cpu_read_tlb_entryhi();
 	cpu_write_tlb_entryhi(TLBHI_ENTRY(vaddr, pmap_asid(pm)));
 	tlb_probe();
 	i = cpu_read_tlb_index();
-	cpu_write_tlb_entrylo0(*pte);
-	cpu_write_tlb_entrylo1(*pte + TLBLO_PA_TO_PFN(TLB_PAGE_SIZE));
+	cpu_write_tlb_entrylo0(pte);
+	cpu_write_tlb_entrylo1(pte + TLBLO_PA_TO_PFN(TLB_PAGE_SIZE));
 	if (i >= 0)
 		tlb_write_indexed();
 	else

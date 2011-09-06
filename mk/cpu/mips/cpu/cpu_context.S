@@ -96,7 +96,7 @@ END(cpu_context_save)
 	 */
 ENTRY(cpu_thread_user_trampoline)
 	dli	sp, USER_STACK_TOP
-	dli	t0, ~8
+	dli	t0, ~7
 	and	sp, t0
 
 	move	ra, zero

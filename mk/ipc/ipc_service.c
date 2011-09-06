@@ -9,9 +9,7 @@
 #include <core/string.h>
 #include <core/task.h>
 #include <core/thread.h>
-#ifdef VERBOSE
 #include <io/console/console.h>
-#endif
 #include <ipc/data.h>
 #include <ipc/ipc.h>
 #include <ipc/port.h>

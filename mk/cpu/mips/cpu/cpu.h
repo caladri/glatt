@@ -9,17 +9,7 @@
 static inline void
 cpu_barrier(void)
 {
-	asm volatile (".set noreorder\n\t"
-			  "nop\n\t"
-			  "nop\n\t"
-			  "nop\n\t"
-			  "nop\n\t"
-			  "nop\n\t"
-			  "nop\n\t"
-			  "nop\n\t"
-			  "nop\n\t"
-			  ".set reorder\n\t"
-			  : : : "memory");
+	asm volatile ("" : : : "memory");
 }
 
 	/* Coprocessor 0 manipulation inlines for 64-bit registers.  */

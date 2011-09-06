@@ -152,7 +152,6 @@ exception(struct frame *frame)
 		cpu_interrupt();
 		break;
 	case EXCEPTION_SYSCALL:
-		__asm __volatile("break");
 		cpu_syscall(frame);
 		break;
 	default:

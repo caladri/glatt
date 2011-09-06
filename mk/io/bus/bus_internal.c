@@ -214,8 +214,7 @@ bus_instance_softc_allocate(struct bus_instance *bi, size_t size)
 void
 bus_instance_vprintf(struct bus_instance *bi, const char *fmt, va_list ap)
 {
-	bus_instance_print(bi);
-	kcprintf(": ");
+	kcprintf("%p: ", bi);
 	kcvprintf(fmt, ap);
 	kcprintf("\n");
 }
@@ -326,11 +325,21 @@ bus_instance_describe(struct bus_instance *bi)
 {
 	if (bi->bi_description[0] == '\0') {
 #ifdef VERBOSE
-		bus_instance_printf(bi, "<%m>", ERROR_NOT_IMPLEMENTED);
-#endif
+		snprintf(bi->bi_description, sizeof bi->bi_description,
+			 "<%m>", ERROR_NOT_IMPLEMENTED);
+#else
 		return;
+#endif
 	}
-	bus_instance_printf(bi, "%s", bi->bi_description);
+	if (bi->bi_parent != NULL)
+		bus_instance_printf(bi, "[%s at %s %p] %s",
+				    bi->bi_attachment->ba_bus->bus_name,
+				    bi->bi_parent->bi_attachment->ba_bus->bus_name,
+				    bi->bi_parent, bi->bi_description);
+	else
+		bus_instance_printf(bi, "[%s] %s",
+				    bi->bi_attachment->ba_bus->bus_name,
+				    bi->bi_description);
 }
 
 static void

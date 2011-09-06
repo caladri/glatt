@@ -186,9 +186,11 @@
 			(var)->field.left->field.parent = (iter);	\
 		}							\
 									\
-		(var)->field.parent = NULL;				\
-		(var)->field.left = NULL;				\
-		(var)->field.right = NULL;				\
+		/*							\
+		 * Ensure future re-insertion doesn't get any lingering	\
+		 * pointers into this tree.				\
+		 */							\
+		BTREE_NODE_INIT(&(var)->field);				\
 	} while (0)
 
 #endif /* !_CORE_BTREE_H_ */

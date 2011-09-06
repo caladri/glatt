@@ -11,6 +11,10 @@
 #define	USER_BASE	(XUSEG_BASE)
 #define	USER_END	(XUSEG_END)
 
+	/* Top of user stack.  */
+
+#define	USER_STACK_TOP	(USER_END - (PAGE_SIZE + 65536))
+
 	/* 64-bit direct-mapped kernel address space.  */
 
 #define	XKPHYS_BASE	(0x8000000000000000)

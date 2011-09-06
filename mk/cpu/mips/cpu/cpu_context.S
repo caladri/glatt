@@ -1,5 +1,6 @@
 #include <core/_macro.h>
 #include <cpu/asm.h>
+#include <cpu/memory.h>
 
 	NOREORDER
 
@@ -94,12 +95,19 @@ END(cpu_context_save)
 	 * a0 = entry.
 	 */
 ENTRY(cpu_thread_user_trampoline)
-	move	sp, zero
+	dli	sp, USER_STACK_TOP
+	dli	t0, ~8
+	and	sp, t0
+
+	move	ra, zero
+
+	move	v0, a0
 
 	dli	t0, PCPU_VIRTUAL
 	ld	t0, PC_INTERRUPT_MASK(t0)
 	ori	t0, USER_STATUS
 	mtc0	t0, CP0_STATUS
-	jr	a0
-	move	ra, a0
+
+	jr	v0
+	nop
 END(cpu_thread_user_trampoline)

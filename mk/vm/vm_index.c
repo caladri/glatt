@@ -293,10 +293,11 @@ db_vm_index_dump_dot(struct vm_index *vmi)
 static void
 db_vm_index_dump(struct vm_index *vmi)
 {
-	kcprintf("VM Index %p [ %p ... %p (%zu pages) ]\n", vmi,
+	kcprintf("VM Index %p [ %p ... %p (%zu pages) ] %s\n", vmi,
 		 (void *)vmi->vmi_base,
 		 (void *)(vmi->vmi_base + vmi->vmi_size * PAGE_SIZE),
-		 vmi->vmi_size);
+		 vmi->vmi_size,
+		 (vmi->vmi_flags & VM_INDEX_FLAG_INUSE) == 0 ? "free" : "inuse");
 	/* XXX Show mappinga via pmap.  */
 }
 

@@ -297,7 +297,7 @@ db_vm_index_dump(struct vm_index *vmi)
 		 (void *)vmi->vmi_base,
 		 (void *)(vmi->vmi_base + vmi->vmi_size * PAGE_SIZE),
 		 vmi->vmi_size,
-		 (vmi->vmi_flags & VM_INDEX_FLAG_INUSE) == 0 ? "free" : "inuse");
+		 (vmi->vmi_flags & VM_INDEX_FLAG_INUSE) == 0 ? "free" : "in-use");
 	/* XXX Show mappinga via pmap.  */
 }
 

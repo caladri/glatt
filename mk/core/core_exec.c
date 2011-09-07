@@ -7,7 +7,9 @@
 #include <core/task.h>
 #include <core/thread.h>
 #include <io/console/console.h>
+#include <vm/vm.h>
 #include <vm/vm_alloc.h>
+#include <vm/vm_index.h>
 #include <vm/vm_page.h>
 
 static int exec_elf64_load(struct thread *, exec_read_t *, void *);
@@ -59,6 +61,7 @@ exec_elf64_load(struct thread *td, exec_read_t *readf, void *softc)
 	struct elf64_program_header ph;
 	struct elf64_header eh;
 	vaddr_t kvaddr;
+	size_t size;
 	size_t len;
 	unsigned i;
 	int error;
@@ -135,9 +138,8 @@ exec_elf64_load(struct thread *td, exec_read_t *readf, void *softc)
 		if (ph.ph_type != ELF_PROGRAM_HEADER_TYPE_LOAD)
 			continue;
 
-		error = vm_alloc_range_wire(td->td_task->t_vm, ph.ph_vaddr,
-					    ph.ph_vaddr + ROUNDUP(ph.ph_memorysize, ph.ph_align),
-					    &kvaddr);
+		size = ROUNDUP(ph.ph_memorysize, ph.ph_align);
+		error = vm_alloc_range_wire(td->td_task->t_vm, ph.ph_vaddr, ph.ph_vaddr + size, &kvaddr);
 		if (error != 0)
 			panic("%s: vm_alloc_range_wire failed: %m", __func__, error);
 
@@ -146,7 +148,9 @@ exec_elf64_load(struct thread *td, exec_read_t *readf, void *softc)
 		if (error != 0)
 			panic("%s: exec_read of program data failed: %m", __func__, error);
 
-		/* XXX Free kvaddr mapping.  */
+		error = vm_free_address(&kernel_vm, kvaddr);
+		if (error != 0)
+			panic("%s: could not unwire progam data: %m", __func__, error);
 	}
 
 	/*

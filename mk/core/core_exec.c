@@ -60,8 +60,9 @@ exec_elf64_load(struct thread *td, exec_read_t *readf, void *softc)
 {
 	struct elf64_program_header ph;
 	struct elf64_header eh;
+	vaddr_t begin, end;
+	vaddr_t low, high;
 	vaddr_t kvaddr;
-	size_t size;
 	size_t len;
 	unsigned i;
 	int error;
@@ -117,7 +118,7 @@ exec_elf64_load(struct thread *td, exec_read_t *readf, void *softc)
 	}
 
 	/*
-	 * Load program headers.
+	 * Check program headers.
 	 */
 	if (eh.eh_phentsize != sizeof ph) {
 		kcprintf("%s: program headers have unexpected size.\n", __func__);
@@ -129,6 +130,13 @@ exec_elf64_load(struct thread *td, exec_read_t *readf, void *softc)
 		return (ERROR_INVALID);
 	}
 
+	/*
+	 * Figure out the span of addresses the program occupies.
+	 *
+	 * XXX Could be better.
+	 */
+	low = 0;
+	high = 0;
 	for (i = 0; i < eh.eh_phnum; i++) {
 		error = exec_read(readf, softc, &ph,
 				  eh.eh_phoff + i * sizeof ph, sizeof ph);
@@ -138,20 +146,59 @@ exec_elf64_load(struct thread *td, exec_read_t *readf, void *softc)
 		if (ph.ph_type != ELF_PROGRAM_HEADER_TYPE_LOAD)
 			continue;
 
-		size = ROUNDUP(ph.ph_memorysize, ph.ph_align);
-		error = vm_alloc_range_wire(td->td_task->t_vm, ph.ph_vaddr, ph.ph_vaddr + size, &kvaddr);
+		begin = PAGE_FLOOR(ROUNDDOWN(ph.ph_vaddr, ph.ph_align));
+		end = PAGE_ROUNDUP(ROUNDUP(ph.ph_vaddr + ph.ph_memorysize, ph.ph_align));
+
+		if (high == 0) {
+			low = begin;
+			high = end;
+			continue;
+		}
+		if (low > begin)
+			low = begin;
+		if (high < end)
+			high = end;
+	}
+
+	if (high == 0 || low == high) {
+		kcprintf("%s: executable has no loadable program data.\n", __func__);
+		return (ERROR_INVALID);
+	}
+
+	/*
+	 * Wire program data address range into the kernel for program load.
+	 */
+	error = vm_alloc_range_wire(td->td_task->t_vm, low, high, &kvaddr);
+	if (error != 0) {
+		kcprintf("%s: could not allocate requested program address range: %m", __func__);
+		return (error);
+	}
+
+	/*
+	 * Load program headers.
+	 */
+	for (i = 0; i < eh.eh_phnum; i++) {
+		error = exec_read(readf, softc, &ph,
+				  eh.eh_phoff + i * sizeof ph, sizeof ph);
 		if (error != 0)
-			panic("%s: vm_alloc_range_wire failed: %m", __func__, error);
+			panic("%s: exec_read of program header failed: %m", __func__, error);
+
+		if (ph.ph_type != ELF_PROGRAM_HEADER_TYPE_LOAD)
+			continue;
 
 		len = MIN(ph.ph_memorysize, ph.ph_filesize);
-		error = exec_read(readf, softc, (void *)(kvaddr + PAGE_OFFSET(ph.ph_vaddr)), ph.ph_off, len);
+		begin = kvaddr + (ph.ph_vaddr - low);
+		error = exec_read(readf, softc, (void *)begin, ph.ph_off, len);
 		if (error != 0)
 			panic("%s: exec_read of program data failed: %m", __func__, error);
-
-		error = vm_free_address(&kernel_vm, kvaddr);
-		if (error != 0)
-			panic("%s: could not unwire progam data: %m", __func__, error);
 	}
+
+	/*
+	 * Unwire program data.
+	 */
+	error = vm_free_address(&kernel_vm, kvaddr);
+	if (error != 0)
+		panic("%s: could not unwire progam data: %m", __func__, error);
 
 	/*
 	 * Set up userland trampoline.

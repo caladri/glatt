@@ -12,7 +12,8 @@
 #define	MIN(a, b)		((a) < (b) ? (a) : (b))
 #define	MAX(a, b)		((a) > (b) ? (a) : (b))
 
-#define	ROUNDUP(x, y)		((((x) + ((y) - 1)) / (y)) * y)
+#define	ROUNDDOWN(x, y)		(((x) / (y)) * (y))
+#define	ROUNDUP(x, y)		((((x) + ((y) - 1)) / (y)) * (y))
 
 #define	offsetof(s, f)		((size_t)((uintptr_t)(&(((s *)NULL)->f))))
 

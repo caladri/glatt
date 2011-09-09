@@ -98,8 +98,8 @@ pool_free(void *m)
 	pool_page_free_datum(page, m);
 	if (page->pp_items == 0)
 		panic("%s: pool %s has no items.", __func__, pool->pool_name);
-	pool->pool_freeitems++;
 	if (page->pp_items-- != 1) {
+		pool->pool_freeitems++;
 		POOL_UNLOCK(pool);
 		return;
 	}
@@ -111,7 +111,10 @@ pool_free(void *m)
 #ifdef INVARIANTS
 	page->pp_magic = ~POOL_PAGE_MAGIC;
 #endif
+
 	SLIST_REMOVE(&pool->pool_pages, page, struct pool_page, pp_link);
+	pool->pool_freeitems -= pool->pool_maxitems - 1;
+
 	vaddr = (vaddr_t)page;
 	if ((pool->pool_flags & POOL_VIRTUAL) != 0) {
 		error = vm_free_page(&kernel_vm, vaddr);

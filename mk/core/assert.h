@@ -10,7 +10,8 @@
 #define	ASSERT(p, s)							\
 	do {								\
 		if (false) {						\
-			(void)(p);					\
+			if (!(p))					\
+				for (;;) continue;			\
 		}							\
 	} while (0)
 #endif

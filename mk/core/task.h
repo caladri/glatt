@@ -18,8 +18,6 @@ struct vm;
 
 struct task {
 	char t_name[TASK_NAME_SIZE];
-	struct task *t_parent;
-	STAILQ_HEAD(, struct task) t_children;
 	STAILQ_HEAD(, struct thread) t_threads;
 	STAILQ_ENTRY(struct task) t_link;
 	unsigned t_flags;
@@ -31,7 +29,7 @@ struct task {
 
 void task_init(void);
 
-int task_create(struct task **, struct task *, const char *, unsigned) __non_null(1) __check_result;
+int task_create(struct task **, const char *, unsigned) __non_null(1) __check_result;
 void task_free(struct task *) __non_null(1);
 
 #endif /* !_CORE_TASK_H_ */

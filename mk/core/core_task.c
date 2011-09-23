@@ -24,8 +24,7 @@ task_init(void)
 }
 
 int
-task_create(struct task **taskp, struct task *parent, const char *name,
-	    unsigned flags)
+task_create(struct task **taskp, const char *name, unsigned flags)
 {
 	struct task *task;
 	int error;
@@ -34,14 +33,8 @@ task_create(struct task **taskp, struct task *parent, const char *name,
 	if (task == NULL)
 		return (ERROR_EXHAUSTED);
 	strlcpy(task->t_name, name, sizeof task->t_name);
-	task->t_parent = parent;
-	STAILQ_INIT(&task->t_children);
 	STAILQ_INIT(&task->t_threads);
-	if (parent == NULL) {
-		STAILQ_INSERT_TAIL(&task_list, task, t_link);
-	} else {
-		STAILQ_INSERT_TAIL(&parent->t_children, task, t_link);
-	}
+	STAILQ_INSERT_TAIL(&task_list, task, t_link);
 	task->t_flags = flags;
 	/*
 	 * CPU task setup takes care of:
@@ -68,17 +61,9 @@ task_create(struct task **taskp, struct task *parent, const char *name,
 void
 task_free(struct task *task)
 {
-	struct task *parent;
+	ASSERT(STAILQ_EMPTY(&task->t_threads), "Freeing task must not have any threads.");
 
-	if (!STAILQ_EMPTY(&task->t_children))
-		return;
-
-	parent = task->t_parent;
-
-	if (parent == NULL)
-		STAILQ_REMOVE(&task_list, task, struct task, t_link);
-	else
-		STAILQ_REMOVE(&parent->t_children, task, struct task, t_link);
+	STAILQ_REMOVE(&task_list, task, struct task, t_link);
 
 	cpu_task_free(task);
 
@@ -87,14 +72,4 @@ task_free(struct task *task)
 #endif
 
 	pool_free(task);
-
-	if (parent != NULL) {
-		if (!STAILQ_EMPTY(&parent->t_children))
-			return;
-
-		if (!STAILQ_EMPTY(&parent->t_threads))
-			return;
-
-		task_free(task);
-	}
 }

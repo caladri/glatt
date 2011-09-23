@@ -44,7 +44,7 @@ exec_task(const char *name, exec_read_t *readf, void *softc)
 	struct task *task;
 	int error;
 
-	error = task_create(&task, NULL, name, TASK_DEFAULT);
+	error = task_create(&task, name, TASK_DEFAULT);
 	if (error != 0)
 		return (error);
 

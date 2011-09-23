@@ -120,7 +120,7 @@ startup_bootstrap(void)
 	/*
 	 * Create our first task.
 	 */
-	error = task_create(&main_task, NULL, "main", TASK_KERNEL);
+	error = task_create(&main_task, "main", TASK_KERNEL);
 	if (error != 0)
 		panic("%s: task_create failed: %m", __func__, error);
 }

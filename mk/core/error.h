@@ -22,7 +22,9 @@ static const char *error_strings[] __used = {
 	"Resource in use.",
 #define	ERROR_NO_RIGHT		(0x0009)
 	"No right to perform operation.",
-#define	ERROR_COUNT		(0x000a)
+#define	ERROR_ARG_COUNT		(0x000a)
+	"Wrong number of arguments.",
+#define	ERROR_COUNT		(0x000b)
 };
 
 #endif /* !_CORE_ERROR_H_ */

@@ -10,7 +10,6 @@
 #include <core/task.h>
 #include <core/thread.h>
 #include <io/console/console.h>
-#include <ipc/data.h>
 #include <ipc/ipc.h>
 #include <ipc/port.h>
 #include <ipc/service.h>
@@ -36,8 +35,7 @@ struct ipc_service_context {
 };
 
 #ifdef VERBOSE
-static void ipc_service_dump(struct ipc_service_context *, struct ipc_header *,
-			     struct ipc_data *);
+static void ipc_service_dump(const struct ipc_service_context *, const struct ipc_header *);
 #endif
 static void ipc_service_main(void *);
 
@@ -90,21 +88,14 @@ ipc_service(const char *name, ipc_port_t port, ipc_port_flags_t flags,
 
 #ifdef VERBOSE
 static void
-ipc_service_dump(struct ipc_service_context *ipcsc, struct ipc_header *ipch,
-		 struct ipc_data *ipcd)
+ipc_service_dump(const struct ipc_service_context *ipcsc, const struct ipc_header *ipch)
 {
-	kcprintf("%s: %lx -> %lx : %lx", ipcsc->ipcsc_name,
+	/*
+	 * XXX
+	 * Dump new fields.
+	 */
+	kcprintf("%s: %lx -> %lx : %lx\n", ipcsc->ipcsc_name,
 		 ipch->ipchdr_src, ipch->ipchdr_dst, ipch->ipchdr_msg);
-	if (ipcd != NULL) {
-		kcprintf(" (data");
-		while (ipcd != NULL) {
-			kcprintf(" <%x, %p, %zu>", ipcd->ipcd_type,
-				 ipcd->ipcd_addr, ipcd->ipcd_len);
-			ipcd = ipcd->ipcd_next;
-		}
-		kcprintf(")");
-	}
-	kcprintf("\n");
 }
 #endif
 
@@ -113,8 +104,8 @@ ipc_service_main(void *arg)
 {
 	struct ipc_service_context *ipcsc = arg;
 	struct ipc_header ipch;
-	struct ipc_data ipcd, *ipcdp;
 	int error;
+	void *p;
 
 	/* Register with the NS.  */
 	if (ipcsc->ipcsc_port >= IPC_PORT_UNRESERVED_START) {
@@ -123,24 +114,21 @@ ipc_service_main(void *arg)
 
 		ipch.ipchdr_src = ipcsc->ipcsc_port;
 		ipch.ipchdr_dst = IPC_PORT_NS;
-		ipch.ipchdr_right = IPC_PORT_RIGHT_SEND_ONCE;
 		ipch.ipchdr_msg = NS_MESSAGE_REGISTER;
+		ipch.ipchdr_right = IPC_PORT_RIGHT_SEND_ONCE;
+		ipch.ipchdr_cookie = 0;
+		ipch.ipchdr_recsize = sizeof nsreq;
+		ipch.ipchdr_reccnt = 1;
 
 		nsreq.error = 0;
-		nsreq.cookie = 0;
 		strlcpy(nsreq.service_name, ipcsc->ipcsc_name,
 			NS_SERVICE_NAME_LENGTH);
 		nsreq.port = ipcsc->ipcsc_port;
 
-		ipcd.ipcd_type = IPC_DATA_TYPE_SMALL;
-		ipcd.ipcd_addr = &nsreq;
-		ipcd.ipcd_len = sizeof nsreq;
-		ipcd.ipcd_next = NULL;
-
-		error = ipc_port_send(&ipch, &ipcd);
+		error = ipc_port_send_data(&ipch, &nsreq, sizeof nsreq);
 		if (error != 0) {
 #ifdef VERBOSE
-			ipc_service_dump(ipcsc, &ipch, &ipcd);
+			ipc_service_dump(ipcsc, &ipch);
 #endif
 			panic("%s: ipc_send failed: %m", __func__, error);
 		}
@@ -156,15 +144,14 @@ ipc_service_main(void *arg)
 				panic("%s: ipc_port_wait failed: %m", __func__,
 				      error);
 
-			error = ipc_port_receive(ipcsc->ipcsc_port, &ipch,
-						 &ipcdp);
+			error = ipc_port_receive(ipcsc->ipcsc_port, &ipch, &p);
 			if (error != 0) {
 				if (error == ERROR_AGAIN)
 					continue;
 			}
 
 #ifdef VERBOSE
-			ipc_service_dump(ipcsc, &ipch, ipcdp);
+			ipc_service_dump(ipcsc, &ipch);
 #endif
 
 			if (ipch.ipchdr_src != IPC_PORT_NS) {
@@ -183,26 +170,48 @@ ipc_service_main(void *arg)
 				continue;
 			}
 
-			if (ipcdp == NULL ||
-			    ipcdp->ipcd_type != IPC_DATA_TYPE_SMALL ||
-			    ipcdp->ipcd_addr == NULL ||
-			    ipcdp->ipcd_len != sizeof *nsresp ||
-			    ipcdp->ipcd_next != NULL) {
+			if (ipch.ipchdr_cookie != 0) {
 #ifdef VERBOSE
-				kcprintf("%s: gibberish data from ns.\n",
+				kcprintf("%s: unexpected cookie from ns.\n",
 					 ipcsc->ipcsc_name);
 #endif
 				continue;
 			}
 
-			nsresp = ipcdp->ipcd_addr;
+			if (ipch.ipchdr_recsize != sizeof *nsresp) {
+#ifdef VERBOSE
+				kcprintf("%s: response record from ns has wrong size.\n",
+					 ipcsc->ipcsc_name);
+#endif
+				continue;
+			}
 
-			if (nsresp->error != 0 || nsresp->cookie != 0 ||
+			if (ipch.ipchdr_reccnt != 1) {
+#ifdef VERBOSE
+				kcprintf("%s: wrong number of response records from ns.\n",
+					 ipcsc->ipcsc_name);
+#endif
+				continue;
+			}
+
+			if (p == NULL) {
+#ifdef VERBOSE
+				kcprintf("%s: no data from ns.\n",
+					 ipcsc->ipcsc_name);
+#endif
+				continue;
+			}
+
+			nsresp = p;
+
+			if (nsresp->error != 0 ||
 			    strcmp(ipcsc->ipcsc_name, nsresp->service_name) != 0 ||
 			    nsresp->port != ipcsc->ipcsc_port) {
 				panic("%s: unexpected response from ns.",
 				      ipcsc->ipcsc_name);
 			}
+
+			/* XXX Free page in p.  */
 
 			break;
 		}
@@ -223,7 +232,7 @@ ipc_service_main(void *arg)
 		if (error != 0)
 			panic ("%s: ipc_port_wait failed: %m", __func__, error);
 
-		error = ipc_port_receive(ipcsc->ipcsc_port, &ipch, &ipcdp);
+		error = ipc_port_receive(ipcsc->ipcsc_port, &ipch, &p);
 		if (error != 0) {
 			if (error == ERROR_AGAIN)
 				continue;
@@ -232,14 +241,15 @@ ipc_service_main(void *arg)
 		}
 
 #ifdef VERBOSE
-		ipc_service_dump(ipcsc, &ipch, ipcdp);
+		ipc_service_dump(ipcsc, &ipch);
 #endif
 
-		error = ipcsc->ipcsc_handler(ipcsc->ipcsc_arg, &ipch, ipcdp);
+		error = ipcsc->ipcsc_handler(ipcsc->ipcsc_arg, &ipch, p);
 		if (error != 0)
 			kcprintf("%s: service handler failed: %m", __func__, error);
 
-		if (ipcdp != NULL)
-			ipc_data_free(ipcdp);
+		if (p != NULL) {
+			/* XXX Free page in p?  */
+		}
 	}
 }

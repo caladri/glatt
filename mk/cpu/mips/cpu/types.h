@@ -22,11 +22,15 @@ typedef	uint64_t		uintptr_t;
 typedef	signed long		intmax_t;
 typedef	unsigned long		uintmax_t;
 
+	/* Types just for mk.  */
+#ifdef MK
+
 	/* Virtual memory subsystem.  */
 
 typedef	uint64_t	paddr_t;
 typedef	uint64_t	vaddr_t;
 
 #include <platform/types.h>
+#endif
 
 #endif /* !_CPU_TYPES_H_ */

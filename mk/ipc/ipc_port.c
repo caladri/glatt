@@ -6,18 +6,20 @@
 #include <core/mutex.h>
 #include <core/pool.h>
 #include <core/startup.h>
+#include <core/string.h>
 #include <core/task.h>
 #include <core/thread.h>
-#include <ipc/data.h>
 #include <ipc/ipc.h>
 #include <ipc/port.h>
+#include <vm/vm.h>
+#include <vm/vm_index.h>
+#include <vm/vm_page.h>
 
-struct ipc_message;
 struct ipc_port;
 
 struct ipc_message {
 	struct ipc_header ipcmsg_header;
-	struct ipc_data *ipcmsg_data;
+	struct vm_page *ipcmsg_page;
 	TAILQ_ENTRY(struct ipc_message) ipcmsg_link;
 };
 
@@ -135,14 +137,19 @@ ipc_port_allocate_reserved(struct task *task, ipc_port_t port, ipc_port_flags_t 
 	return (0);
 }
 
+/*
+ * XXX
+ * receive could take a task-local port number like a fd and speed lookup and
+ * minimize locking.
+ */
 int
-ipc_port_receive(ipc_port_t port, struct ipc_header *ipch,
-		 struct ipc_data **ipcdp)
+ipc_port_receive(ipc_port_t port, struct ipc_header *ipch, void **vpagep)
 {
 	struct ipc_message *ipcmsg;
 	struct ipc_port *ipcp;
 	struct task *task;
-	int error;
+	vaddr_t vaddr;
+	int error, error2;
 
 	task = current_task();
 
@@ -194,14 +201,54 @@ ipc_port_receive(ipc_port_t port, struct ipc_header *ipch,
 
 	IPC_PORTS_UNLOCK();
 
-	*ipch = ipcmsg->ipcmsg_header;
-	if (ipcdp != NULL) {
-		*ipcdp = ipcmsg->ipcmsg_data;
+	if (ipcmsg->ipcmsg_page == NULL) {
+		if (vpagep != NULL)
+			*vpagep = NULL;
 	} else {
-		if (ipcmsg->ipcmsg_data != NULL)
-			ipc_data_free(ipcmsg->ipcmsg_data);
+		if (vpagep == NULL) {
+			/*
+			 * A task may refuse a page flip for any number of reasons.
+			 */
+			page_release(ipcmsg->ipcmsg_page);
+		} else {
+			/*
+			 * Map this page into the receiving task.
+			 */
+			if ((task->t_flags & TASK_KERNEL) == 0) {
+				/*
+				 * User task.
+				 */
+				error = vm_alloc_address(task->t_vm, &vaddr, 1);
+				if (error != 0) {
+					page_release(ipcmsg->ipcmsg_page);
+					free(ipcmsg);
+					return (error);
+				}
+
+				error = page_map(task->t_vm, vaddr, ipcmsg->ipcmsg_page);
+				if (error != 0) {
+					error2 = vm_free_address(task->t_vm, vaddr);
+					if (error2 != 0)
+						panic("%s: vm_free_address failed: %m", __func__, error);
+					page_release(ipcmsg->ipcmsg_page);
+					free(ipcmsg);
+				}
+			} else {
+				/*
+				 * Kernel task.
+				 */
+				error = page_map_direct(&kernel_vm, ipcmsg->ipcmsg_page, &vaddr);
+				if (error != 0) {
+					page_release(ipcmsg->ipcmsg_page);
+					free(ipcmsg);
+					return (error);
+				}
+			}
+			*vpagep = (void *)vaddr;
+		}
 	}
-	ipcmsg->ipcmsg_data = NULL;
+
+	*ipch = ipcmsg->ipcmsg_header;
 
 	free(ipcmsg);
 
@@ -209,7 +256,106 @@ ipc_port_receive(ipc_port_t port, struct ipc_header *ipch,
 }
 
 int
-ipc_port_send(struct ipc_header *ipch, struct ipc_data *ipcd)
+ipc_port_send(struct ipc_header *ipch, void *vpage)
+{
+	struct vm_page *page;
+	struct task *task;
+	struct vm *vm;
+	int error;
+
+	task = current_task();
+
+	ASSERT(task != NULL, "Must have a running task.");
+	ASSERT(ipch != NULL, "Must have a header.");
+
+	/*
+	 * Step 0:
+	 * Prepare for page flip.
+	 *
+	 * XXX This makes a copy of the page.  Flip in the future.
+	 */
+	if (vpage == NULL) {
+		page = NULL;
+	} else {
+		if ((task->t_flags & TASK_KERNEL) == 0)
+			vm = task->t_vm;
+		else
+			vm = &kernel_vm;
+		error = page_clone(vm, (vaddr_t)vpage, &page);
+		if (error != 0)
+			return (error);
+	}
+
+	error = ipc_port_send_page(ipch, page);
+	if (error != 0) {
+		if (page != NULL)
+			page_release(page);
+		return (error);
+	}
+
+	return (0);
+}
+
+/*
+ * NB: Don't check recsize or reclen.
+ */
+int
+ipc_port_send_data(struct ipc_header *ipch, const void *p, size_t len)
+{
+	struct vm_page *page;
+	struct task *task;
+	vaddr_t vaddr;
+	int error;
+
+	task = current_task();
+
+	ASSERT(task != NULL, "Must have a running task.");
+
+	if (p == NULL) {
+		ASSERT(len == 0, "Cannot send no data with a set data length.");
+		if (len != 0)
+			return (ERROR_INVALID);
+		error = ipc_port_send(ipch, NULL);
+		if (error != 0)
+			return (error);
+		return (0);
+	}
+
+	ASSERT(len != 0, "Cannot send data without data length.");
+	ASSERT(len <= PAGE_SIZE, "Cannot send more than a page.");
+
+	error = page_alloc(PAGE_FLAG_DEFAULT, &page);
+	if (error != 0)
+		return (error);
+
+	error = page_map_direct(&kernel_vm, page, &vaddr);
+	if (error != 0) {
+		page_release(page);
+		return (error);
+	}
+
+	memcpy((void *)vaddr, p, len);
+	/*
+	 * Clear any trailing data so we don't leak kernel information.
+	 */
+	if (len != PAGE_SIZE)
+		memset((void *)(vaddr + len), 0, PAGE_SIZE - len);
+
+	error = page_unmap_direct(&kernel_vm, page, vaddr);
+	if (error != 0)
+		panic("%s: page_unmap_direct failed: %m", __func__, error);
+
+	error = ipc_port_send_page(ipch, page);
+	if (error != 0) {
+		page_release(page);
+		return (error);
+	}
+
+	return (0);
+}
+
+int
+ipc_port_send_page(struct ipc_header *ipch, struct vm_page *page)
 {
 	struct ipc_message *ipcmsg;
 	struct ipc_port *ipcp;
@@ -265,17 +411,7 @@ ipc_port_send(struct ipc_header *ipch, struct ipc_data *ipcd)
 
 	ipcmsg = malloc(sizeof *ipcmsg);
 	ipcmsg->ipcmsg_header = *ipch;
-	ipcmsg->ipcmsg_data = NULL;
-
-	if (ipcd != NULL) {
-		error = ipc_data_copyin(ipcd, &ipcmsg->ipcmsg_data);
-		if (error != 0) {
-			IPC_PORT_UNLOCK(ipcp);
-			IPC_PORTS_UNLOCK();
-			free(ipcmsg);
-			return (error);
-		}
-	}
+	ipcmsg->ipcmsg_page = page;
 
 	TAILQ_INSERT_TAIL(&ipcp->ipcp_msgs, ipcmsg, ipcmsg_link);
 	cv_signal(ipcp->ipcp_cv);

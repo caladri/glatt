@@ -4,6 +4,9 @@
 #include <core/mutex.h>
 #include <core/pool.h>
 #include <core/string.h>
+#ifdef VERBOSE
+#include <io/console/console.h>
+#endif
 #include <ipc/ipc.h>
 #include <ns/ns.h>
 #include <ns/service_directory.h>
@@ -62,6 +65,10 @@ service_directory_enter(const char *service_name, ipc_port_t port)
 		     strcmp(sde->sde_name, iter->sde_name) < 0);
 
 	SERVICE_DIRECTORY_UNLOCK();
+
+#ifdef VERBOSE
+	kcprintf("%s: registered service \"%s\" at port %lx\n", __func__, service_name, port);
+#endif
 
 	return (0);
 }

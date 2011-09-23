@@ -7,13 +7,10 @@
 
 	/* Common types.  */
 
-typedef	uintmax_t ns_cookie_t;
-
 	/* Message types.  */
 
 #define	NS_MINIMAL_MESSAGE_FIELDS					\
-	int error;							\
-	ns_cookie_t cookie
+	int error
 
 #define	NS_SERVICE_NAME_MESSAGE_FIELDS					\
 	NS_MINIMAL_MESSAGE_FIELDS;					\

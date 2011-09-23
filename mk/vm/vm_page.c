@@ -123,7 +123,7 @@ page_alloc_direct(struct vm *vm, unsigned flags, vaddr_t *vaddrp)
 {
 	struct vm_page *page;
 	vaddr_t vaddr;
-	int error, error2;
+	int error;
 
 	error = page_alloc(flags, &page);
 	if (error != 0)
@@ -131,9 +131,7 @@ page_alloc_direct(struct vm *vm, unsigned flags, vaddr_t *vaddrp)
 
 	error = page_map_direct(vm, page, &vaddr);
 	if (error != 0) {
-		error2 = page_release(page);
-		if (error2 != 0)
-			panic("%s: can't release page: %m", __func__, error);
+		page_release(page);
 		return (error);
 	}
 	*vaddrp = vaddr;
@@ -144,7 +142,7 @@ int
 page_alloc_map(struct vm *vm, unsigned flags, vaddr_t vaddr)
 {
 	struct vm_page *page;
-	int error, error2;
+	int error;
 
 	error = page_alloc(flags, &page);
 	if (error != 0)
@@ -152,11 +150,71 @@ page_alloc_map(struct vm *vm, unsigned flags, vaddr_t vaddr)
 
 	error = page_map(vm, vaddr, page);
 	if (error != 0) {
-		error2 = page_release(page);
-		if (error2 != 0)
-			panic("%s: can't release page: %m", __func__, error);
+		page_release(page);
 		return (error);
 	}
+	return (0);
+}
+
+int
+page_clone(struct vm *vm, vaddr_t vaddr, struct vm_page **pagep)
+{
+	struct vm_page *page;
+	vaddr_t src, dst;
+	paddr_t psrc, pdst;
+	int error, error2;
+
+	if (vm != &kernel_vm) {
+		/*
+		 * XXX Locking?
+		 */
+		error = pmap_extract(vm, vaddr, &psrc);
+		if (error != 0)
+			return (error);
+
+		error = pmap_map_direct(&kernel_vm, psrc, &src);
+		if (error != 0)
+			return (error);
+	} else {
+		src = vaddr;
+	}
+
+	error = page_alloc(PAGE_FLAG_DEFAULT, &page);
+	if (error != 0) {
+		if (vm != &kernel_vm) {
+			error2 = pmap_unmap_direct(&kernel_vm, src);
+			if (error2 != 0)
+				panic("%s: pmap_unmap_direct failed: %m", __func__, error);
+		}
+		return (error);
+	}
+
+	pdst = page_address(page);
+	error = pmap_map_direct(&kernel_vm, pdst, &dst);
+	if (error != 0) {
+		if (vm != &kernel_vm) {
+			error2 = pmap_unmap_direct(&kernel_vm, src);
+			if (error2 != 0)
+				panic("%s: pmap_unmap_direct failed: %m", __func__, error);
+		}
+		page_release(page);
+		return (error);
+	}
+
+	memcpy((void *)dst, (void *)src, PAGE_SIZE);
+
+	if (vm != &kernel_vm) {
+		error = pmap_unmap_direct(&kernel_vm, src);
+		if (error != 0)
+			panic("%s: pmap_unmap_direct failed: %m", __func__, error);
+	}
+
+	error = pmap_unmap_direct(&kernel_vm, dst);
+	if (error != 0)
+		panic("%s: pmap_unmap_direct failed: %m", __func__, error);
+
+	*pagep = page;
+
 	return (0);
 }
 
@@ -196,9 +254,7 @@ page_free_direct(struct vm *vm, vaddr_t vaddr)
 	if (error != 0)
 		return (error);
 
-	error = page_release(page);
-	if (error != 0)
-		return (error);
+	page_release(page);
 
 	return (0);
 }
@@ -219,9 +275,7 @@ page_free_map(struct vm *vm, vaddr_t vaddr)
 	if (error != 0)
 		return (error);
 
-	error = page_release(page);
-	if (error != 0)
-		return (error);
+	page_release(page);
 
 	return (0);
 }
@@ -324,14 +378,13 @@ page_map_direct(struct vm *vm, struct vm_page *page, vaddr_t *vaddrp)
 	return (error);
 }
 
-int
+void
 page_release(struct vm_page *page)
 {
 	PAGEQ_LOCK();
 	page_ref_drop(page);
 	ASSERT(page->pg_refcnt == 0, "Cannot release if refs held.");
 	PAGEQ_UNLOCK();
-	return (0);
 }
 
 int

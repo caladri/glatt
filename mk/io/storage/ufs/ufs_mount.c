@@ -59,7 +59,9 @@ static int ufs_lookup(struct ufs_mount *, const char *, uint32_t *);
 static int ufs_map_block(struct ufs_mount *, struct ufs2_inode *, off_t, uint64_t *);
 static int ufs_read_block(struct ufs_mount *, struct ufs2_inode *, uint64_t, uint8_t *);
 static int ufs_read_directory(struct ufs_mount *);
+#ifdef EXEC
 static int ufs_read_file(void *, void *, off_t, size_t *);
+#endif
 static int ufs_read_fsbn(struct ufs_mount *, uint64_t, uint8_t *);
 static int ufs_read_inode(struct ufs_mount *, uint32_t, struct ufs2_inode *);
 static int ufs_read_superblock(struct ufs_mount *);
@@ -259,6 +261,7 @@ ufs_read_directory(struct ufs_mount *um)
 	return (0);
 }
 
+#ifdef EXEC
 static int
 ufs_read_file(void *softc, void *buf, off_t off, size_t *lenp)
 {
@@ -279,6 +282,7 @@ ufs_read_file(void *softc, void *buf, off_t off, size_t *lenp)
 
 	return (0);
 }
+#endif
 
 static int
 ufs_read_fsbn(struct ufs_mount *um, uint64_t fsbn, uint8_t *buf)

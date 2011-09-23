@@ -18,9 +18,13 @@
 int
 syscall(unsigned number, register_t *cnt, register_t *params)
 {
+#ifdef IPC
 	struct ipc_header ipch;
+#endif
 	struct thread *td;
+#ifdef IPC
 	ipc_port_t port;
+#endif
 	vaddr_t vaddr;
 	int error;
 
@@ -39,6 +43,7 @@ syscall(unsigned number, register_t *cnt, register_t *params)
 		*cnt = 0;
 		return (0);
 	case SYSCALL_IPC_PORT_ALLOCATE:
+#ifdef IPC
 		if (*cnt != 1)
 			return (ERROR_ARG_COUNT);
 		error = ipc_port_allocate(td->td_task, &port, (ipc_port_flags_t)params[0]);
@@ -47,7 +52,11 @@ syscall(unsigned number, register_t *cnt, register_t *params)
 		*cnt = 1;
 		params[0] = port;
 		return (0);
+#else
+		return (ERROR_NOT_AVAILABLE);
+#endif
 	case SYSCALL_IPC_PORT_SEND:
+#ifdef IPC
 		if (*cnt != 2)
 			return (ERROR_ARG_COUNT);
 		/*
@@ -60,7 +69,11 @@ syscall(unsigned number, register_t *cnt, register_t *params)
 			return (error);
 		*cnt = 0;
 		return (0);
+#else
+		return (ERROR_NOT_AVAILABLE);
+#endif
 	case SYSCALL_IPC_PORT_WAIT:
+#ifdef IPC
 		if (*cnt != 1)
 			return (ERROR_ARG_COUNT);
 		error = ipc_port_wait((ipc_port_t)params[0]);
@@ -68,6 +81,9 @@ syscall(unsigned number, register_t *cnt, register_t *params)
 			return (error);
 		*cnt = 0;
 		return (0);
+#else
+		return (ERROR_NOT_AVAILABLE);
+#endif
 	case SYSCALL_VM_PAGE_GET:
 		if (*cnt != 0)
 			return (ERROR_ARG_COUNT);

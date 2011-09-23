@@ -24,7 +24,9 @@ static const char *error_strings[] __used = {
 	"No right to perform operation.",
 #define	ERROR_ARG_COUNT		(0x000a)
 	"Wrong number of arguments.",
-#define	ERROR_COUNT		(0x000b)
+#define	ERROR_NOT_AVAILABLE	(0x000b)
+	"Facility not available.",
+#define	ERROR_COUNT		(0x000c)
 };
 
 #endif /* !_CORE_ERROR_H_ */

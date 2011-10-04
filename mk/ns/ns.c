@@ -35,7 +35,7 @@ ns_handle_lookup(const struct ipc_header *reqh, void *p)
 	req = p;
 
 	resp.error = 0;
-	strlcpy(resp.service_name, req->service_name, NS_SERVICE_NAME_LENGTH);
+	memcpy(resp.service_name, req->service_name, NS_SERVICE_NAME_LENGTH);
 	resp.port = IPC_PORT_UNKNOWN;
 
 	error = service_directory_lookup(resp.service_name, &resp.port);
@@ -69,7 +69,7 @@ ns_handle_register(const struct ipc_header *reqh, void *p)
 	req = p;
 
 	resp.error = 0;
-	strlcpy(resp.service_name, req->service_name, NS_SERVICE_NAME_LENGTH);
+	memcpy(resp.service_name, req->service_name, NS_SERVICE_NAME_LENGTH);
 	resp.port = IPC_PORT_UNKNOWN;
 
 	error = service_directory_enter(resp.service_name, req->port);

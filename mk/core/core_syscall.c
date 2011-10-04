@@ -27,6 +27,9 @@ syscall(unsigned number, register_t *cnt, register_t *params)
 #endif
 	vaddr_t vaddr;
 	int error;
+#ifdef IPC
+	void *p;
+#endif
 
 	td = current_thread();
 
@@ -80,6 +83,20 @@ syscall(unsigned number, register_t *cnt, register_t *params)
 		if (error != 0)
 			return (error);
 		*cnt = 0;
+		return (0);
+#else
+		return (ERROR_NOT_AVAILABLE);
+#endif
+	case SYSCALL_IPC_PORT_RECEIVE:
+#ifdef IPC
+		if (*cnt != 2)
+			return (ERROR_ARG_COUNT);
+		error = ipc_port_receive((ipc_port_t)params[0], &ipch, &p);
+		if (error != 0)
+			return (error);
+		memcpy((void *)(uintptr_t)params[1], &ipch, sizeof ipch); /* XXX copyout */
+		*cnt = 1;
+		params[0] = (register_t)(intptr_t)p;
 		return (0);
 #else
 		return (ERROR_NOT_AVAILABLE);

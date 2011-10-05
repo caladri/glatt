@@ -83,9 +83,10 @@ STATIC_ENTRY(generic_exception)
 	dla	k0, 1f
 	j	exception_frame_save
 	nop
-1:	dla	a0, 0(sp)
-	jal	exception
-	nop
+
+1:	jal	exception
+	move	a0, sp
+
 	j	exception_frame_restore
 	nop
 	.set at
@@ -205,9 +206,9 @@ STATIC_ENTRY(tlbmod_exception)
 	j	exception_frame_save
 	nop
 
-1:	dmfc0	a0, CP0_BADVADDR
-	jal	tlb_modify
-	nop
+1:	jal	tlb_modify
+	dmfc0	a0, CP0_BADVADDR
+
 	j	exception_frame_restore
 	nop
 	.set at

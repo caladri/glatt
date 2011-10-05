@@ -148,6 +148,9 @@ mk: mk-config mk-build
 mu-build:
 	@${GO_MAKE:S,DST,mu,:S,TGT,all,}
 
+mu-clean:
+	@${GO_MAKE:S,DST,mu,:S,TGT,clean,}
+
 .if make(mu-install) && !defined(DESTDIR)
 .error "Must set DESTDIR for mu-install."
 .endif

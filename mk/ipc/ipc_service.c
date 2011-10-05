@@ -229,7 +229,7 @@ ipc_service_main(void *arg)
 
 		error = ipc_port_wait(ipcsc->ipcsc_port);
 		if (error != 0)
-			panic ("%s: ipc_port_wait failed: %m", __func__, error);
+			panic("%s: ipc_port_wait failed: %m", __func__, error);
 
 		error = ipc_port_receive(ipcsc->ipcsc_port, &ipch, &p);
 		if (error != 0) {
@@ -245,7 +245,7 @@ ipc_service_main(void *arg)
 
 		error = ipcsc->ipcsc_handler(ipcsc->ipcsc_arg, &ipch, p);
 		if (error != 0)
-			kcprintf("%s: service handler failed: %m", __func__, error);
+			kcprintf("%s: service handler failed: %m\n", __func__, error);
 
 		if (p != NULL) {
 			/* XXX Free page in p?  */

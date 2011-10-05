@@ -3,7 +3,7 @@
 
 	/* Constants.  */
 
-#define	NS_SERVICE_NAME_LENGTH	(128)
+#define	NS_SERVICE_NAME_LENGTH	(24)
 
 	/* Common types.  */
 

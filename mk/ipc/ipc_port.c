@@ -367,6 +367,13 @@ ipc_port_send_page(struct ipc_header *ipch, struct vm_page *page)
 	ASSERT(task != NULL, "Must have a running task.");
 	ASSERT(ipch != NULL, "Must have a header.");
 
+	/*
+	 * A message of IPC_MSG_NONE may always be sent to any port by any
+	 * port, may not contain any data, and may be used to grant rights.
+	 */
+	if (ipch->ipchdr_msg == IPC_MSG_NONE && page != NULL)
+		return (ERROR_INVALID);
+
 	IPC_PORTS_LOCK();
 
 	/*
@@ -391,7 +398,8 @@ ipc_port_send_page(struct ipc_header *ipch, struct vm_page *page)
 	/*
 	 * Step 2:
 	 * Check that the sending task has a send right on the destination port
-	 * unless the destination port is providing a public service.
+	 * unless the destination port is providing a public service or a knock
+	 * message is being sent.
 	 */
 	ipcp = ipc_port_lookup(ipch->ipchdr_dst);
 	if (ipcp == NULL) {
@@ -399,7 +407,8 @@ ipc_port_send_page(struct ipc_header *ipch, struct vm_page *page)
 		return (ERROR_NOT_FOUND);
 	}
 
-	if ((ipcp->ipcp_flags & IPC_PORT_FLAG_PUBLIC) == 0) {
+	if ((ipcp->ipcp_flags & IPC_PORT_FLAG_PUBLIC) == 0 &&
+	    ipch->ipchdr_msg != IPC_MSG_NONE) {
 		error = ipc_task_check_port_right(task, IPC_PORT_RIGHT_SEND,
 						  ipch->ipchdr_dst);
 		if (error != 0) {

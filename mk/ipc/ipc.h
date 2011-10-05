@@ -25,12 +25,13 @@ struct ipc_header {
 	ipc_port_t ipchdr_src;
 	ipc_port_t ipchdr_dst;
 	ipc_port_right_t ipchdr_right;	/* Right to give dst on src.  */
-	ipc_msg_t ipchdr_msg;		/* Opaque to IPC code.  */
+	ipc_msg_t ipchdr_msg;		/* Opaque to IPC code, except IPC_MSG_NONE.  */
 	ipc_cookie_t ipchdr_cookie;	/* Opaque to IPC code.  */
 	ipc_size_t ipchdr_recsize;	/* Opaque to IPC code.  */
 	ipc_size_t ipchdr_reccnt;	/* Opaque to IPC code.  */
 };
 
+#define	IPC_MSG_NONE		(0)	/* Requires no right to send, may not have data.  */
 #define	IPC_MSG_REPLY(msg)	(-(msg))
 
 #define	IPC_HEADER_REPLY(ipchdrp)					\

@@ -370,6 +370,11 @@ ipc_port_send_page(struct ipc_header *ipch, struct vm_page *page)
 	/*
 	 * A message of IPC_MSG_NONE may always be sent to any port by any
 	 * port, may not contain any data, and may be used to grant rights.
+	 *
+	 * XXX There is probably a DoS in allowing rights to be inserted
+	 *     for arbitrary tasks, but it's limited to the number of ports,
+	 *     so clamping that value for untrusted tasks is probably a fine
+	 *     compromise for now.
 	 */
 	if (ipch->ipchdr_msg == IPC_MSG_NONE && page != NULL)
 		return (ERROR_INVALID);

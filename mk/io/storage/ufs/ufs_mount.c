@@ -376,6 +376,9 @@ ufs_autorun(void *arg)
 	uint32_t inode;
 	int error;
 
+	if (STAILQ_EMPTY(&ufs_mounts))
+		return;
+
 #ifdef EXEC
 	error = vm_alloc(&kernel_vm, sizeof *fc, &vaddr);
 	if (error != 0) {

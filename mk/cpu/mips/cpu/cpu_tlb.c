@@ -23,7 +23,7 @@ COMPILE_TIME_ASSERT(POPCNT(TLBMASK_MASK) % 2 == 0);
 
 #ifndef	UNIPROCESSOR
 struct tlb_shootdown_arg {
-	struct pmap *pmap;
+	unsigned asid;
 	vaddr_t vaddr;
 };
 #endif
@@ -56,7 +56,7 @@ tlb_write_random(void)
 	cpu_barrier();
 }
 
-static void tlb_invalidate_addr(struct pmap *, vaddr_t);
+static void tlb_invalidate_addr(unsigned, vaddr_t);
 static void tlb_invalidate_one(unsigned);
 #ifndef	UNIPROCESSOR
 static void tlb_shootdown(void *);
@@ -98,9 +98,9 @@ tlb_init(paddr_t pcpu_addr, unsigned ntlbs)
 }
 
 void
-tlb_invalidate(struct pmap *pm, vaddr_t vaddr)
+tlb_invalidate(unsigned asid, vaddr_t vaddr)
 {
-	tlb_invalidate_addr(pm, vaddr);
+	tlb_invalidate_addr(asid, vaddr);
 
 #ifndef	UNIPROCESSOR
 	/*
@@ -110,7 +110,7 @@ tlb_invalidate(struct pmap *pm, vaddr_t vaddr)
 	if (mp_ncpus() != 1) {
 		struct tlb_shootdown_arg shootdown;
 
-		shootdown.pmap = pm;
+		shootdown.asid = asid;
 		shootdown.vaddr = vaddr;
 
 		mp_hokusai_master(NULL, NULL,
@@ -176,19 +176,19 @@ tlb_wired_wire(struct tlb_wired_context *wired, struct pmap *pm, vaddr_t vaddr)
 	if (pte == NULL)
 		panic("%s: pmap_find returned NULL.", __func__);
 	pte_set(pte, PG_D);	/* XXX Mark page dirty.  */
-	tlb_invalidate_addr(pm, vaddr);
+	tlb_invalidate_addr(pmap_asid(pm), vaddr);
 	tlb_wired_entry(twe, vaddr, pmap_asid(pm), *pte);
 }
 
 static void
-tlb_invalidate_addr(struct pmap *pm, vaddr_t vaddr)
+tlb_invalidate_addr(unsigned asid, vaddr_t vaddr)
 {
 	int i;
 
 	vaddr &= ~PAGE_MASK;
 
 	critical_enter();
-	cpu_write_tlb_entryhi(TLBHI_ENTRY(vaddr, pmap_asid(pm)));
+	cpu_write_tlb_entryhi(TLBHI_ENTRY(vaddr, asid));
 	tlb_probe();
 	i = cpu_read_tlb_index();
 	if (i >= 0)
@@ -214,7 +214,7 @@ tlb_shootdown(void *arg)
 	struct tlb_shootdown_arg *tsa;
 
 	tsa = arg;
-	tlb_invalidate_addr(tsa->pmap, tsa->vaddr);
+	tlb_invalidate_addr(tsa->asid, tsa->vaddr);
 }
 #endif
 

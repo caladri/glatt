@@ -23,7 +23,7 @@ struct tlb_wired_context {
 
 	/* An interface to the TLB.  */
 void tlb_init(paddr_t, unsigned);
-void tlb_invalidate(struct pmap *, vaddr_t) __non_null(1);
+void tlb_invalidate(unsigned, vaddr_t);
 void tlb_modify(vaddr_t);
 
 	/* An interface for managing wired TLB entries.  */

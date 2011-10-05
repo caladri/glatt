@@ -222,7 +222,7 @@ pmap_unmap(struct vm *vm, vaddr_t vaddr)
 	if (!pte_test(pte, PG_V))
 		return (0);
 	/* Invalidate by updating to not have PG_V set.  */
-	tlb_invalidate(pm, vaddr);
+	tlb_invalidate(pmap_asid(pm), vaddr);
 	atomic_store64(pte, 0);
 	return (0);
 }
@@ -388,7 +388,7 @@ pmap_update(struct pmap *pm, vaddr_t vaddr, struct vm_page *page, pt_entry_t fla
 			panic("%s: mapping stayed the same.", __func__);
 			return;
 		}
-		tlb_invalidate(pm, vaddr);
+		tlb_invalidate(pmap_asid(pm), vaddr);
 	}
 	atomic_store64(pte, TLBLO_PA_TO_PFN(paddr) | flags);
 }

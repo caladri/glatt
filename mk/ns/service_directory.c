@@ -44,6 +44,9 @@ service_directory_enter(const char *service_name, ipc_port_t port)
 {
 	struct service_directory_entry *sde, *old, *iter;
 
+	if (service_name[0] == '\0')
+		return (ERROR_INVALID);
+
 	sde = pool_allocate(&service_directory_entry_pool);
 	strlcpy(sde->sde_name, service_name, NS_SERVICE_NAME_LENGTH);
 	sde->sde_port = port;

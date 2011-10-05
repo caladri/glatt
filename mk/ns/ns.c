@@ -40,7 +40,7 @@ ns_handle_lookup(const struct ipc_header *reqh, void *p)
 
 	error = service_directory_lookup(resp.service_name, &resp.port);
 	if (error != 0)
-		resp.error = ERROR_NOT_FREE;
+		resp.error = ERROR_NOT_FOUND;
 
 	ipch = IPC_HEADER_REPLY(reqh);
 	ipch.ipchdr_recsize = sizeof resp;

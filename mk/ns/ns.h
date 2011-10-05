@@ -31,11 +31,11 @@
 
 	/* Message numbers and structures.  */
 
-#define	NS_MESSAGE_LOOKUP	(0x00000000)
+#define	NS_MESSAGE_LOOKUP	(0x00000001)
 
 NS_MESSAGE(lookup, NS_SERVICE_NAME, NS_PORT);
 
-#define	NS_MESSAGE_REGISTER	(0x00000001)
+#define	NS_MESSAGE_REGISTER	(0x00000002)
 
 NS_MESSAGE(register, NS_PORT, NS_PORT);
 

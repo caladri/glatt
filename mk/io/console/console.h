@@ -1,5 +1,5 @@
-#ifndef	_IO_DEVICE_CONSOLE_CONSOLE_H_
-#define	_IO_DEVICE_CONSOLE_CONSOLE_H_
+#ifndef	_IO_CONSOLE_CONSOLE_H_
+#define	_IO_CONSOLE_CONSOLE_H_
 
 	/* Kernel Console functions.  */
 
@@ -9,4 +9,4 @@ void kcputs(const char *);
 void kcprintf(const char *, ...)/* XXX need %m __printf(1, 2)*/;
 void kcvprintf(const char *, va_list)/*XXX %m __printf(1, 0)*/;
 
-#endif /* !_IO_DEVICE_CONSOLE_CONSOLE_H_ */
+#endif /* !_IO_CONSOLE_CONSOLE_H_ */

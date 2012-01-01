@@ -1,5 +1,5 @@
-#ifndef	_IO_DEVICE_BUS_INTERNAL_H_
-#define	_IO_DEVICE_BUS_INTERNAL_H_
+#ifndef	_IO_BUS_BUS_INTERNAL_H_
+#define	_IO_BUS_BUS_INTERNAL_H_
 
 int bus_lookup(struct bus **, const char *);
 
@@ -16,4 +16,4 @@ int bus_instance_setup(struct bus_instance *);
 void *bus_instance_softc(struct bus_instance *);
 void *bus_instance_softc_allocate(struct bus_instance *, size_t);
 
-#endif /* !_IO_DEVICE_BUS_INTERNAL_H_ */
+#endif /* !_IO_BUS_BUS_INTERNAL_H_ */

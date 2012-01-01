@@ -1,4 +1,4 @@
-#ifndef _PLATFORM_STARTUP_H_
+#ifndef	_PLATFORM_STARTUP_H_
 #define	_PLATFORM_STARTUP_H_
 
 struct octeon_boot_descriptor;

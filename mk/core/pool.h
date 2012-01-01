@@ -31,4 +31,4 @@ void pool_free(void *) __non_null(1);
 void pool_insert(struct pool *, vaddr_t) __non_null(1);
 int pool_destroy(struct pool *) __non_null(1) __check_result;
 
-#endif /* _CORE_POOL_H_ */
+#endif /* !_CORE_POOL_H_ */

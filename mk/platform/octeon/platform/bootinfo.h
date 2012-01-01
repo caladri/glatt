@@ -1,5 +1,5 @@
-#ifndef	PLATFORM_BOOTINFO_H
-#define	PLATFORM_BOOTINFO_H
+#ifndef	_PLATFORM_BOOTINFO_H_
+#define	_PLATFORM_BOOTINFO_H_
 
 struct octeon_boot_descriptor {
 	uint32_t version;
@@ -44,4 +44,4 @@ struct octeon_memory_descriptor {
 	uint64_t size;
 };
 
-#endif /* !PLATFORM_BOOTINFO_H */
+#endif /* !_PLATFORM_BOOTINFO_H_ */

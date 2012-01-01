@@ -1,6 +1,6 @@
-#ifndef	_CORE_IPC_H_
-#define	_CORE_IPC_H_
+#ifndef	_IPC_SYSTEM_H_
+#define	_IPC_SYSTEM_H_
 
 void ipc_init(void);
 
-#endif /* !_CORE_IPC_H_ */
+#endif /* !_IPC_SYSTEM_H_ */

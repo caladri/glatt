@@ -48,4 +48,4 @@ struct ufs_superblock {
 
 void ufs_superblock_swap(struct ufs_superblock *) __non_null(1);
 
-#endif /* !_IO_STORAGE_UFS_UFS_SUPERBLOCK_H_*/
+#endif /* !_IO_STORAGE_UFS_UFS_SUPERBLOCK_H_ */

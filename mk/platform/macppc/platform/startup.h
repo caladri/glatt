@@ -1,4 +1,4 @@
-#ifndef _PLATFORM_STARTUP_H_
+#ifndef	_PLATFORM_STARTUP_H_
 #define	_PLATFORM_STARTUP_H_
 
 void platform_halt(void) __noreturn;

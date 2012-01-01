@@ -35,4 +35,4 @@ void scheduler_thread_runnable(struct thread *) __non_null(1);
 void scheduler_thread_setup(struct thread *) __non_null(1);
 void scheduler_thread_sleeping(struct thread *) __non_null(1);
 
-#endif /* _CORE_SCHEDULER_H_ */
+#endif /* !_CORE_SCHEDULER_H_ */

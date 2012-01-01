@@ -12,4 +12,4 @@ struct cpuinfo {
 
 void cpu_identify(struct cpuinfo *) __non_null(1);
 
-#endif /* _CPU_CPUINFO_H_ */
+#endif /* !_CPU_CPUINFO_H_ */

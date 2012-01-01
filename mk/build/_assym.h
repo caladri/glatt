@@ -1,4 +1,4 @@
-#ifndef _BUILD__ASSYM_H_
+#ifndef	_BUILD__ASSYM_H_
 #define	_BUILD__ASSYM_H_
 
 /*

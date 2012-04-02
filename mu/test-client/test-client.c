@@ -26,7 +26,7 @@ main(void)
 	while ((server = ns_lookup("test-server")) == IPC_PORT_UNKNOWN)
 		continue;
 
-	id = ipc_dispatch_alloc(IPC_PORT_UNKNOWN);
+	id = ipc_dispatch_allocate(IPC_PORT_UNKNOWN, IPC_PORT_FLAG_DEFAULT);
 
 	idh = ipc_dispatch_register(id, test_response_handler, NULL);
 	test_request(idh, server);

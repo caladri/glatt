@@ -41,6 +41,7 @@ NS_MESSAGE(register, NS_PORT, NS_PORT);
 
 #if !defined(MK)
 ipc_port_t ns_lookup(const char *);
+int ns_register(const char *, ipc_port_t);
 #endif
 
 #endif /* !_NS_NS_H_ */

@@ -1,5 +1,6 @@
 CC=	${TOOLCHAIN_TARGET}-gcc
 
+CFLAGS+=-W -Wall -Werror
 CFLAGS+=-I${GLATT_SRC}/mk
 CFLAGS+=-I${GLATT_SRC}/mk/cpu/mips
 CFLAGS+=-I${GLATT_SRC}/mu

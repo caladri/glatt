@@ -8,62 +8,42 @@
 
 #include <common/common.h>
 
+static void test_request_handler(const struct ipc_dispatch_handler *, const struct ipc_header *, void *);
+
 void
 main(void)
 {
-	struct ns_register_request *nsreq;
-	struct ipc_header ipch;
-	ipc_port_t port;
-	void *page;
+	struct ipc_dispatch *id;
 	int error;
 
 	puts("Starting test-server.\n");
 
-	error = vm_page_get(&page);
+	id = ipc_dispatch_allocate(IPC_PORT_UNKNOWN, IPC_PORT_FLAG_DEFAULT | IPC_PORT_FLAG_PUBLIC);
+
+	error = ns_register("test-server", id->id_port);
 	if (error != 0)
-		fatal("vm_page_get failed", error);
+		fatal("ns_register failed", error);
 
-	error = ipc_port_allocate(&port, IPC_PORT_FLAG_DEFAULT);
-	if (error != 0)
-		fatal("ipc_port_allocate failed", error);
+	ipc_dispatch_default(id, test_request_handler, NULL);
 
-	ipch.ipchdr_src = port;
-	ipch.ipchdr_dst = IPC_PORT_NS;
-	ipch.ipchdr_msg = NS_MESSAGE_REGISTER;
-	ipch.ipchdr_right = IPC_PORT_RIGHT_SEND_ONCE;
-	ipch.ipchdr_cookie = 0;
-	ipch.ipchdr_recsize = sizeof *nsreq;
-	ipch.ipchdr_reccnt = 1;
+	ipc_dispatch(id);
+}
 
-	nsreq = page;
-	nsreq->error = 0;
-	memset(nsreq->service_name, 0, NS_SERVICE_NAME_LENGTH);
-	strlcpy(nsreq->service_name, "test-server", NS_SERVICE_NAME_LENGTH);
-	nsreq->port = port;
+static void
+test_request_handler(const struct ipc_dispatch_handler *idh, const struct ipc_header *reqh, void *page)
+{
+	int error;
 
-	printf("Sending message:\n");
-	ipc_message_print(&ipch, page);
+	if (reqh->ipchdr_recsize != 0 || reqh->ipchdr_reccnt != 0 ||
+	    page != NULL) {
+		printf("Received unexpected message:\n");
+		ipc_message_print(reqh, page);
+		return;
+	}
 
-	error = ipc_port_send(&ipch, nsreq);
-	if (error != 0)
-		fatal("ipc_port_send failed", error);
-
-	for (;;) {
-		puts("Waiting.\n");
-		error = ipc_port_wait(port);
-		if (error != 0)
-			fatal("ipc_port_wait failed", error);
-
-		error = ipc_port_receive(port, &ipch, &page);
-		if (error != 0)
-			fatal("ipc_port_receive failed", error);
-
-		if (page == NULL)
-			fatal("got NULL page from ipc_port_receive", ERROR_UNEXPECTED);
-
-		printf("Received message:\n");
-		ipc_message_print(&ipch, page);
-
-		/* XXX free page.  */
+	error = ipc_dispatch_send_reply(idh, reqh, IPC_PORT_RIGHT_NONE, NULL, 0);
+	if (error != 0) {
+		printf("Failed to send reply to:\n");
+		ipc_message_print(reqh, page);
 	}
 }

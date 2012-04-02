@@ -9,7 +9,6 @@
 #include <common/common.h>
 
 static int debug = 0;
-static int quiet = 0;
 
 static void ns_message_print(const struct ipc_header *, const void *);
 
@@ -145,10 +144,6 @@ ipc_message_print(const struct ipc_header *ipch, const void *page)
 {
 	const uint8_t *bytes;
 	unsigned i;
-
-	if (quiet) {
-		return;
-	}
 
 	ipc_header_print(ipch);
 

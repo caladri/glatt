@@ -44,6 +44,7 @@ struct tmether_softc {
 
 static void tmether_interrupt(void *, int);
 static network_interface_request_handler_t tmether_request;
+static network_interface_transmit_t tmether_transmit;
 
 static int
 tmether_setup(struct bus_instance *bi)
@@ -57,8 +58,8 @@ tmether_setup(struct bus_instance *bi)
 	spinlock_init(&sc->sc_lock, "testmips ethernet", SPINLOCK_FLAG_DEFAULT);
 	TMETHER_LOCK(sc);
 	error = network_interface_attach(&sc->sc_netif,
-					 NETWORK_INTERFACE_ETHERNET,
-					 tmether_request, sc);
+					 NETWORK_INTERFACE_ETHERNET, "tmether0",
+					 tmether_request, tmether_transmit, sc);
 	if (error != 0) {
 		TMETHER_UNLOCK(sc);
 		return (error);
@@ -105,6 +106,23 @@ tmether_request(void *softc, enum network_interface_request req, void *data,
 	default:
 		return (ERROR_NOT_IMPLEMENTED);
 	}
+}
+
+static int
+tmether_transmit(void *softc, const void *data, size_t datalen)
+{
+	struct tmether_softc *sc = softc;
+
+	if (data == NULL || datalen == 0 || datalen > TEST_ETHER_DEV_MTU)
+		return (ERROR_INVALID);
+
+	TMETHER_LOCK(sc);
+	TEST_ETHER_DEV_WRITE(TEST_ETHER_DEV_LENGTH, datalen);
+	memcpy(XKPHYS_MAP(CCA_UC, TEST_ETHER_DEV_BASE + TEST_ETHER_DEV_BUFFER), data, datalen);
+	TEST_ETHER_DEV_WRITE(TEST_ETHER_DEV_COMMAND, TEST_ETHER_DEV_COMMAND_TX);
+	TMETHER_UNLOCK(sc);
+
+	return (0);
 }
 
 BUS_INTERFACE(tmetherif) {

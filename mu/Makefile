@@ -1,6 +1,7 @@
 ##
 # Figure out what components to build.
 ##
+SUBDIRS+=	net-test
 SUBDIRS+=	test-client
 SUBDIRS+=	test-server
 

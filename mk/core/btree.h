@@ -83,13 +83,11 @@
 			break;						\
 		}							\
 									\
-		BTREE_INSERT_SUB((var), (iter), (iter),	field, cmp);	\
+		BTREE_INSERT_SUB((var), (iter), field, cmp);		\
 	} while (0)
 
-#define	BTREE_INSERT_SUB(var, iter, node, field, cmp)			\
+#define	BTREE_INSERT_SUB(var, iter, field, cmp)				\
 	do {								\
-		(iter) = (node);					\
-									\
 		for (;;) {						\
 			if ((cmp)) {					\
 				if ((iter)->field.left == NULL) {	\

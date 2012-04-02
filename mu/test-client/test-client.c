@@ -47,6 +47,8 @@ test_request(const struct ipc_dispatch_handler *idh, ipc_port_t server)
 static void
 test_response_handler(const struct ipc_dispatch_handler *idh, const struct ipc_header *ipch, void *page)
 {
+	(void)idh;
+
 	if (ipch->ipchdr_msg != IPC_MSG_REPLY(1) ||
 	    ipch->ipchdr_recsize != 0 || ipch->ipchdr_reccnt != 0 ||
 	    page != NULL) {
@@ -58,5 +60,5 @@ test_response_handler(const struct ipc_dispatch_handler *idh, const struct ipc_h
 	printf("Reply from test-server:\n");
 	ipc_message_print(ipch, page);
 
-	test_request(idh, ipch->ipchdr_src);
+	fatal("Finished!", 0);
 }

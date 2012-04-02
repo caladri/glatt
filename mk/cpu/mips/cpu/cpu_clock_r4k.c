@@ -36,6 +36,8 @@ clock_r4k_interrupt(void *arg, int interrupt)
 		cycles = count - csc->csc_last_count;
 	}
 
+	(void)cycles;
+
 	cpu_write_compare(count + csc->csc_cycles_per_hz);
 	/* XXX clock_ticks(cycles / csc->csc_cycles_per_hz); */
 	csc->csc_last_count = count;

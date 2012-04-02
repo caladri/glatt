@@ -13,7 +13,7 @@ struct ns_response_wait {
 	ipc_port_t nrw_port;
 };
 
-static void ns_response_handler(const struct ipc_dispatch_handler *, const struct ipc_header *, void *);
+static void ns_lookup_response_handler(const struct ipc_dispatch_handler *, const struct ipc_header *, void *);
 
 ipc_port_t
 ns_lookup(const char *service)
@@ -25,7 +25,7 @@ ns_lookup(const char *service)
 	int error;
 
 	id = ipc_dispatch_alloc(IPC_PORT_UNKNOWN);
-	idh = ipc_dispatch_register(id, ns_response_handler, &nrw);
+	idh = ipc_dispatch_register(id, ns_lookup_response_handler, &nrw);
 
 	nsreq.error = 0;
 	memset(nsreq.service_name, 0, NS_SERVICE_NAME_LENGTH);
@@ -52,7 +52,7 @@ ns_lookup(const char *service)
 }
 
 static void
-ns_response_handler(const struct ipc_dispatch_handler *idh, const struct ipc_header *ipch, void *page)
+ns_lookup_response_handler(const struct ipc_dispatch_handler *idh, const struct ipc_header *ipch, void *page)
 {
 	struct ns_response_wait *nrw = idh->idh_softc;
 	struct ns_lookup_response *nsresp;

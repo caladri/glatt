@@ -1,0 +1,93 @@
+#include <cpu/asm.h>
+#include <core/syscall.h>
+
+	.set noreorder
+
+	.text
+
+ENTRY(_start)
+	dla	gp, _gp
+	jal	main
+	nop
+	j	exit
+	nop
+END(_start)
+
+ENTRY(exit)
+	li	v0, SYSCALL_EXIT
+	li	v1, 0
+	syscall
+END(exit)
+
+ENTRY(putchar)
+	li	v0, SYSCALL_CONSOLE_PUTC
+	li	v1, 1
+	syscall
+	jr	ra
+	nop
+END(putchar)
+
+ENTRY(ipc_port_allocate)
+	move	t0, a0
+	move	a0, a1
+
+	li	v0, SYSCALL_IPC_PORT_ALLOCATE
+	li	v1, 1
+	syscall
+
+	beqz	v1, 1f
+	nop
+
+	sw	a0, 0(t0)
+
+1:	jr	ra
+	nop
+END(ipc_port_allocate)
+
+ENTRY(ipc_port_send)
+	li	v0, SYSCALL_IPC_PORT_SEND
+	li	v1, 2
+	syscall
+	jr	ra
+	nop
+END(ipc_port_send)
+
+ENTRY(ipc_port_wait)
+	li	v0, SYSCALL_IPC_PORT_WAIT
+	li	v1, 1
+	syscall
+	jr	ra
+	nop
+END(ipc_port_wait)
+
+ENTRY(ipc_port_receive)
+	move	t0, a2
+
+	li	v0, SYSCALL_IPC_PORT_RECEIVE
+	li	v1, 2
+	syscall
+
+	beqz	v1, 1f
+	nop
+
+	sd	a0, 0(t0)
+
+1:	jr	ra
+	nop
+END(ipc_port_receive)
+
+ENTRY(vm_page_get)
+	move	t0, a0
+
+	li	v0, SYSCALL_VM_PAGE_GET
+	li	v1, 0
+	syscall
+
+	beqz	v1, 1f
+	nop
+
+	sd	a0, 0(t0)
+
+1:	jr	ra
+	nop
+END(vm_page_get)

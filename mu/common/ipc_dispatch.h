@@ -1,0 +1,27 @@
+#ifndef	IPC_DISPATCH_H
+#define	IPC_DISPATCH_H
+
+struct ipc_dispatch_handler;
+
+struct ipc_dispatch {
+	ipc_port_t id_port;
+	unsigned id_cookie_next;
+	struct ipc_dispatch_handler *id_handlers;
+};
+
+typedef	void ipc_dispatch_callback_t(const struct ipc_dispatch_handler *, const struct ipc_header *, void *);
+
+struct ipc_dispatch_handler {
+	struct ipc_dispatch *idh_dispatch;
+	unsigned idh_cookie;
+	void *idh_softc;
+	ipc_dispatch_callback_t *idh_callback;
+	struct ipc_dispatch_handler *idh_next;
+};
+
+struct ipc_dispatch *ipc_dispatch_alloc(ipc_port_t);
+void ipc_dispatch(const struct ipc_dispatch *);
+const struct ipc_dispatch_handler *ipc_dispatch_register(struct ipc_dispatch *, ipc_dispatch_callback_t *, void *);
+int ipc_dispatch_send(const struct ipc_dispatch_handler *, ipc_port_t, ipc_msg_t, ipc_port_right_t, const void *, size_t);
+
+#endif /* !IPC_DISPATCH_H */

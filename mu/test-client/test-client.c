@@ -8,61 +8,62 @@
 
 #include <common/common.h>
 
+static void ns_request(const struct ipc_dispatch_handler *);
+static void ns_response_handler(const struct ipc_dispatch_handler *, const struct ipc_header *, void *);
+
 void
 main(void)
 {
-	struct ns_lookup_request *nsreq;
-	struct ipc_header ipch;
-	ipc_port_t port;
-	void *page;
-	int error;
+	const struct ipc_dispatch_handler *idh;
+	struct ipc_dispatch *id;
 
 	puts("Starting test-client.\n");
 
-	error = vm_page_get(&page);
+	id = ipc_dispatch_alloc(IPC_PORT_UNKNOWN);
+
+	idh = ipc_dispatch_register(id, ns_response_handler, NULL);
+	ns_request(idh);
+
+	ipc_dispatch(id);
+}
+
+static void
+ns_request(const struct ipc_dispatch_handler *idh)
+{
+	struct ns_lookup_request nsreq;
+	int error;
+
+	nsreq.error = 0;
+	memset(nsreq.service_name, 0, NS_SERVICE_NAME_LENGTH);
+	strlcpy(nsreq.service_name, "test-server", NS_SERVICE_NAME_LENGTH);
+
+	error = ipc_dispatch_send(idh, IPC_PORT_NS, NS_MESSAGE_LOOKUP, IPC_PORT_RIGHT_SEND_ONCE, &nsreq, sizeof nsreq);
 	if (error != 0)
-		fatal("vm_page_get failed", error);
+		fatal("ipc_dispatch_send failed", error);
+}
 
-	error = ipc_port_allocate(&port, IPC_PORT_FLAG_DEFAULT);
-	if (error != 0)
-		fatal("ipc_port_allocate failed", error);
+static void
+ns_response_handler(const struct ipc_dispatch_handler *idh, const struct ipc_header *ipch, void *page)
+{
+	struct ns_lookup_response *nsresp;
 
-	ipch.ipchdr_src = port;
-	ipch.ipchdr_dst = IPC_PORT_NS;
-	ipch.ipchdr_msg = NS_MESSAGE_LOOKUP;
-	ipch.ipchdr_right = IPC_PORT_RIGHT_SEND_ONCE;
-	ipch.ipchdr_cookie = 0;
-	ipch.ipchdr_recsize = sizeof *nsreq;
-	ipch.ipchdr_reccnt = 1;
-
-	nsreq = page;
-	nsreq->error = 0;
-	memset(nsreq->service_name, 0, NS_SERVICE_NAME_LENGTH);
-	strlcpy(nsreq->service_name, "test-server", NS_SERVICE_NAME_LENGTH);
-
-	printf("Sending message:\n");
-	ipc_message_print(&ipch, page);
-
-	error = ipc_port_send(&ipch, nsreq);
-	if (error != 0)
-		fatal("ipc_port_send failed", error);
-
-	for (;;) {
-		puts("Waiting.\n");
-		error = ipc_port_wait(port);
-		if (error != 0)
-			fatal("ipc_port_wait failed", error);
-
-		error = ipc_port_receive(port, &ipch, &page);
-		if (error != 0)
-			fatal("ipc_port_receive failed", error);
-
-		if (page == NULL)
-			fatal("got NULL page from ipc_port_receive", ERROR_UNEXPECTED);
-
-		printf("Received message:\n");
-		ipc_message_print(&ipch, page);
-
-		/* XXX free page.  */
+	if (ipch->ipchdr_msg != IPC_MSG_REPLY(NS_MESSAGE_LOOKUP) ||
+	    ipch->ipchdr_recsize != sizeof *nsresp || ipch->ipchdr_reccnt != 1 ||
+	    page == NULL) {
+		printf("Received unexpected message:\n");
+		ipc_message_print(ipch, page);
+		return;
 	}
+
+	nsresp = page;
+	if (nsresp->error != 0) {
+		/*
+		 * Continue to wait for test-server to arrive.
+		 */
+		ns_request(idh);
+		return;
+	}
+
+	printf("Discovered test-server:\n");
+	ipc_message_print(ipch, page);
 }

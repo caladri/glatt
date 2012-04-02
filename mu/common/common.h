@@ -1,6 +1,8 @@
 #ifndef	COMMON_H
 #define	COMMON_H
 
+#include "ipc_dispatch.h"
+
 int vm_page_get(void **);
 
 void exit(void);
@@ -16,5 +18,8 @@ void hexdump(const void *, size_t);
 
 void ipc_header_print(const struct ipc_header *);
 void ipc_message_print(const struct ipc_header *, const void *);
+
+void *malloc(size_t);
+void free(void *);
 
 #endif /* !COMMON_H */

@@ -9,7 +9,7 @@
 #include <common/common.h>
 
 static int debug = 0;
-static int quiet = 1;
+static int quiet = 0;
 
 static void ns_message_print(const struct ipc_header *, const void *);
 
@@ -185,6 +185,32 @@ ipc_message_print(const struct ipc_header *ipch, const void *page)
 
 		bytes += ipch->ipchdr_recsize;
 	}
+}
+
+void *
+malloc(size_t len)
+{
+	int error;
+	void *page;
+
+	if (len > PAGE_SIZE)
+		fatal("request to allocate more than a page", ERROR_NOT_IMPLEMENTED);
+	if (len == 0)
+		fatal("request to allocate 0 bytes", ERROR_INVALID);
+
+	error = vm_page_get(&page);
+	if (error != 0)
+		return (NULL);
+
+	return (page);
+}
+
+void
+free(void *ptr)
+{
+	/* XXX Not yet.  */
+	(void)ptr;
+	return;
 }
 
 static void

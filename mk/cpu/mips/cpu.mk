@@ -24,6 +24,7 @@ KERNEL_CPU=	-mips64
 .else
 KERNEL_CPU=	-mips3
 .endif
+KERNEL_CPU+=	-msoft-float
 .if defined(LITTLE_ENDIAN)
 .if defined(MIPS_O64)
 KERNEL_FORMAT=	elf32-littlemips

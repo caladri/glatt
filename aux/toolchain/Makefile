@@ -43,6 +43,13 @@ NEED_GMP=	t
 .if !exists(${PREFIX}/include/mpfr.h)
 NEED_MPFR=	t
 .endif
+
+.if !exists(${VENDOR_SRC}/gnu/mpfr)
+.error "Building GCC requires MPC!  Update vendor-src."
+.endif
+.if !exists(${PREFIX}/include/mpc.h)
+NEED_MPC=	t
+.endif
 .endif
 
 ##
@@ -57,7 +64,7 @@ SUBDIRS+=	libiconv
 .endif
 
 ##
-# GCC requires GMP and MPFR, so build them first.
+# GCC requires GMP, MPFR and MPC, so build them first.
 ##
 .if defined(NEED_GMP)
 SUBDIRS+=	gmp
@@ -65,6 +72,10 @@ SUBDIRS+=	gmp
 
 .if defined(NEED_MPFR)
 SUBDIRS+=	mpfr
+.endif
+
+.if defined(NEED_MPC)
+SUBDIRS+=	mpc
 .endif
 
 ##

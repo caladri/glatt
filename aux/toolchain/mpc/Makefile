@@ -1,9 +1,11 @@
 VENDOR=		gnu
-PACKAGE=	mpfr
-VERSION=	3.1.0
+PACKAGE=	mpc
+VERSION=	0.9
+DISTFILE=	${PACKAGE}-${VERSION}.tar.gz
 
 CONFIGURE+=	--prefix=${PREFIX}
 CONFIGURE+=	--with-gmp=${PREFIX}
+CONFIGURE+=	--with-mpfr=${PREFIX}
 
 USE_GNUMAKE=	true
 

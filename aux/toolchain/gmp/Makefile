@@ -1,6 +1,6 @@
 VENDOR=		gnu
 PACKAGE=	gmp
-VERSION=	4.3.1
+VERSION=	5.0.4
 
 CONFIGURE+=	--prefix=${PREFIX}
 

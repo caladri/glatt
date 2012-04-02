@@ -1,13 +1,15 @@
 VENDOR=		gnu
 PACKAGE=	gcc
-VERSION=	4.4.2
-DISTFILE=	${PACKAGE}-core-${VERSION}.tar.bz2
+VERSION=	4.7.0
+DISTFILE=	${PACKAGE}-${VERSION}.tar.bz2
 
 CONFIGURE+=	--prefix=${PREFIX}
 CONFIGURE+=	--target=${TOOLCHAIN_TARGET}
 CONFIGURE+=	--disable-libssp
 CONFGIURE+=	--with-gmp=${PREFIX}
 CONFGIURE+=	--with-mpfr=${PREFIX}
+CONFGIURE+=	--with-mpc=${PREFIX}
+CONFIGURE+=	--enable-languages=c
 
 # XXX ac_compile for the gmp and mpfr tests is broken.
 CONFIGURE_ENV+=	CFLAGS="-I${PREFIX}/include"

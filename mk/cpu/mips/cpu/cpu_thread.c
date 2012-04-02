@@ -74,5 +74,5 @@ cpu_thread_exception(void *arg)
 	struct thread *td;
 
 	td = arg;
-	panic("%s: upcall not set on thread %p", __func__, (void *)arg);
+	panic("%s: upcall not set on thread %p", __func__, (void *)td);
 }

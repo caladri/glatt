@@ -39,4 +39,8 @@ NS_MESSAGE(lookup, NS_SERVICE_NAME, NS_PORT);
 
 NS_MESSAGE(register, NS_PORT, NS_PORT);
 
+#if !defined(MK)
+ipc_port_t ns_lookup(const char *);
+#endif
+
 #endif /* !_NS_NS_H_ */

@@ -8,62 +8,55 @@
 
 #include <common/common.h>
 
-static void ns_request(const struct ipc_dispatch_handler *);
-static void ns_response_handler(const struct ipc_dispatch_handler *, const struct ipc_header *, void *);
+static void test_request(const struct ipc_dispatch_handler *, ipc_port_t server);
+static void test_response_handler(const struct ipc_dispatch_handler *, const struct ipc_header *, void *);
 
 void
 main(void)
 {
 	const struct ipc_dispatch_handler *idh;
 	struct ipc_dispatch *id;
+	ipc_port_t server;
 
 	puts("Starting test-client.\n");
 
+	/*
+	 * Wait for the test-server.
+	 */
+	while ((server = ns_lookup("test-server")) == IPC_PORT_UNKNOWN)
+		continue;
+
 	id = ipc_dispatch_alloc(IPC_PORT_UNKNOWN);
 
-	idh = ipc_dispatch_register(id, ns_response_handler, NULL);
-	ns_request(idh);
+	idh = ipc_dispatch_register(id, test_response_handler, NULL);
+	test_request(idh, server);
 
 	ipc_dispatch(id);
 }
 
 static void
-ns_request(const struct ipc_dispatch_handler *idh)
+test_request(const struct ipc_dispatch_handler *idh, ipc_port_t server)
 {
-	struct ns_lookup_request nsreq;
 	int error;
 
-	nsreq.error = 0;
-	memset(nsreq.service_name, 0, NS_SERVICE_NAME_LENGTH);
-	strlcpy(nsreq.service_name, "test-server", NS_SERVICE_NAME_LENGTH);
-
-	error = ipc_dispatch_send(idh, IPC_PORT_NS, NS_MESSAGE_LOOKUP, IPC_PORT_RIGHT_SEND_ONCE, &nsreq, sizeof nsreq);
+	error = ipc_dispatch_send(idh, server, 1, IPC_PORT_RIGHT_SEND_ONCE, NULL, 0);
 	if (error != 0)
 		fatal("ipc_dispatch_send failed", error);
 }
 
 static void
-ns_response_handler(const struct ipc_dispatch_handler *idh, const struct ipc_header *ipch, void *page)
+test_response_handler(const struct ipc_dispatch_handler *idh, const struct ipc_header *ipch, void *page)
 {
-	struct ns_lookup_response *nsresp;
-
-	if (ipch->ipchdr_msg != IPC_MSG_REPLY(NS_MESSAGE_LOOKUP) ||
-	    ipch->ipchdr_recsize != sizeof *nsresp || ipch->ipchdr_reccnt != 1 ||
-	    page == NULL) {
+	if (ipch->ipchdr_msg != IPC_MSG_REPLY(1) ||
+	    ipch->ipchdr_recsize != 0 || ipch->ipchdr_reccnt != 0 ||
+	    page != NULL) {
 		printf("Received unexpected message:\n");
 		ipc_message_print(ipch, page);
 		return;
 	}
 
-	nsresp = page;
-	if (nsresp->error != 0) {
-		/*
-		 * Continue to wait for test-server to arrive.
-		 */
-		ns_request(idh);
-		return;
-	}
-
-	printf("Discovered test-server:\n");
+	printf("Reply from test-server:\n");
 	ipc_message_print(ipch, page);
+
+	test_request(idh, ipch->ipchdr_src);
 }

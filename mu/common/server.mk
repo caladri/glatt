@@ -15,6 +15,7 @@ LDFLAGS+=-Wl,--oformat=elf64-bigmips
 CFLAGS+=-fno-builtin
 
 SRCS+=	${GLATT_SRC}/mu/common/ipc_dispatch.c
+SRCS+=	${GLATT_SRC}/mu/common/ns_util.c
 SRCS+=	${GLATT_SRC}/mu/common/syscalls.S
 SRCS+=	${GLATT_SRC}/mu/common/util.c
 SRCS+=	${GLATT_SRC}/mk/core/core_printf.c

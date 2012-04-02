@@ -8,6 +8,8 @@
 
 #include <common/common.h>
 
+static void ipc_dispatch_message(const struct ipc_dispatch *, const struct ipc_header *, void *);
+
 struct ipc_dispatch *
 ipc_dispatch_alloc(ipc_port_t port)
 {
@@ -34,7 +36,6 @@ ipc_dispatch_alloc(ipc_port_t port)
 void
 ipc_dispatch(const struct ipc_dispatch *id)
 {
-	const struct ipc_dispatch_handler *idh;
 	struct ipc_header ipch;
 	void *page;
 	int error;
@@ -51,12 +52,24 @@ ipc_dispatch(const struct ipc_dispatch *id)
 		if (error != 0)
 			fatal("ipc_port_receive failed", error);
 
-		for (idh = id->id_handlers; idh != NULL; idh = idh->idh_next) {
-			if (idh->idh_cookie != ipch.ipchdr_cookie)
-				continue;
-			idh->idh_callback(idh, &ipch, page);
-		}
+		ipc_dispatch_message(id, &ipch, page);
 	}
+}
+
+bool
+ipc_dispatch_poll(const struct ipc_dispatch *id)
+{
+	struct ipc_header ipch;
+	void *page;
+	int error;
+
+	error = ipc_port_receive(id->id_port, &ipch, &page);
+	if (error != 0)
+		return (false);
+
+	ipc_dispatch_message(id, &ipch, page);
+
+	return (false);
 }
 
 const struct ipc_dispatch_handler *
@@ -115,4 +128,32 @@ ipc_dispatch_send(const struct ipc_dispatch_handler *idh, ipc_port_t dst, ipc_ms
 	}
 
 	return (0);
+}
+
+void
+ipc_dispatch_wait(const struct ipc_dispatch *id)
+{
+	int error;
+
+	error = ipc_port_wait(id->id_port);
+	if (error != 0)
+		fatal("ipc_port_wait failed", error);
+}
+
+static void
+ipc_dispatch_message(const struct ipc_dispatch *id, const struct ipc_header *ipch, void *page)
+{
+	struct ipc_dispatch_handler *idh;
+
+	for (idh = id->id_handlers; idh != NULL; idh = idh->idh_next) {
+		if (idh->idh_cookie != ipch->ipchdr_cookie)
+			continue;
+		idh->idh_callback(idh, ipch, page);
+		return;
+	}
+
+	/*
+	 * XXX
+	 * Need to free page.
+	 */
 }

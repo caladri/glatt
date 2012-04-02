@@ -21,7 +21,9 @@ struct ipc_dispatch_handler {
 
 struct ipc_dispatch *ipc_dispatch_alloc(ipc_port_t);
 void ipc_dispatch(const struct ipc_dispatch *);
+bool ipc_dispatch_poll(const struct ipc_dispatch *);
 const struct ipc_dispatch_handler *ipc_dispatch_register(struct ipc_dispatch *, ipc_dispatch_callback_t *, void *);
 int ipc_dispatch_send(const struct ipc_dispatch_handler *, ipc_port_t, ipc_msg_t, ipc_port_right_t, const void *, size_t);
+void ipc_dispatch_wait(const struct ipc_dispatch *);
 
 #endif /* !IPC_DISPATCH_H */

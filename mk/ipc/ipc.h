@@ -1,7 +1,9 @@
 #ifndef	_IPC_IPC_H_
 #define	_IPC_IPC_H_
 
+#if defined(MK)
 #include <core/queue.h>
+#endif
 
 typedef	uint32_t	ipc_port_t;
 typedef	int32_t		ipc_msg_t;

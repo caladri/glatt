@@ -44,7 +44,7 @@ KERNEL_CFLAGS+=	${KERNEL_ABI} ${KERNEL_CPU} -nostdinc
 KERNEL_CFLAGS+=	-std=c99 -pedantic
 KERNEL_CFLAGS+=	-Werror -W -Wall -Wno-unused -Wformat
 KERNEL_CFLAGS+=	-Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wshadow
-KERNEL_CFLAGS+=	-Wcast-align -Winline -Wnested-externs -Wredundant-decls
+KERNEL_CFLAGS+=	-Wcast-align -Wnested-externs -Wredundant-decls
 KERNEL_CFLAGS+=	-Wstrict-prototypes -Wmissing-prototypes -Wpointer-arith
 KERNEL_CFLAGS+=	-fstrict-aliasing -fno-builtin
 KERNEL_CFLAGS+=	--param inline-unit-growth=100

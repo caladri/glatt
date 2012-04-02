@@ -110,10 +110,6 @@ hexdump(const void *p, size_t len)
 void
 ipc_header_print(const struct ipc_header *ipch)
 {
-	if (quiet) {
-		return;
-	}
-
 	if (debug) {
 		printf("Raw message header:\n");
 		hexdump(ipch, sizeof *ipch);
@@ -149,6 +145,10 @@ ipc_message_print(const struct ipc_header *ipch, const void *page)
 {
 	const uint8_t *bytes;
 	unsigned i;
+
+	if (quiet) {
+		return;
+	}
 
 	ipc_header_print(ipch);
 

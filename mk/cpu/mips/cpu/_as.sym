@@ -62,6 +62,7 @@ DEFINE(FRAME_EPC,	offsetof(struct frame,	f_regs[FRAME_EPC]));
 DEFINE(FRAME_HI,	offsetof(struct frame,	f_regs[FRAME_HI]));
 DEFINE(FRAME_LO,	offsetof(struct frame,	f_regs[FRAME_LO]));
 DEFINE(FRAME_STATUS,	offsetof(struct frame,	f_regs[FRAME_STATUS]));
+DEFINE(FRAME_CAUSE,	offsetof(struct frame,	f_regs[FRAME_CAUSE]));
 DEFINE(FRAME_SIZE,	sizeof (struct frame));
 
 	/* PCPU-related constants we might want.  */

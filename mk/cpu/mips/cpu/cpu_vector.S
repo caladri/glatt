@@ -229,11 +229,6 @@ STATIC_ENTRY(exception_frame_save)		/* Return address is k0.  */
 	nop
 
 	/* User mode.  */
-	mfc0	k1, CP0_STATUS
-	andi	k1, CP0_STATUS_IE	/* Preserve interrupt status.  */
-	ori	k1, KERNEL_STATUS
-	ori	k1, CP0_STATUS_EXL	/* Still in exception handler.  */
-	mtc0	k1, CP0_STATUS		/* Enter kernel mode.  */
 
 	/* Look up kernel stack.  */
 	dli	k1, PCPU_VIRTUAL
@@ -250,7 +245,6 @@ STATIC_ENTRY(exception_frame_save)		/* Return address is k0.  */
 	/* Save status to return to after exception.  */
 	li	k1, USER_STATUS
 	b	2f			/* Continue with normal frame save.  */
-	ori	k1, CP0_STATUS_EXL	/* Still in exception handler.  */
 
 	/* Kernel mode.  */
 1:	dsubu	k1, sp, FRAME_SIZE
@@ -260,9 +254,28 @@ STATIC_ENTRY(exception_frame_save)		/* Return address is k0.  */
 	mfc0	k1, CP0_STATUS
 	andi	k1, CP0_STATUS_IE	/* Preserve interrupt status.  */
 	ori	k1, KERNEL_STATUS
-	ori	k1, CP0_STATUS_EXL	/* Still in exception handler.  */
 
 2:	sd	k1, FRAME_STATUS(sp)
+
+	/*
+	 * Finish saving state that would be clobbered by other exceptions
+	 * and then drop EXL to 0 and enter kernel mode.  At that point we
+	 * can take nested exceptions during save here.
+	 */
+
+	/* Save exception program counter.  */
+	dmfc0	k1, CP0_EXCPC
+	sd	k1, FRAME_EPC(sp)
+
+	/* Save cause.  */
+	mfc0	k1, CP0_CAUSE
+	sd	k1, FRAME_CAUSE(sp)
+
+	/* Enter kernel mode, EXL=0.  */
+	mfc0	k1, CP0_STATUS
+	andi	k1, CP0_STATUS_IE	/* Preserve interrupt status.  */
+	ori	k1, KERNEL_STATUS
+	mtc0	k1, CP0_STATUS		/* Enter kernel mode.  */
 
 	sd	AT, FRAME_AT(sp)
 	sd	v0, FRAME_V0(sp)
@@ -281,7 +294,6 @@ STATIC_ENTRY(exception_frame_save)		/* Return address is k0.  */
 	sd	t3, FRAME_T3(sp)
 
 	/* Use freshly-available temporaries to start loading externals.  */
-	dmfc0	t0, CP0_EXCPC
 	mfhi	t1
 	mflo	t2
 
@@ -299,7 +311,6 @@ STATIC_ENTRY(exception_frame_save)		/* Return address is k0.  */
 	sd	s8, FRAME_S8(sp)
 	sd	ra, FRAME_RA(sp)
 
-	sd	t0, FRAME_EPC(sp)
 	sd	t1, FRAME_HI(sp)
 	sd	t2, FRAME_LO(sp)
 
@@ -310,6 +321,12 @@ END(exception_frame_save)
 
 STATIC_ENTRY(exception_frame_restore)		/* Does not return.  */
 	.set noat
+
+	/* Enter kernel mode, EXL=1.  */
+	li	k1, KERNEL_STATUS
+	ori	k1, CP0_STATUS_EXL	/* Back in exception handler.  */
+	mtc0	k1, CP0_STATUS		/* Enter kernel mode.  */
+
 	ld	t2, FRAME_LO(sp)
 	ld	t1, FRAME_HI(sp)
 	ld	t0, FRAME_EPC(sp)
@@ -359,6 +376,7 @@ STATIC_ENTRY(exception_frame_restore)		/* Does not return.  */
 	ld	sp, FRAME_SP(sp)
 
 	/* Restore status.  */
+	ori	k0, CP0_STATUS_EXL	/* Still in exception handler.  */
 	mtc0	k0, CP0_STATUS
 
 	/* Return from exception.  */

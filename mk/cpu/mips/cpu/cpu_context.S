@@ -106,8 +106,9 @@ ENTRY(cpu_thread_user_trampoline)
 	dli	t0, PCPU_VIRTUAL
 	ld	t0, PC_INTERRUPT_MASK(t0)
 	ori	t0, USER_STATUS
+	ori	t0, CP0_STATUS_EXL
 	mtc0	t0, CP0_STATUS
 
-	jr	v0
-	nop
+	dmtc0	v0, CP0_EXCPC
+	eret
 END(cpu_thread_user_trampoline)

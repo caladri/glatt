@@ -134,7 +134,6 @@ exception(struct frame *frame)
 {
 	struct frame *oframe;
 	struct thread *td;
-	unsigned cause;
 	unsigned code;
 	vaddr_t vaddr;
 	bool handled;
@@ -144,8 +143,7 @@ exception(struct frame *frame)
 	ASSERT(frame != NULL, "exception must have a frame.");
 
 	td = current_thread();
-	cause = cpu_read_cause();
-	code = (cause & CP0_CAUSE_EXCEPTION) >> CP0_CAUSE_EXCEPTION_SHIFT;
+	code = (frame->f_regs[FRAME_CAUSE] & CP0_CAUSE_EXCEPTION) >> CP0_CAUSE_EXCEPTION_SHIFT;
 	user = (frame->f_regs[FRAME_STATUS] & CP0_STATUS_U) != 0;
 
 	if (td != NULL) {
@@ -201,6 +199,10 @@ exception(struct frame *frame)
 			cpu_exception_frame_dump(frame);
 		else
 			cpu_exception_state_dump();
+		if (oframe != NULL) {
+			kcprintf("Previous frame:\n");
+			cpu_exception_frame_dump(oframe);
+		}
 #ifdef DB
 		db_enter();
 #else
@@ -233,7 +235,6 @@ static void
 cpu_exception_frame_dump(struct frame *fp)
 {
 	const char *mode;
-	unsigned cause;
 	unsigned code;
 
 	if (fp == NULL) {
@@ -241,11 +242,7 @@ cpu_exception_frame_dump(struct frame *fp)
 		return;
 	}
 
-	/*
-	 * XXX Get cause from frame.
-	 */
-	cause = cpu_read_cause();
-	code = (cause & CP0_CAUSE_EXCEPTION) >> CP0_CAUSE_EXCEPTION_SHIFT;
+	code = (fp->f_regs[FRAME_CAUSE] & CP0_CAUSE_EXCEPTION) >> CP0_CAUSE_EXCEPTION_SHIFT;
 
 	if ((fp->f_regs[FRAME_STATUS] & CP0_STATUS_U) == 0)
 		mode = "kernel";
@@ -257,6 +254,8 @@ cpu_exception_frame_dump(struct frame *fp)
 		 cpu_exception_names[code], mode, mp_whoami());
 	kcprintf("status              = %x\n",
 		 (unsigned)fp->f_regs[FRAME_STATUS]);
+	kcprintf("cause               = %x\n",
+		 (unsigned)fp->f_regs[FRAME_CAUSE]);
 	kcprintf("pc                  = %p\n",
 		 (void *)fp->f_regs[FRAME_EPC]);
 	kcprintf("ra                  = %p\n",

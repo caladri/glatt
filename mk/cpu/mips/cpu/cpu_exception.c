@@ -288,3 +288,34 @@ cpu_exception_state_dump(void)
 #ifdef DB
 DB_COMMAND(state, cpu, cpu_exception_state_dump);
 #endif
+
+#ifdef DB
+static void
+db_cpu_exception_registers_dump(void)
+{
+	struct thread *td;
+
+	td = current_thread();
+
+	if (td == NULL) {
+		kcprintf("[Thread unavailable.]\n");
+		return;
+	}
+
+#define	DUMP(r)	kcprintf("\t" #r ":\t%#lx", td->td_cputhread.td_frame->f_regs[_CONCAT(FRAME_, r)])
+	DUMP(AT); kcprintf("\n");
+	DUMP(V0); DUMP(V1); kcprintf("\n");
+	DUMP(A0); DUMP(A1); DUMP(A2); DUMP(A3); kcprintf("\n");
+	DUMP(A4); DUMP(A5); DUMP(A6); DUMP(A7); kcprintf("\n");
+	DUMP(T0); DUMP(T1); DUMP(T2); DUMP(T3); kcprintf("\n");
+	DUMP(S0); DUMP(S1); DUMP(S2); DUMP(S3); kcprintf("\n");
+	DUMP(S4); DUMP(S5); DUMP(S6); DUMP(S7); kcprintf("\n");
+	DUMP(T8); DUMP(T9); kcprintf("\n");
+	DUMP(GP); DUMP(SP); DUMP(S8); DUMP(RA); kcprintf("\n");
+	DUMP(EPC); kcprintf("\n");
+	DUMP(HI); DUMP(LO); kcprintf("\n");
+	DUMP(STATUS); DUMP(CAUSE); kcprintf("\n");
+#undef DUMP
+}
+DB_COMMAND(registers, cpu, db_cpu_exception_registers_dump);
+#endif

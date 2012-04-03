@@ -174,7 +174,7 @@ exception(struct frame *frame)
 			kcprintf("Kernel page fault.\n");
 			break;
 		}
-		vaddr = cpu_read_badvaddr();
+		vaddr = frame->f_regs[FRAME_BADVADDR];
 		if (vaddr > USER_STACK_BOT && vaddr <= USER_STACK_TOP) {
 			error = vm_fault_stack(td, vaddr);
 			if (error != 0) {
@@ -262,6 +262,8 @@ cpu_exception_frame_dump(struct frame *fp)
 		 (void *)fp->f_regs[FRAME_RA]);
 	kcprintf("sp                  = %p\n",
 		 (void *)fp->f_regs[FRAME_SP]);
+	kcprintf("badvaddr            = %p\n",
+		 (void *)fp->f_regs[FRAME_BADVADDR]);
 }
 
 static void
@@ -280,10 +282,9 @@ cpu_exception_state_dump(void)
 			 td->td_task == NULL ? "nil" : td->td_task->t_name);
 	} else {
 		kcprintf("[Thread unavailable.]\n");
+		kcprintf("cause               = %x\n", cpu_read_cause());
+		kcprintf("badvaddr            = %p\n", (void *)cpu_read_badvaddr());
 	}
-	/* XXX Push into frame?  */
-	kcprintf("cause               = %x\n", cpu_read_cause());
-	kcprintf("badvaddr            = %p\n", (void *)cpu_read_badvaddr());
 }
 #ifdef DB
 DB_COMMAND(state, cpu, cpu_exception_state_dump);

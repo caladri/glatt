@@ -229,13 +229,13 @@ tlb_update(struct pmap *pm, vaddr_t vaddr, pt_entry_t pte)
 	cpu_write_tlb_entryhi(TLBHI_ENTRY(vaddr, pmap_asid(pm)));
 	tlb_probe();
 	i = cpu_read_tlb_index();
-	cpu_write_tlb_entrylo0(pte);
-	cpu_write_tlb_entrylo1(pte + TLBLO_PA_TO_PFN(TLB_PAGE_SIZE));
-	if (i >= 0)
+	if (i >= 0) {
+		cpu_write_tlb_entrylo0(pte);
+		cpu_write_tlb_entrylo1(pte + TLBLO_PA_TO_PFN(TLB_PAGE_SIZE));
+
 		tlb_write_indexed();
-	else
-		tlb_write_random();
-	cpu_write_tlb_entryhi(asid);
+		cpu_write_tlb_entryhi(asid);
+	}
 	critical_exit();
 }
 
@@ -264,9 +264,19 @@ tlb_wired_insert(unsigned index, struct tlb_wired_entry *twe)
 
 #ifdef DB
 static void
+db_cpu_dump_tlb_lo(unsigned n, register_t lo)
+{
+	kcprintf(" Lo%u\t%lx\tpa %lx\tcache attribute %lx\t%s\t%s\t%s\n", n,
+		 lo, TLBLO_PTE_TO_PA(lo), lo & PG_C(~0),
+		 (lo & PG_D) != 0 ? "dirty" : "clean",
+		 (lo & PG_V) != 0 ? "valid" : "invalid",
+		 (lo & PG_G) != 0 ? "global" : "local");
+}
+
+static void
 db_cpu_dump_tlb(void)
 {
-	register_t ehi, elo0, elo1;
+	register_t ehi, elo0, elo1, pmask;
 	unsigned i;
 
 	kcprintf("Beginning TLB dump...\n");
@@ -283,13 +293,14 @@ db_cpu_dump_tlb(void)
 		ehi = cpu_read_tlb_entryhi();
 		elo0 = cpu_read_tlb_entrylo0();
 		elo1 = cpu_read_tlb_entrylo1();
+		pmask = cpu_read_tlb_pagemask();
 
 		if (elo0 == 0 && elo1 == 0)
 			continue;
 
-		kcprintf("#%u\t=> %lx\n", i, ehi);
-		kcprintf(" Lo0\t%lx\n", elo0);
-		kcprintf(" Lo1\t%lx\n", elo1);
+		kcprintf("#%u\t=> %lx (pagemask %lx)\n", i, ehi, pmask);
+		db_cpu_dump_tlb_lo(0, elo0);
+		db_cpu_dump_tlb_lo(1, elo1);
 	}
 	kcprintf("Finished.\n");
 }

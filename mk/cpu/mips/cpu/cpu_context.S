@@ -95,10 +95,6 @@ END(cpu_context_save)
 	 * a0 = entry.
 	 */
 ENTRY(cpu_thread_user_trampoline)
-	dli	sp, USER_STACK_TOP
-	dli	t0, ~7
-	and	sp, t0
-
 	move	ra, zero
 
 	move	v0, a0
@@ -108,6 +104,10 @@ ENTRY(cpu_thread_user_trampoline)
 	ori	t0, USER_STATUS
 	ori	t0, CP0_STATUS_EXL
 	mtc0	t0, CP0_STATUS
+
+	dli	sp, USER_STACK_TOP
+	dli	t0, ~7
+	and	sp, t0
 
 	dmtc0	v0, CP0_EXCPC
 	eret

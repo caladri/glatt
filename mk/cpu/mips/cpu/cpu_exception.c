@@ -314,7 +314,7 @@ db_cpu_exception_registers_dump(void)
 	DUMP(GP); DUMP(SP); DUMP(S8); DUMP(RA); kcprintf("\n");
 	DUMP(EPC); kcprintf("\n");
 	DUMP(HI); DUMP(LO); kcprintf("\n");
-	DUMP(STATUS); DUMP(CAUSE); kcprintf("\n");
+	DUMP(STATUS); DUMP(CAUSE); DUMP(BADVADDR); kcprintf("\n");
 #undef DUMP
 }
 DB_COMMAND(registers, cpu, db_cpu_exception_registers_dump);

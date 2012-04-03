@@ -294,6 +294,7 @@ STATIC_ENTRY(exception_frame_save)		/* Return address is k0.  */
 	sd	t3, FRAME_T3(sp)
 
 	/* Use freshly-available temporaries to start loading externals.  */
+	dmfc0	t0, CP0_BADVADDR
 	mfhi	t1
 	mflo	t2
 
@@ -311,6 +312,7 @@ STATIC_ENTRY(exception_frame_save)		/* Return address is k0.  */
 	sd	s8, FRAME_S8(sp)
 	sd	ra, FRAME_RA(sp)
 
+	sd	t0, FRAME_BADVADDR(sp)
 	sd	t1, FRAME_HI(sp)
 	sd	t2, FRAME_LO(sp)
 

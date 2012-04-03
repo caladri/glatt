@@ -13,7 +13,14 @@
 
 	/* Top of user stack.  */
 
+/*
+ * XXX Only required for 32-bit userlands with 64-bit registers.
+ */
+#if 0
 #define	USER_STACK_TOP	(USER_END - (PAGE_SIZE + 65536))
+#else
+#define	USER_STACK_TOP	(USER_END)
+#endif
 #define	USER_STACK_SIZE	(128 * PAGE_SIZE)
 #define	USER_STACK_BOT	(USER_STACK_TOP - USER_STACK_SIZE)
 

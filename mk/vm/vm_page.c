@@ -294,6 +294,7 @@ page_insert_pages(paddr_t base, size_t pages)
 	ptps = ptpents = 0;
 
 	PAGE_TREE_LOCK();
+	PAGEQ_LOCK();
 	while (pages > 1) {
 		error = pmap_map_direct(&kernel_vm, base, &vaddr);
 		if (error != 0)
@@ -309,7 +310,6 @@ page_insert_pages(paddr_t base, size_t pages)
 			struct vm_page *page;
 
 			page = &ptp->ptp_entries[i];
-			PAGEQ_LOCK();
 			page_insert(page, base);
 			if (i == 0) {
 				/*
@@ -318,7 +318,6 @@ page_insert_pages(paddr_t base, size_t pages)
 				 */
 				page_ref_hold(page);
 			}
-			PAGEQ_UNLOCK();
 
 			ptpents++;
 			pages--;
@@ -329,6 +328,7 @@ page_insert_pages(paddr_t base, size_t pages)
 		BTREE_INSERT(ptp, iter, &page_tree, ptp_tree.pt_tree,
 			     (ptp < iter));
 	}
+	PAGEQ_UNLOCK();
 	PAGE_TREE_UNLOCK();
 
 #ifdef VERBOSE

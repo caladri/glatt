@@ -18,7 +18,7 @@ static void printf_puts(void *, const char *, size_t);
 void
 fatal(const char *msg, int error)
 {
-	printf("test-server: %s: %m\n", msg, error);
+	printf("fatal: %s: %m\n", msg, error);
 	exit();
 }
 

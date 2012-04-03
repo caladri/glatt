@@ -234,8 +234,8 @@ tlb_update(struct pmap *pm, vaddr_t vaddr, pt_entry_t pte)
 		cpu_write_tlb_entrylo1(pte + TLBLO_PA_TO_PFN(TLB_PAGE_SIZE));
 
 		tlb_write_indexed();
-		cpu_write_tlb_entryhi(asid);
 	}
+	cpu_write_tlb_entryhi(asid);
 	critical_exit();
 }
 
@@ -298,7 +298,7 @@ db_cpu_dump_tlb(void)
 		if (elo0 == 0 && elo1 == 0)
 			continue;
 
-		kcprintf("#%u\t=> %lx (pagemask %lx)\n", i, ehi, pmask);
+		kcprintf("#%u\t=> %lx pagemask %lx asid %u\n", i, ehi, pmask, (unsigned)ehi & 0xff);
 		db_cpu_dump_tlb_lo(0, elo0);
 		db_cpu_dump_tlb_lo(1, elo1);
 	}

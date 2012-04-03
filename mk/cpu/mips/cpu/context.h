@@ -23,7 +23,7 @@ struct context {
 #define	CONTEXT_SP	(0x09)
 #define	CONTEXT_RA	(0x0a)
 
-void cpu_context_restore(struct thread *) __non_null(1);
-bool cpu_context_save(struct thread *) __non_null(1);
+void cpu_context_restore(struct thread *) __non_null(1) __noreturn;
+bool cpu_context_save(struct thread *) __non_null(1) __check_result;
 
 #endif /* !_CPU_CONTEXT_H_ */

@@ -4,9 +4,28 @@
 #include <cpu/frame.h>
 #include <cpu/syscall.h>
 
+#include <cpu/memory.h>
+#include <io/console/console.h>
+
 void
 cpu_syscall(struct frame *frame)
 {
+#if 0
+	unsigned i;
+
+	for (i = 0; i < FRAME_COUNT; i++)
+		kcprintf(">sys frame[%x] = %#jx\n", i, (uintmax_t)frame->f_regs[i]);
+	kcprintf("stack %p\n", (void *)frame->f_regs[FRAME_SP]);
+	for (i = 0; i < 16; i++) {
+		vaddr_t sp = frame->f_regs[FRAME_SP] + i * sizeof (uintmax_t);
+		if (sp > USER_STACK_TOP) {
+			kcprintf("stack top\n");
+			break;
+		}
+		kcprintf("stack[%u x u64] = %#jx\n", i, *(const uint64_t *)sp);
+	}
+#endif
+
 	if (frame->f_regs[FRAME_V1] > 4) {
 		/*
 		 * If there are more than 4 arguments to this syscall, error.
@@ -15,5 +34,21 @@ cpu_syscall(struct frame *frame)
 	} else {
 		frame->f_regs[FRAME_V0] = syscall(frame->f_regs[FRAME_V0], &frame->f_regs[FRAME_V1], &frame->f_regs[FRAME_A0]);
 	}
+
 	frame->f_regs[FRAME_EPC] += 4;
+
+#if 0
+	for (i = 0; i < FRAME_COUNT; i++)
+		kcprintf("<sys frame[%x] = %#jx\n", i, (uintmax_t)frame->f_regs[i]);
+
+	kcprintf("stack %p\n", (void *)frame->f_regs[FRAME_SP]);
+	for (i = 0; i < 16; i++) {
+		vaddr_t sp = frame->f_regs[FRAME_SP] + i * sizeof (uintmax_t);
+		if (sp > USER_STACK_TOP) {
+			kcprintf("stack top\n");
+			break;
+		}
+		kcprintf("stack[%u x u64] = %#jx\n", i, *(const uint64_t *)sp);
+	}
+#endif
 }

@@ -52,16 +52,8 @@ ENTRY(cpu_context_restore)
 	/*
 	 * We'll be returning true from cpu_context_save().
 	 */
-	li	v0, TRUE
-
-	/*
-	 * Set status register to kernel with interrupt mask, but don't set the
-	 * interrupts-enabled bit, spinlocks will take care of that.
-	 */
-	ld	t2, PC_INTERRUPT_MASK(t3)
-	ori	t2, KERNEL_STATUS
 	jr	ra
-	mtc0	t2, CP0_STATUS
+	li	v0, TRUE
 END(cpu_context_restore)
 
 	/*
@@ -101,7 +93,8 @@ ENTRY(cpu_thread_user_trampoline)
 
 	dli	t0, PCPU_VIRTUAL
 	ld	t0, PC_INTERRUPT_MASK(t0)
-	ori	t0, USER_STATUS
+	li	t1, USER_STATUS
+	or	t0, t1
 	ori	t0, CP0_STATUS_EXL
 	mtc0	t0, CP0_STATUS
 

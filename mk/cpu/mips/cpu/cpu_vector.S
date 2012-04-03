@@ -240,22 +240,16 @@ STATIC_ENTRY(exception_frame_save)		/* Return address is k0.  */
 	/* Save and replace stack pointer.  */
 	daddu	k1, KSTACK_SIZE - FRAME_SIZE	/* Frame at top of kstack.  */
 	sd	sp, FRAME_SP(k1)
-	move	sp, k1			/* Switch to kernel stack.  */
-
-	/* Save status to return to after exception.  */
-	li	k1, USER_STATUS
 	b	2f			/* Continue with normal frame save.  */
+	move	sp, k1			/* Switch to kernel stack.  */
 
 	/* Kernel mode.  */
 1:	dsubu	k1, sp, FRAME_SIZE
 	sd	sp, FRAME_SP(k1)
 	move	sp, k1
 
-	mfc0	k1, CP0_STATUS
-	andi	k1, CP0_STATUS_IE	/* Preserve interrupt status.  */
-	ori	k1, KERNEL_STATUS
-
-2:	sd	k1, FRAME_STATUS(sp)
+2:	mfc0	k1, CP0_STATUS
+	sd	k1, FRAME_STATUS(sp)
 
 	/*
 	 * Finish saving state that would be clobbered by other exceptions
@@ -270,12 +264,6 @@ STATIC_ENTRY(exception_frame_save)		/* Return address is k0.  */
 	/* Save cause.  */
 	mfc0	k1, CP0_CAUSE
 	sd	k1, FRAME_CAUSE(sp)
-
-	/* Enter kernel mode, EXL=0.  */
-	mfc0	k1, CP0_STATUS
-	andi	k1, CP0_STATUS_IE	/* Preserve interrupt status.  */
-	ori	k1, KERNEL_STATUS
-	mtc0	k1, CP0_STATUS		/* Enter kernel mode.  */
 
 	sd	AT, FRAME_AT(sp)
 	sd	v0, FRAME_V0(sp)
@@ -315,6 +303,13 @@ STATIC_ENTRY(exception_frame_save)		/* Return address is k0.  */
 	sd	t0, FRAME_BADVADDR(sp)
 	sd	t1, FRAME_HI(sp)
 	sd	t2, FRAME_LO(sp)
+
+	/* Enter kernel mode, EXL=0.  */
+	mfc0	k1, CP0_STATUS
+	andi	k1, CP0_STATUS_IE	/* Preserve interrupt status.  */
+	li	t0, KERNEL_STATUS
+	or	k1, t0
+	mtc0	k1, CP0_STATUS		/* Enter kernel mode.  */
 
 	jr	k0
 	nop
@@ -368,8 +363,10 @@ STATIC_ENTRY(exception_frame_restore)		/* Does not return.  */
 	ld	v0, FRAME_V0(sp)
 	ld	AT, FRAME_AT(sp)
 
-	/* Get original status.  */
+	/* Restore original status.  */
 	ld	k0, FRAME_STATUS(sp)
+	li	k1, ~CP0_STATUS_INTERRUPT_MASK
+	and	k0, k1			/* Clear interrupt bits.  */
 	dli	k1, PCPU_VIRTUAL
 	ld	k1, PC_INTERRUPT_MASK(k1)
 	or	k0, k1			/* Set interrupt mask.  */

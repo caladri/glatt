@@ -94,13 +94,14 @@ typedef	uint64_t	register_t;
 #define	CP0_STATUS_KX	0x00000080	/* Kernel extended mode.  */
 #define	CP0_STATUS_SR	0x00100000	/* Soft reset.  */
 #define	CP0_STATUS_BEV	0x00400000	/* Using boot exception vectors.  */
+#define	CP0_STATUS_PX	0x00800000	/* Allow 64-bit register access.  */
 
 #define	CP0_STATUS_INTERRUPT_SHIFT	(8)
 #define	CP0_STATUS_INTERRUPT_MASK	(0xff00)
 
 	/* Coprocessor 0 status register states.  */
-#define	KERNEL_STATUS	(CP0_STATUS_UX | CP0_STATUS_KX)
-#define	USER_STATUS	(CP0_STATUS_U | CP0_STATUS_UX | CP0_STATUS_IE)
+#define	KERNEL_STATUS	(CP0_STATUS_UX | CP0_STATUS_KX | CP0_STATUS_PX)
+#define	USER_STATUS	(CP0_STATUS_U | CP0_STATUS_UX | CP0_STATUS_KX | CP0_STATUS_PX | CP0_STATUS_IE)
 
 	/* Coprocessor 0 config register selector 1 bits & shifts.  */
 

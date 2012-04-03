@@ -51,6 +51,7 @@ pmap_unmap_direct(struct vm *vm, vaddr_t vaddr)
 	return (0);
 }
 
+void pmap_activate(struct vm *);
 void pmap_bootstrap(void);
 int pmap_extract(struct vm *, vaddr_t, paddr_t *) __non_null(1, 3);
 int pmap_init(struct vm *, vaddr_t, vaddr_t) __non_null(1);

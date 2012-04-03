@@ -85,6 +85,15 @@ pmap_asid(struct pmap *pm)
 }
 
 void
+pmap_activate(struct vm *vm)
+{
+	ASSERT(vm != NULL, "cannot activate pmap for NULL VM");
+
+	pmap_alloc_asid(vm->vm_pmap);
+	cpu_write_tlb_entryhi(pmap_asid(vm->vm_pmap));
+}
+
+void
 pmap_bootstrap(void)
 {
 	int error;

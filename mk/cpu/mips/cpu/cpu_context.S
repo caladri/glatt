@@ -17,6 +17,15 @@ ENTRY(cpu_context_restore)
 	jal	tlb_wired_load
 	nop
 
+	/*
+	 * Activate this thread.
+	 */
+	jal	cpu_thread_activate
+	move	a0, s0
+
+	/*
+	 * Load context.
+	 */
 	move	t0, s0
 	dla	t1, TD_CONTEXT(t0)
 	ld	s0, CONTEXT_S0(t1)
@@ -44,12 +53,6 @@ ENTRY(cpu_context_restore)
 	move	a7, s7
 
 	/*
-	 * Set thread pointer.
-	 */
-	dli	t3, PCPU_VIRTUAL
-	sd	t0, PC_THREAD(t3)
-
-	/*
 	 * We'll be returning true from cpu_context_save().
 	 */
 	jr	ra
@@ -74,6 +77,10 @@ ENTRY(cpu_context_save)
 	sd	s8, CONTEXT_S8(t0)
 	sd	sp, CONTEXT_SP(t0)
 	sd	ra, CONTEXT_RA(t0)
+
+	/*
+	 * XXX Deactivate this thread.
+	 */
 
 	/*
 	 * Return false to indicate this isn't a restore.

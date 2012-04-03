@@ -3,11 +3,21 @@
 #include <core/string.h>
 #include <core/task.h>
 #include <core/thread.h>
+#include <cpu/pmap.h>
 #include <vm/vm.h>
 #include <vm/vm_alloc.h>
 #include <vm/vm_page.h>
 
 static void cpu_thread_exception(void *);
+
+void
+cpu_thread_activate(struct thread *td)
+{
+	PCPU_SET(thread, td);
+
+	if ((td->td_task->t_flags & TASK_KERNEL) == 0)
+		pmap_activate(td->td_task->t_vm);
+}
 
 void
 cpu_thread_free(struct thread *td)

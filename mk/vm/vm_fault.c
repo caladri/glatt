@@ -19,10 +19,6 @@ vm_fault_stack(struct thread *td, vaddr_t vaddr)
 
 	vaddr = PAGE_FLOOR(vaddr);
 
-	error = vm_alloc_range(vm, vaddr, vaddr + PAGE_SIZE);
-	if (error != 0)
-		return (error);
-
 	error = page_alloc_map(vm, PAGE_FLAG_ZERO, vaddr);
 	if (error != 0)
 		return (error);

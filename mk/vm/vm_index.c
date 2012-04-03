@@ -136,7 +136,7 @@ vm_insert_range(struct vm *vm, vaddr_t begin, vaddr_t end)
 	int error;
 
 	VM_LOCK(vm);
-	error = vm_insert_index(vm, NULL, begin, ADDR_TO_PAGE(end - begin));
+	error = vm_insert_index(vm, NULL, begin, PAGE_COUNT(end - begin));
 	if (error != 0) {
 		VM_UNLOCK(vm);
 		return (error);

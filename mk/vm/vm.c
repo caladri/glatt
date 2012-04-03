@@ -7,6 +7,7 @@
 #endif
 #include <vm/vm.h>
 #include <vm/vm_index.h>
+#include <vm/vm_page.h>
 
 #ifdef DB
 DB_COMMAND_TREE(vm, root, vm);
@@ -87,6 +88,10 @@ vm_setup(struct vm **vmp, vaddr_t base, vaddr_t end)
 	}
 	*vmp = vm;
 	VM_UNLOCK(vm);
+
+	error = vm_alloc_range(vm, USER_STACK_BOT, USER_STACK_TOP);
+	if (error != 0)
+		panic("%s: could not allocate range for stack: %m", __func__, error);
 	return (0);
 }
 

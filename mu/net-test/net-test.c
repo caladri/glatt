@@ -57,7 +57,7 @@ main(void)
 
 	ifc.ifc_transmit_handler = ipc_dispatch_register(ifc.ifc_dispatch, if_transmit_callback, &ifc);
 
-	arp_request(&ifc, NULL, 0, 0);
+	arp_request(&ifc, NULL, 0x0a000001, 0x0a0000fe);
 
 	ipc_dispatch(ifc.ifc_dispatch);
 }

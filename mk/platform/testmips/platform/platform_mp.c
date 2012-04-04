@@ -41,9 +41,9 @@ static volatile paddr_t platform_mp_pcpu_addr;
 static void platform_mp_attach_cpu(bool);
 #ifndef	UNIPROCESSOR
 static void platform_mp_ipi_interrupt(void *, int);
-#endif
 static void platform_mp_start_cpu(void);
 static void platform_mp_start_one(cpu_id_t);
+#endif
 
 #ifndef	UNIPROCESSOR
 void
@@ -131,6 +131,7 @@ platform_mp_ipi_interrupt(void *arg, int interrupt)
 static void
 platform_mp_start_all(void *arg)
 {
+#ifndef	UNIPROCESSOR
 	cpu_id_t cpu;
 	uint64_t ncpus;
 
@@ -140,11 +141,9 @@ platform_mp_start_all(void *arg)
 		ncpus = MAXCPUS;
 	}
 
-#ifndef	UNIPROCESSOR
 	for (cpu = 0; cpu < ncpus; cpu++)
 		if (cpu != mp_whoami())
 			mp_cpu_present(cpu);
-#endif
 
 	if (ncpus != 1) {
 		for (cpu = 0; cpu < ncpus; cpu++) {
@@ -158,10 +157,14 @@ platform_mp_start_all(void *arg)
 	} else {
 		platform_mp_attach_cpu(true);
 	}
+#else
+	platform_mp_attach_cpu(true);
+#endif
 }
 STARTUP_ITEM(platform_mp, STARTUP_MP, STARTUP_SECOND,
 	     platform_mp_start_all, NULL);
 
+#ifndef	UNIPROCESSOR
 static void
 platform_mp_start_cpu(void)
 {
@@ -225,6 +228,7 @@ platform_mp_start_one(cpu_id_t cpu)
 	bus_printf(platform_mp_bus, "launched cpu%u.", cpu);
 #endif
 }
+#endif
 
 static void
 platform_mp_attach_cpu(bool bootstrap)

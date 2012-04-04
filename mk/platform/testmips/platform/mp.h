@@ -7,10 +7,9 @@ typedef	uint64_t	cpu_bitmask_t;
 
 #ifndef UNIPROCESSOR
 #define	MAXCPUS		(8 * sizeof (cpu_bitmask_t))
-#else
-#define	MAXCPUS		(1)
 #endif
 
+#ifndef UNIPROCESSOR
 static inline bool
 cpu_bitmask_is_set(const volatile cpu_bitmask_t *maskp, cpu_id_t cpu)
 {
@@ -45,6 +44,7 @@ cpu_bitmask_clear(volatile cpu_bitmask_t *maskp, cpu_id_t cpu)
 #endif
 	atomic_clear64(maskp, (cpu_bitmask_t)1 << cpu);
 }
+#endif
 
 enum ipi_type {
 	IPI_NONE	= 0,

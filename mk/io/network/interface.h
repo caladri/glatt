@@ -4,7 +4,7 @@
 #if defined(MK)
 #include <core/btree.h>
 #endif
-#ifdef IPC
+#if !defined(MK) || defined(IPC)
 #include <ipc/ipc.h>
 #endif
 
@@ -18,7 +18,7 @@ enum network_interface_request {
 	NETWORK_INTERFACE_GET_ADDRESS,
 };
 
-/* IPC.  */
+#if !defined(MK) || defined(IPC)
 /*
  * XXX
  * For now interfaces have their names exported as services, rather than
@@ -28,6 +28,15 @@ enum network_interface_request {
 #define	NETWORK_INTERFACE_MSG_TRANSMIT		(0x00000001)
 #define	NETWORK_INTERFACE_MSG_RECEIVE		(0x00000002)
 #define	NETWORK_INTERFACE_MSG_RECEIVE_PACKET	(0x00000003)
+#define	NETWORK_INTERFACE_MSG_GET_INFO		(0x00000004)
+
+struct network_interface_get_info_response_header {
+	int error;
+	enum network_interface_type type;
+	size_t addrlen;
+	/* uint8_t addr[addrlen] follows.  */
+};
+#endif
 
 #if defined(MK)
 typedef	int network_interface_request_handler_t(void *,

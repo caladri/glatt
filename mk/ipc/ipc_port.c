@@ -15,8 +15,6 @@
 #include <vm/vm_index.h>
 #include <vm/vm_page.h>
 
-#include <io/console/console.h>
-
 struct ipc_port;
 
 struct ipc_message {
@@ -280,22 +278,15 @@ ipc_port_send(struct ipc_header *ipch, void *vpage)
 			vm = task->t_vm;
 		else
 			vm = &kernel_vm;
-#if 0
 		error = page_extract(vm, (vaddr_t)vpage, &page);
-#else
-		error = page_clone(vm, (vaddr_t)vpage, &page);
-#endif
 		if (error != 0)
 			return (error);
-#if 0
-		kcprintf("%s(%p, %p) [page %p]\n", __func__, ipch, vpage, page);
 		error = page_unmap(vm, (vaddr_t)vpage, page);
 		if (error != 0)
 			panic("%s: could not unmap source page: %m", __func__, error);
 		error = vm_free_address(vm, (vaddr_t)vpage);
 		if (error != 0)
 			panic("%s: could not free source page address: %m", __func__, error);
-#endif
 	}
 
 	error = ipc_port_send_page(ipch, page);

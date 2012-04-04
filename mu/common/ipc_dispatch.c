@@ -85,7 +85,6 @@ ipc_dispatch_register(struct ipc_dispatch *id, ipc_dispatch_callback_t *cb, void
 	if (idh == NULL)
 		fatal("could not allocate memory for handler", ERROR_EXHAUSTED);
 
-	idh->idh_dispatch = id;
 	idh->idh_cookie = id->id_cookie_next++;
 	idh->idh_softc = softc;
 	idh->idh_callback = cb;
@@ -107,7 +106,6 @@ ipc_dispatch_register_default(struct ipc_dispatch *id, ipc_dispatch_callback_t *
 	if (idh == NULL)
 		fatal("could not allocate memory for handler", ERROR_EXHAUSTED);
 
-	idh->idh_dispatch = id;
 	idh->idh_cookie = 0;
 	idh->idh_softc = softc;
 	idh->idh_callback = cb;
@@ -118,7 +116,7 @@ ipc_dispatch_register_default(struct ipc_dispatch *id, ipc_dispatch_callback_t *
 }
 
 int
-ipc_dispatch_send(const struct ipc_dispatch_handler *idh, ipc_port_t dst, ipc_msg_t msg, ipc_port_right_t right, const void *data, size_t datalen)
+ipc_dispatch_send(const struct ipc_dispatch *id, const struct ipc_dispatch_handler *idh, ipc_port_t dst, ipc_msg_t msg, ipc_port_right_t right, const void *data, size_t datalen)
 {
 	struct ipc_header ipch;
 	void *page;
@@ -135,11 +133,14 @@ ipc_dispatch_send(const struct ipc_dispatch_handler *idh, ipc_port_t dst, ipc_ms
 		memcpy(page, data, datalen);
 	}
 
-	ipch.ipchdr_src = idh->idh_dispatch->id_port;
+	ipch.ipchdr_src = id->id_port;
 	ipch.ipchdr_dst = dst;
 	ipch.ipchdr_right = right;
 	ipch.ipchdr_msg = msg;
-	ipch.ipchdr_cookie = idh->idh_cookie;
+	if (idh == NULL)
+		ipch.ipchdr_cookie = 0;
+	else
+		ipch.ipchdr_cookie = idh->idh_cookie;
 	ipch.ipchdr_recsize = datalen;
 	if (page != NULL)
 		ipch.ipchdr_reccnt = 1;
@@ -159,7 +160,7 @@ ipc_dispatch_send(const struct ipc_dispatch_handler *idh, ipc_port_t dst, ipc_ms
 }
 
 int
-ipc_dispatch_send_reply(const struct ipc_dispatch_handler *idh, const struct ipc_header *reqh, ipc_port_right_t right, const void *data, size_t datalen)
+ipc_dispatch_send_reply(const struct ipc_dispatch *id, const struct ipc_header *reqh, ipc_port_right_t right, const void *data, size_t datalen)
 {
 	struct ipc_header ipch;
 	void *page;
@@ -177,7 +178,7 @@ ipc_dispatch_send_reply(const struct ipc_dispatch_handler *idh, const struct ipc
 	}
 
 	ipch = IPC_HEADER_REPLY(reqh);
-	ipch.ipchdr_src = idh->idh_dispatch->id_port;
+	ipch.ipchdr_src = id->id_port;
 	ipch.ipchdr_right = right;
 	ipch.ipchdr_recsize = datalen;
 	if (page != NULL)
@@ -216,12 +217,12 @@ ipc_dispatch_message(const struct ipc_dispatch *id, const struct ipc_header *ipc
 	for (idh = id->id_handlers; idh != NULL; idh = idh->idh_next) {
 		if (idh->idh_cookie != ipch->ipchdr_cookie)
 			continue;
-		idh->idh_callback(idh, ipch, page);
+		idh->idh_callback(id, idh, ipch, page);
 		return;
 	}
 
 	if (id->id_default != NULL) {
-		id->id_default->idh_callback(id->id_default, ipch, page);
+		id->id_default->idh_callback(id, id->id_default, ipch, page);
 		return;
 	}
 

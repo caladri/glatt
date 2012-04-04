@@ -14,8 +14,8 @@ struct ns_response_wait {
 	ipc_port_t nrw_port;
 };
 
-static void ns_lookup_response_handler(const struct ipc_dispatch_handler *, const struct ipc_header *, void *);
-static void ns_register_response_handler(const struct ipc_dispatch_handler *, const struct ipc_header *, void *);
+static void ns_lookup_response_handler(const struct ipc_dispatch *, const struct ipc_dispatch_handler *, const struct ipc_header *, void *);
+static void ns_register_response_handler(const struct ipc_dispatch *, const struct ipc_dispatch_handler *, const struct ipc_header *, void *);
 
 ipc_port_t
 ns_lookup(const char *service)
@@ -33,7 +33,7 @@ ns_lookup(const char *service)
 	memset(nsreq.service_name, 0, NS_SERVICE_NAME_LENGTH);
 	strlcpy(nsreq.service_name, service, NS_SERVICE_NAME_LENGTH);
 
-	error = ipc_dispatch_send(idh, IPC_PORT_NS, NS_MESSAGE_LOOKUP, IPC_PORT_RIGHT_SEND_ONCE, &nsreq, sizeof nsreq);
+	error = ipc_dispatch_send(id, idh, IPC_PORT_NS, NS_MESSAGE_LOOKUP, IPC_PORT_RIGHT_SEND_ONCE, &nsreq, sizeof nsreq);
 	if (error != 0)
 		fatal("ipc_dispatch_send failed", error);
 
@@ -70,7 +70,7 @@ ns_register(const char *service, ipc_port_t port)
 	strlcpy(nsreq.service_name, service, NS_SERVICE_NAME_LENGTH);
 	nsreq.port = port;
 
-	error = ipc_dispatch_send(idh, IPC_PORT_NS, NS_MESSAGE_REGISTER, IPC_PORT_RIGHT_SEND_ONCE, &nsreq, sizeof nsreq);
+	error = ipc_dispatch_send(id, idh, IPC_PORT_NS, NS_MESSAGE_REGISTER, IPC_PORT_RIGHT_SEND_ONCE, &nsreq, sizeof nsreq);
 	if (error != 0)
 		fatal("ipc_dispatch_send failed", error);
 
@@ -91,10 +91,12 @@ ns_register(const char *service, ipc_port_t port)
 }
 
 static void
-ns_lookup_response_handler(const struct ipc_dispatch_handler *idh, const struct ipc_header *ipch, void *page)
+ns_lookup_response_handler(const struct ipc_dispatch *id, const struct ipc_dispatch_handler *idh, const struct ipc_header *ipch, void *page)
 {
 	struct ns_response_wait *nrw = idh->idh_softc;
 	struct ns_lookup_response *nsresp;
+
+	(void)id;
 
 	if (ipch->ipchdr_msg != IPC_MSG_REPLY(NS_MESSAGE_LOOKUP) ||
 	    ipch->ipchdr_recsize != sizeof *nsresp || ipch->ipchdr_reccnt != 1 ||
@@ -113,10 +115,12 @@ ns_lookup_response_handler(const struct ipc_dispatch_handler *idh, const struct 
 }
 
 static void
-ns_register_response_handler(const struct ipc_dispatch_handler *idh, const struct ipc_header *ipch, void *page)
+ns_register_response_handler(const struct ipc_dispatch *id, const struct ipc_dispatch_handler *idh, const struct ipc_header *ipch, void *page)
 {
 	struct ns_response_wait *nrw = idh->idh_softc;
 	struct ns_register_response *nsresp;
+
+	(void)id;
 
 	if (ipch->ipchdr_msg != IPC_MSG_REPLY(NS_MESSAGE_REGISTER) ||
 	    ipch->ipchdr_recsize != sizeof *nsresp || ipch->ipchdr_reccnt != 1 ||

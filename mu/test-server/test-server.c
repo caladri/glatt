@@ -8,7 +8,7 @@
 
 #include <common/common.h>
 
-static void test_request_handler(const struct ipc_dispatch_handler *, const struct ipc_header *, void *);
+static void test_request_handler(const struct ipc_dispatch *id, const struct ipc_dispatch_handler *, const struct ipc_header *, void *);
 
 void
 main(void)
@@ -30,9 +30,11 @@ main(void)
 }
 
 static void
-test_request_handler(const struct ipc_dispatch_handler *idh, const struct ipc_header *reqh, void *page)
+test_request_handler(const struct ipc_dispatch *id, const struct ipc_dispatch_handler *idh, const struct ipc_header *reqh, void *page)
 {
 	int error;
+
+	(void)idh;
 
 	if (reqh->ipchdr_recsize != 0 || reqh->ipchdr_reccnt != 0 ||
 	    page != NULL) {
@@ -41,7 +43,7 @@ test_request_handler(const struct ipc_dispatch_handler *idh, const struct ipc_he
 		return;
 	}
 
-	error = ipc_dispatch_send_reply(idh, reqh, IPC_PORT_RIGHT_NONE, NULL, 0);
+	error = ipc_dispatch_send_reply(id, reqh, IPC_PORT_RIGHT_NONE, NULL, 0);
 	if (error != 0) {
 		printf("Failed to send reply to:\n");
 		ipc_message_print(reqh, page);

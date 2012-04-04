@@ -76,6 +76,12 @@ network_interface_ipc_handle_transmit(struct network_interface *netif, const str
 
 	error = netif->ni_transmit(netif->ni_softc, p, reqh->ipchdr_recsize);
 
+	/*
+	 * If we weren't given a reply right, don't send back a status.
+	 */
+	if (reqh->ipchdr_right != IPC_PORT_RIGHT_SEND_ONCE)
+		return (0);
+
         ipch = IPC_HEADER_REPLY(reqh);
         ipch.ipchdr_recsize = sizeof error;
         ipch.ipchdr_reccnt = 1;

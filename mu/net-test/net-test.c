@@ -104,13 +104,13 @@ arp_request(struct if_context *ifc, const uint8_t *ether_src, uint32_t ip_src, u
 	p += sizeof eh.eh_shost;
 
 	memcpy(p, &ip_src, sizeof ip_src);
-	p += ip_src;
+	p += sizeof ip_src;
 
 	memcpy(p, eh.eh_dhost, sizeof eh.eh_dhost);
 	p += sizeof eh.eh_dhost;
 
 	memcpy(p, &ip_dst, sizeof ip_dst);
-	p += ip_dst;
+	p += sizeof ip_dst;
 
 	if_transmit(ifc, pkt, pktlen);
 	free(pkt);

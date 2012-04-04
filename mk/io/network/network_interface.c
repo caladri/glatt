@@ -96,10 +96,10 @@ network_interface_ipc_handle_receive(struct network_interface *netif, const stru
         struct ipc_header ipch;
 	int error;
 
-	if (reqh->ipchdr_reccnt != 0 || reqh->ipchdr_recsize || p != NULL)
+	if (reqh->ipchdr_reccnt != 0 || reqh->ipchdr_recsize != 0 || p != NULL)
 		return (ERROR_INVALID);
 
-	if (reqh->ipchdr_right != IPC_PORT_RIGHT_SEND_ONCE)
+	if (reqh->ipchdr_right != IPC_PORT_RIGHT_SEND)
 		error = ERROR_NO_RIGHT; /* We must be given a send right.  */
 	else if (netif->ni_receive_header.ipchdr_dst != IPC_PORT_UNKNOWN)
 		error = ERROR_NOT_FREE; /* We already have a receiver set up.  */

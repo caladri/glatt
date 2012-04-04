@@ -13,6 +13,7 @@
 
 #ifdef IPC
 static ipc_service_t network_interface_ipc_handler;
+static int network_interface_ipc_handle_receive(struct network_interface *, const struct ipc_header *, const void *);
 static int network_interface_ipc_handle_transmit(struct network_interface *, const struct ipc_header *, const void *);
 #endif
 
@@ -37,6 +38,8 @@ network_interface_attach(struct network_interface *netif,
 	/* XXX Set up based on type?  */
 
 #ifdef IPC
+	memset(&netif->ni_receive_header, 0x00, sizeof netif->ni_receive_header);
+
 	/* XXX This is gross.  */
 	error = ipc_service(netif->ni_name, IPC_PORT_UNKNOWN, IPC_PORT_FLAG_PUBLIC,
 			    network_interface_ipc_handler, netif);
@@ -52,9 +55,21 @@ network_interface_receive(struct network_interface *netif,
 			  const void *data, size_t datalen)
 {
 #ifdef IPC
-	/*
-	 * XXX Send data to a port.
-	 */
+	struct ipc_header ipch;
+	int error;
+
+	if (netif->ni_receive_header.ipchdr_dst == IPC_PORT_UNKNOWN)
+		return;
+
+	ipch = netif->ni_receive_header;
+	ipch.ipchdr_recsize = datalen;
+	ipch.ipchdr_reccnt = 1;
+
+        error = ipc_port_send_data(&ipch, data, datalen);
+        if (error != 0) {
+                kcprintf("%s: ipc_port_send failed: %m\n", __func__, error);
+		return;
+        }
 #endif
 }
 
@@ -67,10 +82,47 @@ network_interface_ipc_handler(void *softc, struct ipc_header *ipch, void *p)
 	switch (ipch->ipchdr_msg) {
 	case NETWORK_INTERFACE_MSG_TRANSMIT:
 		return (network_interface_ipc_handle_transmit(netif, ipch, p));
+	case NETWORK_INTERFACE_MSG_RECEIVE:
+		return (network_interface_ipc_handle_receive(netif, ipch, p));
 	default:
 		/* Don't respond to nonsense.  */
 		return (ERROR_INVALID);
 	}
+}
+
+static int
+network_interface_ipc_handle_receive(struct network_interface *netif, const struct ipc_header *reqh, const void *p)
+{
+        struct ipc_header ipch;
+	int error;
+
+	if (reqh->ipchdr_reccnt != 0 || reqh->ipchdr_recsize || p != NULL)
+		return (ERROR_INVALID);
+
+	if (reqh->ipchdr_right != IPC_PORT_RIGHT_SEND_ONCE)
+		error = ERROR_NO_RIGHT; /* We must be given a send right.  */
+	else if (netif->ni_receive_header.ipchdr_dst != IPC_PORT_UNKNOWN)
+		error = ERROR_NOT_FREE; /* We already have a receiver set up.  */
+	else {
+		netif->ni_receive_header = IPC_HEADER_REPLY(reqh);
+		netif->ni_receive_header.ipchdr_msg = NETWORK_INTERFACE_MSG_RECEIVE_PACKET;
+		netif->ni_receive_header.ipchdr_recsize = 0;
+		netif->ni_receive_header.ipchdr_reccnt = 0;
+
+		error = 0;
+	}
+
+        ipch = IPC_HEADER_REPLY(reqh);
+        ipch.ipchdr_recsize = sizeof error;
+        ipch.ipchdr_reccnt = 1;
+
+        error = ipc_port_send_data(&ipch, &error, sizeof error);
+        if (error != 0) {
+                kcprintf("%s: ipc_port_send failed: %m\n", __func__, error);
+                return (error);
+        }
+
+	return (0);
 }
 
 static int
@@ -79,7 +131,7 @@ network_interface_ipc_handle_transmit(struct network_interface *netif, const str
         struct ipc_header ipch;
 	int error;
 
-	if (reqh->ipchdr_reccnt  != 1 || p == NULL)
+	if (reqh->ipchdr_reccnt != 1 || p == NULL)
 		return (ERROR_INVALID);
 
 	if (netif->ni_transmit == NULL)

@@ -4,6 +4,9 @@
 #if defined(MK)
 #include <core/btree.h>
 #endif
+#ifdef IPC
+#include <ipc/ipc.h>
+#endif
 
 #define	NETWORK_INTERFACE_NAME_LENGTH	(128)
 
@@ -22,7 +25,9 @@ enum network_interface_request {
  * having another layer of enumeration and lookup here.  This is not as
  * abstract as anyone would like.
  */
-#define	NETWORK_INTERFACE_MSG_TRANSMIT	(0x00000001)
+#define	NETWORK_INTERFACE_MSG_TRANSMIT		(0x00000001)
+#define	NETWORK_INTERFACE_MSG_RECEIVE		(0x00000002)
+#define	NETWORK_INTERFACE_MSG_RECEIVE_PACKET	(0x00000003)
 
 #if defined(MK)
 typedef	int network_interface_request_handler_t(void *,
@@ -37,6 +42,9 @@ struct network_interface {
 	enum network_interface_type ni_type;
 	network_interface_request_handler_t *ni_handler;
 	network_interface_transmit_t *ni_transmit;
+#ifdef IPC
+	struct ipc_header ni_receive_header;
+#endif
 };
 
 int network_interface_attach(struct network_interface *,

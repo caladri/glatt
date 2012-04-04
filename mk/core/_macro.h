@@ -15,7 +15,11 @@
 #define	ROUNDDOWN(x, y)		(((x) / (y)) * (y))
 #define	ROUNDUP(x, y)		((((x) + ((y) - 1)) / (y)) * (y))
 
+#ifndef __GNUC__
 #define	offsetof(s, f)		((size_t)((uintptr_t)(&(((s *)NULL)->f))))
+#else
+#define	offsetof(s, f)		__builtin_offsetof(s, f)
+#endif
 
 	/* Preprocessor magic.  */
 
@@ -54,8 +58,13 @@
 
 	/* Compile-time assertions.  (Only use in source files.)  */
 
+#ifndef __GNUC__
 #define	COMPILE_TIME_ASSERT(p)					\
 	typedef	uint8_t CONCAT(ctassert_, __LINE__) [(!(p) * -1) + (p)]
+#else
+#define	COMPILE_TIME_ASSERT(p)					\
+	typedef	uint8_t CONCAT(ctassert_, __LINE__) [__builtin_choose_expr((p), 1, -1)]
+#endif
 
 	/* Using separate sections to implement dynamic lists.  */
 #define	SECTION_START(s)	_CONCAT(__start_, s)

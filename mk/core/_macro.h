@@ -55,7 +55,7 @@
 	/* Compile-time assertions.  (Only use in source files.)  */
 
 #define	COMPILE_TIME_ASSERT(p)					\
-	static inline void CONCAT(ctassert_f_, __LINE__)(void) { typedef	uint8_t CONCAT(ctassert_, __LINE__) [(!(p) * -1) + (p)]; } struct __hack
+	typedef	uint8_t CONCAT(ctassert_, __LINE__) [(!(p) * -1) + (p)]
 
 	/* Using separate sections to implement dynamic lists.  */
 #define	SECTION_START(s)	_CONCAT(__start_, s)

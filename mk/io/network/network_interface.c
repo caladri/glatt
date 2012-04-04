@@ -47,6 +47,17 @@ network_interface_attach(struct network_interface *netif,
 	return (0);
 }
 
+void
+network_interface_receive(struct network_interface *netif,
+			  const void *data, size_t datalen)
+{
+#ifdef IPC
+	/*
+	 * XXX Send data to a port.
+	 */
+#endif
+}
+
 #ifdef IPC
 static int
 network_interface_ipc_handler(void *softc, struct ipc_header *ipch, void *p)

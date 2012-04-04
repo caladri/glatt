@@ -75,16 +75,22 @@ tmether_interrupt(void *arg, int interrupt)
 	struct tmether_softc *sc = arg;
 
 	TMETHER_LOCK(sc);
-	switch (TEST_ETHER_DEV_READ(TEST_ETHER_DEV_STATUS)) {
-	case TEST_ETHER_DEV_STATUS_RX_OK:
-		panic("%s: TEST_ETHER_DEV_STATUS_RX_OK", __func__);
-		break;
-	case TEST_ETHER_DEV_STATUS_RX_MORE:
-		panic("%s: TEST_ETHER_DEV_STATUS_RX_MORE", __func__);
-		break;
-	default:
-		panic("%s: unexpected status.", __func__);
-		break;
+	for (;;) {
+		uint64_t status, length;
+
+		/*
+		 * XXX
+		 * Limit number of packets received at once?
+		 */
+		status = TEST_ETHER_DEV_READ(TEST_ETHER_DEV_STATUS);
+		if (status == TEST_ETHER_DEV_STATUS_RX_MORE) {
+			TEST_ETHER_DEV_WRITE(TEST_ETHER_DEV_COMMAND, TEST_ETHER_DEV_COMMAND_RX);
+			continue;
+		}
+		if (status != TEST_ETHER_DEV_STATUS_RX_OK)
+			break;
+		length = TEST_ETHER_DEV_READ(TEST_ETHER_DEV_LENGTH);
+		network_interface_receive(&sc->sc_netif, XKPHYS_MAP(CCA_UC, TEST_ETHER_DEV_BASE + TEST_ETHER_DEV_BUFFER), length);
 	}
 	TMETHER_UNLOCK(sc);
 }

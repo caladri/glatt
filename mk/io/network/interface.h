@@ -44,6 +44,7 @@ int network_interface_attach(struct network_interface *,
 			     const char *,
 			     network_interface_request_handler_t *,
 			     network_interface_transmit_t *, void *);
+void network_interface_receive(struct network_interface *, const void *, size_t);
 #endif
 
 #endif /* !_IO_NETWORK_INTERFACE_H_ */

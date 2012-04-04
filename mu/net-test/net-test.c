@@ -32,11 +32,13 @@ struct arp_header {
 
 struct if_context {
 	struct ipc_dispatch *ifc_dispatch;
+	const struct ipc_dispatch_handler *ifc_receive_handler;
 	const struct ipc_dispatch_handler *ifc_transmit_handler;
 	ipc_port_t ifc_ifport;
 };
 
 static void arp_request(struct if_context *, const uint8_t *, uint32_t, uint32_t);
+static void if_receive_callback(const struct ipc_dispatch *, const struct ipc_dispatch_handler *, const struct ipc_header *, void *);
 static void if_transmit(struct if_context *, const void *, size_t);
 static void if_transmit_callback(const struct ipc_dispatch *, const struct ipc_dispatch_handler *, const struct ipc_header *, void *);
 
@@ -44,6 +46,7 @@ void
 main(void)
 {
 	struct if_context ifc;
+	int error;
 
 	puts("Starting net-test.\n");
 
@@ -54,6 +57,11 @@ main(void)
 		continue;
 
 	ifc.ifc_dispatch = ipc_dispatch_allocate(IPC_PORT_UNKNOWN, IPC_PORT_FLAG_DEFAULT);
+
+	ifc.ifc_receive_handler = ipc_dispatch_register(ifc.ifc_dispatch, if_receive_callback, &ifc);
+	error = ipc_dispatch_send(ifc.ifc_dispatch, ifc.ifc_receive_handler, ifc.ifc_ifport, NETWORK_INTERFACE_MSG_RECEIVE, IPC_PORT_RIGHT_SEND, NULL, 0);
+	if (error != 0)
+		fatal("could not send receive registration message", error);
 
 	ifc.ifc_transmit_handler = ipc_dispatch_register(ifc.ifc_dispatch, if_transmit_callback, &ifc);
 
@@ -114,6 +122,36 @@ arp_request(struct if_context *ifc, const uint8_t *ether_src, uint32_t ip_src, u
 
 	if_transmit(ifc, pkt, pktlen);
 	free(pkt);
+}
+
+static void
+if_receive_callback(const struct ipc_dispatch *id, const struct ipc_dispatch_handler *idh, const struct ipc_header *ipch, void *page)
+{
+	int *errorp;
+
+	(void)id;
+	(void)idh;
+
+	switch (ipch->ipchdr_msg) {
+	case IPC_MSG_REPLY(NETWORK_INTERFACE_MSG_RECEIVE):
+		if (ipch->ipchdr_reccnt != 1 || ipch->ipchdr_recsize != sizeof *errorp || page == NULL)
+			return;
+		errorp = page;
+		if (*errorp != 0)
+			fatal("failed to register receive handler", *errorp);
+		return;
+	case NETWORK_INTERFACE_MSG_RECEIVE_PACKET:
+		if (ipch->ipchdr_reccnt != 1 || ipch->ipchdr_recsize == 0 || page == NULL)
+			return;
+		break;
+	default:
+		printf("Received unexpected message:\n");
+		ipc_message_print(ipch, page);
+		return;
+	}
+
+	printf("Received packet:\n");
+	ipc_message_print(ipch, page);
 }
 
 static void

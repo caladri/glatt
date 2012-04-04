@@ -10,7 +10,6 @@
 #include <common/common.h>
 
 #define	ETHERNET_ADDRESS_SIZE	6
-#define	IP4_ADDRESS_SIZE	4
 
 struct ethernet_header {
 	uint8_t eh_dhost[ETHERNET_ADDRESS_SIZE];

@@ -24,7 +24,7 @@ main(void)
 	if (error != 0)
 		fatal("ns_register failed", error);
 
-	ipc_dispatch_default(id, test_request_handler, NULL);
+	ipc_dispatch_register_default(id, test_request_handler, NULL);
 
 	ipc_dispatch(id);
 }

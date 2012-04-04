@@ -96,7 +96,7 @@ ipc_dispatch_register(struct ipc_dispatch *id, ipc_dispatch_callback_t *cb, void
 }
 
 const struct ipc_dispatch_handler *
-ipc_dispatch_default(struct ipc_dispatch *id, ipc_dispatch_callback_t *cb, void *softc)
+ipc_dispatch_register_default(struct ipc_dispatch *id, ipc_dispatch_callback_t *cb, void *softc)
 {
 	struct ipc_dispatch_handler *idh;
 

@@ -5,9 +5,7 @@
 #include <core/string.h>
 #include <core/task.h>
 #include <core/thread.h>
-#ifdef DB
 #include <cpu/cpu.h>
-#endif
 #include <cpu/memory.h>
 #include <cpu/pcpu.h>
 #include <cpu/pmap.h>

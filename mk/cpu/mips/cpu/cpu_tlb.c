@@ -23,7 +23,7 @@ COMPILE_TIME_ASSERT(POPCNT(TLBMASK_MASK) % 2 == 0);
 
 #ifndef	UNIPROCESSOR
 struct tlb_shootdown_arg {
-	unsigned asid;
+	struct pmap *pmap;
 	vaddr_t vaddr;
 };
 #endif
@@ -56,7 +56,7 @@ tlb_write_random(void)
 	cpu_barrier();
 }
 
-static void tlb_invalidate_addr(unsigned, vaddr_t);
+static void tlb_invalidate_addr(struct pmap *, vaddr_t);
 static void tlb_invalidate_one(unsigned);
 #ifndef	UNIPROCESSOR
 static void tlb_shootdown(void *);
@@ -98,9 +98,9 @@ tlb_init(paddr_t pcpu_addr, unsigned ntlbs)
 }
 
 void
-tlb_invalidate(unsigned asid, vaddr_t vaddr)
+tlb_invalidate(struct pmap *pm, vaddr_t vaddr)
 {
-	tlb_invalidate_addr(asid, vaddr);
+	tlb_invalidate_addr(pm, vaddr);
 
 #ifndef	UNIPROCESSOR
 	/*
@@ -110,7 +110,7 @@ tlb_invalidate(unsigned asid, vaddr_t vaddr)
 	if (mp_ncpus() != 1) {
 		struct tlb_shootdown_arg shootdown;
 
-		shootdown.asid = asid;
+		shootdown.pmap = pm;
 		shootdown.vaddr = vaddr;
 
 		mp_hokusai_master(NULL, NULL,
@@ -176,30 +176,35 @@ tlb_wired_wire(struct tlb_wired_context *wired, struct pmap *pm, vaddr_t vaddr)
 	if (pte == NULL)
 		panic("%s: pmap_find returned NULL.", __func__);
 	pte_set(pte, PG_D);	/* XXX Mark page dirty.  */
-	tlb_invalidate_addr(pmap_asid(pm), vaddr);
+	tlb_invalidate_addr(pm, vaddr);
 	tlb_wired_entry(twe, vaddr, pmap_asid(pm), *pte);
 }
 
 static void
-tlb_invalidate_addr(unsigned asid, vaddr_t vaddr)
+tlb_invalidate_addr(struct pmap *pm, vaddr_t vaddr)
 {
+	register_t asid;
 	int i;
 
 	vaddr &= ~PAGE_MASK;
 
 	critical_enter();
-	cpu_write_tlb_entryhi(TLBHI_ENTRY(vaddr, asid));
+	asid = cpu_read_tlb_entryhi() & TLBHI_ASID_MASK;
+	cpu_write_tlb_entryhi(TLBHI_ENTRY(vaddr, pmap_asid(pm)));
 	tlb_probe();
 	i = cpu_read_tlb_index();
 	if (i >= 0)
 		tlb_invalidate_one(i);
+	cpu_write_tlb_entryhi(asid);
 	critical_exit();
 }
 
 static void
 tlb_invalidate_one(unsigned i)
 {
-	/* XXX an invalid ASID? */
+	/*
+	 * ASID is saved and restored by caller, no need to do it here.
+	 */
 	cpu_write_tlb_entryhi(TLBHI_ENTRY(KSEG2_BASE + (i * PAGE_SIZE), 0));
 	cpu_write_tlb_entrylo0(0);
 	cpu_write_tlb_entrylo1(0);
@@ -214,7 +219,7 @@ tlb_shootdown(void *arg)
 	struct tlb_shootdown_arg *tsa;
 
 	tsa = arg;
-	tlb_invalidate_addr(tsa->asid, tsa->vaddr);
+	tlb_invalidate_addr(tsa->pmap, tsa->vaddr);
 }
 #endif
 
@@ -225,7 +230,7 @@ tlb_update(struct pmap *pm, vaddr_t vaddr, pt_entry_t pte)
 	int i;
 
 	critical_enter();
-	asid = cpu_read_tlb_entryhi();
+	asid = cpu_read_tlb_entryhi() & TLBHI_ASID_MASK;
 	cpu_write_tlb_entryhi(TLBHI_ENTRY(vaddr, pmap_asid(pm)));
 	tlb_probe();
 	i = cpu_read_tlb_index();

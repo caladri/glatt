@@ -116,6 +116,7 @@ struct pmap {
 #define	TLBHI_VPN2_SHIFT	(PAGE_SHIFT)
 #define	TLBHI_VPN2_MASK		(((~((1UL << TLBHI_VPN2_SHIFT) - 1)) << (63 - TLBHI_FILL_SHIFT)) >> (63 - TLBHI_FILL_SHIFT))
 #define	TLBHI_VA_TO_VPN2(va)	((va) & TLBHI_VPN2_MASK)
+#define	TLBHI_ASID_MASK		0xff
 #define	TLBHI_ENTRY(va, asid)	((TLBHI_VA_R((va))) /* Region. */ | \
 				 (TLBHI_VA_TO_VPN2((va))) /* VPN2. */ | \
 				 ((asid)))

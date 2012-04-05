@@ -70,7 +70,6 @@ ufs		io/storage/ufs/ufs_superblock.c
 ufs		requires: storage
 
 ipc		ipc/ipc_port.c
-# XXX Make ipc_service optional.
 ipc		ipc/ipc_service.c
 ipc		ipc/ipc_system.c
 ipc		ipc/ipc_task.c

@@ -37,7 +37,6 @@ COMPILE_TIME_ASSERT(sizeof (struct vm_page_tree_page) <= PAGE_SIZE);
 
 static BTREE_ROOT(struct vm_page_tree_page) page_tree;
 static struct vm_page_queue page_free_queue, page_use_queue;
-static struct spinlock page_tree_lock;
 static struct spinlock page_queue_lock;
 
 static void page_insert(struct vm_page *, paddr_t);
@@ -47,16 +46,12 @@ static char page_lookup_cmp(paddr_t, struct vm_page_tree_page *,
 static void page_ref_drop(struct vm_page *);
 static void page_ref_hold(struct vm_page *);
 
-#define	PAGE_TREE_LOCK()	spinlock_lock(&page_tree_lock)
-#define	PAGE_TREE_UNLOCK()	spinlock_unlock(&page_tree_lock)
-
 #define	PAGEQ_LOCK()	spinlock_lock(&page_queue_lock)
 #define	PAGEQ_UNLOCK()	spinlock_unlock(&page_queue_lock)
 
 void
 page_init(void)
 {
-	spinlock_init(&page_tree_lock, "Page tree", SPINLOCK_FLAG_DEFAULT);
 	spinlock_init(&page_queue_lock, "Page queue", SPINLOCK_FLAG_DEFAULT);
 
 	BTREE_ROOT_INIT(&page_tree);
@@ -293,7 +288,6 @@ page_insert_pages(paddr_t base, size_t pages)
 
 	ptps = ptpents = 0;
 
-	PAGE_TREE_LOCK();
 	PAGEQ_LOCK();
 	while (pages > 1) {
 		error = pmap_map_direct(&kernel_vm, base, &vaddr);
@@ -329,7 +323,6 @@ page_insert_pages(paddr_t base, size_t pages)
 			     (ptp < iter));
 	}
 	PAGEQ_UNLOCK();
-	PAGE_TREE_UNLOCK();
 
 #ifdef VERBOSE
 	kcprintf("PAGE: inserted %zu page tree entries in %zu nodes.\n",

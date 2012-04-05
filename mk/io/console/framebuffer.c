@@ -14,9 +14,9 @@
 #define	FB_ROWS(fb)	((fb)->fb_height / (fb)->fb_font->f_height)
 
 static struct rgb foreground = {
-	.red = 0x00,
-	.green = 0x00,
-	.blue = 0x80,
+	.red = 0xd0,
+	.green = 0xd0,
+	.blue = 0xd0,
 };
 
 static struct rgb background = {

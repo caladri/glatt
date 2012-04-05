@@ -29,6 +29,7 @@ static void framebuffer_clear(struct framebuffer *);
 static void framebuffer_flush(void *);
 static int framebuffer_getc(void *, char *);
 static void framebuffer_putc(void *, char);
+static void framebuffer_puts(void *, const char *, size_t);
 static void framebuffer_putxy(struct framebuffer *, char, unsigned, unsigned);
 static void framebuffer_scroll(struct framebuffer *);
 
@@ -46,6 +47,7 @@ framebuffer_init(struct framebuffer *fb, unsigned width, unsigned height)
 	fb->fb_console.c_softc = fb;
 	fb->fb_console.c_getc = framebuffer_getc;
 	fb->fb_console.c_putc = framebuffer_putc;
+	fb->fb_console.c_puts = framebuffer_puts;
 	fb->fb_console.c_flush = framebuffer_flush;
 
 	spinlock_init(&fb->fb_lock, "framebuffer", SPINLOCK_FLAG_DEFAULT);
@@ -119,6 +121,40 @@ framebuffer_putc(void *sc, char ch)
 		else
 			fb->fb_row++;
 		fb->fb_column = 0;
+	}
+	spinlock_unlock(&fb->fb_lock);
+}
+
+static void
+framebuffer_puts(void *sc, const char *s, size_t len)
+{
+	struct framebuffer *fb;
+	unsigned i;
+
+	fb = sc;
+
+	spinlock_lock(&fb->fb_lock);
+	for (i = 0; i < len; i++) {
+		char ch = s[i];
+
+		if (ch == '\n') {
+			if (fb->fb_row == FB_ROWS(fb) - 1)
+				framebuffer_scroll(fb);
+			else
+				fb->fb_row++;
+			fb->fb_column = 0;
+			continue;
+		}
+
+		framebuffer_putxy(fb, ch, fb->fb_column, fb->fb_row);
+
+		if (fb->fb_column++ == FB_COLUMNS(fb) - 1) {
+			if (fb->fb_row == FB_ROWS(fb) - 1)
+				framebuffer_scroll(fb);
+			else
+				fb->fb_row++;
+			fb->fb_column = 0;
+		}
 	}
 	spinlock_unlock(&fb->fb_lock);
 }

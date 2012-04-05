@@ -3,7 +3,7 @@
 #include <core/startup.h>
 #include <core/string.h>
 #include <cpu/memory.h>
-#include <io/bus/device.h>
+#include <io/bus/bus.h>
 #include <io/console/framebuffer.h>
 
 static void
@@ -19,7 +19,7 @@ static struct framebuffer tmfb_softc = {
 };
 
 static int
-tmfb_setup(struct device *device, void *busdata)
+tmfb_setup(struct bus_instance *bi)
 {
 	struct framebuffer *fb;
 
@@ -28,7 +28,9 @@ tmfb_setup(struct device *device, void *busdata)
 		return (ERROR_NOT_IMPLEMENTED);
 #endif
 
-	fb = device_softc_allocate(device, sizeof *fb);
+	bus_set_description(bi, "testmips simulated framebuffer");
+
+	fb = bus_softc_allocate(bi, sizeof *fb);
 	memcpy(fb, &tmfb_softc, sizeof *fb);
 	/*
 	 * XXX probe for resolution.
@@ -38,7 +40,7 @@ tmfb_setup(struct device *device, void *busdata)
 	return (0);
 }
 
-DEVICE_INTERFACE(tmfbif) {
-	.device_setup = tmfb_setup,
+BUS_INTERFACE(tmfbif) {
+	.bus_setup = tmfb_setup,
 };
-DEVICE_ATTACHMENT(tmfb, "mpbus", tmfbif);
+BUS_ATTACHMENT(tmfb, "mpbus", tmfbif);

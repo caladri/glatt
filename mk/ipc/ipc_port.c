@@ -318,7 +318,7 @@ ipc_port_send_data(struct ipc_header *ipch, const void *p, size_t len)
 		ASSERT(len == 0, "Cannot send no data with a set data length.");
 		if (len != 0)
 			return (ERROR_INVALID);
-		error = ipc_port_send(ipch, NULL);
+		error = ipc_port_send_page(ipch, NULL);
 		if (error != 0)
 			return (error);
 		return (0);

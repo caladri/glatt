@@ -7,6 +7,7 @@ int vm_page_get(void **);
 
 void exit(void);
 void putchar(int);
+void putsn(const char *, size_t);
 
 void fatal(const char *, int);
 void puts(const char *);

@@ -25,8 +25,7 @@ fatal(const char *msg, int error)
 void
 puts(const char *s)
 {
-	while (*s != '\0')
-		(void)putchar(*s++);
+	putsn(s, strlen(s));
 }
 
 void
@@ -288,6 +287,5 @@ printf_puts(void *arg, const char *s, size_t len)
 {
 	(void)arg;
 
-	while (len-- != 0)
-		putchar(*s++);
+	putsn(s, len);
 }

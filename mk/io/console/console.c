@@ -55,6 +55,15 @@ kcputs(const char *s)
 }
 
 void
+kcputsn(const char *s, size_t len)
+{
+	CONSOLE_LOCK(kernel_console);
+	cputs_noflush(kernel_console, s, len);
+	cflush(kernel_console);
+	CONSOLE_UNLOCK(kernel_console);
+}
+
+void
 kcprintf(const char *s, ...)
 {
 	va_list ap;

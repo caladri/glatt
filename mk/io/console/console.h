@@ -6,6 +6,7 @@
 int kcgetc(char *);
 void kcputc(char);
 void kcputs(const char *);
+void kcputsn(const char *, size_t);
 void kcprintf(const char *, ...)/* XXX need %m __printf(1, 2)*/;
 void kcvprintf(const char *, va_list)/*XXX %m __printf(1, 0)*/;
 

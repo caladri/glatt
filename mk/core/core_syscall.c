@@ -45,6 +45,12 @@ syscall(unsigned number, register_t *cnt, register_t *params)
 		kcputc(params[0]);
 		*cnt = 0;
 		return (0);
+	case SYSCALL_CONSOLE_PUTS:
+		if (*cnt != 2)
+			return (ERROR_ARG_COUNT);
+		kcputsn((void *)(uintptr_t)params[0], params[1]); /* XXX copyinstr.  */
+		*cnt = 0;
+		return (0);
 	case SYSCALL_IPC_PORT_ALLOCATE:
 #ifdef IPC
 		if (*cnt != 1)

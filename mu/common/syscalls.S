@@ -27,6 +27,14 @@ ENTRY(putchar)
 	nop
 END(putchar)
 
+ENTRY(putsn)
+	li	v0, SYSCALL_CONSOLE_PUTS
+	li	v1, 2
+	syscall
+	jr	ra
+	nop
+END(putsn)
+
 ENTRY(ipc_port_allocate)
 	move	t0, a0
 	move	a0, a1

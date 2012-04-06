@@ -15,8 +15,38 @@ static inline int strncmp(const char *, const char *, size_t) __non_null(1, 2) _
 static inline void
 memcpy(void *dst, const void *src, size_t len)
 {
-	char *d;
-	const char *s;
+	uint8_t *d;
+	const uint8_t *s;
+
+	if ((((uintptr_t)dst | (uintptr_t)src | len) & (sizeof (uint64_t) - 1)) == 0) {
+		uint64_t *d64 = dst;
+		const uint64_t *s64 = src;
+
+		len /= sizeof (uint64_t);
+		while (len--)
+			*d64++ = *s64++;
+		return;
+	}
+
+	if ((((uintptr_t)dst | (uintptr_t)src | len) & (sizeof (uint32_t) - 1)) == 0) {
+		uint32_t *d32 = dst;
+		const uint32_t *s32 = src;
+
+		len /= sizeof (uint32_t);
+		while (len--)
+			*d32++ = *s32++;
+		return;
+	}
+
+	if ((((uintptr_t)dst | (uintptr_t)src | len) & (sizeof (uint16_t) - 1)) == 0) {
+		uint16_t *d16 = dst;
+		const uint16_t *s16 = src;
+
+		len /= sizeof (uint16_t);
+		while (len--)
+			*d16++ = *s16++;
+		return;
+	}
 
 	d = dst;
 	s = src;
@@ -29,6 +59,50 @@ static inline void
 memset(void *dst, int val, size_t len)
 {
 	char *d = dst;
+
+	val &= 0xff;
+
+	if ((((uintptr_t)dst | len) & (sizeof (int64_t) - 1)) == 0) {
+		int64_t *d64 = dst;
+
+		len /= sizeof (int64_t);
+		while (len--)
+			*d64++ =
+				((uint64_t)val << 0) |
+				((uint64_t)val << 8) |
+				((uint64_t)val << 16) |
+				((uint64_t)val << 24) |
+				((uint64_t)val << 32) |
+				((uint64_t)val << 40) |
+				((uint64_t)val << 48) |
+				((uint64_t)val << 56) |
+				((uint64_t)val << 56);
+		return;
+	}
+
+	if ((((uintptr_t)dst | len) & (sizeof (int32_t) - 1)) == 0) {
+		int32_t *d32 = dst;
+
+		len /= sizeof (int32_t);
+		while (len--)
+			*d32++ =
+				((uint32_t)val << 0) |
+				((uint32_t)val << 8) |
+				((uint32_t)val << 16) |
+				((uint32_t)val << 24);
+		return;
+	}
+
+	if ((((uintptr_t)dst | len) & (sizeof (int16_t) - 1)) == 0) {
+		int16_t *d16 = dst;
+
+		len /= sizeof (int16_t);
+		while (len--)
+			*d16++ =
+				((uint32_t)val << 0) |
+				((uint32_t)val << 8);
+		return;
+	}
 
 	while (len--)
 		*d++ = val;

@@ -1,6 +1,4 @@
 KERNEL_CC=	${TOOLCHAIN_TARGET}-gcc
-KERNEL_AS=	${TOOLCHAIN_TARGET}-as
-KERNEL_LD=	${TOOLCHAIN_TARGET}-ld
 KERNEL_NM=	${TOOLCHAIN_TARGET}-nm
 KERNEL_SIM=	gxemul
 
@@ -32,8 +30,6 @@ KERNEL_FORMAT=	elf32-littlemips
 KERNEL_FORMAT=	elf64-littlemips
 .endif
 KERNEL_CC+=	-EL
-KERNEL_AS+=	-EL
-KERNEL_LD+=	-EL
 .else
 .if defined(MIPS_O64)
 KERNEL_FORMAT=	elf32-bigmips

@@ -53,7 +53,7 @@ hexdump(const void *p, size_t len)
 	buf = p;
 
 	while (len != 0) {
-		printf("\t");
+		printf("  ");
 		for (i = 0; i < 16; i++) {
 			if (len <= i) {
 				if (i % 4 == 0)
@@ -71,7 +71,7 @@ hexdump(const void *p, size_t len)
 			printf("%x", buf[i]);
 		}
 
-		printf("\t| ");
+		printf(" | ");
 		for (i = 0; i < 16; i++) {
 			if (len <= i) {
 				printf(" ");
@@ -218,31 +218,31 @@ ns_message_print(const struct ipc_header *ipch, const void *rec)
 #define	NS_GET_REC(val, ipch, rec, typestr)				\
 	do {								\
 		if ((ipch)->ipchdr_recsize != sizeof *(val)) {		\
-			printf("\tNS %s record has wrong size.\n", (typestr));\
+			printf("  NS %s record has wrong size.\n", (typestr));\
 			return;						\
 		}							\
-		printf("\tNS %s.\n", (typestr));			\
+		printf("  NS %s.\n", (typestr));			\
 		(val) = (rec);						\
 	} while (0)
 
 #define	NS_PRINT_ERROR(val)						\
 	do {								\
 		if ((val)->error != 0)					\
-			printf("\tError: %m\n", (val)->error);		\
+			printf("  Error: %m\n", (val)->error);		\
 		else							\
-			printf("\tNo error.\n");			\
+			printf("  No error.\n");			\
 	} while (0)
 
 #define	NS_PRINT_NAME(val)						\
 	do {								\
 		if (debug) {						\
-			printf("\tRaw name:\n");			\
+			printf("  Raw name:\n");			\
 			hexdump((val)->service_name, sizeof (val)->service_name);\
 		}							\
-		printf("\tName: %s\n", (val)->service_name);		\
+		printf("  Name: %s\n", (val)->service_name);		\
 	} while (0)
 
-#define	NS_PRINT_PORT(val)	IPC_PORT_PRINT("\tPort", (val)->port)
+#define	NS_PRINT_PORT(val)	IPC_PORT_PRINT("  Port", (val)->port)
 
 	switch (ipch->ipchdr_msg) {
 	case NS_MESSAGE_LOOKUP:
@@ -269,7 +269,7 @@ ns_message_print(const struct ipc_header *ipch, const void *rec)
 		NS_PRINT_PORT(nsrresp);
 		break;
 	default:
-		printf("\tUnhandled NS record:\n");
+		printf("  Unhandled NS record:\n");
 		hexdump(rec, ipch->ipchdr_recsize);
 		break;
 	}

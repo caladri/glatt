@@ -55,7 +55,7 @@ syscall(unsigned number, register_t *cnt, register_t *params)
 	case SYSCALL_CONSOLE_GETC:
 		if (*cnt != 0)
 			return (ERROR_ARG_COUNT);
-		error = kcgetc(&ch);
+		error = kcgetc_wait(&ch);
 		if (error != 0)
 			return (error);
 		*cnt = 1;

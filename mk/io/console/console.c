@@ -1,5 +1,7 @@
 #include <core/types.h>
+#include <core/error.h>
 #include <core/printf.h>
+#include <core/sleepq.h>
 #include <core/string.h>
 #include <io/console/console.h>
 #include <io/console/consoledev.h>
@@ -34,6 +36,39 @@ kcgetc(char *chp)
 		return (error);
 	*chp = ch;
 	return (0);
+}
+
+int
+kcgetc_wait(char *chp)
+{
+	char ch;
+	int error;
+
+	for (;;) {
+		CONSOLE_LOCK(kernel_console);
+		error = kernel_console->c_getc(kernel_console->c_softc, &ch);
+		switch (error) {
+		case ERROR_AGAIN:
+			sleepq_enter(kernel_console, &kernel_console->c_lock);
+			/* sleepq_enter drops console lock.  */
+			continue;
+		default:
+			CONSOLE_UNLOCK(kernel_console);
+			if (error != 0)
+				return (error);
+			*chp = ch;
+			return (0);
+		}
+	}
+}
+
+void
+kcgetc_wakeup(bool broadcast)
+{
+	if (broadcast)
+		sleepq_signal(kernel_console);
+	else
+		sleepq_signal_one(kernel_console);
 }
 
 void

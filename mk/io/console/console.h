@@ -4,6 +4,8 @@
 	/* Kernel Console functions.  */
 
 int kcgetc(char *);
+int kcgetc_wait(char *);
+void kcgetc_wakeup(bool);
 void kcputc(char);
 void kcputs(const char *);
 void kcputsn(const char *, size_t);

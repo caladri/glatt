@@ -161,12 +161,8 @@ tmcons_interrupt(void *arg, int interrupt)
 			break;
 		sc->sc_avail++;
 	}
-	if (need_wakeup) {
-		/*
-		 * XXX
-		 * Indicate input available on console.
-		 */
-	}
+	if (need_wakeup)
+		kcgetc_wakeup(sc->sc_avail != 0);
 	TMCONS_UNLOCK(sc);
 }
 

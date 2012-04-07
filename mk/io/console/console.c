@@ -85,7 +85,8 @@ kcvprintf(const char *s, va_list ap)
 static void
 cflush(struct console *console)
 {
-	console->c_flush(console->c_softc);
+	if (console->c_flush != NULL)
+		console->c_flush(console->c_softc);
 }
 
 static void

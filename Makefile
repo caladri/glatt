@@ -154,6 +154,15 @@ mu-image:
 	@${GO_MAKE:S,DST,${.CURDIR},:S,TGT,mu-build,}
 	(cd ${.CURDIR} && sh mu-image.sh)
 
+.PHONY: mu
+TARGETS+=mu
+mu-help:
+	@echo 'Performs mu-clean and then mu-image.'
+	@echo 'usage: '${MAKE}' mu'
+	@echo 'See mu-clean-help and mu-image-help for more information.'
+mu: mu-clean mu-image
+
+
 ###
 # toolchain section
 ###

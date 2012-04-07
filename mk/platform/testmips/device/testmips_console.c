@@ -148,12 +148,13 @@ tmcons_interrupt(void *arg, int interrupt)
 	need_wakeup = sc->sc_avail == 0;
 	for (;;) {
 		if (sc->sc_avail == sizeof sc->sc_buf) {
-#ifdef VERBOSE
-			kcprintf("%s: buffer full, dropping characters.\n", __func__);
-#endif
 			while (TEST_CONSOLE_DEV_READ() != 0)
 				continue;
-			break;
+			TMCONS_UNLOCK(sc);
+#ifdef VERBOSE
+			kcprintf("%s: buffer full, dropped characters.\n", __func__);
+#endif
+			return;
 		}
 		error = testmips_console_early_getc(NULL, &sc->sc_buf[(sc->sc_buffo + sc->sc_avail) % sizeof sc->sc_buf]);
 		if (error != 0)

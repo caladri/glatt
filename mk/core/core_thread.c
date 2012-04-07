@@ -90,6 +90,7 @@ thread_switch(struct thread *otd, struct thread *td)
 	ASSERT(otd != td, "cannot switch from a thread to itself.");
 	if (otd != NULL) {
 		if (cpu_context_save(otd)) {
+			otd = current_thread();
 			thread_set_upcall(otd, thread_error, otd);
 			/*
 			 * We've been restored by something, return.

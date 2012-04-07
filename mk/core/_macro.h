@@ -41,6 +41,7 @@
 #define	__non_null(...)		__attribute__ ((__nonnull__ (__VA_ARGS__)))
 #endif
 #define	__check_result		__attribute__ ((__warn_unused_result__))
+#define	__returns_twice		__attribute__ ((__returns_twice__))
 
 	/* Bitmask helpers.  */
 

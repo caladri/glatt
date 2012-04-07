@@ -24,6 +24,6 @@ struct context {
 #define	CONTEXT_RA	(0x0a)
 
 void cpu_context_restore(struct thread *) __non_null(1) __noreturn;
-bool cpu_context_save(struct thread *) __non_null(1) __check_result;
+bool cpu_context_save(struct thread *) __non_null(1) __check_result __returns_twice;
 
 #endif /* !_CPU_CONTEXT_H_ */

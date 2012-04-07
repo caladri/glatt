@@ -16,6 +16,7 @@ SET(db_commands, struct db_command);
 DB_COMMAND_TREE(root, root, root);
 
 static bool db_command_return;
+static char db_command_buffer[DB_COMMAND_ARG_MAX * DB_COMMAND_ARG_LIKELY_SIZE];
 
 static void db_command_all(struct db_command_tree *);
 static void db_command_listing(struct db_command_tree *);
@@ -57,7 +58,6 @@ db_command_init(void)
 void
 db_command_enter(void)
 {
-	char cmdbuf[DB_COMMAND_ARG_MAX * DB_COMMAND_ARG_LIKELY_SIZE];
 	const char *argv[DB_COMMAND_ARG_MAX];
 	struct db_command_tree *current, *old;
 	unsigned argc, i;
@@ -72,7 +72,7 @@ db_command_enter(void)
 		kcprintf(") ");
 
 
-		error = db_getargs(cmdbuf, sizeof cmdbuf, &argc, argv,
+		error = db_getargs(db_command_buffer, sizeof db_command_buffer, &argc, argv,
 				   DB_COMMAND_ARG_MAX, " \t/");
 		if (error != 0) {
 			kcprintf("\nDB: Input not available.  Halting.\n");

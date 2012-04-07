@@ -94,12 +94,12 @@ hexdump(const void *p, size_t len)
 
 		printf(" | ");
 		for (i = 0; i < 16; i++) {
+			if (i != 0 && i % 4 == 0)
+				printf(" ");
 			if (len <= i) {
 				printf(" ");
 				continue;
 			}
-			if (i != 0 && i % 4 == 0)
-				printf(" ");
 			if (buf[i] >= 0x20 && buf[i] <= 0x7e)
 				printf("%c", buf[i]);
 			else

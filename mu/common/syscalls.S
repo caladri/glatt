@@ -35,6 +35,21 @@ ENTRY(putsn)
 	nop
 END(putsn)
 
+ENTRY(getchar)
+	li	v0, SYSCALL_CONSOLE_GETC
+	li	v1, 0
+	syscall
+
+	beqz	v1, 1f
+	nop
+
+	jr	ra
+	move	v0, a0
+
+1:	jr	ra
+	li	v0, -1
+END(getchar)
+
 ENTRY(ipc_port_allocate)
 	move	t0, a0
 	move	a0, a1

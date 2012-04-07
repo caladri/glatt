@@ -27,6 +27,7 @@ syscall(unsigned number, register_t *cnt, register_t *params)
 #endif
 	vaddr_t vaddr;
 	int error;
+	char ch;
 #ifdef IPC
 	void *p;
 #endif
@@ -50,6 +51,15 @@ syscall(unsigned number, register_t *cnt, register_t *params)
 			return (ERROR_ARG_COUNT);
 		kcputsn((void *)(uintptr_t)params[0], params[1]); /* XXX copyinstr.  */
 		*cnt = 0;
+		return (0);
+	case SYSCALL_CONSOLE_GETC:
+		if (*cnt != 0)
+			return (ERROR_ARG_COUNT);
+		error = kcgetc(&ch);
+		if (error != 0)
+			return (error);
+		*cnt = 1;
+		params[0] = ch;
 		return (0);
 	case SYSCALL_IPC_PORT_ALLOCATE:
 #ifdef IPC

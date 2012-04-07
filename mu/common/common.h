@@ -4,6 +4,7 @@
 #include "ipc_dispatch.h"
 
 int vm_page_get(void **);
+int vm_page_free(void *);
 
 void exit(void);
 void putchar(int);

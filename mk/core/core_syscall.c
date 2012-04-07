@@ -117,6 +117,14 @@ syscall(unsigned number, register_t *cnt, register_t *params)
 		params[0] = vaddr;
 		return (0);
 	case SYSCALL_VM_PAGE_FREE:
+		if (*cnt != 1)
+			return (ERROR_ARG_COUNT);
+		error = vm_free_page(td->td_task->t_vm, (vaddr_t)params[0]);
+		if (error != 0)
+			return (error);
+		*cnt = 0;
+		return (0);
+
 		return (ERROR_NOT_IMPLEMENTED);
 	default:
 		return (ERROR_INVALID);

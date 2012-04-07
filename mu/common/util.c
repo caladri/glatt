@@ -184,8 +184,8 @@ ipc_message_print(const struct ipc_header *ipch, const void *page)
 void *
 malloc(size_t len)
 {
-	int error;
 	void *page;
+	int error;
 
 	if (len > PAGE_SIZE)
 		fatal("request to allocate more than a page", ERROR_NOT_IMPLEMENTED);
@@ -202,9 +202,17 @@ malloc(size_t len)
 void
 free(void *ptr)
 {
-	/* XXX Not yet.  */
-	(void)ptr;
-	return;
+	void *page;
+	int error;
+
+	if (ptr == NULL)
+		fatal("request to free NULL; what do you think this is, plain old C?", ERROR_NOT_IMPLEMENTED);
+
+	page = ptr;
+
+	error = vm_page_free(page);
+	if (error != 0)
+		fatal("page free failed", error);
 }
 
 static void

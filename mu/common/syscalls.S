@@ -99,3 +99,11 @@ ENTRY(vm_page_get)
 1:	jr	ra
 	nop
 END(vm_page_get)
+
+ENTRY(vm_page_free)
+	li	v0, SYSCALL_VM_PAGE_FREE
+	li	v1, 1
+	syscall
+	jr	ra
+	nop
+END(vm_page_free)

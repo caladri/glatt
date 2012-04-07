@@ -26,7 +26,9 @@ static const char *error_strings[] __used = {
 	"Wrong number of arguments.",
 #define	ERROR_NOT_AVAILABLE	(0x000b)
 	"Facility not available.",
-#define	ERROR_COUNT		(0x000c)
+#define	ERROR_FULL		(0x000c)
+	"No space available.",
+#define	ERROR_COUNT		(0x000d)
 };
 
 #endif /* !_CORE_ERROR_H_ */

@@ -10,6 +10,7 @@ void exit(void);
 int getchar(void);
 void putchar(int);
 void putsn(const char *, size_t);
+int getline(char *, size_t);
 
 void fatal(const char *, int);
 void puts(const char *);

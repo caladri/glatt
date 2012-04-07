@@ -11,14 +11,14 @@
 void
 main(void)
 {
-	int ch;
+	char buf[1024];
+	int error;
 
 	printf("MU Experimental Shell.\n");
 	for (;;) {
 		printf("# ");
-		ch = getchar();
-		if (ch == -1)
-			fatal("getchar failed", error);
-		printf("%c\nYou entered: %x\n", ch, ch);
+		error = getline(buf, sizeof buf);
+		if (error != 0)
+			fatal("getline failed", error);
 	}
 }

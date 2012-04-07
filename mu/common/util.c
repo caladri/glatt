@@ -28,6 +28,27 @@ puts(const char *s)
 	putsn(s, strlen(s));
 }
 
+int
+getline(char *buf, size_t len)
+{
+	int ch;
+
+	for (;;) {
+		if (len == 0)
+			return (ERROR_FULL);
+		ch = getchar();
+		if (ch == -1)
+			return (ERROR_UNEXPECTED);
+		putchar(ch); /* Echo back.  */
+		if (ch == '\n') {
+			*buf = '\0';
+			return (0);
+		}
+		*buf++ = ch;
+		len--;
+	}
+}
+
 void
 printf(const char *fmt, ...)
 {

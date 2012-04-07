@@ -15,6 +15,10 @@
 #include <ipc/service.h>
 #include <ns/ns.h>
 
+#if defined(VERBOSE) && 0
+#define	SERVICE_TRACING
+#endif
+
 /*
  * Notes:
  *
@@ -34,7 +38,7 @@ struct ipc_service_context {
 	struct thread *ipcsc_thread;
 };
 
-#ifdef VERBOSE
+#ifdef SERVICE_TRACING
 static void ipc_service_dump(const struct ipc_service_context *, const struct ipc_header *);
 #endif
 static void ipc_service_main(void *);
@@ -85,7 +89,7 @@ ipc_service(const char *name, ipc_port_t port, ipc_port_flags_t flags,
 	return (0);
 }
 
-#ifdef VERBOSE
+#ifdef SERVICE_TRACING
 static void
 ipc_service_dump(const struct ipc_service_context *ipcsc, const struct ipc_header *ipch)
 {
@@ -126,14 +130,14 @@ ipc_service_main(void *arg)
 
 		error = ipc_port_send_data(&ipch, &nsreq, sizeof nsreq);
 		if (error != 0) {
-#ifdef VERBOSE
+#ifdef SERVICE_TRACING
 			ipc_service_dump(ipcsc, &ipch);
 #endif
 			panic("%s: ipc_send failed: %m", __func__, error);
 		}
 
 		for (;;) {
-#ifdef VERBOSE
+#ifdef SERVICE_TRACING
 			kcprintf("%s: waiting for registration with ns...\n",
 				 ipcsc->ipcsc_name);
 #endif
@@ -149,12 +153,12 @@ ipc_service_main(void *arg)
 					continue;
 			}
 
-#ifdef VERBOSE
+#ifdef SERVICE_TRACING
 			ipc_service_dump(ipcsc, &ipch);
 #endif
 
 			if (ipch.ipchdr_src != IPC_PORT_NS) {
-#ifdef VERBOSE
+#ifdef SERVICE_TRACING
 				kcprintf("%s: message from unexpected source.\n",
 					 ipcsc->ipcsc_name);
 #endif
@@ -162,7 +166,7 @@ ipc_service_main(void *arg)
 			}
 
 			if (ipch.ipchdr_msg != IPC_MSG_REPLY(NS_MESSAGE_REGISTER)) {
-#ifdef VERBOSE
+#ifdef SERVICE_TRACING
 				kcprintf("%s: unexpected message type from ns.\n",
 					 ipcsc->ipcsc_name);
 #endif
@@ -170,7 +174,7 @@ ipc_service_main(void *arg)
 			}
 
 			if (ipch.ipchdr_cookie != 0) {
-#ifdef VERBOSE
+#ifdef SERVICE_TRACING
 				kcprintf("%s: unexpected cookie from ns.\n",
 					 ipcsc->ipcsc_name);
 #endif
@@ -178,7 +182,7 @@ ipc_service_main(void *arg)
 			}
 
 			if (ipch.ipchdr_recsize != sizeof *nsresp) {
-#ifdef VERBOSE
+#ifdef SERVICE_TRACING
 				kcprintf("%s: response record from ns has wrong size.\n",
 					 ipcsc->ipcsc_name);
 #endif
@@ -186,7 +190,7 @@ ipc_service_main(void *arg)
 			}
 
 			if (ipch.ipchdr_reccnt != 1) {
-#ifdef VERBOSE
+#ifdef SERVICE_TRACING
 				kcprintf("%s: wrong number of response records from ns.\n",
 					 ipcsc->ipcsc_name);
 #endif
@@ -194,7 +198,7 @@ ipc_service_main(void *arg)
 			}
 
 			if (p == NULL) {
-#ifdef VERBOSE
+#ifdef SERVICE_TRACING
 				kcprintf("%s: no data from ns.\n",
 					 ipcsc->ipcsc_name);
 #endif
@@ -215,7 +219,7 @@ ipc_service_main(void *arg)
 			break;
 		}
 
-#ifdef VERBOSE
+#ifdef SERVICE_TRACING
 		kcprintf("%s: registered with ns.\n", ipcsc->ipcsc_name);
 #endif
 	}
@@ -223,7 +227,7 @@ ipc_service_main(void *arg)
 	/* Receive real requests and responses.  */
 
 	for (;;) {
-#ifdef VERBOSE
+#ifdef SERVICE_TRACING
 		kcprintf("%s: waiting...\n", ipcsc->ipcsc_name);
 #endif
 
@@ -239,7 +243,7 @@ ipc_service_main(void *arg)
 			      error);
 		}
 
-#ifdef VERBOSE
+#ifdef SERVICE_TRACING
 		ipc_service_dump(ipcsc, &ipch);
 #endif
 

@@ -36,20 +36,11 @@ ofw_console_putc(void *scp, char ch)
 		panic("%s: ofw_write returned len %zu", __func__, len);
 }
 
-static void
-ofw_console_flush(void *scp)
-{
-	struct ofw_console_softc *sc = scp;
-
-	(void)sc;
-}
-
 static struct console ofw_console = {
 	.c_name = "ofw",
 	.c_softc = &ofw_console_softc,
 	.c_getc = ofw_console_getc,
 	.c_putc = ofw_console_putc,
-	.c_flush = ofw_console_flush,
 };
 
 void

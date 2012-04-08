@@ -79,18 +79,11 @@ malta_console_putc(void *scp, char ch)
 	(*malta_print_count)(0, sc->sc_putc_addr, 1);
 }
 
-static void
-malta_console_flush(void *scp)
-{
-	(void)scp;
-}
-
 static struct console malta_console = {
 	.c_name = "malta",
 	.c_softc = NULL,
 	.c_getc = malta_console_getc,
 	.c_putc = malta_console_putc,
-	.c_flush = malta_console_flush,
 };
 
 void

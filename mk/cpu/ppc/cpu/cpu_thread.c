@@ -71,6 +71,12 @@ cpu_thread_setup(struct thread *td)
 #endif
 }
 
+void
+cpu_thread_user_trampoline(void *entry)
+{
+	panic("%s: not yet implemented.", __func__);
+}
+
 #if 0
 static void
 cpu_thread_exception(void *arg)

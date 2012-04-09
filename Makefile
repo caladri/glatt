@@ -118,10 +118,9 @@ mk-universe-help:
 	@echo 'Attempts to build the microkernel for all platforms.'
 	@echo 'usage: '${MAKE}' mk-universe'
 mk-universe:
-# XXX macppc
-.for _platform in malta octeon testmips
+.for _platform in macppc malta octeon testmips
 	@cd ${.CURDIR} && ${MAKE} toolchain PLATFORM=${_platform}
-.for _config in std std+db std+verbose std+invariants std-ipc-ns
+.for _config in std std+db std+verbose std+invariants std-ipc-ns std+fs+exec
 	@cd ${.CURDIR} && ${MAKE} mk PLATFORM=${_platform} MK_CONFIG=${_config}
 .endfor
 	@cd ${.CURDIR} && ${MAKE} mk-clean

@@ -31,22 +31,31 @@ puts(const char *s)
 int
 getline(char *buf, size_t len)
 {
+	unsigned i;
 	int ch;
 
-	for (;;) {
-		if (len == 0)
-			return (ERROR_FULL);
-		ch = getchar();
+	for (i = 0; i < len; i++) {
+again:		ch = getchar();
 		if (ch == -1)
 			return (ERROR_UNEXPECTED);
+		if (ch == '\010') {
+			if (i != 0) {
+				putchar(ch);
+				putchar(' ');
+				putchar(ch);
+				i--;
+			}
+			goto again;
+		}
 		putchar(ch); /* Echo back.  */
 		if (ch == '\n') {
-			*buf = '\0';
+			buf[i] = '\0';
 			return (0);
 		}
-		*buf++ = ch;
-		len--;
+		buf[i] = ch;
 	}
+
+	return (ERROR_FULL);
 }
 
 void

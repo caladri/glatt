@@ -4,9 +4,7 @@
 #include <cpu/memory.h>
 #include <cpu/startup.h>
 #include <io/bus/bus.h>
-#ifdef VERBOSE
 #include <io/console/console.h>
-#endif
 #include <io/console/consoledev.h>
 
 #define	TEST_CONSOLE_DEV_BASE	(0x10000000)

@@ -6,17 +6,18 @@
 #include <core/string.h>
 #include <core/task.h>
 #include <core/thread.h>
+#include <fs/fs_ops.h>
 #include <io/console/console.h>
 #include <vm/vm.h>
 #include <vm/vm_alloc.h>
 #include <vm/vm_index.h>
 #include <vm/vm_page.h>
 
-static int exec_elf64_load(struct thread *, exec_read_t *, void *);
-static int exec_read(exec_read_t *, void *, void *, off_t, size_t);
+static int exec_elf64_load(struct thread *, fs_file_read_op_t *, fs_context_t, fs_file_context_t);
+static int exec_read(fs_file_read_op_t *, fs_context_t, fs_file_context_t, void *, off_t, size_t);
 
 int
-exec_load(struct task *task, const char *name, exec_read_t *readf, void *softc)
+exec_load(struct task *task, const char *name, fs_file_read_op_t *readf, fs_context_t fsc, fs_file_context_t fsfc)
 {
 	struct thread *td;
 	int error;
@@ -27,7 +28,7 @@ exec_load(struct task *task, const char *name, exec_read_t *readf, void *softc)
 		return (error);
 	}
 
-	error = exec_elf64_load(td, readf, softc);
+	error = exec_elf64_load(td, readf, fsc, fsfc);
 	if (error != 0) {
 		kcprintf("%s: exec_elf64_load for %s failed: %m\n", __func__, name, error);
 		return (error);
@@ -39,7 +40,7 @@ exec_load(struct task *task, const char *name, exec_read_t *readf, void *softc)
 }
 
 int
-exec_task(const char *name, exec_read_t *readf, void *softc)
+exec_task(const char *name, fs_file_read_op_t *readf, fs_context_t fsc, fs_file_context_t fsfc)
 {
 	struct task *task;
 	int error;
@@ -48,7 +49,7 @@ exec_task(const char *name, exec_read_t *readf, void *softc)
 	if (error != 0)
 		return (error);
 
-	error = exec_load(task, name, readf, softc);
+	error = exec_load(task, name, readf, fsc, fsfc);
 	if (error != 0)
 		return (error);
 
@@ -56,7 +57,7 @@ exec_task(const char *name, exec_read_t *readf, void *softc)
 }
 
 static int
-exec_elf64_load(struct thread *td, exec_read_t *readf, void *softc)
+exec_elf64_load(struct thread *td, fs_file_read_op_t *readf, fs_context_t fsc, fs_file_context_t fsfc)
 {
 	struct elf64_program_header ph;
 	struct elf64_header eh;
@@ -67,7 +68,7 @@ exec_elf64_load(struct thread *td, exec_read_t *readf, void *softc)
 	unsigned i;
 	int error;
 
-	error = exec_read(readf, softc, &eh, 0, sizeof eh);
+	error = exec_read(readf, fsc, fsfc, &eh, 0, sizeof eh);
 	if (error != 0)
 		return (error);
 
@@ -138,7 +139,7 @@ exec_elf64_load(struct thread *td, exec_read_t *readf, void *softc)
 	low = 0;
 	high = 0;
 	for (i = 0; i < eh.eh_phnum; i++) {
-		error = exec_read(readf, softc, &ph,
+		error = exec_read(readf, fsc, fsfc, &ph,
 				  eh.eh_phoff + i * sizeof ph, sizeof ph);
 		if (error != 0)
 			panic("%s: exec_read of program header failed: %m", __func__, error);
@@ -178,7 +179,7 @@ exec_elf64_load(struct thread *td, exec_read_t *readf, void *softc)
 	 * Load program headers.
 	 */
 	for (i = 0; i < eh.eh_phnum; i++) {
-		error = exec_read(readf, softc, &ph,
+		error = exec_read(readf, fsc, fsfc, &ph,
 				  eh.eh_phoff + i * sizeof ph, sizeof ph);
 		if (error != 0)
 			panic("%s: exec_read of program header failed: %m", __func__, error);
@@ -188,7 +189,7 @@ exec_elf64_load(struct thread *td, exec_read_t *readf, void *softc)
 
 		len = MIN(ph.ph_memorysize, ph.ph_filesize);
 		begin = kvaddr + (ph.ph_vaddr - low);
-		error = exec_read(readf, softc, (void *)begin, ph.ph_off, len);
+		error = exec_read(readf, fsc, fsfc, (void *)begin, ph.ph_off, len);
 		if (error != 0)
 			panic("%s: exec_read of program data failed: %m", __func__, error);
 	}
@@ -209,7 +210,7 @@ exec_elf64_load(struct thread *td, exec_read_t *readf, void *softc)
 }
 
 static int
-exec_read(exec_read_t *readf, void *softc, void *buf, off_t off, size_t len)
+exec_read(fs_file_read_op_t *readf, fs_context_t fsc, fs_file_context_t fsfc, void *buf, off_t off, size_t len)
 {
 	int error;
 	size_t resid;
@@ -217,7 +218,7 @@ exec_read(exec_read_t *readf, void *softc, void *buf, off_t off, size_t len)
 	resid = len;
 
 	for (;;) {
-		error = readf(softc, buf, off, &len);
+		error = readf(fsc, fsfc, buf, off, &len);
 		if (error != 0)
 			return (error);
 		ASSERT(len <= resid, ("cannot have read too much data"));

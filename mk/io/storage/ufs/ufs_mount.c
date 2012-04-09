@@ -1,9 +1,6 @@
 #include <core/types.h>
 #include <core/endian.h>
 #include <core/error.h>
-#ifdef EXEC
-#include <core/exec.h>
-#endif
 #include <core/startup.h>
 #include <core/string.h>
 #include <io/storage/device.h>
@@ -12,6 +9,7 @@
 #include <io/storage/ufs/ufs_mount.h>
 #include <io/storage/ufs/ufs_param.h>
 #include <io/storage/ufs/ufs_superblock.h>
+#include <fs/fs_ops.h>
 #include <vm/vm.h>
 #include <vm/vm_alloc.h>
 
@@ -52,19 +50,24 @@ struct ufs_mount {
 #define	UFS_MOUNT_SWAP		(0x00000001)
 
 static off_t ufs_superblock_offsets[] = UFS_SUPERBLOCK_OFFSETS;
-static STAILQ_HEAD(, struct ufs_mount) ufs_mounts =
-	STAILQ_HEAD_INITIALIZER(ufs_mounts);
+
+static fs_file_open_op_t ufs_op_file_open;
+static fs_file_read_op_t ufs_op_file_read;
+static fs_file_close_op_t ufs_op_file_close;
 
 static int ufs_lookup(struct ufs_mount *, const char *, uint32_t *);
 static int ufs_map_block(struct ufs_mount *, struct ufs2_inode *, off_t, uint64_t *);
 static int ufs_read_block(struct ufs_mount *, struct ufs2_inode *, uint64_t, uint8_t *);
 static int ufs_read_directory(struct ufs_mount *);
-#ifdef EXEC
-static int ufs_read_file(void *, void *, off_t, size_t *);
-#endif
 static int ufs_read_fsbn(struct ufs_mount *, uint64_t, uint8_t *);
 static int ufs_read_inode(struct ufs_mount *, uint32_t, struct ufs2_inode *);
 static int ufs_read_superblock(struct ufs_mount *);
+
+static struct fs_ops ufs_fs_ops = {
+	.fs_file_open = ufs_op_file_open,
+	.fs_file_read = ufs_op_file_read,
+	.fs_file_close = ufs_op_file_close,
+};
 
 int
 ufs_mount(struct storage_device *sdev)
@@ -90,7 +93,85 @@ ufs_mount(struct storage_device *sdev)
 		return (error);
 	}
 
-	STAILQ_INSERT_TAIL(&ufs_mounts, um, um_link);
+	error = fs_register("ufs0"/*XXX*/, &ufs_fs_ops, um);
+
+	return (0);
+}
+
+static int
+ufs_op_file_open(fs_context_t fsc, const char *name, fs_file_context_t *fsfcp)
+{
+	struct ufs_file_context *fc;
+	struct ufs_mount *um = fsc;
+	uint32_t inode;
+	vaddr_t vaddr;
+	int error, error2;
+
+	error = vm_alloc(&kernel_vm, sizeof *fc, &vaddr);
+	if (error != 0)
+		return (error);
+	fc = (struct ufs_file_context *)vaddr;
+
+	error = ufs_lookup(um, name, &inode);
+	if (error != 0) {
+		error2 = vm_free(&kernel_vm, sizeof *fc, vaddr);
+		if (error2 != 0)
+			panic("%s: vm_free failed: %m", __func__, error2);
+
+		return (error);
+	}
+
+	error = ufs_read_inode(um, inode, &fc->f_in);
+	if (error != 0) {
+		error2 = vm_free(&kernel_vm, sizeof *fc, vaddr);
+		if (error2 != 0)
+			panic("%s: vm_free failed: %m", __func__, error2);
+
+		return (error);
+	}
+
+	/*
+	 * XXX
+	 * Check file type.
+	 */
+
+	*fsfcp = fc;
+
+	return (0);
+}
+
+static int
+ufs_op_file_read(fs_context_t fsc, fs_file_context_t fsfc, void *buf, off_t off, size_t *lenp)
+{
+	struct ufs_file_context *fc = fsfc;
+	struct ufs_mount *um = fsc;
+	unsigned offset = off % UFS_BSIZE(&um->um_sb);
+	uint64_t address = (off >> um->um_sb.sb_bshift) << um->um_sb.sb_bshift;
+	size_t len;
+	int error;
+
+	error = ufs_read_block(um, &fc->f_in, address, fc->f_block);
+	if (error != 0)
+		return (error);
+
+	len = MIN(*lenp, UFS_BSIZE(&um->um_sb) - offset);
+	memcpy(buf, &fc->f_block[offset], len);
+	*lenp = len;
+
+	return (0);
+}
+
+static int
+ufs_op_file_close(fs_context_t fsc, fs_file_context_t fsfc)
+{
+	struct ufs_file_context *fc = fsfc;
+	int error;
+
+	(void)fsc;
+
+	error = vm_free(&kernel_vm, sizeof *fc, (vaddr_t)fc);
+	if (error != 0)
+		panic("%s: vm_free failed: %m", __func__, error);
 
 	return (0);
 }
@@ -261,29 +342,6 @@ ufs_read_directory(struct ufs_mount *um)
 	return (0);
 }
 
-#ifdef EXEC
-static int
-ufs_read_file(void *softc, void *buf, off_t off, size_t *lenp)
-{
-	struct ufs_file_context *fc = softc;
-	struct ufs_mount *um = fc->f_um;
-	unsigned offset = off % UFS_BSIZE(&um->um_sb);
-	uint64_t address = (off >> um->um_sb.sb_bshift) << um->um_sb.sb_bshift;
-	size_t len;
-	int error;
-
-	error = ufs_read_block(um, &fc->f_in, address, fc->f_block);
-	if (error != 0)
-		return (error);
-
-	len = MIN(*lenp, UFS_BSIZE(&um->um_sb) - offset);
-	memcpy(buf, &fc->f_block[offset], len);
-	*lenp = len;
-
-	return (0);
-}
-#endif
-
 static int
 ufs_read_fsbn(struct ufs_mount *um, uint64_t fsbn, uint8_t *buf)
 {
@@ -364,85 +422,3 @@ ufs_read_superblock(struct ufs_mount *um)
 
 	return (0);
 }
-
-static void
-ufs_autorun(void *arg)
-{
-#ifdef EXEC
-	struct ufs_file_context *fc;
-	vaddr_t vaddr;
-#endif
-	struct ufs_mount *um;
-	uint32_t inode;
-	int error;
-
-	if (STAILQ_EMPTY(&ufs_mounts))
-		return;
-
-#ifdef EXEC
-	error = vm_alloc(&kernel_vm, sizeof *fc, &vaddr);
-	if (error != 0) {
-		kcprintf("%s: vm_alloc failed: %m\n", __func__, error);
-		return;
-	}
-
-	fc = (struct ufs_file_context *)vaddr;
-#endif
-
-	STAILQ_FOREACH(um, &ufs_mounts, um_link) {
-#ifdef EXEC
-		fc->f_um = um;
-#endif
-
-		error = ufs_lookup(um, "/mu/servers/", &inode);
-		if (error != 0) {
-			kcprintf("%s: ufs_lookup failed: %m\n", __func__, error);
-			continue;
-		}
-
-		error = ufs_read_inode(um, inode, &um->um_dc.d_in);
-		if (error != 0)
-			continue;
-
-		um->um_dc.d_address = 0;
-
-		for (;;) {
-			if (um->um_dc.d_address == um->um_dc.d_in.in_size)
-				break;
-
-			error = ufs_read_directory(um);
-			if (error != 0)
-				break;
-
-			if (um->um_dc.d_name[0] == '.')
-				continue;
-			kcprintf("autorun %s\n", um->um_dc.d_name);
-
-			/*
-			 * XXX
-			 * Check that this is a regular, executable file.
-			 */
-
-#ifdef EXEC
-			error = ufs_read_inode(um, um->um_dc.d_entry.de_inode, &fc->f_in);
-			if (error != 0) {
-				kcprintf("%s: ufs_read_inode failed: %m\n", __func__, error);
-				continue;
-			}
-
-			error = exec_task(um->um_dc.d_name, ufs_read_file, fc);
-			if (error != 0) {
-				kcprintf("%s: exec_task failed: %m\n", __func__, error);
-				continue;
-			}
-#endif
-		}
-	}
-
-#ifdef EXEC
-	error = vm_free(&kernel_vm, sizeof *fc, vaddr);
-	if (error != 0)
-		panic("%s: vm_free failed: %m", __func__, error);
-#endif
-}
-STARTUP_ITEM(ufs_autorun, STARTUP_SERVERS, STARTUP_SECOND, ufs_autorun, NULL);

@@ -30,6 +30,7 @@ std		core/core_thread.c
 std		core/core_ttk.c
 
 exec		core/core_exec.c
+exec		requires: fs
 
 mp		core/core_mp.c
 mp		core/core_mp_cpu.c
@@ -40,6 +41,10 @@ db		db/db.c
 db		db/db_command.c
 db		db/db_misc.c
 enter_debugger	requires: db
+
+fs		fs/fs.c
+# XXX We could actually eliminate the IPC requirement.
+fs		requires: ipc
 
 std		io/console/console.c
 framebuffer	io/console/framebuffer.c
@@ -68,6 +73,7 @@ ufs		io/storage/ufs/ufs_inode.c
 ufs		io/storage/ufs/ufs_mount.c
 ufs		io/storage/ufs/ufs_superblock.c
 ufs		requires: storage
+ufs		requires: fs
 
 ipc		ipc/ipc_port.c
 ipc		ipc/ipc_service.c

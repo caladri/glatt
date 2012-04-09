@@ -113,7 +113,6 @@ ipc_service_main(void *arg)
 	/* Register with the NS.  */
 	if (ipcsc->ipcsc_port >= IPC_PORT_UNRESERVED_START) {
 		struct ns_register_request nsreq;
-		struct ns_register_response *nsresp;
 
 		ipch.ipchdr_src = ipcsc->ipcsc_port;
 		ipch.ipchdr_dst = IPC_PORT_NS;
@@ -123,7 +122,6 @@ ipc_service_main(void *arg)
 		ipch.ipchdr_recsize = sizeof nsreq;
 		ipch.ipchdr_reccnt = 1;
 
-		nsreq.error = 0;
 		strlcpy(nsreq.service_name, ipcsc->ipcsc_name,
 			NS_SERVICE_NAME_LENGTH);
 		nsreq.port = ipcsc->ipcsc_port;
@@ -165,6 +163,9 @@ ipc_service_main(void *arg)
 				continue;
 			}
 
+			if (ipch.ipchdr_msg == IPC_MSG_ERROR(NS_MESSAGE_REGISTER))
+				panic("%s: could not register with ns.", ipcsc->ipcsc_name);
+
 			if (ipch.ipchdr_msg != IPC_MSG_REPLY(NS_MESSAGE_REGISTER)) {
 #ifdef SERVICE_TRACING
 				kcprintf("%s: unexpected message type from ns.\n",
@@ -181,7 +182,7 @@ ipc_service_main(void *arg)
 				continue;
 			}
 
-			if (ipch.ipchdr_recsize != sizeof *nsresp) {
+			if (ipch.ipchdr_recsize != 0) {
 #ifdef SERVICE_TRACING
 				kcprintf("%s: response record from ns has wrong size.\n",
 					 ipcsc->ipcsc_name);
@@ -189,7 +190,7 @@ ipc_service_main(void *arg)
 				continue;
 			}
 
-			if (ipch.ipchdr_reccnt != 1) {
+			if (ipch.ipchdr_reccnt != 0) {
 #ifdef SERVICE_TRACING
 				kcprintf("%s: wrong number of response records from ns.\n",
 					 ipcsc->ipcsc_name);
@@ -197,24 +198,13 @@ ipc_service_main(void *arg)
 				continue;
 			}
 
-			if (p == NULL) {
+			if (p != NULL) {
 #ifdef SERVICE_TRACING
-				kcprintf("%s: no data from ns.\n",
+				kcprintf("%s: unexpected data from ns.\n",
 					 ipcsc->ipcsc_name);
 #endif
 				continue;
 			}
-
-			nsresp = p;
-
-			if (nsresp->error != 0 ||
-			    strcmp(ipcsc->ipcsc_name, nsresp->service_name) != 0 ||
-			    nsresp->port != ipcsc->ipcsc_port) {
-				panic("%s: unexpected response from ns.",
-				      ipcsc->ipcsc_name);
-			}
-
-			/* XXX Free page in p.  */
 
 			break;
 		}

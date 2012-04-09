@@ -63,6 +63,7 @@ cpu_thread_setup(struct thread *td)
 	for (off = 0; off < KSTACK_SIZE; off += PAGE_SIZE)
 		tlb_wired_wire(&td->td_cputhread.td_tlbwired, kernel_vm.vm_pmap,
 			       kstack + off);
+	memset(&td->td_context, 0, sizeof td->td_context);
 	td->td_context.c_regs[CONTEXT_SP] = kstack + KSTACK_SIZE;
 
 	if ((td->td_task->t_flags & TASK_KERNEL) == 0) {

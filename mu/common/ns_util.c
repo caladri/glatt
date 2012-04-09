@@ -29,7 +29,6 @@ ns_lookup(const char *service)
 	id = ipc_dispatch_allocate(IPC_PORT_UNKNOWN, IPC_PORT_FLAG_DEFAULT);
 	idh = ipc_dispatch_register(id, ns_lookup_response_handler, &nrw);
 
-	nsreq.error = 0;
 	memset(nsreq.service_name, 0, NS_SERVICE_NAME_LENGTH);
 	strlcpy(nsreq.service_name, service, NS_SERVICE_NAME_LENGTH);
 
@@ -65,7 +64,6 @@ ns_register(const char *service, ipc_port_t port)
 	id = ipc_dispatch_allocate(IPC_PORT_UNKNOWN, IPC_PORT_FLAG_DEFAULT);
 	idh = ipc_dispatch_register(id, ns_register_response_handler, &nrw);
 
-	nsreq.error = 0;
 	memset(nsreq.service_name, 0, NS_SERVICE_NAME_LENGTH);
 	strlcpy(nsreq.service_name, service, NS_SERVICE_NAME_LENGTH);
 	nsreq.port = port;
@@ -95,45 +93,72 @@ ns_lookup_response_handler(const struct ipc_dispatch *id, const struct ipc_dispa
 {
 	struct ns_response_wait *nrw = idh->idh_softc;
 	struct ns_lookup_response *nsresp;
+	struct ns_lookup_error *nserr;
 
 	(void)id;
 
-	if (ipch->ipchdr_msg != IPC_MSG_REPLY(NS_MESSAGE_LOOKUP) ||
-	    ipch->ipchdr_recsize != sizeof *nsresp || ipch->ipchdr_reccnt != 1 ||
-	    page == NULL) {
+	switch (ipch->ipchdr_msg) {
+	case IPC_MSG_REPLY(NS_MESSAGE_LOOKUP):
+		if (ipch->ipchdr_recsize != sizeof *nsresp || ipch->ipchdr_reccnt != 1 || page == NULL) {
+			printf("Received message with unexpected data:\n");
+			ipc_message_print(ipch, page);
+			return;
+		}
+		nsresp = page;
+
+		nrw->nrw_done = true;
+		nrw->nrw_port = nsresp->port;
+		return;
+	case IPC_MSG_ERROR(NS_MESSAGE_LOOKUP):
+		if (ipch->ipchdr_recsize != sizeof *nserr || ipch->ipchdr_reccnt != 1 || page == NULL) {
+			printf("Received message with unexpected data:\n");
+			ipc_message_print(ipch, page);
+			return;
+		}
+		nserr = page;
+
+		nrw->nrw_done = true;
+		nrw->nrw_error = nserr->error;
+		return;
+	default:
 		printf("Received unexpected message:\n");
 		ipc_message_print(ipch, page);
 		return;
 	}
-
-	nrw->nrw_done = true;
-
-	nsresp = page;
-	if (nsresp->error == 0)
-		nrw->nrw_port = nsresp->port;
-	nrw->nrw_error = nsresp->error;
 }
 
 static void
 ns_register_response_handler(const struct ipc_dispatch *id, const struct ipc_dispatch_handler *idh, const struct ipc_header *ipch, void *page)
 {
 	struct ns_response_wait *nrw = idh->idh_softc;
-	struct ns_register_response *nsresp;
+	struct ns_register_error *nserr;
 
 	(void)id;
 
-	if (ipch->ipchdr_msg != IPC_MSG_REPLY(NS_MESSAGE_REGISTER) ||
-	    ipch->ipchdr_recsize != sizeof *nsresp || ipch->ipchdr_reccnt != 1 ||
-	    page == NULL) {
+	switch (ipch->ipchdr_msg) {
+	case IPC_MSG_REPLY(NS_MESSAGE_REGISTER):
+		if (ipch->ipchdr_recsize != 0 || ipch->ipchdr_reccnt != 0 || page == NULL) {
+			printf("Received message with unexpected data:\n");
+			ipc_message_print(ipch, page);
+			return;
+		}
+
+		nrw->nrw_done = true;
+		return;
+	case IPC_MSG_ERROR(NS_MESSAGE_REGISTER):
+		if (ipch->ipchdr_recsize != sizeof *nserr || ipch->ipchdr_reccnt != 1 || page == NULL) {
+			printf("Received message with unexpected data:\n");
+			ipc_message_print(ipch, page);
+			return;
+		}
+		nserr = page;
+
+		nrw->nrw_done = true;
+		nrw->nrw_error = nserr->error;
+		return;
+	default:
 		printf("Received unexpected message:\n");
 		ipc_message_print(ipch, page);
 		return;
 	}
-
-	nrw->nrw_done = true;
-
-	nsresp = page;
-	if (nsresp->error == 0)
-		nrw->nrw_port = nsresp->port;
-	nrw->nrw_error = nsresp->error;
 }

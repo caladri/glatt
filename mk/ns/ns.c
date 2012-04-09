@@ -26,7 +26,9 @@ ns_handle_lookup(const struct ipc_header *reqh, void *p)
 {
 	const struct ns_lookup_request *req;
 	struct ns_lookup_response resp;
+	struct ns_lookup_error err;
 	struct ipc_header ipch;
+	ipc_port_t port;
 	int error;
 
 	if (p == NULL || reqh->ipchdr_recsize != sizeof *req || reqh->ipchdr_reccnt != 1)
@@ -34,19 +36,25 @@ ns_handle_lookup(const struct ipc_header *reqh, void *p)
 
 	req = p;
 
-	resp.error = 0;
-	memcpy(resp.service_name, req->service_name, NS_SERVICE_NAME_LENGTH);
-	resp.port = IPC_PORT_UNKNOWN;
+	error = service_directory_lookup(req->service_name, &port);
+	if (error != 0) {
+		err.error = error;
 
-	error = service_directory_lookup(resp.service_name, &resp.port);
-	if (error != 0)
-		resp.error = ERROR_NOT_FOUND;
+		ipch = IPC_HEADER_ERROR(reqh);
+		ipch.ipchdr_recsize = sizeof err;
+		ipch.ipchdr_reccnt = 1;
 
-	ipch = IPC_HEADER_REPLY(reqh);
-	ipch.ipchdr_recsize = sizeof resp;
-	ipch.ipchdr_reccnt = 1;
+		error = ipc_port_send_data(&ipch, &err, sizeof err);
+	} else {
+		resp.port = port;
 
-	error = ipc_port_send_data(&ipch, &resp, sizeof resp);
+		ipch = IPC_HEADER_REPLY(reqh);
+		ipch.ipchdr_recsize = sizeof resp;
+		ipch.ipchdr_reccnt = 1;
+
+		error = ipc_port_send_data(&ipch, &resp, sizeof resp);
+	}
+
 	if (error != 0) {
 		kcprintf("%s: ipc_port_send failed: %m\n", __func__, error);
 		return (error);
@@ -59,7 +67,7 @@ static int
 ns_handle_register(const struct ipc_header *reqh, void *p)
 {
 	const struct ns_register_request *req;
-	struct ns_register_response resp;
+	struct ns_register_error err;
 	struct ipc_header ipch;
 	int error;
 
@@ -68,32 +76,23 @@ ns_handle_register(const struct ipc_header *reqh, void *p)
 
 	req = p;
 
-	resp.error = 0;
-	memcpy(resp.service_name, req->service_name, NS_SERVICE_NAME_LENGTH);
-	resp.port = IPC_PORT_UNKNOWN;
+	error = service_directory_enter(req->service_name, req->port);
+	if (error != 0) {
+		err.error = error;
 
-	error = service_directory_enter(resp.service_name, req->port);
-	switch (error) {
-	case 0:
-		resp.port = req->port;
-		break;
-	case ERROR_NOT_FREE:
-		resp.error = ERROR_NOT_FREE;
-		error = service_directory_lookup(resp.service_name, &resp.port);
-		if (error != 0)
-			panic("%s: service_directory_lookup failed: %m",
-			      __func__, error);
-		break;
-	default:
-		resp.error = ERROR_NOT_FREE;
-		break;
+		ipch = IPC_HEADER_ERROR(reqh);
+		ipch.ipchdr_recsize = sizeof err;
+		ipch.ipchdr_reccnt = 1;
+
+		error = ipc_port_send_data(&ipch, &err, sizeof err);
+	} else {
+		ipch = IPC_HEADER_REPLY(reqh);
+		ipch.ipchdr_recsize = 0;
+		ipch.ipchdr_reccnt = 0;
+
+		error = ipc_port_send_data(&ipch, NULL, 0);
 	}
 
-	ipch = IPC_HEADER_REPLY(reqh);
-	ipch.ipchdr_recsize = sizeof resp;
-	ipch.ipchdr_reccnt = 1;
-
-	error = ipc_port_send_data(&ipch, &resp, sizeof resp);
 	if (error != 0) {
 		kcprintf("%s: ipc_port_send failed: %m\n", __func__, error);
 		return (error);

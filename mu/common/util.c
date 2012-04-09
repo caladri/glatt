@@ -155,7 +155,7 @@ ipc_header_print(const struct ipc_header *ipch)
 		printf("Grants unrecognized right mask: 0x%jx\n", (uintmax_t)ipch->ipchdr_right);
 		break;
 	}
-	printf("Message: %jd\n", (intmax_t)ipch->ipchdr_msg);
+	printf("Message: 0x%jx\n", (intmax_t)ipch->ipchdr_msg);
 	printf("Cookie: 0x%jx\n", (uintmax_t)ipch->ipchdr_cookie);
 	printf("Record size: %ju\n", (uintmax_t)ipch->ipchdr_recsize);
 	printf("Record count: %ju\n", (uintmax_t)ipch->ipchdr_reccnt);
@@ -243,8 +243,9 @@ ns_message_print(const struct ipc_header *ipch, const void *rec)
 {
 	const struct ns_lookup_request *nslreq;
 	const struct ns_lookup_response *nslresp;
+	const struct ns_lookup_error *nslerr;
 	const struct ns_register_request *nsrreq;
-	const struct ns_register_response *nsrresp;
+	const struct ns_register_error *nsrerr;
 
 #define	NS_GET_REC(val, ipch, rec, typestr)				\
 	do {								\
@@ -254,6 +255,15 @@ ns_message_print(const struct ipc_header *ipch, const void *rec)
 		}							\
 		printf("  NS %s.\n", (typestr));			\
 		(val) = (rec);						\
+	} while (0)
+
+#define	NS_GET_EMPTY_REC(ipch, typestr)					\
+	do {								\
+		if ((ipch)->ipchdr_recsize != 0) {			\
+			printf("  NS %s record has wrong size.\n", (typestr));\
+			return;						\
+		}							\
+		printf("  NS %s.\n", (typestr));			\
 	} while (0)
 
 #define	NS_PRINT_ERROR(val)						\
@@ -278,26 +288,27 @@ ns_message_print(const struct ipc_header *ipch, const void *rec)
 	switch (ipch->ipchdr_msg) {
 	case NS_MESSAGE_LOOKUP:
 		NS_GET_REC(nslreq, ipch, rec, "lookup request");
-		NS_PRINT_ERROR(nslreq);
 		NS_PRINT_NAME(nslreq);
 		break;
 	case IPC_MSG_REPLY(NS_MESSAGE_LOOKUP):
 		NS_GET_REC(nslresp, ipch, rec, "lookup response");
-		NS_PRINT_ERROR(nslresp);
-		NS_PRINT_NAME(nslresp);
 		NS_PRINT_PORT(nslresp);
+		break;
+	case IPC_MSG_ERROR(NS_MESSAGE_LOOKUP):
+		NS_GET_REC(nslerr, ipch, rec, "lookup error");
+		NS_PRINT_ERROR(nslerr);
 		break;
 	case NS_MESSAGE_REGISTER:
 		NS_GET_REC(nsrreq, ipch, rec, "register request");
-		NS_PRINT_ERROR(nsrreq);
 		NS_PRINT_NAME(nsrreq);
 		NS_PRINT_PORT(nsrreq);
 		break;
 	case IPC_MSG_REPLY(NS_MESSAGE_REGISTER):
-		NS_GET_REC(nsrresp, ipch, rec, "register response");
-		NS_PRINT_ERROR(nsrresp);
-		NS_PRINT_NAME(nsrresp);
-		NS_PRINT_PORT(nsrresp);
+		NS_GET_EMPTY_REC(ipch, "lookup response");
+		break;
+	case IPC_MSG_ERROR(NS_MESSAGE_REGISTER):
+		NS_GET_REC(nsrerr, ipch, rec, "register error");
+		NS_PRINT_ERROR(nsrerr);
 		break;
 	default:
 		printf("  Unhandled NS record:\n");

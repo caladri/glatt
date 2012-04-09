@@ -171,7 +171,7 @@ exec_elf64_load(struct thread *td, fs_file_read_op_t *readf, fs_context_t fsc, f
 	 */
 	error = vm_alloc_range_wire(td->td_task->t_vm, low, high, &kvaddr);
 	if (error != 0) {
-		kcprintf("%s: could not allocate requested program address range: %m", __func__, error);
+		kcprintf("%s: could not allocate requested program address range: %m\n", __func__, error);
 		return (error);
 	}
 

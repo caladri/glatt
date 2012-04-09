@@ -178,7 +178,7 @@ exception(struct frame *frame)
 		if (vaddr > USER_STACK_BOT && vaddr <= USER_STACK_TOP) {
 			error = vm_fault_stack(td, vaddr);
 			if (error != 0) {
-				kcprintf("%s: vm_fault_stack failed: %m", __func__, error);
+				kcprintf("%s: vm_fault_stack failed: %m\n", __func__, error);
 				break;
 			}
 			handled = true;

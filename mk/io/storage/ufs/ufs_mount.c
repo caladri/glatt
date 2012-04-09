@@ -88,7 +88,7 @@ ufs_mount(struct storage_device *sdev)
 	if (error != 0) {
 		error2 = vm_free(&kernel_vm, sizeof *um, umaddr);
 		if (error2 != 0)
-			panic("%s: vm_free failed: %m\n", __func__, error);
+			panic("%s: vm_free failed: %m", __func__, error);
 		return (error);
 	}
 

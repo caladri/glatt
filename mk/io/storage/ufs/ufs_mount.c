@@ -26,7 +26,6 @@ struct ufs_directory_context {
 };
 
 struct ufs_file_context {
-	struct ufs_mount *f_um;
 	struct ufs2_inode f_in;
 	uint8_t f_block[UFS_MAX_BSIZE];
 };

@@ -19,7 +19,6 @@
 
 struct ufs_directory_context {
 	struct ufs2_inode d_in;
-	uint64_t d_address;
 	struct ufs_directory_entry d_entry;
 	uint8_t d_block[UFS_MAX_BSIZE];
 	char d_name[256];
@@ -54,10 +53,14 @@ static fs_file_open_op_t ufs_op_file_open;
 static fs_file_read_op_t ufs_op_file_read;
 static fs_file_close_op_t ufs_op_file_close;
 
+static fs_directory_open_op_t ufs_op_directory_open;
+static fs_directory_read_op_t ufs_op_directory_read;
+static fs_directory_close_op_t ufs_op_directory_close;
+
 static int ufs_lookup(struct ufs_mount *, const char *, uint32_t *);
 static int ufs_map_block(struct ufs_mount *, struct ufs2_inode *, off_t, uint64_t *);
 static int ufs_read_block(struct ufs_mount *, struct ufs2_inode *, uint64_t, uint8_t *);
-static int ufs_read_directory(struct ufs_mount *);
+static int ufs_read_directory(struct ufs_mount *, struct ufs2_inode *, uint64_t, struct ufs_directory_entry *, char *, size_t);
 static int ufs_read_fsbn(struct ufs_mount *, uint64_t, uint8_t *);
 static int ufs_read_inode(struct ufs_mount *, uint32_t, struct ufs2_inode *);
 static int ufs_read_superblock(struct ufs_mount *);
@@ -66,6 +69,10 @@ static struct fs_ops ufs_fs_ops = {
 	.fs_file_open = ufs_op_file_open,
 	.fs_file_read = ufs_op_file_read,
 	.fs_file_close = ufs_op_file_close,
+
+	.fs_directory_open = ufs_op_directory_open,
+	.fs_directory_read = ufs_op_directory_read,
+	.fs_directory_close = ufs_op_directory_close,
 };
 
 int
@@ -176,9 +183,95 @@ ufs_op_file_close(fs_context_t fsc, fs_file_context_t fsfc)
 }
 
 static int
+ufs_op_directory_open(fs_context_t fsc, const char *name, fs_directory_context_t *fsdcp)
+{
+	struct ufs_directory_context *dc;
+	struct ufs_mount *um = fsc;
+	uint32_t inode;
+	vaddr_t vaddr;
+	int error, error2;
+
+	error = vm_alloc(&kernel_vm, sizeof *dc, &vaddr);
+	if (error != 0)
+		return (error);
+	dc = (struct ufs_directory_context *)vaddr;
+
+	error = ufs_lookup(um, name, &inode);
+	if (error != 0) {
+		error2 = vm_free(&kernel_vm, sizeof *dc, vaddr);
+		if (error2 != 0)
+			panic("%s: vm_free failed: %m", __func__, error2);
+
+		return (error);
+	}
+
+	error = ufs_read_inode(um, inode, &dc->d_in);
+	if (error != 0) {
+		error2 = vm_free(&kernel_vm, sizeof *dc, vaddr);
+		if (error2 != 0)
+			panic("%s: vm_free failed: %m", __func__, error2);
+
+		return (error);
+	}
+
+	/*
+	 * XXX
+	 * Check file type.
+	 */
+
+	*fsdcp = dc;
+
+	return (0);
+}
+
+static int
+ufs_op_directory_read(fs_context_t fsc, fs_directory_context_t fsdc, struct fs_directory_entry *de, off_t *offp, size_t *cntp)
+{
+	struct ufs_directory_context *dc = fsdc;
+	struct ufs_mount *um = fsc;
+	uint64_t offset;
+	int error;
+
+	offset = *offp;
+
+	if (offset >= dc->d_in.in_size) {
+		*offp = 0;
+		*cntp = 0;
+		return (0);
+	}
+
+	error = ufs_read_directory(um, &dc->d_in, offset, &dc->d_entry, de->name, sizeof de->name);
+	if (error != 0)
+		return (error);
+
+	/* XXX Bounds check; make sure it doesn't span blocks.  */
+	*offp = offset + dc->d_entry.de_entrylen;
+	*cntp = 1;
+
+	return (0);
+}
+
+static int
+ufs_op_directory_close(fs_context_t fsc, fs_directory_context_t fsdc)
+{
+	struct ufs_directory_context *dc = fsdc;
+	int error;
+
+	(void)fsc;
+
+	error = vm_free(&kernel_vm, sizeof *dc, (vaddr_t)dc);
+	if (error != 0)
+		panic("%s: vm_free failed: %m", __func__, error);
+
+	return (0);
+}
+
+static int
 ufs_lookup(struct ufs_mount *um, const char *path, uint32_t *inodep)
 {
+	struct ufs_directory_context *dc;
 	const char *p, *q;
+	uint64_t offset;
 	uint32_t inode;
 	size_t clen;
 	int error;
@@ -189,14 +282,15 @@ ufs_lookup(struct ufs_mount *um, const char *path, uint32_t *inodep)
 	for (p = path; *p == '/'; p++)
 		continue;
 
+	dc = &um->um_dc;
 	inode = UFS_ROOT_INODE;
 
 	for (;;) {
-		error = ufs_read_inode(um, inode, &um->um_dc.d_in);
+		error = ufs_read_inode(um, inode, &dc->d_in);
 		if (error != 0)
 			return (error);
 
-		um->um_dc.d_address = 0;
+		offset = 0;
 
 		q = strchr(p, '/');
 		if (q == NULL)
@@ -205,21 +299,24 @@ ufs_lookup(struct ufs_mount *um, const char *path, uint32_t *inodep)
 			clen = q - p;
 
 		for (;;) {
-			if (um->um_dc.d_address == um->um_dc.d_in.in_size)
+			if (offset == dc->d_in.in_size)
 				return (ERROR_NOT_FOUND);
 
-			error = ufs_read_directory(um);
+			error = ufs_read_directory(um, &dc->d_in, offset, &dc->d_entry, dc->d_name, sizeof dc->d_name);
 			if (error != 0)
 				return (error);
 
-			if (um->um_dc.d_entry.de_namelen != clen)
+			/* XXX Bounds check; make sure it doesn't span blocks.  */
+			offset += dc->d_entry.de_entrylen;
+
+			if (dc->d_entry.de_namelen != clen)
 				continue;
 
-			if (strncmp(um->um_dc.d_name, p, clen) != 0)
+			if (strncmp(dc->d_name, p, clen) != 0)
 				continue;
 
 			/* We've found our inode.  */
-			inode = um->um_dc.d_entry.de_inode;
+			inode = dc->d_entry.de_inode;
 
 			p += clen;
 
@@ -316,14 +413,13 @@ ufs_read_block(struct ufs_mount *um, struct ufs2_inode *in, uint64_t off, uint8_
 }
 
 static int
-ufs_read_directory(struct ufs_mount *um)
+ufs_read_directory(struct ufs_mount *um, struct ufs2_inode *in, uint64_t off, struct ufs_directory_entry *de, char *buf, size_t buflen)
 {
-	unsigned offset = um->um_dc.d_address % UFS_BSIZE(&um->um_sb);
-	struct ufs_directory_entry *de = &um->um_dc.d_entry;
+	unsigned offset = off % UFS_BSIZE(&um->um_sb);
 	int error;
 
 	if (offset == 0) {
-		error = ufs_read_block(um, &um->um_dc.d_in, um->um_dc.d_address, um->um_dc.d_block);
+		error = ufs_read_block(um, in, off, um->um_dc.d_block);
 		if (error != 0)
 			return (error);
 	}
@@ -333,10 +429,7 @@ ufs_read_directory(struct ufs_mount *um)
 	if ((um->um_flags & UFS_MOUNT_SWAP) != 0)
 		ufs_directory_entry_swap(de);
 
-	strlcpy(um->um_dc.d_name, (char *)&um->um_dc.d_block[offset + sizeof *de],
-		sizeof um->um_dc.d_name);
-	/* XXX Bounds check; make sure it doesn't span blocks.  */
-	um->um_dc.d_address += de->de_entrylen;
+	strlcpy(buf, (char *)&um->um_dc.d_block[offset + sizeof *de], buflen);
 
 	return (0);
 }

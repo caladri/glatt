@@ -119,6 +119,12 @@ fs_autorun(void *arg)
 			if (cnt != 1)
 				panic("%s: implausible number of directory entries: %zu", __func__, cnt);
 
+			/*
+			 * Skip files with leading dot.
+			 */
+			if (fs_autorun_entry.name[0] == '.')
+				continue;
+
 			snprintf(fs_autorun_path, sizeof fs_autorun_path, "%s/%s", FS_AUTORUN_DIR, fs_autorun_entry.name);
 
 			error = fs->fs_ops->fs_file_open(fs->fs_context, fs_autorun_path, &fsfc);

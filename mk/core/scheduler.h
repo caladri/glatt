@@ -28,6 +28,7 @@ void scheduler_init(void);
 
 void scheduler_activate(struct thread *) __non_null(1);
 void scheduler_cpu_pin(struct thread *) __non_null(1);
+bool scheduler_idle(void) __check_result;
 void scheduler_schedule(struct thread *, struct spinlock *);
 void scheduler_thread_exiting(void);
 void scheduler_thread_free(struct thread *) __non_null(1);

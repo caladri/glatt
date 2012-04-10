@@ -73,3 +73,9 @@ cpu_startup_thread(void *arg)
 	platform_startup_thread();
 	callback(NULL);
 }
+
+void
+cpu_wait(void)
+{
+	/* Nothing.  */
+}

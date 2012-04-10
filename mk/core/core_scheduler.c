@@ -62,6 +62,37 @@ scheduler_cpu_pin(struct thread *td)
 #endif
 }
 
+/*
+ * Determine if any threads other than the current one are runnable
+ * on this CPU.
+ */
+bool
+scheduler_idle(void)
+{
+	struct scheduler_entry *ose, *se;
+
+	SCHEDULER_LOCK();
+	ose = &current_thread()->td_sched;
+	TAILQ_FOREACH(se, &scheduler_queue.sq_queue, se_link) {
+		if (se == ose)
+			continue;
+		if ((se->se_flags & SCHEDULER_RUNNABLE) == 0)
+			continue;
+		if ((se->se_flags & SCHEDULER_RUNNING) != 0)
+			continue;
+#ifndef UNIPROCESSOR
+		if ((se->se_flags & SCHEDULER_PINNED) != 0) {
+			if (se->se_oncpu != mp_whoami())
+				continue;
+		}
+#endif
+		SCHEDULER_UNLOCK();
+		return (false);
+	}
+	SCHEDULER_UNLOCK();
+	return (true);
+}
+
 void
 scheduler_schedule(struct thread *td, struct spinlock *lock)
 {

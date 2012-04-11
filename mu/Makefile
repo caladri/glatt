@@ -1,6 +1,7 @@
 ##
 # Figure out what components to build.
 ##
+SUBDIRS+=	etc
 SUBDIRS+=	servers
 
 .if !defined(GLATT_SRC) && exists(${.CURDIR}/../config.mk)

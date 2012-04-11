@@ -27,6 +27,7 @@ void *malloc(size_t);
 void free(void *);
 
 int open(ipc_port_t, const char *, ipc_port_t *);
+int read(ipc_port_t, void **, off_t, size_t *);
 int exec(ipc_port_t);
 
 #endif /* !COMMON_H */

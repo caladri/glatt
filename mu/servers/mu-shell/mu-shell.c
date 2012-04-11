@@ -14,7 +14,9 @@ main(void)
 {
 	ipc_port_t fs, file;
 	char buf[1024];
+	size_t len;
 	int error;
+	void *p;
 
 	printf("MU Experimental Shell.\n");
 
@@ -33,11 +35,22 @@ main(void)
 			continue;
 		}
 
+#if 0
 		error = exec(file);
 		if (error != 0) {
 			printf("Could not exec %s: %m\n", buf, error);
 			continue;
 		}
+#endif
+
+		len = PAGE_SIZE;
+		error = read(file, &p, 0, &len);
+		if (error != 0) {
+			printf("Could not read %s: %m\n", buf, error);
+			continue;
+		}
+		hexdump(p, len);
+		vm_page_free(p);
 
 		/* XXX close */
 	}

@@ -37,7 +37,7 @@ struct fs_open_file_response {
 
 struct fs_file_read_request {
 	off_t offset;
-	size_t len;
+	size_t length;
 };
 
 #endif /* !_FS_FS_H_ */

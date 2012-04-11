@@ -8,6 +8,7 @@ sudo newfs -O 2 ${dev}
 rm -rf img
 mkdir img
 sudo mount ${dev} $PWD/img
+sudo mkdir -p $PWD/img/mu/etc
 sudo mkdir -p $PWD/img/mu/servers
 sudo make mu-install DESTDIR=$PWD/img
 sudo umount $PWD/img

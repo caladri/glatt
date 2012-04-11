@@ -35,6 +35,7 @@ static int fs_exec(struct fs *, const char *);
 static ipc_service_t fs_ipc_handler;
 static int fs_ipc_open_file_handler(struct fs *, const struct ipc_header *, void *);
 static ipc_service_t fs_file_ipc_handler;
+static int fs_file_ipc_read_handler(struct fs_file *, const struct ipc_header *, void *);
 #ifdef EXEC
 static int fs_file_ipc_exec_handler(struct fs_file *, const struct ipc_header *, void *);
 #endif
@@ -205,6 +206,8 @@ fs_file_ipc_handler(void *softc, struct ipc_header *ipch, void *p)
 	struct fs_file *fsf = softc;
 
 	switch (ipch->ipchdr_msg) {
+	case FS_FILE_MSG_READ:
+		return (fs_file_ipc_read_handler(fsf, ipch, p));
 #ifdef EXEC
 	case FS_FILE_MSG_EXEC:
 		return (fs_file_ipc_exec_handler(fsf, ipch, p));
@@ -213,6 +216,59 @@ fs_file_ipc_handler(void *softc, struct ipc_header *ipch, void *p)
 		/* Don't respond to nonsense.  */
 		return (ERROR_INVALID);
 	}
+}
+
+static int
+fs_file_ipc_read_handler(struct fs_file *fsf, const struct ipc_header *reqh, void *p)
+{
+	fs_file_context_t fsfc = fsf->fsf_context;
+	struct fs *fs = fsf->fsf_fs;
+	struct fs_file_read_request *req;
+	struct ipc_error_record err;
+	struct ipc_header ipch;
+	size_t length;
+	int error;
+
+	if (reqh->ipchdr_recsize != sizeof *req || reqh->ipchdr_reccnt != 1 || p == NULL)
+		return (ERROR_INVALID);
+	req = p;
+
+	if (req->length == 0)
+		return (ERROR_INVALID);
+
+	/*
+	 * Note that we reuse p as a buffer.
+	 */
+	length = req->length > PAGE_SIZE ? PAGE_SIZE : req->length;
+	error = fs->fs_ops->fs_file_read(fs->fs_context, fsfc, p, req->offset, &length);
+	if (error != 0) {
+		err.error = error;
+
+		ipch = IPC_HEADER_ERROR(reqh);
+		ipch.ipchdr_recsize = sizeof err;
+		ipch.ipchdr_reccnt = 1;
+
+		error = ipc_port_send_data(&ipch, &err, sizeof err);
+	} else {
+		ipch = IPC_HEADER_REPLY(reqh);
+		ipch.ipchdr_recsize = length;
+		if (length != 0)
+			ipch.ipchdr_reccnt = 1;
+		else
+			ipch.ipchdr_reccnt = 0;
+
+		/*
+		 * XXX
+		 * We don't just send p directly because ipc_service is still
+		 * messy about whether pages are freed or not, to say nothing
+		 * of error handling.  Better to copy for now.
+		 */
+		error = ipc_port_send_data(&ipch, p, length);
+	}
+
+	if (error != 0)
+		return (error);
+	return (0);
 }
 
 #ifdef EXEC

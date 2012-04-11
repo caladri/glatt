@@ -15,7 +15,15 @@ struct fs_wait {
 	ipc_port_t fw_port;
 };
 
+struct fs_read_wait {
+	bool frw_done;
+	int frw_error;
+	void *frw_buf;
+	size_t frw_length;
+};
+
 static void fs_open_file_response_handler(const struct ipc_dispatch *, const struct ipc_dispatch_handler *, const struct ipc_header *, void *);
+static void fs_file_read_response_handler(const struct ipc_dispatch *, const struct ipc_dispatch_handler *, const struct ipc_header *, void *);
 static void fs_file_exec_response_handler(const struct ipc_dispatch *, const struct ipc_dispatch_handler *, const struct ipc_header *, void *);
 
 int
@@ -82,6 +90,78 @@ fs_open_file_response_handler(const struct ipc_dispatch *id, const struct ipc_di
 
 		fw->fw_done = true;
 		fw->fw_error = err->error;
+		return;
+	default:
+		printf("Received unexpected message:\n");
+		ipc_message_print(ipch, page);
+		return;
+	}
+}
+
+int
+read(ipc_port_t file, void **bufp, off_t off, size_t *lenp)
+{
+	const struct ipc_dispatch_handler *idh;
+	struct fs_file_read_request fsreq;
+	struct ipc_dispatch *id;
+	struct fs_read_wait frw;
+	int error;
+
+	id = ipc_dispatch_allocate(IPC_PORT_UNKNOWN, IPC_PORT_FLAG_DEFAULT);
+	idh = ipc_dispatch_register(id, fs_file_read_response_handler, &frw);
+
+	memset(&fsreq, 0, sizeof fsreq);
+	fsreq.offset = off;
+	fsreq.length = *lenp;
+
+	error = ipc_dispatch_send(id, idh, file, FS_FILE_MSG_READ, IPC_PORT_RIGHT_SEND_ONCE, &fsreq, sizeof fsreq);
+	if (error != 0)
+		fatal("ipc_dispatch_send failed", error);
+
+	frw.frw_done = false;
+	frw.frw_error = 0;
+	frw.frw_buf = NULL;
+	frw.frw_length = 0;
+	for (;;) {
+		ipc_dispatch_poll(id);
+		if (frw.frw_done)
+			break;
+		ipc_dispatch_wait(id);
+	}
+	
+	if (frw.frw_error == 0) {
+		*bufp = frw.frw_buf;
+		*lenp = frw.frw_length;
+	}
+
+	return (frw.frw_error);
+}
+
+static void
+fs_file_read_response_handler(const struct ipc_dispatch *id, const struct ipc_dispatch_handler *idh, const struct ipc_header *ipch, void *page)
+{
+	struct fs_read_wait *frw = idh->idh_softc;
+	struct ipc_error_record *err;
+
+	(void)id;
+
+	switch (ipch->ipchdr_msg) {
+	case IPC_MSG_REPLY(FS_FILE_MSG_READ):
+		frw->frw_done = true;
+		frw->frw_error = 0;
+		frw->frw_buf = page;
+		frw->frw_length = ipch->ipchdr_recsize;
+		return;
+	case IPC_MSG_ERROR(FS_FILE_MSG_READ):
+		if (ipch->ipchdr_recsize != sizeof *err || ipch->ipchdr_reccnt != 1 || page == NULL) {
+			printf("Received message with unexpected data:\n");
+			ipc_message_print(ipch, page);
+			return;
+		}
+		err = page;
+
+		frw->frw_done = true;
+		frw->frw_error = err->error;
 		return;
 	default:
 		printf("Received unexpected message:\n");

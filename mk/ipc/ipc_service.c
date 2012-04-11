@@ -33,7 +33,9 @@ struct ipc_service_context {
 	const char *ipcsc_name;
 	ipc_service_t *ipcsc_handler;
 	void *ipcsc_arg;
+	bool ipcsc_service_register;
 	ipc_port_t ipcsc_port;
+	ipc_port_flags_t ipcsc_port_flags;
 	struct task *ipcsc_task;
 	struct thread *ipcsc_thread;
 };
@@ -44,7 +46,8 @@ static void ipc_service_dump(const struct ipc_service_context *, const struct ip
 static void ipc_service_main(void *);
 
 int
-ipc_service(const char *name, ipc_port_t port, ipc_port_flags_t flags,
+ipc_service(const char *name, bool service_register, ipc_port_t port, ipc_port_flags_t flags,
+	    const struct ipc_service_context **ipcscp,
 	    ipc_service_t *handler, void *arg)
 {
 	struct ipc_service_context *ipcsc;
@@ -54,7 +57,9 @@ ipc_service(const char *name, ipc_port_t port, ipc_port_flags_t flags,
 	ipcsc->ipcsc_name = name;
 	ipcsc->ipcsc_handler = handler;
 	ipcsc->ipcsc_arg = arg;
+	ipcsc->ipcsc_service_register = service_register;
 	ipcsc->ipcsc_port = port;
+	ipcsc->ipcsc_port_flags = flags;
 	ipcsc->ipcsc_task = NULL;
 	ipcsc->ipcsc_thread = NULL;
 
@@ -86,7 +91,16 @@ ipc_service(const char *name, ipc_port_t port, ipc_port_flags_t flags,
 	thread_set_upcall(ipcsc->ipcsc_thread, ipc_service_main, ipcsc);
 	scheduler_thread_runnable(ipcsc->ipcsc_thread);
 
+	if (ipcscp != NULL)
+		*ipcscp = ipcsc;
+
 	return (0);
+}
+
+ipc_port_t
+ipc_service_port(const struct ipc_service_context *ipcsc)
+{
+	return (ipcsc->ipcsc_port);
 }
 
 #ifdef SERVICE_TRACING
@@ -110,8 +124,8 @@ ipc_service_main(void *arg)
 	int error;
 	void *p;
 
-	/* Register with the NS.  */
-	if (ipcsc->ipcsc_port >= IPC_PORT_UNRESERVED_START) {
+	/* Register with the NS if requested.  */
+	if (ipcsc->ipcsc_service_register) {
 		struct ns_register_request nsreq;
 
 		ipch.ipchdr_src = ipcsc->ipcsc_port;

@@ -17,19 +17,11 @@ struct ns_lookup_response {
 	ipc_port_t port;
 };
 
-struct ns_lookup_error {
-	int error;
-};
-
 #define	NS_MESSAGE_REGISTER	(0x00000002)
 
 struct ns_register_request {
 	char service_name[NS_SERVICE_NAME_LENGTH];
 	ipc_port_t port;
-};
-
-struct ns_register_error {
-	int error;
 };
 
 #if !defined(MK)

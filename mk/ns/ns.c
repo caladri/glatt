@@ -26,7 +26,7 @@ ns_handle_lookup(const struct ipc_header *reqh, void *p)
 {
 	const struct ns_lookup_request *req;
 	struct ns_lookup_response resp;
-	struct ns_lookup_error err;
+	struct ipc_error_record err;
 	struct ipc_header ipch;
 	ipc_port_t port;
 	int error;
@@ -67,7 +67,7 @@ static int
 ns_handle_register(const struct ipc_header *reqh, void *p)
 {
 	const struct ns_register_request *req;
-	struct ns_register_error err;
+	struct ipc_error_record err;
 	struct ipc_header ipch;
 	int error;
 
@@ -122,7 +122,7 @@ ns_startup(void *arg)
 
 	service_directory_init();
 
-	error = ipc_service("ns", IPC_PORT_NS, IPC_PORT_FLAG_PUBLIC,
+	error = ipc_service("ns", false, IPC_PORT_NS, IPC_PORT_FLAG_PUBLIC, NULL,
 			    ns_handler, NULL);
 	if (error != 0)
 		panic("%s: ipc_service failed: %m", __func__, error);

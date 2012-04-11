@@ -252,9 +252,8 @@ ns_message_print(const struct ipc_header *ipch, const void *rec)
 {
 	const struct ns_lookup_request *nslreq;
 	const struct ns_lookup_response *nslresp;
-	const struct ns_lookup_error *nslerr;
 	const struct ns_register_request *nsrreq;
-	const struct ns_register_error *nsrerr;
+	const struct ipc_error_record *err;
 
 #define	NS_GET_REC(val, ipch, rec, typestr)				\
 	do {								\
@@ -275,7 +274,7 @@ ns_message_print(const struct ipc_header *ipch, const void *rec)
 		printf("  NS %s.\n", (typestr));			\
 	} while (0)
 
-#define	NS_PRINT_ERROR(val)						\
+#define	IPC_ERROR_RECORD(val)						\
 	do {								\
 		if ((val)->error != 0)					\
 			printf("  Error: %m\n", (val)->error);		\
@@ -304,8 +303,8 @@ ns_message_print(const struct ipc_header *ipch, const void *rec)
 		NS_PRINT_PORT(nslresp);
 		break;
 	case IPC_MSG_ERROR(NS_MESSAGE_LOOKUP):
-		NS_GET_REC(nslerr, ipch, rec, "lookup error");
-		NS_PRINT_ERROR(nslerr);
+		NS_GET_REC(err, ipch, rec, "lookup error");
+		IPC_ERROR_RECORD(err);
 		break;
 	case NS_MESSAGE_REGISTER:
 		NS_GET_REC(nsrreq, ipch, rec, "register request");
@@ -316,8 +315,8 @@ ns_message_print(const struct ipc_header *ipch, const void *rec)
 		NS_GET_EMPTY_REC(ipch, "lookup response");
 		break;
 	case IPC_MSG_ERROR(NS_MESSAGE_REGISTER):
-		NS_GET_REC(nsrerr, ipch, rec, "register error");
-		NS_PRINT_ERROR(nsrerr);
+		NS_GET_REC(err, ipch, rec, "register error");
+		IPC_ERROR_RECORD(err);
 		break;
 	default:
 		printf("  Unhandled NS record:\n");

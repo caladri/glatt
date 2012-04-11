@@ -33,6 +33,16 @@ struct ipc_header {
 	ipc_cookie_t ipchdr_cookie;	/* Opaque to IPC code.  */
 };
 
+/*
+ * A conventional error response structure.
+ */
+struct ipc_error_record {
+	int error;
+};
+
+/*
+ * Message field encoding.
+ */
 #define	IPC_MSG_NONE		(0)	/* Requires no right to send, may not have data.  */
 
 /*

@@ -93,7 +93,7 @@ ns_lookup_response_handler(const struct ipc_dispatch *id, const struct ipc_dispa
 {
 	struct ns_response_wait *nrw = idh->idh_softc;
 	struct ns_lookup_response *nsresp;
-	struct ns_lookup_error *nserr;
+	struct ipc_error_record *err;
 
 	(void)id;
 
@@ -110,15 +110,15 @@ ns_lookup_response_handler(const struct ipc_dispatch *id, const struct ipc_dispa
 		nrw->nrw_port = nsresp->port;
 		return;
 	case IPC_MSG_ERROR(NS_MESSAGE_LOOKUP):
-		if (ipch->ipchdr_recsize != sizeof *nserr || ipch->ipchdr_reccnt != 1 || page == NULL) {
+		if (ipch->ipchdr_recsize != sizeof *err || ipch->ipchdr_reccnt != 1 || page == NULL) {
 			printf("Received message with unexpected data:\n");
 			ipc_message_print(ipch, page);
 			return;
 		}
-		nserr = page;
+		err = page;
 
 		nrw->nrw_done = true;
-		nrw->nrw_error = nserr->error;
+		nrw->nrw_error = err->error;
 		return;
 	default:
 		printf("Received unexpected message:\n");
@@ -131,13 +131,13 @@ static void
 ns_register_response_handler(const struct ipc_dispatch *id, const struct ipc_dispatch_handler *idh, const struct ipc_header *ipch, void *page)
 {
 	struct ns_response_wait *nrw = idh->idh_softc;
-	struct ns_register_error *nserr;
+	struct ipc_error_record *err;
 
 	(void)id;
 
 	switch (ipch->ipchdr_msg) {
 	case IPC_MSG_REPLY(NS_MESSAGE_REGISTER):
-		if (ipch->ipchdr_recsize != 0 || ipch->ipchdr_reccnt != 0 || page == NULL) {
+		if (ipch->ipchdr_recsize != 0 || ipch->ipchdr_reccnt != 0 || page != NULL) {
 			printf("Received message with unexpected data:\n");
 			ipc_message_print(ipch, page);
 			return;
@@ -146,15 +146,15 @@ ns_register_response_handler(const struct ipc_dispatch *id, const struct ipc_dis
 		nrw->nrw_done = true;
 		return;
 	case IPC_MSG_ERROR(NS_MESSAGE_REGISTER):
-		if (ipch->ipchdr_recsize != sizeof *nserr || ipch->ipchdr_reccnt != 1 || page == NULL) {
+		if (ipch->ipchdr_recsize != sizeof *err || ipch->ipchdr_reccnt != 1 || page == NULL) {
 			printf("Received message with unexpected data:\n");
 			ipc_message_print(ipch, page);
 			return;
 		}
-		nserr = page;
+		err = page;
 
 		nrw->nrw_done = true;
-		nrw->nrw_error = nserr->error;
+		nrw->nrw_error = err->error;
 		return;
 	default:
 		printf("Received unexpected message:\n");

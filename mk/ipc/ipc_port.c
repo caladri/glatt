@@ -440,6 +440,27 @@ ipc_port_send_page(struct ipc_header *ipch, struct vm_page *page)
 }
 
 int
+ipc_port_send_right(ipc_port_t src, ipc_port_t dst, ipc_port_right_t right)
+{
+	struct ipc_header ipch;
+	int error;
+
+	ipch.ipchdr_src = src;
+	ipch.ipchdr_dst = dst;
+	ipch.ipchdr_right = right;
+	ipch.ipchdr_msg = IPC_MSG_NONE;
+	ipch.ipchdr_recsize = 0;
+	ipch.ipchdr_reccnt = 0;
+	ipch.ipchdr_cookie = 0;
+
+	error = ipc_port_send_page(&ipch, NULL);
+	if (error != 0)
+		return (error);
+
+	return (0);
+}
+
+int
 ipc_port_wait(ipc_port_t port)
 {
 	struct ipc_port *ipcp;

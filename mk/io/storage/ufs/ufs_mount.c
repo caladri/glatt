@@ -298,6 +298,11 @@ ufs_lookup(struct ufs_mount *um, const char *path, uint32_t *inodep)
 		if (error != 0)
 			return (error);
 
+		if (*p == '\0') {
+			*inodep = inode;
+			return (0);
+		}
+
 		offset = 0;
 
 		q = strchr(p, '/');

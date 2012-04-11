@@ -32,6 +32,8 @@ main(void)
 	test_request(id, idh, server);
 
 	ipc_dispatch(id);
+
+	ipc_dispatch_free(id);
 }
 
 static void
@@ -53,8 +55,7 @@ test_response_handler(const struct ipc_dispatch *id, const struct ipc_dispatch_h
 	if (ipch->ipchdr_msg != IPC_MSG_REPLY(1) ||
 	    ipch->ipchdr_recsize != 0 || ipch->ipchdr_reccnt != 0 ||
 	    page != NULL) {
-		printf("Received unexpected message:\n");
-		ipc_message_print(ipch, page);
+		ipc_message_drop(ipch, page);
 		return;
 	}
 

@@ -213,6 +213,22 @@ ipc_message_print(const struct ipc_header *ipch, const void *page)
 	}
 }
 
+void
+ipc_message_drop(const struct ipc_header *ipch, void *page)
+{
+	int error;
+
+	if (debug) {
+		printf("Dropping unexpected message:\n");
+		ipc_message_print(ipch, page);
+	}
+	if (page != NULL) {
+		error = vm_page_free(page);
+		if (error != 0)
+			fatal("vm_page_free failed", error);
+	}
+}
+
 void *
 malloc(size_t len)
 {

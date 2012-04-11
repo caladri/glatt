@@ -56,6 +56,8 @@ open(ipc_port_t fs, const char *path, ipc_port_t *filep)
 		ipc_dispatch_wait(id);
 	}
 
+	ipc_dispatch_free(id);
+
 	*filep = fw.fw_port;
 	return (fw.fw_error);
 }
@@ -72,8 +74,7 @@ fs_open_file_response_handler(const struct ipc_dispatch *id, const struct ipc_di
 	switch (ipch->ipchdr_msg) {
 	case IPC_MSG_REPLY(FS_MSG_OPEN_FILE):
 		if (ipch->ipchdr_recsize != sizeof *fsresp || ipch->ipchdr_reccnt != 1 || page == NULL) {
-			printf("Received message with unexpected data:\n");
-			ipc_message_print(ipch, page);
+			ipc_message_drop(ipch, page);
 			return;
 		}
 		fsresp = page;
@@ -83,8 +84,7 @@ fs_open_file_response_handler(const struct ipc_dispatch *id, const struct ipc_di
 		return;
 	case IPC_MSG_ERROR(FS_MSG_OPEN_FILE):
 		if (ipch->ipchdr_recsize != sizeof *err || ipch->ipchdr_reccnt != 1 || page == NULL) {
-			printf("Received message with unexpected data:\n");
-			ipc_message_print(ipch, page);
+			ipc_message_drop(ipch, page);
 			return;
 		}
 		err = page;
@@ -93,8 +93,7 @@ fs_open_file_response_handler(const struct ipc_dispatch *id, const struct ipc_di
 		fw->fw_error = err->error;
 		return;
 	default:
-		printf("Received unexpected message:\n");
-		ipc_message_print(ipch, page);
+		ipc_message_drop(ipch, page);
 		return;
 	}
 }
@@ -135,6 +134,8 @@ read(ipc_port_t file, void **bufp, off_t off, size_t *lenp)
 		*lenp = frw.frw_length;
 	}
 
+	ipc_dispatch_free(id);
+
 	return (frw.frw_error);
 }
 
@@ -155,8 +156,7 @@ fs_file_read_response_handler(const struct ipc_dispatch *id, const struct ipc_di
 		return;
 	case IPC_MSG_ERROR(FS_FILE_MSG_READ):
 		if (ipch->ipchdr_recsize != sizeof *err || ipch->ipchdr_reccnt != 1 || page == NULL) {
-			printf("Received message with unexpected data:\n");
-			ipc_message_print(ipch, page);
+			ipc_message_drop(ipch, page);
 			return;
 		}
 		err = page;
@@ -165,8 +165,7 @@ fs_file_read_response_handler(const struct ipc_dispatch *id, const struct ipc_di
 		frw->frw_error = err->error;
 		return;
 	default:
-		printf("Received unexpected message:\n");
-		ipc_message_print(ipch, page);
+		ipc_message_drop(ipch, page);
 		return;
 	}
 }
@@ -195,6 +194,8 @@ close(ipc_port_t file)
 		ipc_dispatch_wait(id);
 	}
 
+	ipc_dispatch_free(id);
+
 	return (fw.fw_error);
 }
 
@@ -209,8 +210,7 @@ fs_file_close_response_handler(const struct ipc_dispatch *id, const struct ipc_d
 	switch (ipch->ipchdr_msg) {
 	case IPC_MSG_REPLY(FS_FILE_MSG_CLOSE):
 		if (ipch->ipchdr_recsize != 0 || ipch->ipchdr_reccnt != 0 || page != NULL) {
-			printf("Received message with unexpected data:\n");
-			ipc_message_print(ipch, page);
+			ipc_message_drop(ipch, page);
 			return;
 		}
 
@@ -219,8 +219,7 @@ fs_file_close_response_handler(const struct ipc_dispatch *id, const struct ipc_d
 		return;
 	case IPC_MSG_ERROR(FS_FILE_MSG_CLOSE):
 		if (ipch->ipchdr_recsize != sizeof *err || ipch->ipchdr_reccnt != 1 || page == NULL) {
-			printf("Received message with unexpected data:\n");
-			ipc_message_print(ipch, page);
+			ipc_message_drop(ipch, page);
 			return;
 		}
 		err = page;
@@ -229,8 +228,7 @@ fs_file_close_response_handler(const struct ipc_dispatch *id, const struct ipc_d
 		fw->fw_error = err->error;
 		return;
 	default:
-		printf("Received unexpected message:\n");
-		ipc_message_print(ipch, page);
+		ipc_message_drop(ipch, page);
 		return;
 	}
 }
@@ -259,6 +257,8 @@ exec(ipc_port_t file)
 		ipc_dispatch_wait(id);
 	}
 
+	ipc_dispatch_free(id);
+
 	return (fw.fw_error);
 }
 
@@ -273,8 +273,7 @@ fs_file_exec_response_handler(const struct ipc_dispatch *id, const struct ipc_di
 	switch (ipch->ipchdr_msg) {
 	case IPC_MSG_REPLY(FS_FILE_MSG_EXEC):
 		if (ipch->ipchdr_recsize != 0 || ipch->ipchdr_reccnt != 0 || page != NULL) {
-			printf("Received message with unexpected data:\n");
-			ipc_message_print(ipch, page);
+			ipc_message_drop(ipch, page);
 			return;
 		}
 
@@ -283,8 +282,7 @@ fs_file_exec_response_handler(const struct ipc_dispatch *id, const struct ipc_di
 		return;
 	case IPC_MSG_ERROR(FS_FILE_MSG_EXEC):
 		if (ipch->ipchdr_recsize != sizeof *err || ipch->ipchdr_reccnt != 1 || page == NULL) {
-			printf("Received message with unexpected data:\n");
-			ipc_message_print(ipch, page);
+			ipc_message_drop(ipch, page);
 			return;
 		}
 		err = page;
@@ -293,8 +291,7 @@ fs_file_exec_response_handler(const struct ipc_dispatch *id, const struct ipc_di
 		fw->fw_error = err->error;
 		return;
 	default:
-		printf("Received unexpected message:\n");
-		ipc_message_print(ipch, page);
+		ipc_message_drop(ipch, page);
 		return;
 	}
 }

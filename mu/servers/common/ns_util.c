@@ -45,9 +45,7 @@ ns_lookup(const char *service)
 		ipc_dispatch_wait(id);
 	}
 
-	/*
-	 * XXX Free port and ipc_dispatch.
-	 */
+	ipc_dispatch_free(id);
 
 	return (nrw.nrw_port);
 }
@@ -81,9 +79,7 @@ ns_register(const char *service, ipc_port_t port)
 		ipc_dispatch_wait(id);
 	}
 
-	/*
-	 * XXX Free port and ipc_dispatch.
-	 */
+	ipc_dispatch_free(id);
 
 	return (nrw.nrw_error);
 }
@@ -100,8 +96,7 @@ ns_lookup_response_handler(const struct ipc_dispatch *id, const struct ipc_dispa
 	switch (ipch->ipchdr_msg) {
 	case IPC_MSG_REPLY(NS_MESSAGE_LOOKUP):
 		if (ipch->ipchdr_recsize != sizeof *nsresp || ipch->ipchdr_reccnt != 1 || page == NULL) {
-			printf("Received message with unexpected data:\n");
-			ipc_message_print(ipch, page);
+			ipc_message_drop(ipch, page);
 			return;
 		}
 		nsresp = page;
@@ -111,8 +106,7 @@ ns_lookup_response_handler(const struct ipc_dispatch *id, const struct ipc_dispa
 		return;
 	case IPC_MSG_ERROR(NS_MESSAGE_LOOKUP):
 		if (ipch->ipchdr_recsize != sizeof *err || ipch->ipchdr_reccnt != 1 || page == NULL) {
-			printf("Received message with unexpected data:\n");
-			ipc_message_print(ipch, page);
+			ipc_message_drop(ipch, page);
 			return;
 		}
 		err = page;
@@ -121,8 +115,7 @@ ns_lookup_response_handler(const struct ipc_dispatch *id, const struct ipc_dispa
 		nrw->nrw_error = err->error;
 		return;
 	default:
-		printf("Received unexpected message:\n");
-		ipc_message_print(ipch, page);
+		ipc_message_drop(ipch, page);
 		return;
 	}
 }
@@ -138,8 +131,7 @@ ns_register_response_handler(const struct ipc_dispatch *id, const struct ipc_dis
 	switch (ipch->ipchdr_msg) {
 	case IPC_MSG_REPLY(NS_MESSAGE_REGISTER):
 		if (ipch->ipchdr_recsize != 0 || ipch->ipchdr_reccnt != 0 || page != NULL) {
-			printf("Received message with unexpected data:\n");
-			ipc_message_print(ipch, page);
+			ipc_message_drop(ipch, page);
 			return;
 		}
 
@@ -147,8 +139,7 @@ ns_register_response_handler(const struct ipc_dispatch *id, const struct ipc_dis
 		return;
 	case IPC_MSG_ERROR(NS_MESSAGE_REGISTER):
 		if (ipch->ipchdr_recsize != sizeof *err || ipch->ipchdr_reccnt != 1 || page == NULL) {
-			printf("Received message with unexpected data:\n");
-			ipc_message_print(ipch, page);
+			ipc_message_drop(ipch, page);
 			return;
 		}
 		err = page;
@@ -157,8 +148,7 @@ ns_register_response_handler(const struct ipc_dispatch *id, const struct ipc_dis
 		nrw->nrw_error = err->error;
 		return;
 	default:
-		printf("Received unexpected message:\n");
-		ipc_message_print(ipch, page);
+		ipc_message_drop(ipch, page);
 		return;
 	}
 }

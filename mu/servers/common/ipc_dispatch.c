@@ -35,6 +35,24 @@ ipc_dispatch_allocate(ipc_port_t port, ipc_port_flags_t flags)
 }
 
 void
+ipc_dispatch_free(struct ipc_dispatch *id)
+{
+	struct ipc_dispatch_handler *idh;
+
+	while ((idh = id->id_handlers) != NULL) {
+		id->id_handlers = idh->idh_next;
+		free(idh);
+	}
+
+	if (id->id_default != NULL)
+		free(id->id_default);
+
+	/* XXX free port.  */
+
+	free(id);
+}
+
+void
 ipc_dispatch(const struct ipc_dispatch *id)
 {
 	struct ipc_header ipch;
@@ -226,8 +244,5 @@ ipc_dispatch_message(const struct ipc_dispatch *id, const struct ipc_header *ipc
 		return;
 	}
 
-	/*
-	 * XXX
-	 * Need to free page.
-	 */
+	ipc_message_drop(ipch, page);
 }

@@ -20,6 +20,7 @@ struct ipc_dispatch_handler {
 };
 
 struct ipc_dispatch *ipc_dispatch_allocate(ipc_port_t, ipc_port_flags_t);
+void ipc_dispatch_free(struct ipc_dispatch *);
 void ipc_dispatch(const struct ipc_dispatch *);
 bool ipc_dispatch_poll(const struct ipc_dispatch *);
 const struct ipc_dispatch_handler *ipc_dispatch_register(struct ipc_dispatch *, ipc_dispatch_callback_t *, void *);

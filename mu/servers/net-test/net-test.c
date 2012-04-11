@@ -72,6 +72,8 @@ main(void)
 	ifc.ifc_transmit_handler = ipc_dispatch_register(ifc.ifc_dispatch, if_transmit_callback, &ifc);
 
 	ipc_dispatch(ifc.ifc_dispatch);
+
+	ipc_dispatch_free(ifc.ifc_dispatch);
 }
 
 static void
@@ -143,8 +145,7 @@ if_get_info_callback(const struct ipc_dispatch *id, const struct ipc_dispatch_ha
 
 	if (ipch->ipchdr_msg != IPC_MSG_REPLY(NETWORK_INTERFACE_MSG_GET_INFO) ||
 	    ipch->ipchdr_reccnt != 1 || ipch->ipchdr_recsize < sizeof rhdr || page == NULL) {
-		printf("Received unexpected message:\n");
-		ipc_message_print(ipch, page);
+		ipc_message_drop(ipch, page);
 		return;
 	}
 
@@ -171,15 +172,19 @@ if_receive_callback(const struct ipc_dispatch *id, const struct ipc_dispatch_han
 
 	switch (ipch->ipchdr_msg) {
 	case IPC_MSG_REPLY(NETWORK_INTERFACE_MSG_RECEIVE):
-		if (ipch->ipchdr_reccnt != 1 || ipch->ipchdr_recsize != sizeof *errorp || page == NULL)
+		if (ipch->ipchdr_reccnt != 1 || ipch->ipchdr_recsize != sizeof *errorp || page == NULL) {
+			ipc_message_drop(ipch, page);
 			return;
+		}
 		errorp = page;
 		if (*errorp != 0)
 			fatal("failed to register receive handler", *errorp);
 		return;
 	case NETWORK_INTERFACE_MSG_RECEIVE_PACKET:
-		if (ipch->ipchdr_reccnt != 1 || ipch->ipchdr_recsize == 0 || page == NULL)
+		if (ipch->ipchdr_reccnt != 1 || ipch->ipchdr_recsize == 0 || page == NULL) {
+			ipc_message_drop(ipch, page);
 			return;
+		}
 		break;
 	default:
 		printf("Received unexpected message:\n");
@@ -207,6 +212,5 @@ if_transmit_callback(const struct ipc_dispatch *id, const struct ipc_dispatch_ha
 	(void)id;
 	(void)idh;
 
-	printf("Received unexpected message:\n");
-	ipc_message_print(ipch, page);
+	ipc_message_drop(ipch, page);
 }

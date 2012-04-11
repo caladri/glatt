@@ -22,6 +22,7 @@ void hexdump(const void *, size_t);
 
 void ipc_header_print(const struct ipc_header *);
 void ipc_message_print(const struct ipc_header *, const void *);
+void ipc_message_drop(const struct ipc_header *, void *);
 
 void *malloc(size_t);
 void free(void *);

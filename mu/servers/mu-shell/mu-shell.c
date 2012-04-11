@@ -55,6 +55,8 @@ main(void)
 		hexdump(p, len);
 		vm_page_free(p);
 
-		/* XXX close */
+		error = close(file);
+		if (error != 0)
+			fatal("close failed", error);
 	}
 }

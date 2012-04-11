@@ -36,6 +36,7 @@ static ipc_service_t fs_ipc_handler;
 static int fs_ipc_open_file_handler(struct fs *, const struct ipc_header *, void *);
 static ipc_service_t fs_file_ipc_handler;
 static int fs_file_ipc_read_handler(struct fs_file *, const struct ipc_header *, void *);
+static int fs_file_ipc_close_handler(struct fs_file *, const struct ipc_header *, void *);
 #ifdef EXEC
 static int fs_file_ipc_exec_handler(struct fs_file *, const struct ipc_header *, void *);
 #endif
@@ -208,6 +209,8 @@ fs_file_ipc_handler(void *softc, struct ipc_header *ipch, void *p)
 	switch (ipch->ipchdr_msg) {
 	case FS_FILE_MSG_READ:
 		return (fs_file_ipc_read_handler(fsf, ipch, p));
+	case FS_FILE_MSG_CLOSE:
+		return (fs_file_ipc_close_handler(fsf, ipch, p));
 #ifdef EXEC
 	case FS_FILE_MSG_EXEC:
 		return (fs_file_ipc_exec_handler(fsf, ipch, p));
@@ -264,6 +267,45 @@ fs_file_ipc_read_handler(struct fs_file *fsf, const struct ipc_header *reqh, voi
 		 * of error handling.  Better to copy for now.
 		 */
 		error = ipc_port_send_data(&ipch, p, length);
+	}
+
+	if (error != 0)
+		return (error);
+	return (0);
+}
+
+static int
+fs_file_ipc_close_handler(struct fs_file *fsf, const struct ipc_header *reqh, void *p)
+{
+	fs_file_context_t fsfc = fsf->fsf_context;
+	struct fs *fs = fsf->fsf_fs;
+	struct ipc_error_record err;
+	struct ipc_header ipch;
+	int error;
+
+	if (reqh->ipchdr_recsize != 0 || reqh->ipchdr_reccnt != 0 || p != NULL)
+		return (ERROR_INVALID);
+
+	/*
+	 * XXX
+	 * Need to reference-count the service and only do this close once all
+	 * users are done, and drop the receive right, and have dropping the
+	 * receive right lead to garbage-collecting the port.
+	 */
+
+	error = fs->fs_ops->fs_file_close(fs->fs_context, fsfc);
+	if (error != 0) {
+		err.error = error;
+
+		ipch = IPC_HEADER_ERROR(reqh);
+		ipch.ipchdr_recsize = sizeof err;
+		ipch.ipchdr_reccnt = 1;
+
+		error = ipc_port_send_data(&ipch, &err, sizeof err);
+	} else {
+		ipch = IPC_HEADER_REPLY(reqh);
+
+		error = ipc_port_send_data(&ipch, NULL, 0);
 	}
 
 	if (error != 0)

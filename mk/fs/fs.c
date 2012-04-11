@@ -22,6 +22,7 @@ struct fs {
 
 static STAILQ_HEAD(, struct fs) fs_list = STAILQ_HEAD_INITIALIZER(fs_list);
 
+static int fs_exec(struct fs *, const char *);
 static ipc_service_t fs_ipc_handler;
 
 int
@@ -50,6 +51,28 @@ fs_register(const char *name, struct fs_ops *fso, fs_context_t fsc)
 }
 
 static int
+fs_exec(struct fs *fs, const char *path)
+{
+	fs_file_context_t fsfc;
+	int error, error2;
+
+	error = fs->fs_ops->fs_file_open(fs->fs_context, path, &fsfc);
+	if (error != 0)
+		return (error);
+
+	error = exec_task(path, fs->fs_ops->fs_file_read, fs->fs_context, fsfc);
+
+	error2 = fs->fs_ops->fs_file_close(fs->fs_context, fsfc);
+	if (error2 != 0)
+		panic("%s: file close failed: %m", __func__, error2);
+
+	if (error != 0)
+		return (error);
+
+	return (0);
+}
+
+static int
 fs_ipc_handler(void *softc, struct ipc_header *ipch, void *p)
 {
 	struct fs *fs = softc;
@@ -72,7 +95,6 @@ static void
 fs_autorun(void *arg)
 {
 	fs_directory_context_t fsdc;
-	fs_file_context_t fsfc;
 	struct fs *fs;
 	off_t offset;
 	size_t cnt;
@@ -127,21 +149,9 @@ fs_autorun(void *arg)
 
 			snprintf(fs_autorun_path, sizeof fs_autorun_path, "%s/%s", FS_AUTORUN_DIR, fs_autorun_entry.name);
 
-			error = fs->fs_ops->fs_file_open(fs->fs_context, fs_autorun_path, &fsfc);
+			error = fs_exec(fs, fs_autorun_path);
 			if (error != 0) {
-				kcprintf("%s: file open failed: %m\n", __func__, error);
-				continue;
-			}
-
-			error = exec_task(fs_autorun_path, fs->fs_ops->fs_file_read, fs->fs_context, fsfc);
-			if (error != 0) {
-				kcprintf("%s: exec_task failed: %m\n", __func__, error);
-				continue;
-			}
-
-			error = fs->fs_ops->fs_file_close(fs->fs_context, fsfc);
-			if (error != 0) {
-				kcprintf("%s: file close failed: %m\n", __func__, error);
+				kcprintf("%s: file exec failed: %m", __func__, error);
 				continue;
 			}
 		}

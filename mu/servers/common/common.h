@@ -26,4 +26,7 @@ void ipc_message_print(const struct ipc_header *, const void *);
 void *malloc(size_t);
 void free(void *);
 
+int open(ipc_port_t, const char *, ipc_port_t *);
+int exec(ipc_port_t);
+
 #endif /* !COMMON_H */

@@ -29,6 +29,9 @@ main(void)
 		if (error != 0)
 			fatal("getline failed", error);
 
+		if (buf[0] == '\0')
+			continue;
+
 		error = open(fs, buf, &file);
 		if (error != 0) {
 			printf("Could not open %s: %m\n", buf, error);

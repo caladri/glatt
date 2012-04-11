@@ -156,11 +156,19 @@ ufs_op_file_read(fs_context_t fsc, fs_file_context_t fsfc, void *buf, off_t off,
 	size_t len;
 	int error;
 
+	if ((uint64_t)off > fc->f_in.in_size)
+		return (ERROR_INVALID);
+
+	if ((uint64_t)off == fc->f_in.in_size) {
+		*lenp = 0;
+		return (0);
+	}
+
 	error = ufs_read_block(um, &fc->f_in, address, fc->f_block);
 	if (error != 0)
 		return (error);
 
-	len = MIN(*lenp, UFS_BSIZE(&um->um_sb) - offset);
+	len = MIN(MIN(*lenp, UFS_BSIZE(&um->um_sb) - offset), fc->f_in.in_size - off);
 	memcpy(buf, &fc->f_block[offset], len);
 	*lenp = len;
 

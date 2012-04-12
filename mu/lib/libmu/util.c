@@ -10,8 +10,6 @@
 
 static int debug = 0;
 
-static void ns_message_print(const struct ipc_header *, const void *);
-
 static void printf_putc(void *, char);
 static void printf_puts(void *, const char *, size_t);
 
@@ -168,6 +166,7 @@ ipc_header_print(const struct ipc_header *ipch)
 	printf("Cookie: 0x%jx\n", (uintmax_t)ipch->ipchdr_cookie);
 	printf("Record size: %ju\n", (uintmax_t)ipch->ipchdr_recsize);
 	printf("Record count: %ju\n", (uintmax_t)ipch->ipchdr_reccnt);
+	printf("Param: 0x%jx\n", (uintmax_t)ipch->ipchdr_param);
 }
 
 void
@@ -194,20 +193,8 @@ ipc_message_print(const struct ipc_header *ipch, const void *page)
 
 	bytes = page;
 	for (i = 0; i < ipch->ipchdr_reccnt; i++) {
-		if (debug) {
-			printf("Raw record %u:\n", i);
-			hexdump(bytes, ipch->ipchdr_recsize);
-		}
-
-		if (ipch->ipchdr_src == IPC_PORT_NS || ipch->ipchdr_dst == IPC_PORT_NS) {
-			printf("NS Record %u:\n", i);
-			ns_message_print(ipch, bytes);
-		} else {
-			if (!debug) { 
-				printf("Unknown record %u:\n", i);
-				hexdump(bytes, ipch->ipchdr_recsize);
-			}
-		}
+		printf("Record %u:\n", i);
+		hexdump(bytes, ipch->ipchdr_recsize);
 
 		bytes += ipch->ipchdr_recsize;
 	}
@@ -261,84 +248,6 @@ free(void *ptr)
 	error = vm_page_free(page);
 	if (error != 0)
 		fatal("page free failed", error);
-}
-
-static void
-ns_message_print(const struct ipc_header *ipch, const void *rec)
-{
-	const struct ns_lookup_request *nslreq;
-	const struct ns_lookup_response *nslresp;
-	const struct ns_register_request *nsrreq;
-	const struct ipc_error_record *err;
-
-#define	NS_GET_REC(val, ipch, rec, typestr)				\
-	do {								\
-		if ((ipch)->ipchdr_recsize != sizeof *(val)) {		\
-			printf("  NS %s record has wrong size.\n", (typestr));\
-			return;						\
-		}							\
-		printf("  NS %s.\n", (typestr));			\
-		(val) = (rec);						\
-	} while (0)
-
-#define	NS_GET_EMPTY_REC(ipch, typestr)					\
-	do {								\
-		if ((ipch)->ipchdr_recsize != 0) {			\
-			printf("  NS %s record has wrong size.\n", (typestr));\
-			return;						\
-		}							\
-		printf("  NS %s.\n", (typestr));			\
-	} while (0)
-
-#define	IPC_ERROR_RECORD(val)						\
-	do {								\
-		if ((val)->error != 0)					\
-			printf("  Error: %m\n", (val)->error);		\
-		else							\
-			printf("  No error.\n");			\
-	} while (0)
-
-#define	NS_PRINT_NAME(val)						\
-	do {								\
-		if (debug) {						\
-			printf("  Raw name:\n");			\
-			hexdump((val)->service_name, sizeof (val)->service_name);\
-		}							\
-		printf("  Name: %s\n", (val)->service_name);		\
-	} while (0)
-
-#define	NS_PRINT_PORT(val)	IPC_PORT_PRINT("  Port", (val)->port)
-
-	switch (ipch->ipchdr_msg) {
-	case NS_MESSAGE_LOOKUP:
-		NS_GET_REC(nslreq, ipch, rec, "lookup request");
-		NS_PRINT_NAME(nslreq);
-		break;
-	case IPC_MSG_REPLY(NS_MESSAGE_LOOKUP):
-		NS_GET_REC(nslresp, ipch, rec, "lookup response");
-		NS_PRINT_PORT(nslresp);
-		break;
-	case IPC_MSG_ERROR(NS_MESSAGE_LOOKUP):
-		NS_GET_REC(err, ipch, rec, "lookup error");
-		IPC_ERROR_RECORD(err);
-		break;
-	case NS_MESSAGE_REGISTER:
-		NS_GET_REC(nsrreq, ipch, rec, "register request");
-		NS_PRINT_NAME(nsrreq);
-		NS_PRINT_PORT(nsrreq);
-		break;
-	case IPC_MSG_REPLY(NS_MESSAGE_REGISTER):
-		NS_GET_EMPTY_REC(ipch, "lookup response");
-		break;
-	case IPC_MSG_ERROR(NS_MESSAGE_REGISTER):
-		NS_GET_REC(err, ipch, rec, "register error");
-		IPC_ERROR_RECORD(err);
-		break;
-	default:
-		printf("  Unhandled NS record:\n");
-		hexdump(rec, ipch->ipchdr_recsize);
-		break;
-	}
 }
 
 static void

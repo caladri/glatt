@@ -13,10 +13,6 @@ struct ns_lookup_request {
 	char service_name[NS_SERVICE_NAME_LENGTH];
 };
 
-struct ns_lookup_response {
-	ipc_port_t port;
-};
-
 #define	NS_MESSAGE_REGISTER	(0x00000002)
 
 struct ns_register_request {

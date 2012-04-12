@@ -66,31 +66,27 @@ static void
 fs_open_file_response_handler(const struct ipc_dispatch *id, const struct ipc_dispatch_handler *idh, const struct ipc_header *ipch, void *page)
 {
 	struct fs_wait *fw = idh->idh_softc;
-	struct fs_open_file_response *fsresp;
-	struct ipc_error_record *err;
 
 	(void)id;
 
 	switch (ipch->ipchdr_msg) {
 	case IPC_MSG_REPLY(FS_MSG_OPEN_FILE):
-		if (ipch->ipchdr_recsize != sizeof *fsresp || ipch->ipchdr_reccnt != 1 || page == NULL) {
+		if (ipch->ipchdr_recsize != 0 || ipch->ipchdr_reccnt != 0 || page != NULL) {
 			ipc_message_drop(ipch, page);
 			return;
 		}
-		fsresp = page;
 
 		fw->fw_done = true;
-		fw->fw_port = fsresp->file_port;
+		fw->fw_port = ipch->ipchdr_param;
 		return;
 	case IPC_MSG_ERROR(FS_MSG_OPEN_FILE):
-		if (ipch->ipchdr_recsize != sizeof *err || ipch->ipchdr_reccnt != 1 || page == NULL) {
+		if (ipch->ipchdr_recsize != 0 || ipch->ipchdr_reccnt != 0 || page != NULL) {
 			ipc_message_drop(ipch, page);
 			return;
 		}
-		err = page;
 
 		fw->fw_done = true;
-		fw->fw_error = err->error;
+		fw->fw_error = ipch->ipchdr_param;
 		return;
 	default:
 		ipc_message_drop(ipch, page);
@@ -143,7 +139,6 @@ static void
 fs_file_read_response_handler(const struct ipc_dispatch *id, const struct ipc_dispatch_handler *idh, const struct ipc_header *ipch, void *page)
 {
 	struct fs_read_wait *frw = idh->idh_softc;
-	struct ipc_error_record *err;
 
 	(void)id;
 
@@ -155,14 +150,13 @@ fs_file_read_response_handler(const struct ipc_dispatch *id, const struct ipc_di
 		frw->frw_length = ipch->ipchdr_recsize;
 		return;
 	case IPC_MSG_ERROR(FS_FILE_MSG_READ):
-		if (ipch->ipchdr_recsize != sizeof *err || ipch->ipchdr_reccnt != 1 || page == NULL) {
+		if (ipch->ipchdr_recsize != 0 || ipch->ipchdr_reccnt != 0 || page != NULL) {
 			ipc_message_drop(ipch, page);
 			return;
 		}
-		err = page;
 
 		frw->frw_done = true;
-		frw->frw_error = err->error;
+		frw->frw_error = ipch->ipchdr_param;
 		return;
 	default:
 		ipc_message_drop(ipch, page);
@@ -203,7 +197,6 @@ static void
 fs_file_close_response_handler(const struct ipc_dispatch *id, const struct ipc_dispatch_handler *idh, const struct ipc_header *ipch, void *page)
 {
 	struct fs_wait *fw = idh->idh_softc;
-	struct ipc_error_record *err;
 
 	(void)id;
 
@@ -218,14 +211,13 @@ fs_file_close_response_handler(const struct ipc_dispatch *id, const struct ipc_d
 		fw->fw_error = 0;
 		return;
 	case IPC_MSG_ERROR(FS_FILE_MSG_CLOSE):
-		if (ipch->ipchdr_recsize != sizeof *err || ipch->ipchdr_reccnt != 1 || page == NULL) {
+		if (ipch->ipchdr_recsize != 0 || ipch->ipchdr_reccnt != 0 || page != NULL) {
 			ipc_message_drop(ipch, page);
 			return;
 		}
-		err = page;
 
 		fw->fw_done = true;
-		fw->fw_error = err->error;
+		fw->fw_error = ipch->ipchdr_param;
 		return;
 	default:
 		ipc_message_drop(ipch, page);
@@ -266,7 +258,6 @@ static void
 fs_file_exec_response_handler(const struct ipc_dispatch *id, const struct ipc_dispatch_handler *idh, const struct ipc_header *ipch, void *page)
 {
 	struct fs_wait *fw = idh->idh_softc;
-	struct ipc_error_record *err;
 
 	(void)id;
 
@@ -281,14 +272,13 @@ fs_file_exec_response_handler(const struct ipc_dispatch *id, const struct ipc_di
 		fw->fw_error = 0;
 		return;
 	case IPC_MSG_ERROR(FS_FILE_MSG_EXEC):
-		if (ipch->ipchdr_recsize != sizeof *err || ipch->ipchdr_reccnt != 1 || page == NULL) {
+		if (ipch->ipchdr_recsize != 0 || ipch->ipchdr_reccnt != 0 || page != NULL) {
 			ipc_message_drop(ipch, page);
 			return;
 		}
-		err = page;
 
 		fw->fw_done = true;
-		fw->fw_error = err->error;
+		fw->fw_error = ipch->ipchdr_param;
 		return;
 	default:
 		ipc_message_drop(ipch, page);

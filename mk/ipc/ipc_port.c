@@ -452,6 +452,7 @@ ipc_port_send_right(ipc_port_t src, ipc_port_t dst, ipc_port_right_t right)
 	ipch.ipchdr_recsize = 0;
 	ipch.ipchdr_reccnt = 0;
 	ipch.ipchdr_cookie = 0;
+	ipch.ipchdr_param = 0;
 
 	error = ipc_port_send_page(&ipch, NULL);
 	if (error != 0)

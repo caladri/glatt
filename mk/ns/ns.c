@@ -25,8 +25,6 @@ static int
 ns_handle_lookup(const struct ipc_header *reqh, void *p)
 {
 	const struct ns_lookup_request *req;
-	struct ns_lookup_response resp;
-	struct ipc_error_record err;
 	struct ipc_header ipch;
 	ipc_port_t port;
 	int error;
@@ -38,23 +36,13 @@ ns_handle_lookup(const struct ipc_header *reqh, void *p)
 
 	error = service_directory_lookup(req->service_name, &port);
 	if (error != 0) {
-		err.error = error;
-
-		ipch = IPC_HEADER_ERROR(reqh);
-		ipch.ipchdr_recsize = sizeof err;
-		ipch.ipchdr_reccnt = 1;
-
-		error = ipc_port_send_data(&ipch, &err, sizeof err);
+		ipch = IPC_HEADER_ERROR(reqh, error);
 	} else {
-		resp.port = port;
-
 		ipch = IPC_HEADER_REPLY(reqh);
-		ipch.ipchdr_recsize = sizeof resp;
-		ipch.ipchdr_reccnt = 1;
-
-		error = ipc_port_send_data(&ipch, &resp, sizeof resp);
+		ipch.ipchdr_param = port;
 	}
 
+	error = ipc_port_send_data(&ipch, NULL, 0);
 	if (error != 0) {
 		kcprintf("%s: ipc_port_send failed: %m\n", __func__, error);
 		return (error);
@@ -67,7 +55,6 @@ static int
 ns_handle_register(const struct ipc_header *reqh, void *p)
 {
 	const struct ns_register_request *req;
-	struct ipc_error_record err;
 	struct ipc_header ipch;
 	int error;
 
@@ -78,21 +65,12 @@ ns_handle_register(const struct ipc_header *reqh, void *p)
 
 	error = service_directory_enter(req->service_name, req->port);
 	if (error != 0) {
-		err.error = error;
-
-		ipch = IPC_HEADER_ERROR(reqh);
-		ipch.ipchdr_recsize = sizeof err;
-		ipch.ipchdr_reccnt = 1;
-
-		error = ipc_port_send_data(&ipch, &err, sizeof err);
+		ipch = IPC_HEADER_ERROR(reqh, error);
 	} else {
 		ipch = IPC_HEADER_REPLY(reqh);
-		ipch.ipchdr_recsize = 0;
-		ipch.ipchdr_reccnt = 0;
-
-		error = ipc_port_send_data(&ipch, NULL, 0);
 	}
 
+	error = ipc_port_send_data(&ipch, NULL, 0);
 	if (error != 0) {
 		kcprintf("%s: ipc_port_send failed: %m\n", __func__, error);
 		return (error);

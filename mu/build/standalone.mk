@@ -32,7 +32,7 @@ ${_obj}: ${_src}
 LDFLAGS+=-L${GLATT_SRC}/mu/lib/libmu
 LDADD+=	-lmu
 
-${PROGRAM}: ${OBJS}
+${PROGRAM}: ${OBJS} ${GLATT_SRC}/mu/lib/libmu/libmu.a
 	${CC} ${CFLAGS} ${LDFLAGS} -o $@ $> ${LDADD}
 
 install:

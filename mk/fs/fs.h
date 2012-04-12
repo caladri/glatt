@@ -23,10 +23,6 @@ struct fs_open_file_request {
 	char path[FS_PATH_MAX];
 };
 
-struct fs_open_file_response {
-	ipc_port_t file_port;
-};
-
 /*
  * File IPC.
  */

@@ -10,6 +10,7 @@ typedef	uint16_t	ipc_msg_t;
 typedef	uint16_t	ipc_port_right_t;
 typedef	uint64_t	ipc_cookie_t;
 typedef	uint16_t	ipc_size_t;
+typedef	uint64_t	ipc_parameter_t;
 
 #define	IPC_PORT_UNKNOWN		(0)
 #define	IPC_PORT_NS			(1)
@@ -31,13 +32,7 @@ struct ipc_header {
 	ipc_size_t ipchdr_recsize;	/* Opaque to IPC code.  */
 	ipc_size_t ipchdr_reccnt;	/* Opaque to IPC code.  */
 	ipc_cookie_t ipchdr_cookie;	/* Opaque to IPC code.  */
-};
-
-/*
- * A conventional error response structure.
- */
-struct ipc_error_record {
-	int error;
+	ipc_parameter_t ipchdr_param;	/* Opaque to IPC code.  */
 };
 
 /*
@@ -68,9 +63,10 @@ struct ipc_error_record {
 	 	.ipchdr_cookie = (ipchdrp)->ipchdr_cookie,		\
 	 	.ipchdr_recsize = 0,					\
 	 	.ipchdr_reccnt = 0,					\
+	 	.ipchdr_param = 0,					\
 	})
 
-#define	IPC_HEADER_ERROR(ipchdrp)					\
+#define	IPC_HEADER_ERROR(ipchdrp, error)				\
 	((struct ipc_header) {						\
 		.ipchdr_src = (ipchdrp)->ipchdr_dst,			\
 		.ipchdr_dst = (ipchdrp)->ipchdr_src,			\
@@ -79,6 +75,7 @@ struct ipc_error_record {
 	 	.ipchdr_cookie = (ipchdrp)->ipchdr_cookie,		\
 	 	.ipchdr_recsize = 0,					\
 	 	.ipchdr_reccnt = 0,					\
+	 	.ipchdr_param = (error),				\
 	})
 
 #if !defined(MK)

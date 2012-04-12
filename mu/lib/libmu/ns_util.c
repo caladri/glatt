@@ -88,31 +88,27 @@ static void
 ns_lookup_response_handler(const struct ipc_dispatch *id, const struct ipc_dispatch_handler *idh, const struct ipc_header *ipch, void *page)
 {
 	struct ns_response_wait *nrw = idh->idh_softc;
-	struct ns_lookup_response *nsresp;
-	struct ipc_error_record *err;
 
 	(void)id;
 
 	switch (ipch->ipchdr_msg) {
 	case IPC_MSG_REPLY(NS_MESSAGE_LOOKUP):
-		if (ipch->ipchdr_recsize != sizeof *nsresp || ipch->ipchdr_reccnt != 1 || page == NULL) {
+		if (ipch->ipchdr_recsize != 0 || ipch->ipchdr_reccnt != 0 || page != NULL) {
 			ipc_message_drop(ipch, page);
 			return;
 		}
-		nsresp = page;
 
 		nrw->nrw_done = true;
-		nrw->nrw_port = nsresp->port;
+		nrw->nrw_port = ipch->ipchdr_param;
 		return;
 	case IPC_MSG_ERROR(NS_MESSAGE_LOOKUP):
-		if (ipch->ipchdr_recsize != sizeof *err || ipch->ipchdr_reccnt != 1 || page == NULL) {
+		if (ipch->ipchdr_recsize != 0 || ipch->ipchdr_reccnt != 0 || page != NULL) {
 			ipc_message_drop(ipch, page);
 			return;
 		}
-		err = page;
 
 		nrw->nrw_done = true;
-		nrw->nrw_error = err->error;
+		nrw->nrw_error = ipch->ipchdr_param;
 		return;
 	default:
 		ipc_message_drop(ipch, page);
@@ -124,7 +120,6 @@ static void
 ns_register_response_handler(const struct ipc_dispatch *id, const struct ipc_dispatch_handler *idh, const struct ipc_header *ipch, void *page)
 {
 	struct ns_response_wait *nrw = idh->idh_softc;
-	struct ipc_error_record *err;
 
 	(void)id;
 
@@ -138,14 +133,13 @@ ns_register_response_handler(const struct ipc_dispatch *id, const struct ipc_dis
 		nrw->nrw_done = true;
 		return;
 	case IPC_MSG_ERROR(NS_MESSAGE_REGISTER):
-		if (ipch->ipchdr_recsize != sizeof *err || ipch->ipchdr_reccnt != 1 || page == NULL) {
+		if (ipch->ipchdr_recsize != 0 || ipch->ipchdr_reccnt != 0 || page != NULL) {
 			ipc_message_drop(ipch, page);
 			return;
 		}
-		err = page;
 
 		nrw->nrw_done = true;
-		nrw->nrw_error = err->error;
+		nrw->nrw_error = ipch->ipchdr_param;
 		return;
 	default:
 		ipc_message_drop(ipch, page);

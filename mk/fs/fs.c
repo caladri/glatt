@@ -109,8 +109,6 @@ fs_ipc_open_file_handler(struct fs *fs, const struct ipc_header *reqh, void *p)
 {
 	const struct ipc_service_context *svc;
 	struct fs_open_file_request *req;
-	struct fs_open_file_response resp;
-	struct ipc_error_record err;
 	struct ipc_header ipch;
 	fs_file_context_t fsfc;
 	struct fs_file *fsf;
@@ -122,13 +120,9 @@ fs_ipc_open_file_handler(struct fs *fs, const struct ipc_header *reqh, void *p)
 
 	error = fs->fs_ops->fs_file_open(fs->fs_context, req->path, &fsfc);
 	if (error != 0) {
-		err.error = error;
+		ipch = IPC_HEADER_ERROR(reqh, error);
 
-		ipch = IPC_HEADER_ERROR(reqh);
-		ipch.ipchdr_recsize = sizeof err;
-		ipch.ipchdr_reccnt = 1;
-
-		error = ipc_port_send_data(&ipch, &err, sizeof err);
+		error = ipc_port_send_data(&ipch, NULL, 0);
 		if (error != 0)
 			return (error);
 		return (0);
@@ -155,44 +149,32 @@ fs_ipc_open_file_handler(struct fs *fs, const struct ipc_header *reqh, void *p)
 	error = ipc_service(req->path, false, IPC_PORT_UNKNOWN, IPC_PORT_FLAG_PUBLIC, &svc,
 			    fs_file_ipc_handler, fsf);
 	if (error != 0) {
-		err.error = error;
-
-		ipch = IPC_HEADER_ERROR(reqh);
-		ipch.ipchdr_recsize = sizeof err;
-		ipch.ipchdr_reccnt = 1;
+		ipch = IPC_HEADER_ERROR(reqh, error);
 
 		free(fsf);
 
 		error = fs->fs_ops->fs_file_close(fs->fs_context, fsfc);
 		if (error != 0)
 			panic("%s: file close failed: %m", __func__, error);
-
-		error = ipc_port_send_data(&ipch, &err, sizeof err);
-		if (error != 0)
-			return (error);
-		return (0);
-	}
-
-	resp.file_port = ipc_service_port(svc);
-
-	/*
-	 * XXX
-	 * See above about making the service PUBLIC.
-	 */
+	} else {
+		/*
+		 * XXX
+		 * See above about making the service PUBLIC.
+		 */
 #if 0
-	error = ipc_port_send_right(resp.file_port, reqh->ipchdr_src, IPC_PORT_RIGHT_SEND);
-	if (error != 0) {
-		kcprintf("%s: ipc_port_send_right failed: %m\n", __func__, error);
-		/* XXX Shut down the service?  */
-		return (error);
-	}
+		error = ipc_port_send_right(resp.file_port, reqh->ipchdr_src, IPC_PORT_RIGHT_SEND);
+		if (error != 0) {
+			kcprintf("%s: ipc_port_send_right failed: %m\n", __func__, error);
+			/* XXX Shut down the service?  */
+			return (error);
+		}
 #endif
 
-	ipch = IPC_HEADER_REPLY(reqh);
-	ipch.ipchdr_recsize = sizeof resp;
-	ipch.ipchdr_reccnt = 1;
+		ipch = IPC_HEADER_REPLY(reqh);
+		ipch.ipchdr_param = ipc_service_port(svc);
+	}
 
-	error = ipc_port_send_data(&ipch, &resp, sizeof resp);
+	error = ipc_port_send_data(&ipch, NULL, 0);
 	if (error != 0) {
 		kcprintf("%s: ipc_port_send failed: %m\n", __func__, error);
 		return (error);
@@ -227,7 +209,6 @@ fs_file_ipc_read_handler(struct fs_file *fsf, const struct ipc_header *reqh, voi
 	fs_file_context_t fsfc = fsf->fsf_context;
 	struct fs *fs = fsf->fsf_fs;
 	struct fs_file_read_request *req;
-	struct ipc_error_record err;
 	struct ipc_header ipch;
 	size_t length;
 	int error;
@@ -245,13 +226,9 @@ fs_file_ipc_read_handler(struct fs_file *fsf, const struct ipc_header *reqh, voi
 	length = req->length > PAGE_SIZE ? PAGE_SIZE : req->length;
 	error = fs->fs_ops->fs_file_read(fs->fs_context, fsfc, p, req->offset, &length);
 	if (error != 0) {
-		err.error = error;
+		ipch = IPC_HEADER_ERROR(reqh, error);
 
-		ipch = IPC_HEADER_ERROR(reqh);
-		ipch.ipchdr_recsize = sizeof err;
-		ipch.ipchdr_reccnt = 1;
-
-		error = ipc_port_send_data(&ipch, &err, sizeof err);
+		error = ipc_port_send_data(&ipch, NULL, 0);
 	} else {
 		ipch = IPC_HEADER_REPLY(reqh);
 		ipch.ipchdr_recsize = length;
@@ -279,7 +256,6 @@ fs_file_ipc_close_handler(struct fs_file *fsf, const struct ipc_header *reqh, vo
 {
 	fs_file_context_t fsfc = fsf->fsf_context;
 	struct fs *fs = fsf->fsf_fs;
-	struct ipc_error_record err;
 	struct ipc_header ipch;
 	int error;
 
@@ -295,19 +271,12 @@ fs_file_ipc_close_handler(struct fs_file *fsf, const struct ipc_header *reqh, vo
 
 	error = fs->fs_ops->fs_file_close(fs->fs_context, fsfc);
 	if (error != 0) {
-		err.error = error;
-
-		ipch = IPC_HEADER_ERROR(reqh);
-		ipch.ipchdr_recsize = sizeof err;
-		ipch.ipchdr_reccnt = 1;
-
-		error = ipc_port_send_data(&ipch, &err, sizeof err);
+		ipch = IPC_HEADER_ERROR(reqh, error);
 	} else {
 		ipch = IPC_HEADER_REPLY(reqh);
-
-		error = ipc_port_send_data(&ipch, NULL, 0);
 	}
 
+	error = ipc_port_send_data(&ipch, NULL, 0);
 	if (error != 0)
 		return (error);
 	return (0);
@@ -319,7 +288,6 @@ fs_file_ipc_exec_handler(struct fs_file *fsf, const struct ipc_header *reqh, voi
 {
 	fs_file_context_t fsfc = fsf->fsf_context;
 	struct fs *fs = fsf->fsf_fs;
-	struct ipc_error_record err;
 	struct ipc_header ipch;
 	int error;
 
@@ -328,19 +296,12 @@ fs_file_ipc_exec_handler(struct fs_file *fsf, const struct ipc_header *reqh, voi
 
 	error = exec_task(fsf->fsf_path, fs->fs_ops->fs_file_read, fs->fs_context, fsfc);
 	if (error != 0) {
-		err.error = error;
-
-		ipch = IPC_HEADER_ERROR(reqh);
-		ipch.ipchdr_recsize = sizeof err;
-		ipch.ipchdr_reccnt = 1;
-
-		error = ipc_port_send_data(&ipch, &err, sizeof err);
+		ipch = IPC_HEADER_ERROR(reqh, error);
 	} else {
 		ipch = IPC_HEADER_REPLY(reqh);
-
-		error = ipc_port_send_data(&ipch, NULL, 0);
 	}
 
+	error = ipc_port_send_data(&ipch, NULL, 0);
 	if (error != 0)
 		return (error);
 	return (0);

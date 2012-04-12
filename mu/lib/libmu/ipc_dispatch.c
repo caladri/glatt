@@ -6,7 +6,7 @@
 #include <ns/ns.h>
 #include <vm/vm_page.h>
 
-#include <common/common.h>
+#include <libmu/common.h>
 
 static void ipc_dispatch_message(const struct ipc_dispatch *, const struct ipc_header *, void *);
 

@@ -7,7 +7,7 @@
 #include <ns/ns.h>
 #include <vm/vm_page.h>
 
-#include <common/common.h>
+#include <libmu/common.h>
 
 struct fs_wait {
 	bool fw_done;

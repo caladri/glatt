@@ -6,7 +6,7 @@
 #include <ns/ns.h>
 #include <vm/vm_page.h>
 
-#include <common/common.h>
+#include <libmu/common.h>
 
 static void test_request_handler(const struct ipc_dispatch *id, const struct ipc_dispatch_handler *, const struct ipc_header *, void *);
 

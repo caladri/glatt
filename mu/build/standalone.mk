@@ -1,12 +1,12 @@
+.if defined(TOOLCHAIN_TARGET)
 CC=	${TOOLCHAIN_TARGET}-gcc
+.endif
 
 CFLAGS+=-W -Wall -Werror
 CFLAGS+=-I${GLATT_SRC}/mk
 CFLAGS+=-I${GLATT_SRC}/mk/cpu/mips
 CFLAGS+=-I${GLATT_SRC}/mu
-CFLAGS+=-I${GLATT_SRC}/mu/servers
-
-LDFLAGS+=-static -nostdlib
+CFLAGS+=-I${GLATT_SRC}/mu/lib
 
 CFLAGS+=-W -Wall -Wno-main
 CFLAGS+=-Werror
@@ -15,15 +15,9 @@ CFLAGS+=-mabi=64
 LDFLAGS+=-Wl,--oformat=elf64-bigmips
 
 CFLAGS+=-fno-builtin
+LDFLAGS+=-nostdlib
 
-SRCS+=	${GLATT_SRC}/mu/servers/common/file_io.c
-SRCS+=	${GLATT_SRC}/mu/servers/common/ipc_dispatch.c
-SRCS+=	${GLATT_SRC}/mu/servers/common/ns_util.c
-SRCS+=	${GLATT_SRC}/mu/servers/common/syscalls.S
-SRCS+=	${GLATT_SRC}/mu/servers/common/util.c
-SRCS+=	${GLATT_SRC}/mk/core/core_printf.c
-
-all: ${SERVER}
+all: ${PROGRAM}
 
 .for _src in ${SRCS}
 _obj:=	${_src:T:R:S/$/.o/}
@@ -35,17 +29,24 @@ OBJS:=	${_obj}
 ${_obj}: ${_src}
 .endfor
 
-${SERVER}: ${OBJS}
-	${CC} ${CFLAGS} ${LDFLAGS} -o $@ $>
+LDFLAGS+=-L${GLATT_SRC}/mu/lib/libmu
+LDADD+=	-lmu
+
+${PROGRAM}: ${OBJS}
+	${CC} ${CFLAGS} ${LDFLAGS} -o $@ $> ${LDADD}
 
 install:
-	cp ${SERVER} ${DESTDIR}/mu/servers/${SERVER}
+	cp ${PROGRAM} ${DESTDIR}${BINDIR}/${PROGRAM}
 
 clean:
-	rm -f ${SERVER} ${OBJS}
+	rm -f ${PROGRAM} ${OBJS}
 
 .c.o:
 	${CC} ${CPPFLAGS} ${CFLAGS} -c -o $@ $<
 
 .S.o:
 	${CC} ${CPPFLAGS} ${CFLAGS} -DASSEMBLER -c -o $@ $<
+
+.if exists(${.CURDIR}/../Makefile.inc)
+.include "${.CURDIR}/../Makefile.inc"
+.endif

@@ -6,7 +6,7 @@
 #include <ns/ns.h>
 #include <vm/vm_page.h>
 
-#include <common/common.h>
+#include <libmu/common.h>
 
 static int debug = 0;
 

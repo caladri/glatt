@@ -1,4 +1,4 @@
-SERVER=	test-client
+PROGRAM=test-client
 SRCS+=	test-client.c
 
-.include "${GLATT_SRC}/mu/servers/common/server.mk"
+.include "${GLATT_SRC}/mu/build/standalone.mk"

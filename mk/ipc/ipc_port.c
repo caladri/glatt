@@ -11,6 +11,7 @@
 #include <core/thread.h>
 #include <ipc/ipc.h>
 #include <ipc/port.h>
+#include <ipc/token.h>
 #include <vm/vm.h>
 #include <vm/vm_index.h>
 #include <vm/vm_page.h>
@@ -46,7 +47,7 @@ static ipc_port_t ipc_port_next		= IPC_PORT_UNRESERVED_START;
 
 static struct ipc_port *ipc_port_alloc(void);
 static struct ipc_port *ipc_port_lookup(ipc_port_t);
-static int ipc_port_register(struct task *, struct ipc_port *, ipc_port_t, ipc_port_flags_t);
+static int ipc_port_register(struct ipc_token **, struct ipc_port *, ipc_port_t, ipc_port_flags_t);
 
 void
 ipc_port_init(void)
@@ -63,7 +64,7 @@ ipc_port_init(void)
 }
 
 int
-ipc_port_allocate(struct task *task, ipc_port_t *portp, ipc_port_flags_t flags)
+ipc_port_allocate(struct ipc_token **tokenp, ipc_port_t *portp, ipc_port_flags_t flags)
 {
 	struct ipc_port *ipcp, *old;
 	ipc_port_t port;
@@ -88,7 +89,7 @@ ipc_port_allocate(struct task *task, ipc_port_t *portp, ipc_port_flags_t flags)
 		}
 
 		IPC_PORT_LOCK(ipcp);
-		error = ipc_port_register(task, ipcp, port, flags);
+		error = ipc_port_register(tokenp, ipcp, port, flags);
 		if (error != 0)
 			panic("%s: ipc_port_register failed: %m", __func__,
 			      error);
@@ -103,7 +104,7 @@ ipc_port_allocate(struct task *task, ipc_port_t *portp, ipc_port_flags_t flags)
 }
 
 int
-ipc_port_allocate_reserved(struct task *task, ipc_port_t port, ipc_port_flags_t flags)
+ipc_port_allocate_reserved(struct ipc_token **tokenp, ipc_port_t port, ipc_port_flags_t flags)
 {
 	struct ipc_port *ipcp, *old;
 	int error;
@@ -127,7 +128,7 @@ ipc_port_allocate_reserved(struct task *task, ipc_port_t port, ipc_port_flags_t 
 	}
 
 	IPC_PORT_LOCK(ipcp);
-	error = ipc_port_register(task, ipcp, port, flags);
+	error = ipc_port_register(tokenp, ipcp, port, flags);
 	if (error != 0)
 		panic("%s: ipc_port_register failed: %m", __func__, error);
 	IPC_PORT_UNLOCK(ipcp);
@@ -252,6 +253,35 @@ ipc_port_receive(ipc_port_t port, struct ipc_header *ipch, void **vpagep)
 
 	free(ipcmsg);
 
+	return (0);
+}
+
+int
+ipc_port_right_grant(struct task *task, struct ipc_token *token, ipc_port_right_t right)
+{
+	struct ipc_port *ipcp;
+	ipc_port_t port;
+	int error;
+
+	port = ipc_token_port(token);
+	error = ipc_token_consume(token, right);
+	if (error != 0)
+		return (error);
+
+	IPC_PORTS_LOCK();
+	ipcp = ipc_port_lookup(port);
+	if (ipcp == NULL) {
+		IPC_PORTS_UNLOCK();
+		return (ERROR_NOT_FOUND);
+	}
+	IPC_PORTS_UNLOCK();
+
+	error = ipc_task_insert_port_right(task, right, port);
+	if (error != 0) {
+		IPC_PORT_UNLOCK(ipcp);
+		return (error);
+	}
+	IPC_PORT_UNLOCK(ipcp);
 	return (0);
 }
 
@@ -439,6 +469,7 @@ ipc_port_send_page(struct ipc_header *ipch, struct vm_page *page)
 	return (0);
 }
 
+#if 0
 int
 ipc_port_send_right(ipc_port_t src, ipc_port_t dst, ipc_port_right_t right)
 {
@@ -460,6 +491,7 @@ ipc_port_send_right(ipc_port_t src, ipc_port_t dst, ipc_port_right_t right)
 
 	return (0);
 }
+#endif
 
 int
 ipc_port_wait(ipc_port_t port)
@@ -528,7 +560,7 @@ ipc_port_lookup(ipc_port_t port)
 }
 
 static int
-ipc_port_register(struct task *task, struct ipc_port *ipcp, ipc_port_t port, ipc_port_flags_t flags)
+ipc_port_register(struct ipc_token **tokenp, struct ipc_port *ipcp, ipc_port_t port, ipc_port_flags_t flags)
 {
 	struct ipc_port *old, *iter;
 	int error;
@@ -549,12 +581,13 @@ ipc_port_register(struct task *task, struct ipc_port *ipcp, ipc_port_t port, ipc
 		     (ipcp->ipcp_port < iter->ipcp_port));
 
 	/*
-	 * Insert a receive right.
+	 * Create a receive right token.
 	 */
-	error = ipc_task_insert_port_right(task, IPC_PORT_RIGHT_RECEIVE,
-					   ipcp->ipcp_port);
+	ASSERT(tokenp != NULL, "Must be able to yield a token.");
+	error = ipc_token_allocate(tokenp, ipcp->ipcp_port,
+				   IPC_PORT_RIGHT_RECEIVE);
 	if (error != 0)
-		panic("%s: ipc_task_insert_port_right failed: %m", __func__,
+		panic("%s: ipc_token_allocate failed: %m", __func__,
 		      error);
 
 	ipcp->ipcp_flags &= ~IPC_PORT_FLAG_NEW;

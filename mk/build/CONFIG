@@ -79,6 +79,7 @@ ipc		ipc/ipc_port.c
 ipc		ipc/ipc_service.c
 ipc		ipc/ipc_system.c
 ipc		ipc/ipc_task.c
+ipc		ipc/ipc_token.c
 
 ns		ns/ns.c
 ns		ns/service_directory.c

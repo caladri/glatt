@@ -107,7 +107,7 @@ fs_ipc_handler(void *softc, struct ipc_header *ipch, void *p)
 static int
 fs_ipc_open_file_handler(struct fs *fs, const struct ipc_header *reqh, void *p)
 {
-	const struct ipc_service_context *svc;
+	struct ipc_service_context *svc;
 	struct fs_open_file_request *req;
 	struct ipc_header ipch;
 	fs_file_context_t fsfc;
@@ -169,6 +169,7 @@ fs_ipc_open_file_handler(struct fs *fs, const struct ipc_header *reqh, void *p)
 			return (error);
 		}
 #endif
+		ipc_service_start(svc);
 
 		ipch = IPC_HEADER_REPLY(reqh);
 		ipch.ipchdr_param = ipc_service_port(svc);

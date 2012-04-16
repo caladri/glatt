@@ -13,6 +13,7 @@
 #include <ipc/ipc.h>
 #include <ipc/port.h>
 #include <ipc/service.h>
+#include <ipc/token.h>
 #include <ns/ns.h>
 
 #if defined(VERBOSE) && 0
@@ -38,6 +39,7 @@ struct ipc_service_context {
 	ipc_port_flags_t ipcsc_port_flags;
 	struct task *ipcsc_task;
 	struct thread *ipcsc_thread;
+	struct ipc_token *ipcsc_token;
 };
 
 #ifdef SERVICE_TRACING
@@ -47,10 +49,11 @@ static void ipc_service_main(void *);
 
 int
 ipc_service(const char *name, bool service_register, ipc_port_t port, ipc_port_flags_t flags,
-	    const struct ipc_service_context **ipcscp,
+	    struct ipc_service_context **ipcscp,
 	    ipc_service_t *handler, void *arg)
 {
 	struct ipc_service_context *ipcsc;
+	struct ipc_token *token;
 	int error;
 
 	ipcsc = malloc(sizeof *ipcsc);
@@ -74,13 +77,13 @@ ipc_service(const char *name, bool service_register, ipc_port_t port, ipc_port_f
 
 	switch (ipcsc->ipcsc_port) {
 	case IPC_PORT_UNKNOWN:
-		error = ipc_port_allocate(ipcsc->ipcsc_task,
+		error = ipc_port_allocate(&ipcsc->ipcsc_token,
 					  &ipcsc->ipcsc_port, flags);
 		if (error != 0)
 			panic("%s: ipc_allocate failed: %m", __func__, error);
 		break;
 	default:
-		error = ipc_port_allocate_reserved(ipcsc->ipcsc_task,
+		error = ipc_port_allocate_reserved(&ipcsc->ipcsc_token,
 						   ipcsc->ipcsc_port, flags);
 		if (error != 0)
 			panic("%s: ipc_allocate_reserved failed: %m", __func__,
@@ -88,19 +91,56 @@ ipc_service(const char *name, bool service_register, ipc_port_t port, ipc_port_f
 		break;
 	}
 
-	thread_set_upcall(ipcsc->ipcsc_thread, ipc_service_main, ipcsc);
-	scheduler_thread_runnable(ipcsc->ipcsc_thread);
+	/*
+	 * Grant a receive right to our task.
+	 */
+	error = ipc_token_allocate_child(ipcsc->ipcsc_token, &token,
+					 IPC_PORT_RIGHT_RECEIVE);
+	if (error != 0)
+		panic("%s: ipc_token_allocate_child failed: %m", __func__, error);
 
-	if (ipcscp != NULL)
+	error = ipc_port_right_grant(ipcsc->ipcsc_task, token, IPC_PORT_RIGHT_RECEIVE);
+	if (error != 0)
+		panic("%s: ipc_port_right_grant failed: %m", __func__, error);
+
+	/*
+	 * Don't allow the granting of receive rights with our token anymore.
+	 */
+	error = ipc_token_restrict(ipcsc->ipcsc_token, IPC_PORT_RIGHT_SEND);
+	if (error != 0)
+		panic("%s: ipc_token_restrict failed: %m", __func__, error);
+
+	thread_set_upcall(ipcsc->ipcsc_thread, ipc_service_main, ipcsc);
+
+	if (ipcscp != NULL) {
 		*ipcscp = ipcsc;
+	} else {
+		/*
+		 * The caller has not asked for our context, so they
+		 * have no way to start us.  Do it for ourselves.
+		 */
+		ipc_service_start(ipcsc);
+	}
 
 	return (0);
 }
 
 ipc_port_t
-ipc_service_port(const struct ipc_service_context *ipcsc)
+ipc_service_port(struct ipc_service_context *ipcsc)
 {
 	return (ipcsc->ipcsc_port);
+}
+
+void
+ipc_service_start(struct ipc_service_context *ipcsc)
+{
+	/*
+	 * One the task starts, it handles rights.
+	 */
+	ipc_token_free(ipcsc->ipcsc_token);
+	ipcsc->ipcsc_token = NULL;
+
+	scheduler_thread_runnable(ipcsc->ipcsc_thread);
 }
 
 #ifdef SERVICE_TRACING

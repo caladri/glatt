@@ -4,6 +4,7 @@
 struct ipc_data;
 struct ipc_header;
 #ifdef MK
+struct ipc_token;
 struct task;
 struct vm_page;
 #endif
@@ -17,17 +18,21 @@ typedef	unsigned	ipc_port_flags_t;
 #ifdef MK
 void ipc_port_init(void);
 
-int ipc_port_allocate(struct task *, ipc_port_t *, ipc_port_flags_t) __non_null(1, 2) __check_result;
-int ipc_port_allocate_reserved(struct task *, ipc_port_t, ipc_port_flags_t) __non_null(1) __check_result;
+int ipc_port_allocate(struct ipc_token **, ipc_port_t *, ipc_port_flags_t) __non_null(1, 2) __check_result;
+int ipc_port_allocate_reserved(struct ipc_token **, ipc_port_t, ipc_port_flags_t) __non_null(1) __check_result;
 #else
 int ipc_port_allocate(ipc_port_t *, ipc_port_flags_t);
 #endif
 int ipc_port_receive(ipc_port_t, struct ipc_header *, void **) __non_null(2) __check_result;
+#ifdef MK
+/* XXX If the token is NULL use the calling task's rights?  */
+int ipc_port_right_grant(struct task *, struct ipc_token *, ipc_port_right_t) __non_null(1) __check_result;
+int ipc_port_right_send(ipc_port_t, struct ipc_token *, ipc_port_right_t) __check_result;
+#endif
 int ipc_port_send(struct ipc_header *, void *) __non_null(1) __check_result;
 int ipc_port_send_data(struct ipc_header *, const void *, size_t) __non_null(1) __check_result;
 #ifdef MK
 int ipc_port_send_page(struct ipc_header *, struct vm_page *) __non_null(1) __check_result;
-int ipc_port_send_right(ipc_port_t, ipc_port_t, ipc_port_right_t) __check_result;
 #endif
 int ipc_port_wait(ipc_port_t) __check_result;
 

@@ -286,6 +286,50 @@ ipc_port_right_grant(struct task *task, struct ipc_token *token, ipc_port_right_
 }
 
 int
+ipc_port_right_send(ipc_port_t dst, struct ipc_token *token, ipc_port_right_t right)
+{
+	struct ipc_message *ipcmsg;
+	struct ipc_port *ipcp;
+	ipc_port_t src;
+	int error;
+
+	/*
+	 * XXX
+	 * Verify src exists?  Not necessary if tokens refcount ports.
+	 */
+
+	src = ipc_token_port(token);
+	error = ipc_token_consume(token, right);
+	if (error != 0)
+		return (error);
+
+	IPC_PORTS_LOCK();
+	ipcp = ipc_port_lookup(dst);
+	if (ipcp == NULL) {
+		IPC_PORTS_UNLOCK();
+		return (ERROR_NOT_FOUND);
+	}
+
+	ipcmsg = malloc(sizeof *ipcmsg);
+	ipcmsg->ipcmsg_header.ipchdr_src = src;
+	ipcmsg->ipcmsg_header.ipchdr_dst = dst;
+	ipcmsg->ipcmsg_header.ipchdr_right = right;
+	ipcmsg->ipcmsg_header.ipchdr_msg = IPC_MSG_NONE;
+	ipcmsg->ipcmsg_header.ipchdr_recsize = 0;
+	ipcmsg->ipcmsg_header.ipchdr_reccnt = 0;
+	ipcmsg->ipcmsg_header.ipchdr_cookie = 0;
+	ipcmsg->ipcmsg_header.ipchdr_param = 0;
+	ipcmsg->ipcmsg_page = NULL;
+
+	TAILQ_INSERT_TAIL(&ipcp->ipcp_msgs, ipcmsg, ipcmsg_link);
+	cv_signal(ipcp->ipcp_cv);
+	IPC_PORT_UNLOCK(ipcp);
+	IPC_PORTS_UNLOCK();
+
+	return (0);
+}
+
+int
 ipc_port_send(struct ipc_header *ipch, void *vpage)
 {
 	struct vm_page *page;
@@ -468,30 +512,6 @@ ipc_port_send_page(struct ipc_header *ipch, struct vm_page *page)
 
 	return (0);
 }
-
-#if 0
-int
-ipc_port_send_right(ipc_port_t src, ipc_port_t dst, ipc_port_right_t right)
-{
-	struct ipc_header ipch;
-	int error;
-
-	ipch.ipchdr_src = src;
-	ipch.ipchdr_dst = dst;
-	ipch.ipchdr_right = right;
-	ipch.ipchdr_msg = IPC_MSG_NONE;
-	ipch.ipchdr_recsize = 0;
-	ipch.ipchdr_reccnt = 0;
-	ipch.ipchdr_cookie = 0;
-	ipch.ipchdr_param = 0;
-
-	error = ipc_port_send_page(&ipch, NULL);
-	if (error != 0)
-		return (error);
-
-	return (0);
-}
-#endif
 
 int
 ipc_port_wait(ipc_port_t port)

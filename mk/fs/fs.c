@@ -54,7 +54,7 @@ fs_register(const char *name, struct fs_ops *fso, fs_context_t fsc)
 	fs->fs_ops = fso;
 	fs->fs_context = fsc;
 
-	error = ipc_service(name, true, IPC_PORT_UNKNOWN, IPC_PORT_FLAG_PUBLIC, NULL,
+	error = ipc_service(name, IPC_PORT_UNKNOWN, IPC_PORT_FLAG_PUBLIC, NULL,
 			    fs_ipc_handler, fs);
 	if (error != 0) {
 		free(fs);
@@ -137,16 +137,13 @@ fs_ipc_open_file_handler(struct fs *fs, const struct ipc_header *reqh, void *p)
 
 	/*
 	 * XXX
-	 * If this is PUBLIC then we can only open a file once, because the
-	 * name is registered with NS.  Making it not public means we have a
-	 * rights management issue.  Making it public but adding a flag to not
-	 * register it with NS has confusing semantics, too.
+	 * [... Previous comments resolved ...]
 	 *
 	 * Add to that that we want this service to be refcounted and to go away
 	 * when all its send rights disappear, and this exposes quite a lot of
 	 * work that still needs to be done.
 	 */
-	error = ipc_service(req->path, false, IPC_PORT_UNKNOWN, IPC_PORT_FLAG_PUBLIC, &svc,
+	error = ipc_service(req->path, IPC_PORT_UNKNOWN, IPC_PORT_FLAG_DEFAULT, &svc,
 			    fs_file_ipc_handler, fsf);
 	if (error != 0) {
 		ipch = IPC_HEADER_ERROR(reqh, error);
@@ -157,18 +154,13 @@ fs_ipc_open_file_handler(struct fs *fs, const struct ipc_header *reqh, void *p)
 		if (error != 0)
 			panic("%s: file close failed: %m", __func__, error);
 	} else {
-		/*
-		 * XXX
-		 * See above about making the service PUBLIC.
-		 */
-#if 0
-		error = ipc_port_send_right(resp.file_port, reqh->ipchdr_src, IPC_PORT_RIGHT_SEND);
+		error = ipc_port_right_send(reqh->ipchdr_src, ipc_service_token(svc), IPC_PORT_RIGHT_SEND);
 		if (error != 0) {
-			kcprintf("%s: ipc_port_send_right failed: %m\n", __func__, error);
+			kcprintf("%s: ipc_port_right_send failed: %m\n", __func__, error);
 			/* XXX Shut down the service?  */
 			return (error);
 		}
-#endif
+
 		ipc_service_start(svc);
 
 		ipch = IPC_HEADER_REPLY(reqh);

@@ -45,7 +45,7 @@ network_interface_attach(struct network_interface *netif,
 	memset(&netif->ni_receive_header, 0x00, sizeof netif->ni_receive_header);
 
 	/* XXX This is gross.  */
-	error = ipc_service(netif->ni_name, true, IPC_PORT_UNKNOWN, IPC_PORT_FLAG_PUBLIC,
+	error = ipc_service(netif->ni_name, IPC_PORT_UNKNOWN, IPC_PORT_FLAG_PUBLIC,
 			    NULL, network_interface_ipc_handler, netif);
 	if (error != 0)
 		return (error);

@@ -34,7 +34,6 @@ struct ipc_service_context {
 	const char *ipcsc_name;
 	ipc_service_t *ipcsc_handler;
 	void *ipcsc_arg;
-	bool ipcsc_service_register;
 	ipc_port_t ipcsc_port;
 	ipc_port_flags_t ipcsc_port_flags;
 	struct task *ipcsc_task;
@@ -48,7 +47,7 @@ static void ipc_service_dump(const struct ipc_service_context *, const struct ip
 static void ipc_service_main(void *);
 
 int
-ipc_service(const char *name, bool service_register, ipc_port_t port, ipc_port_flags_t flags,
+ipc_service(const char *name, ipc_port_t port, ipc_port_flags_t flags,
 	    struct ipc_service_context **ipcscp,
 	    ipc_service_t *handler, void *arg)
 {
@@ -60,7 +59,6 @@ ipc_service(const char *name, bool service_register, ipc_port_t port, ipc_port_f
 	ipcsc->ipcsc_name = name;
 	ipcsc->ipcsc_handler = handler;
 	ipcsc->ipcsc_arg = arg;
-	ipcsc->ipcsc_service_register = service_register;
 	ipcsc->ipcsc_port = port;
 	ipcsc->ipcsc_port_flags = flags;
 	ipcsc->ipcsc_task = NULL;
@@ -131,6 +129,21 @@ ipc_service_port(struct ipc_service_context *ipcsc)
 	return (ipcsc->ipcsc_port);
 }
 
+struct ipc_token *
+ipc_service_token(struct ipc_service_context *ipcsc)
+{
+	struct ipc_token *token;
+	int error;
+
+	if (ipcsc->ipcsc_token == NULL)
+		panic("%s: called for service %s after tokens expired.", __func__, ipcsc->ipcsc_name);
+	error = ipc_token_allocate_child(ipcsc->ipcsc_token, &token,
+					 IPC_PORT_RIGHT_SEND);
+	if (error != 0)
+		panic("%s: ipc_token_allocate_child failed: %m", __func__, error);
+	return (token);
+}
+
 void
 ipc_service_start(struct ipc_service_context *ipcsc)
 {
@@ -165,7 +178,8 @@ ipc_service_main(void *arg)
 	void *p;
 
 	/* Register with the NS if requested.  */
-	if (ipcsc->ipcsc_service_register) {
+	if ((ipcsc->ipcsc_port_flags & IPC_PORT_FLAG_PUBLIC) != 0 &&
+	    ipcsc->ipcsc_port >= IPC_PORT_UNRESERVED_START) {
 		struct ns_register_request nsreq;
 
 		ipch.ipchdr_src = ipcsc->ipcsc_port;

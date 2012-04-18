@@ -5,7 +5,7 @@
 #include <cpu/cpu.h>
 #include <cpu/interrupt.h>
 #include <cpu/pcpu.h>
-#include <io/console/console.h>
+#include <core/console.h>
 
 static struct pool interrupt_handler_pool;
 

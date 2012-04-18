@@ -13,7 +13,7 @@
 #include <vm/vm.h>
 #include <vm/vm_alloc.h>
 
-#include <io/console/console.h>
+#include <core/console.h>
 
 #define	ufs_mount_swap64(x)	*(x) = bswap64((uint64_t)*(x))
 

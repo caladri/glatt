@@ -5,7 +5,7 @@
 #include <core/thread.h>
 #ifdef DB
 #include <db/db_command.h>
-#include <io/console/console.h>
+#include <core/console.h>
 #endif
 
 #ifdef DB

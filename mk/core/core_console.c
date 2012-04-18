@@ -3,8 +3,8 @@
 #include <core/printf.h>
 #include <core/sleepq.h>
 #include <core/string.h>
-#include <io/console/console.h>
-#include <io/console/consoledev.h>
+#include <core/console.h>
+#include <core/consoledev.h>
 
 static struct console *kernel_console;
 

@@ -4,8 +4,8 @@
 #include <cpu/memory.h>
 #include <cpu/startup.h>
 #include <io/bus/bus.h>
-#include <io/console/console.h>
-#include <io/console/consoledev.h>
+#include <core/console.h>
+#include <core/consoledev.h>
 
 #define	TEST_CONSOLE_DEV_BASE	(0x10000000)
 #define	TEST_CONSOLE_DEV_IRQ	(2)

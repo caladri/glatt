@@ -7,7 +7,7 @@
 #include <db/db_command.h>
 #endif
 #if defined(DB) || defined(VERBOSE)
-#include <io/console/console.h>
+#include <core/console.h>
 #endif
 #include <vm/vm.h>
 #include <vm/vm_page.h>

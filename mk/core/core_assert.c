@@ -2,7 +2,7 @@
 #include <core/mp.h>
 #include <cpu/pcpu.h>
 #include <cpu/startup.h>
-#include <io/console/console.h>
+#include <core/console.h>
 
 void
 panic(const char *s, ...)

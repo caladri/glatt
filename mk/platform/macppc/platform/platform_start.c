@@ -10,7 +10,7 @@
 #include <db/db.h>
 #endif
 #include <device/ofw.h>
-#include <io/console/console.h>
+#include <core/console.h>
 #include <io/ofw/ofw.h>
 #include <io/ofw/ofw_functions.h>
 #include <io/ofw/ofw_memory.h>

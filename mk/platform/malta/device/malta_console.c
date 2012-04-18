@@ -3,7 +3,7 @@
 #include <cpu/memory.h>
 #include <cpu/pmap.h>
 #include <cpu/startup.h>
-#include <io/console/consoledev.h>
+#include <core/consoledev.h>
 #include <vm/vm.h>
 #include <vm/vm_page.h>
 

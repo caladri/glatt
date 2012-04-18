@@ -3,8 +3,8 @@
 #include <cpu/memory.h>
 #include <cpu/startup.h>
 #include <device/mio.h>
-#include <io/console/console.h>
-#include <io/console/consoledev.h>
+#include <core/console.h>
+#include <core/consoledev.h>
 
 static int
 octeon_console_getc(void *sc, char *chp)

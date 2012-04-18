@@ -2,7 +2,7 @@
 #define	_IO_CONSOLE_FRAMEBUFFER_H_
 
 #include <core/spinlock.h>
-#include <io/console/consoledev.h>
+#include <core/consoledev.h>
 
 struct font {
 	uint8_t *f_charset;	/* Charset in 8-bit bitmap format.  */

@@ -5,7 +5,7 @@
 #include <core/string.h>
 #include <cpu/pmap.h>
 #ifdef VERBOSE
-#include <io/console/console.h>
+#include <core/console.h>
 #endif
 #include <vm/vm.h>
 #include <vm/vm_index.h>

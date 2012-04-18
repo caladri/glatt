@@ -14,6 +14,7 @@ ipc		implies: ns
 # Files sorted by directory grouped by option, std always first, then sorted.
 ##
 std		core/core_assert.c
+std		core/core_console.c
 std		core/core_cv.c
 std		core/core_malloc.c
 std		core/core_mutex.c
@@ -46,9 +47,8 @@ fs		fs/fs.c
 # XXX We could actually eliminate the IPC requirement.
 fs		requires: ipc
 
-std		io/console/console.c
-framebuffer	io/console/framebuffer.c
-framebuffer	io/console/framebuffer_font.c
+framebuffer	io/framebuffer/framebuffer.c
+framebuffer	io/framebuffer/framebuffer_font.c
 
 std		io/bus/bus.c
 std		io/bus/bus_internal.c

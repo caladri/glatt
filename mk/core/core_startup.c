@@ -12,7 +12,7 @@
 #ifdef ENTER_DEBUGGER
 #include <db/db.h>
 #endif
-#include <io/console/console.h>
+#include <core/console.h>
 #include <ipc/system.h>
 #include <vm/vm.h>
 

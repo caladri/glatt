@@ -9,7 +9,7 @@
 #endif
 #include <io/bus/bus.h>
 #include <io/bus/bus_internal.h>
-#include <io/console/console.h>
+#include <core/console.h>
 
 #ifdef DB
 DB_COMMAND_TREE(bus, root, bus);

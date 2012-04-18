@@ -5,7 +5,7 @@
 #include <cpu/syscall.h>
 
 #include <cpu/memory.h>
-#include <io/console/console.h>
+#include <core/console.h>
 
 void
 cpu_syscall(struct frame *frame)

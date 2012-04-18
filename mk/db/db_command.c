@@ -5,7 +5,7 @@
 #include <cpu/startup.h>
 #include <db/db.h>
 #include <db/db_command.h>
-#include <io/console/console.h>
+#include <core/console.h>
 
 #define	DB_COMMAND_ARG_MAX		(16)
 #define	DB_COMMAND_ARG_LIKELY_SIZE	(16)

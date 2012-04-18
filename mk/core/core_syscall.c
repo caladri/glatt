@@ -6,7 +6,7 @@
 #include <core/thread.h>
 #include <cpu/pcpu.h>
 #include <cpu/register.h>
-#include <io/console/console.h>
+#include <core/console.h>
 #ifdef IPC
 #include <ipc/ipc.h>
 #include <ipc/port.h>

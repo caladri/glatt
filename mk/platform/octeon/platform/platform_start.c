@@ -8,7 +8,7 @@
 #include <cpu/interrupt.h>
 #include <cpu/memory.h>
 #include <cpu/startup.h>
-#include <io/console/console.h>
+#include <core/console.h>
 #include <platform/bootinfo.h>
 #include <vm/vm_page.h>
 

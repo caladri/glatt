@@ -9,7 +9,7 @@
 #include <core/string.h>
 #include <core/task.h>
 #include <core/thread.h>
-#include <io/console/console.h>
+#include <core/console.h>
 #include <ipc/ipc.h>
 #include <ipc/port.h>
 #include <ipc/service.h>

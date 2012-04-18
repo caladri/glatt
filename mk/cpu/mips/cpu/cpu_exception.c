@@ -16,7 +16,7 @@
 #include <db/db.h>
 #include <db/db_command.h>
 #endif
-#include <io/console/console.h>
+#include <core/console.h>
 #include <vm/vm.h>
 #include <vm/vm_fault.h>
 #include <vm/vm_page.h>

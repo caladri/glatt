@@ -1,6 +1,6 @@
 #include <core/types.h>
 #include <core/error.h>
-#include <io/console/consoledev.h>
+#include <core/consoledev.h>
 #include <io/ofw/ofw.h>
 #include <io/ofw/ofw_console.h>
 #include <io/ofw/ofw_functions.h>

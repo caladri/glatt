@@ -6,7 +6,7 @@
 #include <core/spinlock.h>
 #include <core/startup.h>
 #include <core/string.h>
-#include <io/console/console.h>
+#include <core/console.h>
 #include <io/network/interface.h>
 #ifdef IPC
 #include <ipc/ipc.h>

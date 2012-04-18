@@ -7,7 +7,7 @@
 #include <core/spinlock.h>
 #include <core/startup.h>
 #include <core/string.h>
-#include <io/console/console.h>
+#include <core/console.h>
 #include <ipc/ipc.h>
 #include <ipc/port.h>
 #include <ipc/service.h>

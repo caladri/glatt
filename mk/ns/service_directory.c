@@ -5,7 +5,7 @@
 #include <core/pool.h>
 #include <core/string.h>
 #ifdef VERBOSE
-#include <io/console/console.h>
+#include <core/console.h>
 #endif
 #include <ipc/ipc.h>
 #include <ns/ns.h>

@@ -7,7 +7,7 @@
 #include <core/task.h>
 #include <core/thread.h>
 #include <fs/fs_ops.h>
-#include <io/console/console.h>
+#include <core/console.h>
 #include <vm/vm.h>
 #include <vm/vm_alloc.h>
 #include <vm/vm_index.h>

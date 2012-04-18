@@ -104,12 +104,12 @@ printf(const char *s, ...)
 	va_list ap;
 
 	va_start(ap, s);
-	kcvprintf(s, ap);
+	vprintf(s, ap);
 	va_end(ap);
 }
 
 void
-kcvprintf(const char *s, va_list ap)
+vprintf(const char *s, va_list ap)
 {
 	CONSOLE_LOCK(kernel_console);
 	kfvprintf(cputc_noflush, cputs_noflush, kernel_console, s, ap);

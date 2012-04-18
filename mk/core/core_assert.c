@@ -18,7 +18,7 @@ panic(const char *s, ...)
 
 	printf("panic: cpu%u: ", mp_whoami());
 	va_start(ap, s);
-	kcvprintf(s, ap);
+	vprintf(s, ap);
 	va_end(ap);
 	kcputs("\n");
 

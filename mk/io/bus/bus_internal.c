@@ -216,7 +216,7 @@ bus_instance_vprintf(struct bus_instance *bi, const char *fmt, va_list ap)
 {
 	bus_instance_print(bi);
 	printf(": ");
-	kcvprintf(fmt, ap);
+	vprintf(fmt, ap);
 	printf("\n");
 }
 

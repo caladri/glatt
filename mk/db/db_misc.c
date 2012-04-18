@@ -7,7 +7,7 @@
 static void
 db_halt(void)
 {
-	kcprintf("%s: Halting...\n", __func__);
+	printf("%s: Halting...\n", __func__);
 	cpu_halt();
 }
 DB_COMMAND(halt, root, db_halt);

@@ -121,7 +121,7 @@ platform_start(int argc, char **argv, int initcore, struct octeon_boot_descripto
 
 		if (!PAGE_ALIGNED(phys_addr)) {
 			if (PAGE_SIZE - PAGE_OFFSET(phys_addr) >= size) {
-				kcprintf("Skipping memory descriptor too small for page alignment.\n");
+				printf("Skipping memory descriptor too small for page alignment.\n");
 				continue;
 			}
 			size -= PAGE_SIZE - PAGE_OFFSET(phys_addr);
@@ -129,7 +129,7 @@ platform_start(int argc, char **argv, int initcore, struct octeon_boot_descripto
 		}
 
 		if (size < PAGE_SIZE) {
-			kcprintf("Skipping small memory descriptor.\n");
+			printf("Skipping small memory descriptor.\n");
 			continue;
 		}
 

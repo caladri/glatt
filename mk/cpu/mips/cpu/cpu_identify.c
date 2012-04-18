@@ -168,15 +168,15 @@ cpu_unknown(struct cpuinfo *cpu)
 	prid = cpu_read_prid();
 
 	if (cpu->cpu_company != NULL)
-		kcprintf("cpu%u: Company: %s\n", mp_whoami(), cpu->cpu_company);
+		printf("cpu%u: Company: %s\n", mp_whoami(), cpu->cpu_company);
 	else
-		kcprintf("cpu%u: Company: %x\n", mp_whoami(),
+		printf("cpu%u: Company: %x\n", mp_whoami(),
 			 CP0_PRID_COMPANY(prid));
 	if (cpu->cpu_type != NULL)
-		kcprintf("cpu%u: Type: %s\n", mp_whoami(), cpu->cpu_type);
+		printf("cpu%u: Type: %s\n", mp_whoami(), cpu->cpu_type);
 	else
-		kcprintf("cpu%u: Type: %x\n", mp_whoami(), CP0_PRID_TYPE(prid));
-	kcprintf("cpu%u: Revision: %u.%u\n", mp_whoami(),
+		printf("cpu%u: Type: %x\n", mp_whoami(), CP0_PRID_TYPE(prid));
+	printf("cpu%u: Revision: %u.%u\n", mp_whoami(),
 		 (unsigned)cpu->cpu_revision_major,
 		 (unsigned)cpu->cpu_revision_minor);
 	panic("Unknown CPU.");

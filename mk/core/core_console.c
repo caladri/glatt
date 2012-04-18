@@ -20,7 +20,7 @@ console_init(struct console *console)
 {
 	spinlock_init(&console->c_lock, "console", SPINLOCK_FLAG_DEFAULT);
 	kernel_console = console;
-	kcprintf("Switched to console: %s\n", console->c_name);
+	printf("Switched to console: %s\n", console->c_name);
 }
 
 int
@@ -99,7 +99,7 @@ kcputsn(const char *s, size_t len)
 }
 
 void
-kcprintf(const char *s, ...)
+printf(const char *s, ...)
 {
 	va_list ap;
 

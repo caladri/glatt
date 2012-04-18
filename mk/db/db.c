@@ -10,14 +10,14 @@
 void
 db_init(void)
 {
-	kcprintf("DB: debugger support compiled in.\n");
+	printf("DB: debugger support compiled in.\n");
 	db_command_init();
 }
 
 void
 db_enter(void)
 {
-	kcprintf("DB: Entering debugger.\n");
+	printf("DB: Entering debugger.\n");
 
 #ifndef	UNIPROCESSOR
 	/*
@@ -92,7 +92,7 @@ db_getargs(char *buf, size_t len, unsigned *argcp, const char **argv, size_t avl
 				 * it's an error.
 				 */
 				if (buf[c] != '\0') {
-					kcprintf("DB: too many arguments.\n");
+					printf("DB: too many arguments.\n");
 					return (ERROR_EXHAUSTED);
 				}
 			}
@@ -138,13 +138,13 @@ again:		do {
 			goto again;
 		case '\n':
 			buf[c] = '\0';
-			kcprintf("\n");
+			printf("\n");
 			return (0);
 		default:
 			kcputc(buf[c]);
 			break;
 		}
 	}
-	kcprintf("\nDB: line too long.\n");
+	printf("\nDB: line too long.\n");
 	return (ERROR_EXHAUSTED);
 }

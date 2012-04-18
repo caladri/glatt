@@ -67,15 +67,15 @@ db_command_enter(void)
 	db_command_return = false;
 
 	while (!db_command_return) {
-		kcprintf("(db ");
+		printf("(db ");
 		db_command_path(current);
-		kcprintf(") ");
+		printf(") ");
 
 
 		error = db_getargs(db_command_buffer, sizeof db_command_buffer, &argc, argv,
 				   DB_COMMAND_ARG_MAX, " \t/");
 		if (error != 0) {
-			kcprintf("\nDB: Input not available.  Halting.\n");
+			printf("\nDB: Input not available.  Halting.\n");
 			cpu_halt();
 		}
 
@@ -103,7 +103,7 @@ db_command_enter(void)
 			 * set of arguments.
 			 */
 			if (!db_command_one(&current, argv[i])) {
-				kcprintf("DB: command failed.\n");
+				printf("DB: command failed.\n");
 				current = old;
 				break;
 			}
@@ -121,9 +121,9 @@ db_command_all(struct db_command_tree *tree)
 		return;
 	}
 
-	kcprintf("cmds in ");
+	printf("cmds in ");
 	db_command_path(tree);
-	kcprintf(":\n");
+	printf(":\n");
 
 	BTREE_FOREACH(cmd, &tree->ct_commands, c_tree,
 		      db_command(cmd, true));
@@ -134,10 +134,10 @@ db_command_listing(struct db_command_tree *tree)
 {
 	struct db_command *cmd;
 
-	kcprintf("Available cmds:");
+	printf("Available cmds:");
 	BTREE_FOREACH(cmd, &tree->ct_commands, c_tree,
 		      db_command_listing_one(cmd));
-	kcprintf("\n");
+	printf("\n");
 }
 
 static void
@@ -155,18 +155,18 @@ db_command_listing_one(struct db_command *cmd)
 	default:
 		suffix = '?';
 	}
-	kcprintf(" %s%c", cmd->c_name, suffix);
+	printf(" %s%c", cmd->c_name, suffix);
 }
 
 static void
 db_command_path(struct db_command_tree *current)
 {
 	if (current == &db_command_tree_root) {
-		kcprintf("/");
+		printf("/");
 		return;
 	} else {
 		db_command_path(current->ct_parent);
-		kcprintf("%s/", current->ct_name);
+		printf("%s/", current->ct_name);
 	}
 }
 
@@ -190,11 +190,11 @@ static void
 db_command(struct db_command *cmd, bool show_name)
 {
 	if (show_name)
-		kcprintf("%s:\n", cmd->c_name);
+		printf("%s:\n", cmd->c_name);
 
 	switch (cmd->c_type) {
 	case DB_COMMAND_TYPE_TREE:
-		kcprintf("%s is a directory.\n", cmd->c_name);
+		printf("%s is a directory.\n", cmd->c_name);
 		break;
 	case DB_COMMAND_TYPE_VOIDF:
 		cmd->c_union.c_voidf();
@@ -209,7 +209,7 @@ db_command_ambiguous(struct db_command_tree *tree, const char *name)
 {
 	struct db_command *cmd;
 
-	kcprintf("DB: ambiguous component '%s' possible matches:", name);
+	printf("DB: ambiguous component '%s' possible matches:", name);
 
 	BTREE_MIN(cmd, &tree->ct_commands, c_tree);
 	while (cmd != NULL) {
@@ -218,11 +218,11 @@ db_command_ambiguous(struct db_command_tree *tree, const char *name)
 				BTREE_NEXT(cmd, c_tree);
 				continue;
 			}
-			kcprintf(" %s", cmd->c_name);
+			printf(" %s", cmd->c_name);
 		}
 		BTREE_NEXT(cmd, c_tree);
 	}
-	kcprintf("\n");
+	printf("\n");
 }
 
 static struct db_command *
@@ -276,7 +276,7 @@ static void
 db_command_exit(void)
 {
 	ASSERT(!db_command_return, "Can't leave debugger twice.");
-	kcprintf("Leaving debugger.\n");
+	printf("Leaving debugger.\n");
 	db_command_return = true;
 }
 DB_COMMAND(exit, root, db_command_exit);

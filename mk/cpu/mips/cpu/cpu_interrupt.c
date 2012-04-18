@@ -21,7 +21,7 @@ cpu_interrupt_establish(int interrupt, interrupt_t *func, void *arg)
 	ASSERT(interrupt >= 0 && interrupt < CPU_INTERRUPT_COUNT,
 	       "invalid interrupt number");
 	if (!STAILQ_EMPTY(&PCPU_GET(interrupt_table)[interrupt])) {
-		kcprintf("cpu%u: sharing interrupt %d.\n", mp_whoami(),
+		printf("cpu%u: sharing interrupt %d.\n", mp_whoami(),
 			 interrupt);
 	}
 	ih = pool_allocate(&interrupt_handler_pool);
@@ -59,17 +59,17 @@ cpu_interrupt(void)
 		}
 		interrupts >>= 1;
 		if (STAILQ_EMPTY(&PCPU_GET(interrupt_table)[interrupt])) {
-			kcprintf("cpu%u: stray interrupt %u",
+			printf("cpu%u: stray interrupt %u",
 				 mp_whoami(), interrupt);
-			kcprintf(" mask&interrupt = %x",
+			printf(" mask&interrupt = %x",
 				 PCPU_GET(interrupt_mask) &
 				 ((1 << interrupt) <<
 				 CP0_STATUS_INTERRUPT_SHIFT));
-			kcprintf(" status&interrupt = %x",
+			printf(" status&interrupt = %x",
 				 cpu_read_status() &
 				 ((1 << interrupt) <<
 				 CP0_STATUS_INTERRUPT_SHIFT));
-			kcprintf("\n");
+			printf("\n");
 			continue;
 		}
 		STAILQ_FOREACH(ih, &PCPU_GET(interrupt_table)[interrupt],

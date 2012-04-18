@@ -60,7 +60,7 @@ page_init(void)
 	TAILQ_INIT(&page_use_queue.pq_queue);
 
 #ifdef VERBOSE
-	kcprintf("PAGE: page size is %uK, %lu pages per page tree.\n",
+	printf("PAGE: page size is %uK, %lu pages per page tree.\n",
 		 PAGE_SIZE / 1024, VM_PAGE_TREE_ENTRIES);
 #endif
 }
@@ -325,7 +325,7 @@ page_insert_pages(paddr_t base, size_t pages)
 	PAGEQ_UNLOCK();
 
 #ifdef VERBOSE
-	kcprintf("PAGE: inserted %zu page tree entries in %zu nodes.\n",
+	printf("PAGE: inserted %zu page tree entries in %zu nodes.\n",
 		 ptpents, ptps);
 #endif
 
@@ -499,7 +499,7 @@ page_ref_hold(struct vm_page *page)
 static void
 db_vm_page_dump(struct vm_page *page)
 {
-	kcprintf("vm_page %p addr %p refcnt %u\n", page, page_address(page),
+	printf("vm_page %p addr %p refcnt %u\n", page, page_address(page),
 		 page->pg_refcnt);
 }
 

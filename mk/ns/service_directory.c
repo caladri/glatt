@@ -70,7 +70,7 @@ service_directory_enter(const char *service_name, ipc_port_t port)
 	SERVICE_DIRECTORY_UNLOCK();
 
 #ifdef VERBOSE
-	kcprintf("%s: registered service \"%s\" at port %lx\n", __func__, service_name, port);
+	printf("%s: registered service \"%s\" at port %lx\n", __func__, service_name, port);
 #endif
 
 	return (0);

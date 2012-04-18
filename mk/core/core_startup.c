@@ -36,7 +36,7 @@ static struct task *main_task;
  * NB:
  * startup_early determines all kinds of things about how spinlocks work, etc.
  * There are some cases where e.g. startup_early will be set to false and you
- * must not do things like call kcprintf() until some other steps have been
+ * must not do things like call printf() until some other steps have been
  * taken, for instance setting up exception vectors.
  */
 volatile bool startup_early = true;
@@ -46,7 +46,7 @@ startup_init(void)
 {
 #ifdef VERBOSE
 #ifdef UNIPROCESSOR
-	kcprintf("STARTUP: Uniprocessor kernel, only the boot CPU will be used.\n");
+	printf("STARTUP: Uniprocessor kernel, only the boot CPU will be used.\n");
 #endif
 #endif
 	spinlock_init(&startup_lock, "STARTUP", SPINLOCK_FLAG_DEFAULT);
@@ -108,7 +108,7 @@ startup_main(void)
 void
 startup_version(void)
 {
-	kcprintf("\n%s %s (%s)\n%s\n\n", MK_NAME, MK_VERSION, MK_CONFIG,
+	printf("\n%s %s (%s)\n%s\n\n", MK_NAME, MK_VERSION, MK_CONFIG,
 		 MK_COPYRIGHT);
 }
 
@@ -132,7 +132,7 @@ startup_boot_thread(void *arg)
 	struct startup_item **itemp, *item, *iter;
 
 #ifdef VERBOSE
-	kcprintf("STARTUP: The system is coming up.\n");
+	printf("STARTUP: The system is coming up.\n");
 #endif
 	spinlock_lock(&startup_lock);
 	SET_FOREACH(itemp, startup_items) {
@@ -166,7 +166,7 @@ startup_main_thread(void *arg)
 		spinlock_unlock(lock);
 
 #ifdef VERBOSE
-	kcprintf("STARTUP: cpu%u starting main thread.\n", mp_whoami());
+	printf("STARTUP: cpu%u starting main thread.\n", mp_whoami());
 #endif
 
 #ifdef ENTER_DEBUGGER

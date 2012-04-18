@@ -14,15 +14,15 @@ cpu_syscall(struct frame *frame)
 	unsigned i;
 
 	for (i = 0; i < FRAME_COUNT; i++)
-		kcprintf(">sys frame[%x] = %#jx\n", i, (uintmax_t)frame->f_regs[i]);
-	kcprintf("stack %p\n", (void *)frame->f_regs[FRAME_SP]);
+		printf(">sys frame[%x] = %#jx\n", i, (uintmax_t)frame->f_regs[i]);
+	printf("stack %p\n", (void *)frame->f_regs[FRAME_SP]);
 	for (i = 0; i < 16; i++) {
 		vaddr_t sp = frame->f_regs[FRAME_SP] + i * sizeof (uintmax_t);
 		if (sp > USER_STACK_TOP) {
-			kcprintf("stack top\n");
+			printf("stack top\n");
 			break;
 		}
-		kcprintf("stack[%u x u64] = %#jx\n", i, *(const uint64_t *)sp);
+		printf("stack[%u x u64] = %#jx\n", i, *(const uint64_t *)sp);
 	}
 #endif
 
@@ -39,16 +39,16 @@ cpu_syscall(struct frame *frame)
 
 #if 0
 	for (i = 0; i < FRAME_COUNT; i++)
-		kcprintf("<sys frame[%x] = %#jx\n", i, (uintmax_t)frame->f_regs[i]);
+		printf("<sys frame[%x] = %#jx\n", i, (uintmax_t)frame->f_regs[i]);
 
-	kcprintf("stack %p\n", (void *)frame->f_regs[FRAME_SP]);
+	printf("stack %p\n", (void *)frame->f_regs[FRAME_SP]);
 	for (i = 0; i < 16; i++) {
 		vaddr_t sp = frame->f_regs[FRAME_SP] + i * sizeof (uintmax_t);
 		if (sp > USER_STACK_TOP) {
-			kcprintf("stack top\n");
+			printf("stack top\n");
 			break;
 		}
-		kcprintf("stack[%u x u64] = %#jx\n", i, *(const uint64_t *)sp);
+		printf("stack[%u x u64] = %#jx\n", i, *(const uint64_t *)sp);
 	}
 #endif
 }

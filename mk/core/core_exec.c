@@ -24,13 +24,13 @@ exec_load(struct task *task, const char *name, fs_file_read_op_t *readf, fs_cont
 
 	error = thread_create(&td, task, name, THREAD_DEFAULT);
 	if (error != 0) {
-		kcprintf("%s: thread_create for %s failed: %m\n", __func__, name, error);
+		printf("%s: thread_create for %s failed: %m\n", __func__, name, error);
 		return (error);
 	}
 
 	error = exec_elf64_load(td, readf, fsc, fsfc);
 	if (error != 0) {
-		kcprintf("%s: exec_elf64_load for %s failed: %m\n", __func__, name, error);
+		printf("%s: exec_elf64_load for %s failed: %m\n", __func__, name, error);
 		return (error);
 	}
 
@@ -76,12 +76,12 @@ exec_elf64_load(struct thread *td, fs_file_read_op_t *readf, fs_context_t fsc, f
 	 * Check ELF header magic and version.
 	 */
 	if (!ELF_HEADER_CHECK_MAGIC(&eh)) {
-		kcprintf("%s: bad magic.\n", __func__);
+		printf("%s: bad magic.\n", __func__);
 		return (ERROR_INVALID);
 	}
 
 	if (eh.eh_version != ELF_VERSION_1) {
-		kcprintf("%s: wrong version.\n", __func__);
+		printf("%s: wrong version.\n", __func__);
 		return (ERROR_INVALID);
 	}
 
@@ -91,17 +91,17 @@ exec_elf64_load(struct thread *td, fs_file_read_op_t *readf, fs_context_t fsc, f
 	 * XXX Machine-independentize.
 	 */
 	if (eh.eh_ident[ELF_HEADER_IDENT_CLASS] != ELF_HEADER_CLASS_64) {
-		kcprintf("%s: wrong ident class.\n", __func__);
+		printf("%s: wrong ident class.\n", __func__);
 		return (ERROR_INVALID);
 	}
 
 	if (eh.eh_ident[ELF_HEADER_IDENT_DATA] != ELF_HEADER_DATA_2MSB) {
-		kcprintf("%s: wrong ident data format.\n", __func__);
+		printf("%s: wrong ident data format.\n", __func__);
 		return (ERROR_INVALID);
 	}
 
 	if (eh.eh_machine != ELF_MACHINE_MIPSBE) {
-		kcprintf("%s: wrong machine type.\n", __func__);
+		printf("%s: wrong machine type.\n", __func__);
 		return (ERROR_INVALID);
 	}
 
@@ -109,12 +109,12 @@ exec_elf64_load(struct thread *td, fs_file_read_op_t *readf, fs_context_t fsc, f
 	 * Verify that this is an executable with an entry point.
 	 */
 	if (eh.eh_type != ELF_TYPE_EXEC) {
-		kcprintf("%s: not an executable.\n", __func__);
+		printf("%s: not an executable.\n", __func__);
 		return (ERROR_INVALID);
 	}
 
 	if (eh.eh_entry == ELF_ENTRY_NONE) {
-		kcprintf("%s: no entry point defined.\n", __func__);
+		printf("%s: no entry point defined.\n", __func__);
 		return (ERROR_INVALID);
 	}
 
@@ -122,12 +122,12 @@ exec_elf64_load(struct thread *td, fs_file_read_op_t *readf, fs_context_t fsc, f
 	 * Check program headers.
 	 */
 	if (eh.eh_phentsize != sizeof ph) {
-		kcprintf("%s: program headers have unexpected size.\n", __func__);
+		printf("%s: program headers have unexpected size.\n", __func__);
 		return (ERROR_INVALID);
 	}
 
 	if (eh.eh_phnum == 0) {
-		kcprintf("%s: executable has no program headers.\n", __func__);
+		printf("%s: executable has no program headers.\n", __func__);
 		return (ERROR_INVALID);
 	}
 
@@ -162,7 +162,7 @@ exec_elf64_load(struct thread *td, fs_file_read_op_t *readf, fs_context_t fsc, f
 	}
 
 	if (high == 0 || low == high) {
-		kcprintf("%s: executable has no loadable program data.\n", __func__);
+		printf("%s: executable has no loadable program data.\n", __func__);
 		return (ERROR_INVALID);
 	}
 
@@ -171,7 +171,7 @@ exec_elf64_load(struct thread *td, fs_file_read_op_t *readf, fs_context_t fsc, f
 	 */
 	error = vm_alloc_range_wire(td->td_task->t_vm, low, high, &kvaddr);
 	if (error != 0) {
-		kcprintf("%s: could not allocate requested program address range: %m\n", __func__, error);
+		printf("%s: could not allocate requested program address range: %m\n", __func__, error);
 		return (error);
 	}
 

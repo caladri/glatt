@@ -271,7 +271,7 @@ tlb_wired_insert(unsigned index, struct tlb_wired_entry *twe)
 static void
 db_cpu_dump_tlb_lo(unsigned n, register_t lo)
 {
-	kcprintf(" Lo%u\t%lx\tpa %lx\tcache attribute %lx\t%s\t%s\t%s\n", n,
+	printf(" Lo%u\t%lx\tpa %lx\tcache attribute %lx\t%s\t%s\t%s\n", n,
 		 lo, TLBLO_PTE_TO_PA(lo), lo & PG_C(~0),
 		 (lo & PG_D) != 0 ? "dirty" : "clean",
 		 (lo & PG_V) != 0 ? "valid" : "invalid",
@@ -284,13 +284,13 @@ db_cpu_dump_tlb(void)
 	register_t ehi, elo0, elo1, pmask;
 	unsigned i;
 
-	kcprintf("Beginning TLB dump...\n");
+	printf("Beginning TLB dump...\n");
 	for (i = 0; i < PCPU_GET(cpuinfo).cpu_ntlbs; i++) {
 		if (i == cpu_read_tlb_wired()) {
 			if (i != 0)
-				kcprintf("^^^ WIRED ENTRIES ^^^\n");
+				printf("^^^ WIRED ENTRIES ^^^\n");
 			else
-				kcprintf("(No wired entries.)\n");
+				printf("(No wired entries.)\n");
 		}
 		cpu_write_tlb_index(i);
 		tlb_read();
@@ -303,11 +303,11 @@ db_cpu_dump_tlb(void)
 		if (elo0 == 0 && elo1 == 0)
 			continue;
 
-		kcprintf("#%u\t=> %lx pagemask %lx asid %u\n", i, ehi, pmask, (unsigned)ehi & 0xff);
+		printf("#%u\t=> %lx pagemask %lx asid %u\n", i, ehi, pmask, (unsigned)ehi & 0xff);
 		db_cpu_dump_tlb_lo(0, elo0);
 		db_cpu_dump_tlb_lo(1, elo1);
 	}
-	kcprintf("Finished.\n");
+	printf("Finished.\n");
 }
 DB_COMMAND(tlb, cpu, db_cpu_dump_tlb);
 #endif

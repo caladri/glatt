@@ -164,7 +164,7 @@ ipc_service_dump(const struct ipc_service_context *ipcsc, const struct ipc_heade
 	 * XXX
 	 * Dump new fields.
 	 */
-	kcprintf("%s: %lx -> %lx : %lx\n", ipcsc->ipcsc_name,
+	printf("%s: %lx -> %lx : %lx\n", ipcsc->ipcsc_name,
 		 ipch->ipchdr_src, ipch->ipchdr_dst, ipch->ipchdr_msg);
 }
 #endif
@@ -204,7 +204,7 @@ ipc_service_main(void *arg)
 
 		for (;;) {
 #ifdef SERVICE_TRACING
-			kcprintf("%s: waiting for registration with ns...\n",
+			printf("%s: waiting for registration with ns...\n",
 				 ipcsc->ipcsc_name);
 #endif
 
@@ -225,7 +225,7 @@ ipc_service_main(void *arg)
 
 			if (ipch.ipchdr_src != IPC_PORT_NS) {
 #ifdef SERVICE_TRACING
-				kcprintf("%s: message from unexpected source.\n",
+				printf("%s: message from unexpected source.\n",
 					 ipcsc->ipcsc_name);
 #endif
 				continue;
@@ -236,7 +236,7 @@ ipc_service_main(void *arg)
 
 			if (ipch.ipchdr_msg != IPC_MSG_REPLY(NS_MESSAGE_REGISTER)) {
 #ifdef SERVICE_TRACING
-				kcprintf("%s: unexpected message type from ns.\n",
+				printf("%s: unexpected message type from ns.\n",
 					 ipcsc->ipcsc_name);
 #endif
 				continue;
@@ -244,7 +244,7 @@ ipc_service_main(void *arg)
 
 			if (ipch.ipchdr_cookie != 0) {
 #ifdef SERVICE_TRACING
-				kcprintf("%s: unexpected cookie from ns.\n",
+				printf("%s: unexpected cookie from ns.\n",
 					 ipcsc->ipcsc_name);
 #endif
 				continue;
@@ -252,7 +252,7 @@ ipc_service_main(void *arg)
 
 			if (ipch.ipchdr_recsize != 0) {
 #ifdef SERVICE_TRACING
-				kcprintf("%s: response record from ns has wrong size.\n",
+				printf("%s: response record from ns has wrong size.\n",
 					 ipcsc->ipcsc_name);
 #endif
 				continue;
@@ -260,7 +260,7 @@ ipc_service_main(void *arg)
 
 			if (ipch.ipchdr_reccnt != 0) {
 #ifdef SERVICE_TRACING
-				kcprintf("%s: wrong number of response records from ns.\n",
+				printf("%s: wrong number of response records from ns.\n",
 					 ipcsc->ipcsc_name);
 #endif
 				continue;
@@ -268,7 +268,7 @@ ipc_service_main(void *arg)
 
 			if (p != NULL) {
 #ifdef SERVICE_TRACING
-				kcprintf("%s: unexpected data from ns.\n",
+				printf("%s: unexpected data from ns.\n",
 					 ipcsc->ipcsc_name);
 #endif
 				continue;
@@ -278,7 +278,7 @@ ipc_service_main(void *arg)
 		}
 
 #ifdef SERVICE_TRACING
-		kcprintf("%s: registered with ns.\n", ipcsc->ipcsc_name);
+		printf("%s: registered with ns.\n", ipcsc->ipcsc_name);
 #endif
 	}
 
@@ -286,7 +286,7 @@ ipc_service_main(void *arg)
 
 	for (;;) {
 #ifdef SERVICE_TRACING
-		kcprintf("%s: waiting...\n", ipcsc->ipcsc_name);
+		printf("%s: waiting...\n", ipcsc->ipcsc_name);
 #endif
 
 		error = ipc_port_wait(ipcsc->ipcsc_port);
@@ -307,7 +307,7 @@ ipc_service_main(void *arg)
 
 		error = ipcsc->ipcsc_handler(ipcsc->ipcsc_arg, &ipch, p);
 		if (error != 0)
-			kcprintf("%s: service handler failed: %m\n", __func__, error);
+			printf("%s: service handler failed: %m\n", __func__, error);
 
 		if (p != NULL) {
 			/* XXX Free page in p?  */

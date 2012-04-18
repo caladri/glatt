@@ -156,7 +156,7 @@ fs_ipc_open_file_handler(struct fs *fs, const struct ipc_header *reqh, void *p)
 	} else {
 		error = ipc_port_right_send(reqh->ipchdr_src, ipc_service_token(svc), IPC_PORT_RIGHT_SEND);
 		if (error != 0) {
-			kcprintf("%s: ipc_port_right_send failed: %m\n", __func__, error);
+			printf("%s: ipc_port_right_send failed: %m\n", __func__, error);
 			/* XXX Shut down the service?  */
 			return (error);
 		}
@@ -169,7 +169,7 @@ fs_ipc_open_file_handler(struct fs *fs, const struct ipc_header *reqh, void *p)
 
 	error = ipc_port_send_data(&ipch, NULL, 0);
 	if (error != 0) {
-		kcprintf("%s: ipc_port_send failed: %m\n", __func__, error);
+		printf("%s: ipc_port_send failed: %m\n", __func__, error);
 		return (error);
 	}
 
@@ -324,20 +324,20 @@ fs_autorun(void *arg)
 	STAILQ_FOREACH(fs, &fs_list, fs_link) {
 		if (fs->fs_ops->fs_directory_open == NULL) {
 #ifdef VERBOSE
-			kcprintf("%s: skipping filesystem without directory open method.\n", __func__);
+			printf("%s: skipping filesystem without directory open method.\n", __func__);
 #endif
 			continue;
 		}
 		if (fs->fs_ops->fs_file_open == NULL) {
 #ifdef VERBOSE
-			kcprintf("%s: skipping filesystem without file open method.\n", __func__);
+			printf("%s: skipping filesystem without file open method.\n", __func__);
 #endif
 			continue;
 		}
 
 		error = fs->fs_ops->fs_directory_open(fs->fs_context, FS_AUTORUN_DIR, &fsdc);
 		if (error != 0) {
-			kcprintf("%s: directory open failed: %m\n", __func__, error);
+			printf("%s: directory open failed: %m\n", __func__, error);
 			continue;
 		}
 
@@ -346,7 +346,7 @@ fs_autorun(void *arg)
 			cnt = 1;
 			error = fs->fs_ops->fs_directory_read(fs->fs_context, fsdc, &fs_autorun_entry, &offset, &cnt);
 			if (error != 0) {
-				kcprintf("%s: directory read failed: %m\n", __func__, error);
+				printf("%s: directory read failed: %m\n", __func__, error);
 				break;
 			}
 
@@ -366,7 +366,7 @@ fs_autorun(void *arg)
 
 			error = fs_exec(fs, fs_autorun_path);
 			if (error != 0) {
-				kcprintf("%s: file exec failed: %m", __func__, error);
+				printf("%s: file exec failed: %m", __func__, error);
 				continue;
 			}
 		}

@@ -162,7 +162,7 @@ exception(struct frame *frame)
 		break;
 	case EXCEPTION_SYSCALL:
 		if (!user) {
-			kcprintf("Kernel-originated system call.\n");
+			printf("Kernel-originated system call.\n");
 			break;
 		}
 		cpu_syscall(frame);
@@ -171,25 +171,25 @@ exception(struct frame *frame)
 	case EXCEPTION_TLB_LOAD:
 	case EXCEPTION_TLB_STORE:
 		if (!user) {
-			kcprintf("Kernel page fault.\n");
+			printf("Kernel page fault.\n");
 			break;
 		}
 		vaddr = frame->f_regs[FRAME_BADVADDR];
 		if (vaddr > USER_STACK_BOT && vaddr <= USER_STACK_TOP) {
 			error = vm_fault_stack(td, vaddr);
 			if (error != 0) {
-				kcprintf("%s: vm_fault_stack failed: %m\n", __func__, error);
+				printf("%s: vm_fault_stack failed: %m\n", __func__, error);
 				break;
 			}
 			handled = true;
 			break;
 		}
-		kcprintf("Userland page fault.  Not yet implemented.\n");
+		printf("Userland page fault.  Not yet implemented.\n");
 		break;
 	case EXCEPTION_BREAKPOINT:
 		break;
 	default:
-		kcprintf("Unhandled exception.\n");
+		printf("Unhandled exception.\n");
 		break;
 	}
 
@@ -200,7 +200,7 @@ exception(struct frame *frame)
 		else
 			cpu_exception_state_dump();
 		if (oframe != NULL) {
-			kcprintf("Previous frame:\n");
+			printf("Previous frame:\n");
 			cpu_exception_frame_dump(oframe);
 		}
 #ifdef DB
@@ -225,9 +225,9 @@ cpu_exception_vector_install(void *base, const char *start, const char *end)
 	if (len > EXCEPTION_SPACE)
 		panic("exception code too big");
 	if (len == EXCEPTION_SPACE)
-		kcprintf("exception vector out of space\n");
+		printf("exception vector out of space\n");
 	else if (len + 8 >= EXCEPTION_SPACE)
-		kcprintf("exception vector almost out of space\n");
+		printf("exception vector almost out of space\n");
 	memcpy(base, start, len);
 }
 
@@ -238,7 +238,7 @@ cpu_exception_frame_dump(struct frame *fp)
 	unsigned code;
 
 	if (fp == NULL) {
-		kcprintf("[Frame unavailable.]\n");
+		printf("[Frame unavailable.]\n");
 		return;
 	}
 
@@ -249,20 +249,20 @@ cpu_exception_frame_dump(struct frame *fp)
 	else
 		mode = "user";
 
-	kcprintf("Trap type %u (%s) in %s mode on CPU %u:\n", code,
+	printf("Trap type %u (%s) in %s mode on CPU %u:\n", code,
 		 cpu_exception_names[code] == NULL ? "Reserved" :
 		 cpu_exception_names[code], mode, mp_whoami());
-	kcprintf("status              = %x\n",
+	printf("status              = %x\n",
 		 (unsigned)fp->f_regs[FRAME_STATUS]);
-	kcprintf("cause               = %x\n",
+	printf("cause               = %x\n",
 		 (unsigned)fp->f_regs[FRAME_CAUSE]);
-	kcprintf("pc                  = %p\n",
+	printf("pc                  = %p\n",
 		 (void *)fp->f_regs[FRAME_EPC]);
-	kcprintf("ra                  = %p\n",
+	printf("ra                  = %p\n",
 		 (void *)fp->f_regs[FRAME_RA]);
-	kcprintf("sp                  = %p\n",
+	printf("sp                  = %p\n",
 		 (void *)fp->f_regs[FRAME_SP]);
-	kcprintf("badvaddr            = %p\n",
+	printf("badvaddr            = %p\n",
 		 (void *)fp->f_regs[FRAME_BADVADDR]);
 }
 
@@ -276,14 +276,14 @@ cpu_exception_state_dump(void)
 	if (td != NULL) {
 		cpu_exception_frame_dump(td->td_cputhread.td_frame);
 
-		kcprintf("thread              = %p (%s)\n",
+		printf("thread              = %p (%s)\n",
 			 (void *)td, td->td_name);
-		kcprintf("task                = %p (%s)\n", (void *)td->td_task,
+		printf("task                = %p (%s)\n", (void *)td->td_task,
 			 td->td_task == NULL ? "nil" : td->td_task->t_name);
 	} else {
-		kcprintf("[Thread unavailable.]\n");
-		kcprintf("cause               = %x\n", cpu_read_cause());
-		kcprintf("badvaddr            = %p\n", (void *)cpu_read_badvaddr());
+		printf("[Thread unavailable.]\n");
+		printf("cause               = %x\n", cpu_read_cause());
+		printf("badvaddr            = %p\n", (void *)cpu_read_badvaddr());
 	}
 }
 #ifdef DB
@@ -299,23 +299,23 @@ db_cpu_exception_registers_dump(void)
 	td = current_thread();
 
 	if (td == NULL) {
-		kcprintf("[Thread unavailable.]\n");
+		printf("[Thread unavailable.]\n");
 		return;
 	}
 
-#define	DUMP(r)	kcprintf("\t" #r ":\t%#lx", td->td_cputhread.td_frame->f_regs[_CONCAT(FRAME_, r)])
-	DUMP(AT); kcprintf("\n");
-	DUMP(V0); DUMP(V1); kcprintf("\n");
-	DUMP(A0); DUMP(A1); DUMP(A2); DUMP(A3); kcprintf("\n");
-	DUMP(A4); DUMP(A5); DUMP(A6); DUMP(A7); kcprintf("\n");
-	DUMP(T0); DUMP(T1); DUMP(T2); DUMP(T3); kcprintf("\n");
-	DUMP(S0); DUMP(S1); DUMP(S2); DUMP(S3); kcprintf("\n");
-	DUMP(S4); DUMP(S5); DUMP(S6); DUMP(S7); kcprintf("\n");
-	DUMP(T8); DUMP(T9); kcprintf("\n");
-	DUMP(GP); DUMP(SP); DUMP(S8); DUMP(RA); kcprintf("\n");
-	DUMP(EPC); kcprintf("\n");
-	DUMP(HI); DUMP(LO); kcprintf("\n");
-	DUMP(STATUS); DUMP(CAUSE); DUMP(BADVADDR); kcprintf("\n");
+#define	DUMP(r)	printf("\t" #r ":\t%#lx", td->td_cputhread.td_frame->f_regs[_CONCAT(FRAME_, r)])
+	DUMP(AT); printf("\n");
+	DUMP(V0); DUMP(V1); printf("\n");
+	DUMP(A0); DUMP(A1); DUMP(A2); DUMP(A3); printf("\n");
+	DUMP(A4); DUMP(A5); DUMP(A6); DUMP(A7); printf("\n");
+	DUMP(T0); DUMP(T1); DUMP(T2); DUMP(T3); printf("\n");
+	DUMP(S0); DUMP(S1); DUMP(S2); DUMP(S3); printf("\n");
+	DUMP(S4); DUMP(S5); DUMP(S6); DUMP(S7); printf("\n");
+	DUMP(T8); DUMP(T9); printf("\n");
+	DUMP(GP); DUMP(SP); DUMP(S8); DUMP(RA); printf("\n");
+	DUMP(EPC); printf("\n");
+	DUMP(HI); DUMP(LO); printf("\n");
+	DUMP(STATUS); DUMP(CAUSE); DUMP(BADVADDR); printf("\n");
 #undef DUMP
 }
 DB_COMMAND(registers, cpu, db_cpu_exception_registers_dump);

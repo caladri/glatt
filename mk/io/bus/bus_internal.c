@@ -215,9 +215,9 @@ void
 bus_instance_vprintf(struct bus_instance *bi, const char *fmt, va_list ap)
 {
 	bus_instance_print(bi);
-	kcprintf(": ");
+	printf(": ");
 	kcvprintf(fmt, ap);
-	kcprintf("\n");
+	printf("\n");
 }
 
 static int
@@ -326,10 +326,10 @@ bus_instance_describe(struct bus_instance *bi)
 {
 	bus_instance_print(bi);
 	if (bi->bi_parent != NULL) {
-		kcprintf(" at ");
+		printf(" at ");
 		bus_instance_print(bi->bi_parent);
 	}
-	kcprintf("\n");
+	printf("\n");
 	if (bi->bi_description[0] == '\0')
 		return;
 	bus_instance_printf(bi, "%s", bi->bi_description);
@@ -339,7 +339,7 @@ static void
 bus_instance_print(struct bus_instance *bi)
 {
 	/* XXX Unit numbers, or similar.  */
-	kcprintf("%p [%s]", bi, bi->bi_attachment->ba_bus->bus_name);
+	printf("%p [%s]", bi, bi->bi_attachment->ba_bus->bus_name);
 }
 
 static void
@@ -428,13 +428,13 @@ bus_db_instance_tree_leader(struct bus_instance *parent,
 		return;
 	bus_db_instance_tree_leader(parent->bi_parent, parent, false);
 	if (last && STAILQ_NEXT(bi, bi_peer) == NULL) {
-		kcprintf("`-");
+		printf("`-");
 		return;
 	}
 	if (STAILQ_NEXT(bi, bi_peer) == NULL) {
-		kcprintf("  ");
+		printf("  ");
 	} else {
-		kcprintf("|%c", last ? '-' : ' ');
+		printf("|%c", last ? '-' : ' ');
 	}
 }
 
@@ -445,7 +445,7 @@ bus_db_instance_tree(struct bus_instance *bi)
 	struct bus_instance *child;
 
 	bus_db_instance_tree_leader(bi->bi_parent, bi, true);
-	kcprintf("%s\n", bus->bus_name);
+	printf("%s\n", bus->bus_name);
 
 	STAILQ_FOREACH(child, &bi->bi_children, bi_peer)
 		bus_db_instance_tree(child);
@@ -455,7 +455,7 @@ static void
 bus_db_instances(void)
 {
 	if (bus_root == NULL) {
-		kcprintf("No busses attached.\n");
+		printf("No busses attached.\n");
 		return;
 	}
 	bus_db_instance_tree(STAILQ_FIRST(&bus_root->bus_instances));

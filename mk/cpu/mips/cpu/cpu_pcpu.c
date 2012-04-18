@@ -12,18 +12,18 @@
 static void
 db_cpu_dump_pcpu(void)
 {
-	kcprintf("thread              = %p\n", PCPU_GET(thread));
+	printf("thread              = %p\n", PCPU_GET(thread));
 
-	kcprintf("cpuid               = %x\n", PCPU_GET(cpuid));
-	kcprintf("flags               = %x\n", PCPU_GET(flags));
+	printf("cpuid               = %x\n", PCPU_GET(cpuid));
+	printf("flags               = %x\n", PCPU_GET(flags));
 
-	kcprintf("interrupt_mask      = %x\n", PCPU_GET(interrupt_mask));
-	kcprintf("interrupt_enable    = %x\n", PCPU_GET(interrupt_enable));
+	printf("interrupt_mask      = %x\n", PCPU_GET(interrupt_mask));
+	printf("interrupt_enable    = %x\n", PCPU_GET(interrupt_enable));
 
-	kcprintf("critical_count      = %u\n", PCPU_GET(critical_count));
-	kcprintf("critical_section    = %lx\n", PCPU_GET(critical_section));
+	printf("critical_count      = %u\n", PCPU_GET(critical_count));
+	printf("critical_section    = %lx\n", PCPU_GET(critical_section));
 
-	kcprintf("asidnext            = %u\n", PCPU_GET(asidnext));
+	printf("asidnext            = %u\n", PCPU_GET(asidnext));
 }
 DB_COMMAND(pcpu, cpu, db_cpu_dump_pcpu);
 #endif

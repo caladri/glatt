@@ -257,7 +257,7 @@ scheduler_db_dump_queue(struct scheduler_queue *sq)
 
 		td = se->se_thread;
 
-		kcprintf("%p (thread %p, \"%s\")%s%s%s%s",
+		printf("%p (thread %p, \"%s\")%s%s%s%s",
 			 se, td, td->td_name,
 			 ((se->se_flags & SCHEDULER_RUNNING) ?
 			  " running" : ""),
@@ -272,16 +272,16 @@ scheduler_db_dump_queue(struct scheduler_queue *sq)
 			 ((se->se_flags & SCHEDULER_RUNNABLE) ?
 			  " runnable" : ""));
 #ifndef UNIPROCESSOR
-		kcprintf(" cpu%u", se->se_oncpu);
+		printf(" cpu%u", se->se_oncpu);
 #endif
-		kcprintf("\n");
+		printf("\n");
 	}
 }
 
 static void
 scheduler_db_dump(void)
 {
-	kcprintf("Dumping scheduler queue...\n");
+	printf("Dumping scheduler queue...\n");
 	scheduler_db_dump_queue(&scheduler_queue);
 }
 DB_COMMAND(queues, scheduler, scheduler_db_dump);

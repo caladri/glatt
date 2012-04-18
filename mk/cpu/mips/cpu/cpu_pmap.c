@@ -96,16 +96,16 @@ pmap_bootstrap(void)
 	int error;
 
 #ifdef VERBOSE
-	kcprintf("PMAP: %u level 0 pointers in each pmap.\n", NL0PMAP);
-	kcprintf("PMAP: %lu level 1 pointers in each level 0 page.\n", NL1PL0);
-	kcprintf("PMAP: %lu PTEs in each level 1 page.\n", NPTEL1);
-	kcprintf("PMAP: Level 1 maps %lu pages of virtual address space.\n",
+	printf("PMAP: %u level 0 pointers in each pmap.\n", NL0PMAP);
+	printf("PMAP: %lu level 1 pointers in each level 0 page.\n", NL1PL0);
+	printf("PMAP: %lu PTEs in each level 1 page.\n", NPTEL1);
+	printf("PMAP: Level 1 maps %lu pages of virtual address space.\n",
 		 NPTEL1);
-	kcprintf("PMAP: Level 0 maps %lu pages of virtual address space.\n",
+	printf("PMAP: Level 0 maps %lu pages of virtual address space.\n",
 		 NPTEL1 * NL1PL0);
-	kcprintf("PMAP: Each pmap maps %lu pages of virtual address space.\n",
+	printf("PMAP: Each pmap maps %lu pages of virtual address space.\n",
 		 NPTEL1 * NL1PL0 * NL0PMAP);
-	kcprintf("PMAP: Each pmap maps %luM (%luG) of virtual address space.\n",
+	printf("PMAP: Each pmap maps %luM (%luG) of virtual address space.\n",
 		 ((NPTEL1 * NL1PL0 * NL0PMAP * PAGE_SIZE) /
 		  (1024 * 1024)),
 		 ((NPTEL1 * NL1PL0 * NL0PMAP * PAGE_SIZE) /
@@ -403,7 +403,7 @@ static void
 pmap_startup(void *arg)
 {
 #ifdef VERBOSE
-	kcprintf("PMAP: initialization complete.\n");
+	printf("PMAP: initialization complete.\n");
 #endif
 	PCPU_SET(asidnext, PMAP_ASID_FIRST);
 }
@@ -415,7 +415,7 @@ db_pmap_dump_pte(pt_entry_t pte)
 {
 	if (pte == 0)
 		return;
-	kcprintf("\t\t\t%jx\n", (uintmax_t)pte);
+	printf("\t\t\t%jx\n", (uintmax_t)pte);
 }
 
 static void
@@ -424,11 +424,11 @@ db_pmap_dump_level1(struct pmap_lev1 *pml1, unsigned level)
 	unsigned i;
 
 	if (level == 1) {
-		kcprintf("\t\t%p\n", pml1);
+		printf("\t\t%p\n", pml1);
 		return;
 	}
 
-	kcprintf("\t\tpage table entries:\n");
+	printf("\t\tpage table entries:\n");
 	for (i = 0; i < NPTEL1; i++)
 		db_pmap_dump_pte(pml1->pml1_entries[i]);
 }
@@ -439,11 +439,11 @@ db_pmap_dump_level0(struct pmap_lev0 *pml0, unsigned level)
 	unsigned i;
 
 	if (level == 0) {
-		kcprintf("\t%p\n", pml0);
+		printf("\t%p\n", pml0);
 		return;
 	}
 
-	kcprintf("\tlevel 1 pointers:\n");
+	printf("\tlevel 1 pointers:\n");
 	for (i = 0; i < NL1PL0; i++) {
 		struct pmap_lev1 *pml1 = pml0->pml0_level1[i];
 
@@ -459,14 +459,14 @@ db_pmap_dump_pmap(struct vm *vm, unsigned level)
 	struct pmap *pm = vm->vm_pmap;
 	unsigned i;
 
-	kcprintf("VM %p PMAP %p\n", vm, pm);
+	printf("VM %p PMAP %p\n", vm, pm);
 	if (pm == NULL)
 		return;
 
-	kcprintf("\tasid %u begin %p end %p\n", pm->pm_asid,
+	printf("\tasid %u begin %p end %p\n", pm->pm_asid,
 		 (void *)pm->pm_base, (void *)pm->pm_end);
 
-	kcprintf("level 0 pointers:\n");
+	printf("level 0 pointers:\n");
 	for (i = 0; i < NL0PMAP; i++) {
 		struct pmap_lev0 *pml0 = pm->pm_level0[i];
 
@@ -505,12 +505,12 @@ db_pmap_dump_task_pte(void)
 	task = current_task();
 
 	if (task == NULL) {
-		kcprintf("No current task.\n");
+		printf("No current task.\n");
 		return;
 	}
 
 	if (task->t_vm == NULL) {
-		kcprintf("Current task has no VM.\n");
+		printf("Current task has no VM.\n");
 		return;
 	}
 	db_pmap_dump_pmap(task->t_vm, 2);
@@ -525,12 +525,12 @@ db_pmap_dump_task_l1(void)
 	task = current_task();
 
 	if (task == NULL) {
-		kcprintf("No current task.\n");
+		printf("No current task.\n");
 		return;
 	}
 
 	if (task->t_vm == NULL) {
-		kcprintf("Current task has no VM.\n");
+		printf("Current task has no VM.\n");
 		return;
 	}
 	db_pmap_dump_pmap(task->t_vm, 1);
@@ -545,12 +545,12 @@ db_pmap_dump_task_l0(void)
 	task = current_task();
 
 	if (task == NULL) {
-		kcprintf("No current task.\n");
+		printf("No current task.\n");
 		return;
 	}
 
 	if (task->t_vm == NULL) {
-		kcprintf("Current task has no VM.\n");
+		printf("Current task has no VM.\n");
 		return;
 	}
 	db_pmap_dump_pmap(task->t_vm, 0);

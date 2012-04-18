@@ -71,7 +71,7 @@ network_interface_receive(struct network_interface *netif,
 
 	error = ipc_port_send_data(&ipch, data, datalen);
 	if (error != 0) {
-		kcprintf("%s: ipc_port_send failed: %m\n", __func__, error);
+		printf("%s: ipc_port_send failed: %m\n", __func__, error);
 		return;
 	}
 #endif
@@ -131,7 +131,7 @@ network_interface_ipc_handle_get_info(struct network_interface *netif, const str
 
 		error = ipc_port_send_data(&ipch, &rhdr, ipch.ipchdr_recsize);
 		if (error != 0) {
-			kcprintf("%s: ipc_port_send failed: %m\n", __func__, error);
+			printf("%s: ipc_port_send failed: %m\n", __func__, error);
 			return (error);
 		}
 		return (0);
@@ -152,7 +152,7 @@ network_interface_ipc_handle_get_info(struct network_interface *netif, const str
 
 	error = ipc_port_send_data(&ipch, data, ipch.ipchdr_recsize);
 	if (error != 0) {
-		kcprintf("%s: ipc_port_send failed: %m\n", __func__, error);
+		printf("%s: ipc_port_send failed: %m\n", __func__, error);
 		free(data);
 		return (error);
 	}
@@ -189,7 +189,7 @@ network_interface_ipc_handle_receive(struct network_interface *netif, const stru
 
 	error = ipc_port_send_data(&ipch, &error, sizeof error);
 	if (error != 0) {
-		kcprintf("%s: ipc_port_send failed: %m\n", __func__, error);
+		printf("%s: ipc_port_send failed: %m\n", __func__, error);
 		return (error);
 	}
 
@@ -222,7 +222,7 @@ network_interface_ipc_handle_transmit(struct network_interface *netif, const str
 
 	error = ipc_port_send_data(&ipch, &error, sizeof error);
 	if (error != 0) {
-		kcprintf("%s: ipc_port_send failed: %m\n", __func__, error);
+		printf("%s: ipc_port_send failed: %m\n", __func__, error);
 		return (error);
 	}
 

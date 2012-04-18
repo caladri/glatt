@@ -283,17 +283,17 @@ vm_use_index(struct vm *vm, struct vm_index *vmi, size_t pages)
 static void
 db_vm_index_dump_dot(struct vm_index *vmi)
 {
-	kcprintf("VMI%p [ label=\"%p ... %p\" ];\n", vmi, vmi->vmi_base,
+	printf("VMI%p [ label=\"%p ... %p\" ];\n", vmi, vmi->vmi_base,
 		 vmi->vmi_base + PAGE_TO_ADDR(vmi->vmi_size));
-	kcprintf("VMI%p -> VMI%p;\n", vmi, vmi->vmi_tree.left);
-	kcprintf("VMI%p -> VMI%p;\n", vmi, vmi->vmi_tree.right);
+	printf("VMI%p -> VMI%p;\n", vmi, vmi->vmi_tree.left);
+	printf("VMI%p -> VMI%p;\n", vmi, vmi->vmi_tree.right);
 	/* XXX Should be easy to generate box-drawings via pmap.  */
 }
 
 static void
 db_vm_index_dump(struct vm_index *vmi)
 {
-	kcprintf("VM Index %p [ %p ... %p (%zu pages) ] %s\n", vmi,
+	printf("VM Index %p [ %p ... %p (%zu pages) ] %s\n", vmi,
 		 (void *)vmi->vmi_base,
 		 (void *)(vmi->vmi_base + vmi->vmi_size * PAGE_SIZE),
 		 vmi->vmi_size,
@@ -319,9 +319,9 @@ DB_COMMAND(kvm, vm_index, db_vm_index_dump_kvm);
 static void
 db_vm_index_dump_kvm_dot(void)
 {
-	kcprintf("digraph KVM {\n");
+	printf("digraph KVM {\n");
 	db_vm_index_dump_vm(&kernel_vm, db_vm_index_dump_dot);
-	kcprintf("};\n");
+	printf("};\n");
 }
 DB_COMMAND(dotkvm, vm_index, db_vm_index_dump_kvm_dot);
 
@@ -334,10 +334,10 @@ db_vm_index_dump_task(void)
 		if ((task->t_flags & TASK_KERNEL) == 0) {
 			db_vm_index_dump_vm(task->t_vm, db_vm_index_dump);
 		} else {
-			kcprintf("Kernel tasks do not have their own VM spaces.\n");
+			printf("Kernel tasks do not have their own VM spaces.\n");
 		}
 	} else {
-		kcprintf("No running task.\n");
+		printf("No running task.\n");
 	}
 }
 DB_COMMAND(task, vm_index, db_vm_index_dump_task);
@@ -349,14 +349,14 @@ db_vm_index_dump_task_dot(void)
 
 	if (task != NULL) {
 		if ((task->t_flags & TASK_KERNEL) == 0) {
-			kcprintf("digraph %s {\n", task->t_name);
+			printf("digraph %s {\n", task->t_name);
 			db_vm_index_dump_vm(task->t_vm, db_vm_index_dump_dot);
-			kcprintf("};\n");
+			printf("};\n");
 		} else {
-			kcprintf("Kernel tasks do not have their own VM spaces.\n");
+			printf("Kernel tasks do not have their own VM spaces.\n");
 		}
 	} else {
-		kcprintf("No running task.\n");
+		printf("No running task.\n");
 	}
 }
 DB_COMMAND(dottask, vm_index, db_vm_index_dump_task_dot);

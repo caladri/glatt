@@ -108,7 +108,7 @@ static void
 pmap_startup(void *arg)
 {
 #ifdef VERBOSE
-	kcprintf("PMAP: initialization complete.\n");
+	printf("PMAP: initialization complete.\n");
 #endif
 }
 STARTUP_ITEM(pmap, STARTUP_PMAP, STARTUP_FIRST, pmap_startup, NULL);

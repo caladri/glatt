@@ -150,7 +150,7 @@ tmcons_interrupt(void *arg, int interrupt)
 				continue;
 			TMCONS_UNLOCK(sc);
 #ifdef VERBOSE
-			kcprintf("%s: buffer full, dropped characters.\n", __func__);
+			printf("%s: buffer full, dropped characters.\n", __func__);
 #endif
 			return;
 		}

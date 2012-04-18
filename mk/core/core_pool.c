@@ -132,7 +132,7 @@ pool_create(struct pool *pool, const char *name, size_t size, unsigned flags)
 {
 #ifdef VERBOSE
 	if ((size % POOL_ALIGNMENT) != 0) {
-		kcprintf("POOL: Rounding up pool \"%s\" from %zu to %zu\n",
+		printf("POOL: Rounding up pool \"%s\" from %zu to %zu\n",
 			 name, size, ROUNDUP(size, POOL_ALIGNMENT));
 	}
 #endif
@@ -153,7 +153,7 @@ pool_create(struct pool *pool, const char *name, size_t size, unsigned flags)
 	SLIST_INIT(&pool->pool_pages);
 	pool->pool_flags = flags | POOL_VALID;
 #ifdef VERBOSE
-	kcprintf("POOL: Created pool \"%s\" of size %zu (%zu/pg)\n",
+	printf("POOL: Created pool \"%s\" of size %zu (%zu/pg)\n",
 		 pool->pool_name, pool->pool_size, pool->pool_maxitems);
 #endif
 #ifdef DB
@@ -306,23 +306,23 @@ db_pool_dump_pool(struct pool *pool, bool pages, bool items)
 	pool_map_t *map;
 	unsigned i;
 
-	kcprintf("pool %p \"%s\" size %zu freeitems %zu maxitems %zu\n", pool,
+	printf("pool %p \"%s\" size %zu freeitems %zu maxitems %zu\n", pool,
 		 pool->pool_name, pool->pool_size, pool->pool_freeitems,
 		 pool->pool_maxitems);
 	if (!pages)
 		return;
 	SLIST_FOREACH(page, &pool->pool_pages, pp_link) {
-		kcprintf("     page %p items %zu\n", page, page->pp_items);
+		printf("     page %p items %zu\n", page, page->pp_items);
 		if (!items)
 			continue;
 		map = (pool_map_t *)(void *)(page + 1);
 		for (i = 0; i < pool->pool_maxitems; i++) {
 			if (POOL_OFFSET(i) == 0)
-				kcprintf("          ");
-			kcprintf("%c", POOL_MAP_ISSET(map, i) ? 'F' : '_');
+				printf("          ");
+			printf("%c", POOL_MAP_ISSET(map, i) ? 'F' : '_');
 			if (POOL_OFFSET(i + 1) == 0 ||
 			    i + 1 == pool->pool_maxitems)
-				kcprintf("\n");
+				printf("\n");
 		}
 	}
 }

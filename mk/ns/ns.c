@@ -17,7 +17,7 @@ static int ns_handler(void *, struct ipc_header *, void *);
 static int
 ns_handle_gibberish(const struct ipc_header *reqh)
 {
-	kcprintf("%s: childishly refusing to respond to nonsense.\n", __func__);
+	printf("%s: childishly refusing to respond to nonsense.\n", __func__);
 	return (ERROR_INVALID);
 }
 
@@ -44,7 +44,7 @@ ns_handle_lookup(const struct ipc_header *reqh, void *p)
 
 	error = ipc_port_send_data(&ipch, NULL, 0);
 	if (error != 0) {
-		kcprintf("%s: ipc_port_send failed: %m\n", __func__, error);
+		printf("%s: ipc_port_send failed: %m\n", __func__, error);
 		return (error);
 	}
 
@@ -72,7 +72,7 @@ ns_handle_register(const struct ipc_header *reqh, void *p)
 
 	error = ipc_port_send_data(&ipch, NULL, 0);
 	if (error != 0) {
-		kcprintf("%s: ipc_port_send failed: %m\n", __func__, error);
+		printf("%s: ipc_port_send failed: %m\n", __func__, error);
 		return (error);
 	}
 

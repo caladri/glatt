@@ -7,8 +7,7 @@ verbose		requires: std
 ##
 # Defaults.
 ##
-std		implies: ipc
-ipc		implies: ns
+std		implies: ns
 
 ###
 # Files sorted by directory grouped by option, std always first, then sorted.
@@ -44,8 +43,6 @@ db		db/db_misc.c
 enter_debugger	requires: db
 
 fs		fs/fs.c
-# XXX We could actually eliminate the IPC requirement.
-fs		requires: ipc
 
 framebuffer	io/framebuffer/framebuffer.c
 framebuffer	io/framebuffer/framebuffer_font.c
@@ -75,15 +72,14 @@ ufs		io/storage/ufs/ufs_superblock.c
 ufs		requires: storage
 ufs		requires: fs
 
-ipc		ipc/ipc_port.c
-ipc		ipc/ipc_service.c
-ipc		ipc/ipc_system.c
-ipc		ipc/ipc_task.c
-ipc		ipc/ipc_token.c
+std		ipc/ipc_port.c
+std		ipc/ipc_service.c
+std		ipc/ipc_system.c
+std		ipc/ipc_task.c
+std		ipc/ipc_token.c
 
 ns		ns/ns.c
 ns		ns/service_directory.c
-ns		requires: ipc
 
 std		vm/vm.c
 std		vm/vm_alloc.c

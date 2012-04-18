@@ -4,10 +4,8 @@
 #include <core/queue.h>
 #include <cpu/pcpu.h>
 #include <cpu/task.h>
-#ifdef IPC
 #include <ipc/ipc.h>
 #include <ipc/task.h>
-#endif
 
 struct vm;
 
@@ -22,9 +20,7 @@ struct task {
 	STAILQ_ENTRY(struct task) t_link;
 	unsigned t_flags;
 	struct vm *t_vm;
-#ifdef IPC
 	struct ipc_task t_ipc;
-#endif
 };
 
 void task_init(void);

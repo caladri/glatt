@@ -61,12 +61,10 @@ startup_init(void)
 	 */
 	scheduler_init();
 
-#ifdef IPC
 	/*
 	 * Initialize IPC functionality.
 	 */
 	ipc_init();
-#endif
 
 	/*
 	 * Initialize task and thread data structures.

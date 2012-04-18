@@ -4,9 +4,7 @@
 #if defined(MK)
 #include <core/btree.h>
 #endif
-#if !defined(MK) || defined(IPC)
 #include <ipc/ipc.h>
-#endif
 
 #define	NETWORK_INTERFACE_NAME_LENGTH	(128)
 
@@ -18,7 +16,6 @@ enum network_interface_request {
 	NETWORK_INTERFACE_GET_ADDRESS,
 };
 
-#if !defined(MK) || defined(IPC)
 /*
  * XXX
  * For now interfaces have their names exported as services, rather than
@@ -36,7 +33,6 @@ struct network_interface_get_info_response_header {
 	size_t addrlen;
 	/* uint8_t addr[addrlen] follows.  */
 };
-#endif
 
 #if defined(MK)
 typedef	int network_interface_request_handler_t(void *,
@@ -51,9 +47,7 @@ struct network_interface {
 	enum network_interface_type ni_type;
 	network_interface_request_handler_t *ni_handler;
 	network_interface_transmit_t *ni_transmit;
-#ifdef IPC
 	struct ipc_header ni_receive_header;
-#endif
 };
 
 int network_interface_attach(struct network_interface *,

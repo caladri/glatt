@@ -120,7 +120,7 @@ mk-universe-help:
 mk-universe:
 .for _platform in macppc malta octeon testmips
 	@cd ${.CURDIR} && ${MAKE} toolchain PLATFORM=${_platform}
-.for _config in std std+db std+verbose std+invariants std-ipc-ns std+fs+exec
+.for _config in std std+db std+verbose std+invariants std-ns std+fs+exec
 	@cd ${.CURDIR} && ${MAKE} mk PLATFORM=${_platform} MK_CONFIG=${_config}
 .endfor
 	@cd ${.CURDIR} && ${MAKE} mk-clean

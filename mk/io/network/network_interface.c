@@ -1,25 +1,19 @@
 #include <core/types.h>
 #include <core/error.h>
-#ifdef IPC
 #include <core/malloc.h>
-#endif
 #include <core/spinlock.h>
 #include <core/startup.h>
 #include <core/string.h>
 #include <core/console.h>
 #include <io/network/interface.h>
-#ifdef IPC
 #include <ipc/ipc.h>
 #include <ipc/port.h>
 #include <ipc/service.h>
-#endif
 
-#ifdef IPC
 static ipc_service_t network_interface_ipc_handler;
 static int network_interface_ipc_handle_get_info(struct network_interface *, const struct ipc_header *, const void *);
 static int network_interface_ipc_handle_receive(struct network_interface *, const struct ipc_header *, const void *);
 static int network_interface_ipc_handle_transmit(struct network_interface *, const struct ipc_header *, const void *);
-#endif
 
 int
 network_interface_attach(struct network_interface *netif,
@@ -29,9 +23,7 @@ network_interface_attach(struct network_interface *netif,
 			 network_interface_transmit_t *transmit,
 			 void *softc)
 {
-#ifdef IPC
 	int error;
-#endif
 
 	strlcpy(netif->ni_name, name, sizeof netif->ni_name);
 	netif->ni_softc = softc;
@@ -41,7 +33,6 @@ network_interface_attach(struct network_interface *netif,
 
 	/* XXX Set up based on type?  */
 
-#ifdef IPC
 	memset(&netif->ni_receive_header, 0x00, sizeof netif->ni_receive_header);
 
 	/* XXX This is gross.  */
@@ -49,7 +40,6 @@ network_interface_attach(struct network_interface *netif,
 			    NULL, network_interface_ipc_handler, netif);
 	if (error != 0)
 		return (error);
-#endif
 
 	return (0);
 }
@@ -58,7 +48,6 @@ void
 network_interface_receive(struct network_interface *netif,
 			  const void *data, size_t datalen)
 {
-#ifdef IPC
 	struct ipc_header ipch;
 	int error;
 
@@ -74,10 +63,8 @@ network_interface_receive(struct network_interface *netif,
 		printf("%s: ipc_port_send failed: %m\n", __func__, error);
 		return;
 	}
-#endif
 }
 
-#ifdef IPC
 static int
 network_interface_ipc_handler(void *softc, struct ipc_header *ipch, void *p)
 {
@@ -228,4 +215,3 @@ network_interface_ipc_handle_transmit(struct network_interface *netif, const str
 
 	return (0);
 }
-#endif

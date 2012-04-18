@@ -7,11 +7,9 @@
 #include <cpu/pcpu.h>
 #include <cpu/register.h>
 #include <core/console.h>
-#ifdef IPC
 #include <ipc/ipc.h>
 #include <ipc/port.h>
 #include <ipc/token.h>
-#endif
 #include <vm/vm.h>
 #include <vm/vm_alloc.h>
 #include <vm/vm_page.h>
@@ -19,20 +17,14 @@
 int
 syscall(unsigned number, register_t *cnt, register_t *params)
 {
-#ifdef IPC
 	struct ipc_token *token;
 	struct ipc_header ipch;
-#endif
 	struct thread *td;
-#ifdef IPC
 	ipc_port_t port;
-#endif
 	vaddr_t vaddr;
 	int error;
 	char ch;
-#ifdef IPC
 	void *p;
-#endif
 
 	td = current_thread();
 
@@ -64,7 +56,6 @@ syscall(unsigned number, register_t *cnt, register_t *params)
 		params[0] = ch;
 		return (0);
 	case SYSCALL_IPC_PORT_ALLOCATE:
-#ifdef IPC
 		if (*cnt != 1)
 			return (ERROR_ARG_COUNT);
 		error = ipc_port_allocate(&token, &port, (ipc_port_flags_t)params[0]);
@@ -76,11 +67,7 @@ syscall(unsigned number, register_t *cnt, register_t *params)
 		*cnt = 1;
 		params[0] = port;
 		return (0);
-#else
-		return (ERROR_NOT_AVAILABLE);
-#endif
 	case SYSCALL_IPC_PORT_SEND:
-#ifdef IPC
 		if (*cnt != 2)
 			return (ERROR_ARG_COUNT);
 		/*
@@ -93,11 +80,7 @@ syscall(unsigned number, register_t *cnt, register_t *params)
 			return (error);
 		*cnt = 0;
 		return (0);
-#else
-		return (ERROR_NOT_AVAILABLE);
-#endif
 	case SYSCALL_IPC_PORT_WAIT:
-#ifdef IPC
 		if (*cnt != 1)
 			return (ERROR_ARG_COUNT);
 		error = ipc_port_wait((ipc_port_t)params[0]);
@@ -105,11 +88,7 @@ syscall(unsigned number, register_t *cnt, register_t *params)
 			return (error);
 		*cnt = 0;
 		return (0);
-#else
-		return (ERROR_NOT_AVAILABLE);
-#endif
 	case SYSCALL_IPC_PORT_RECEIVE:
-#ifdef IPC
 		if (*cnt != 2)
 			return (ERROR_ARG_COUNT);
 		error = ipc_port_receive((ipc_port_t)params[0], &ipch, &p);
@@ -119,9 +98,6 @@ syscall(unsigned number, register_t *cnt, register_t *params)
 		*cnt = 1;
 		params[0] = (register_t)(intptr_t)p;
 		return (0);
-#else
-		return (ERROR_NOT_AVAILABLE);
-#endif
 	case SYSCALL_VM_PAGE_GET:
 		if (*cnt != 0)
 			return (ERROR_ARG_COUNT);

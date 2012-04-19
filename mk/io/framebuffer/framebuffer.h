@@ -1,5 +1,5 @@
-#ifndef	_IO_CONSOLE_FRAMEBUFFER_H_
-#define	_IO_CONSOLE_FRAMEBUFFER_H_
+#ifndef	_IO_FRAMEBUFFER_FRAMEBUFFER_H_
+#define	_IO_FRAMEBUFFER_FRAMEBUFFER_H_
 
 #include <core/spinlock.h>
 #include <core/consoledev.h>
@@ -33,4 +33,4 @@ extern struct font framebuffer_font_miklic_bold8x16;
 
 void framebuffer_init(struct framebuffer *, unsigned, unsigned);
 
-#endif /* !_IO_CONSOLE_FRAMEBUFFER_H_ */
+#endif /* !_IO_FRAMEBUFFER_FRAMEBUFFER_H_ */

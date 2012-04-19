@@ -1,5 +1,5 @@
-#ifndef	_IO_CONSOLE_CONSOLEDEV_H_
-#define	_IO_CONSOLE_CONSOLEDEV_H_
+#ifndef	_CORE_CONSOLEDEV_H_
+#define	_CORE_CONSOLEDEV_H_
 
 #include <core/spinlock.h>
 
@@ -15,4 +15,4 @@ struct console {
 
 void console_init(struct console *);
 
-#endif /* !_IO_CONSOLE_CONSOLEDEV_H_ */
+#endif /* !_CORE_CONSOLEDEV_H_ */

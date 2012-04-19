@@ -17,8 +17,6 @@ task_init(void)
 	if (error != 0)
 		panic("%s: pool_create failed: %m", __func__, error);
 	STAILQ_INIT(&task_list);
-
-	ipc_task_init();
 }
 
 int

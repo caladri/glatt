@@ -1,6 +1,7 @@
 #include <core/types.h>
 #include <core/btree.h>
 #include <core/cv.h>
+#include <core/console.h>
 #include <core/error.h>
 #include <core/malloc.h>
 #include <core/mutex.h>
@@ -11,7 +12,6 @@
 #include <core/thread.h>
 #include <ipc/ipc.h>
 #include <ipc/port.h>
-#include <ipc/token.h>
 #include <vm/vm.h>
 #include <vm/vm_index.h>
 #include <vm/vm_page.h>
@@ -24,6 +24,23 @@ struct ipc_message {
 	TAILQ_ENTRY(struct ipc_message) ipcmsg_link;
 };
 
+struct ipc_port_right {
+	struct task *ipcpr_task;
+	ipc_port_right_t ipcpr_right;
+	/*
+	 * Each port right is in a BTREE by task that lets
+	 * rights be looked up for a given task on a port
+	 * quickly.  The BTREE_ROOT is in the port itself.
+	 */
+	BTREE_NODE(struct ipc_port_right) ipcpr_node;
+	/*
+	 * Each port right is in a STAILQ that lets all
+	 * rights associated with a task be enumerated.
+	 * The STAILQ_HEAD is in the ipc_task structure.
+	 */
+	STAILQ_ENTRY(struct ipc_port_right) ipcpr_link;
+};
+
 struct ipc_port {
 	struct mutex ipcp_mutex;
 	struct cv *ipcp_cv;
@@ -31,12 +48,18 @@ struct ipc_port {
 	ipc_port_flags_t ipcp_flags;
 	TAILQ_HEAD(, struct ipc_message) ipcp_msgs;
 	BTREE_NODE(struct ipc_port) ipcp_link;
-	/* XXX Need a list of tasks which are holding rights and a refcnt.  */
+	/*
+	 * XXX
+	 * Need a count of receive rights and to expire _all_
+	 * rights when the last receive right is dropped.
+	 */
+	BTREE_ROOT(struct ipc_port_right) ipcp_rights;
 };
 
 static BTREE_ROOT(struct ipc_port) ipc_ports = BTREE_ROOT_INITIALIZER();
 static struct mutex ipc_ports_lock;
 static struct pool ipc_port_pool;
+static struct pool ipc_port_right_pool;
 static ipc_port_t ipc_port_next		= IPC_PORT_UNRESERVED_START;
 
 #define	IPC_PORTS_LOCK()	mutex_lock(&ipc_ports_lock)
@@ -47,7 +70,11 @@ static ipc_port_t ipc_port_next		= IPC_PORT_UNRESERVED_START;
 
 static struct ipc_port *ipc_port_alloc(void);
 static struct ipc_port *ipc_port_lookup(ipc_port_t);
-static int ipc_port_register(struct ipc_token **, struct ipc_port *, ipc_port_t, ipc_port_flags_t);
+static int ipc_port_register(struct ipc_port *, ipc_port_t, ipc_port_flags_t);
+
+static bool ipc_port_right_check(struct ipc_port *, struct task *, ipc_port_right_t);
+static int ipc_port_right_insert(struct ipc_port *, struct task *, ipc_port_right_t);
+static struct ipc_port_right *ipc_port_right_lookup(struct ipc_port *, struct task *);
 
 void
 ipc_port_init(void)
@@ -60,11 +87,17 @@ ipc_port_init(void)
 	if (error != 0)
 		panic("%s: pool_create failed: %m", __func__, error);
 
+	error = pool_create(&ipc_port_right_pool, "IPC PORT RIGHT",
+			    sizeof (struct ipc_port_right),
+			    POOL_DEFAULT | POOL_VIRTUAL);
+	if (error != 0)
+		panic("%s: pool_create failed: %m", __func__, error);
+
 	mutex_init(&ipc_ports_lock, "IPC Ports", MUTEX_FLAG_DEFAULT);
 }
 
 int
-ipc_port_allocate(struct ipc_token **tokenp, ipc_port_t *portp, ipc_port_flags_t flags)
+ipc_port_allocate(ipc_port_t *portp, ipc_port_flags_t flags)
 {
 	struct ipc_port *ipcp, *old;
 	ipc_port_t port;
@@ -89,7 +122,7 @@ ipc_port_allocate(struct ipc_token **tokenp, ipc_port_t *portp, ipc_port_flags_t
 		}
 
 		IPC_PORT_LOCK(ipcp);
-		error = ipc_port_register(tokenp, ipcp, port, flags);
+		error = ipc_port_register(ipcp, port, flags);
 		if (error != 0)
 			panic("%s: ipc_port_register failed: %m", __func__,
 			      error);
@@ -104,7 +137,7 @@ ipc_port_allocate(struct ipc_token **tokenp, ipc_port_t *portp, ipc_port_flags_t
 }
 
 int
-ipc_port_allocate_reserved(struct ipc_token **tokenp, ipc_port_t port, ipc_port_flags_t flags)
+ipc_port_allocate_reserved(ipc_port_t port, ipc_port_flags_t flags)
 {
 	struct ipc_port *ipcp, *old;
 	int error;
@@ -128,7 +161,7 @@ ipc_port_allocate_reserved(struct ipc_token **tokenp, ipc_port_t port, ipc_port_
 	}
 
 	IPC_PORT_LOCK(ipcp);
-	error = ipc_port_register(tokenp, ipcp, port, flags);
+	error = ipc_port_register(ipcp, port, flags);
 	if (error != 0)
 		panic("%s: ipc_port_register failed: %m", __func__, error);
 	IPC_PORT_UNLOCK(ipcp);
@@ -164,11 +197,10 @@ ipc_port_receive(ipc_port_t port, struct ipc_header *ipch, void **vpagep)
 		return (ERROR_NOT_FOUND);
 	}
 
-	error = ipc_task_check_port_right(task, IPC_PORT_RIGHT_RECEIVE, port);
-	if (error != 0) {
+	if (!ipc_port_right_check(ipcp, task, IPC_PORT_RIGHT_RECEIVE)) {
 		IPC_PORT_UNLOCK(ipcp);
 		IPC_PORTS_UNLOCK();
-		return (error);
+		return (ERROR_NO_RIGHT);
 	}
 
 	if (TAILQ_EMPTY(&ipcp->ipcp_msgs)) {
@@ -191,9 +223,7 @@ ipc_port_receive(ipc_port_t port, struct ipc_header *ipch, void **vpagep)
 		ipcp = ipc_port_lookup(ipcmsg->ipcmsg_header.ipchdr_src);
 		if (ipcp == NULL)
 			panic("%s: port disappeared.", __func__);
-		error = ipc_task_insert_port_right(task,
-						   ipcmsg->ipcmsg_header.ipchdr_right,
-						   ipcmsg->ipcmsg_header.ipchdr_src);
+		error = ipc_port_right_insert(ipcp, task, ipcmsg->ipcmsg_header.ipchdr_right);
 		if (error != 0)
 			panic("%s: grating rights failed: %m", __func__,
 			      error);
@@ -257,26 +287,26 @@ ipc_port_receive(ipc_port_t port, struct ipc_header *ipch, void **vpagep)
 }
 
 int
-ipc_port_right_grant(struct task *task, struct ipc_token *token, ipc_port_right_t right)
+ipc_port_right_grant(struct task *task, ipc_port_t src, ipc_port_right_t right)
 {
 	struct ipc_port *ipcp;
-	ipc_port_t port;
 	int error;
 
-	port = ipc_token_port(token);
-	error = ipc_token_consume(token, right);
-	if (error != 0)
-		return (error);
-
 	IPC_PORTS_LOCK();
-	ipcp = ipc_port_lookup(port);
+	ipcp = ipc_port_lookup(src);
 	if (ipcp == NULL) {
 		IPC_PORTS_UNLOCK();
 		return (ERROR_NOT_FOUND);
 	}
+
+	if (!ipc_port_right_check(ipcp, current_task(), IPC_PORT_RIGHT_RECEIVE)) {
+		IPC_PORT_UNLOCK(ipcp);
+		IPC_PORTS_UNLOCK();
+		return (ERROR_NO_RIGHT);
+	}
 	IPC_PORTS_UNLOCK();
 
-	error = ipc_task_insert_port_right(task, right, port);
+	error = ipc_port_right_insert(ipcp, task, right);
 	if (error != 0) {
 		IPC_PORT_UNLOCK(ipcp);
 		return (error);
@@ -286,45 +316,49 @@ ipc_port_right_grant(struct task *task, struct ipc_token *token, ipc_port_right_
 }
 
 int
-ipc_port_right_send(ipc_port_t dst, struct ipc_token *token, ipc_port_right_t right)
+ipc_port_right_send(ipc_port_t dst, ipc_port_t src, ipc_port_right_t right)
 {
-	struct ipc_message *ipcmsg;
-	struct ipc_port *ipcp;
-	ipc_port_t src;
+	struct ipc_port *dstp, *srcp;
+	struct ipc_port_right *ipcpr;
 	int error;
 
-	/*
-	 * XXX
-	 * Verify src exists?  Not necessary if tokens refcount ports.
-	 */
-
-	src = ipc_token_port(token);
-	error = ipc_token_consume(token, right);
-	if (error != 0)
-		return (error);
-
 	IPC_PORTS_LOCK();
-	ipcp = ipc_port_lookup(dst);
-	if (ipcp == NULL) {
+	srcp = ipc_port_lookup(src);
+	if (srcp == NULL) {
 		IPC_PORTS_UNLOCK();
 		return (ERROR_NOT_FOUND);
 	}
 
-	ipcmsg = malloc(sizeof *ipcmsg);
-	ipcmsg->ipcmsg_header.ipchdr_src = src;
-	ipcmsg->ipcmsg_header.ipchdr_dst = dst;
-	ipcmsg->ipcmsg_header.ipchdr_right = right;
-	ipcmsg->ipcmsg_header.ipchdr_msg = IPC_MSG_NONE;
-	ipcmsg->ipcmsg_header.ipchdr_recsize = 0;
-	ipcmsg->ipcmsg_header.ipchdr_reccnt = 0;
-	ipcmsg->ipcmsg_header.ipchdr_cookie = 0;
-	ipcmsg->ipcmsg_header.ipchdr_param = 0;
-	ipcmsg->ipcmsg_page = NULL;
+	if (!ipc_port_right_check(srcp, current_task(), IPC_PORT_RIGHT_RECEIVE)) {
+		IPC_PORT_UNLOCK(srcp);
+		IPC_PORTS_UNLOCK();
+		return (ERROR_NO_RIGHT);
+	}
 
-	TAILQ_INSERT_TAIL(&ipcp->ipcp_msgs, ipcmsg, ipcmsg_link);
-	cv_signal(ipcp->ipcp_cv);
-	IPC_PORT_UNLOCK(ipcp);
+	dstp = ipc_port_lookup(dst);
+	if (dstp == NULL) {
+		IPC_PORT_UNLOCK(srcp);
+		IPC_PORTS_UNLOCK();
+		return (ERROR_NOT_FOUND);
+	}
 	IPC_PORTS_UNLOCK();
+
+	/*
+	 * For each task with a receive right on dst,
+	 * grant it the requested right on src.
+	 */
+	BTREE_MIN(ipcpr, &dstp->ipcp_rights, ipcpr_node);
+	while (ipcpr != NULL) {
+		if ((ipcpr->ipcpr_right & IPC_PORT_RIGHT_RECEIVE) != 0) {
+			error = ipc_port_right_insert(srcp, ipcpr->ipcpr_task, right);
+			if (error != 0)
+				printf("%s: ipc_port_right_insert failed: %m\n", __func__, error);
+		}
+
+		BTREE_NEXT(ipcpr, ipcpr_node);
+	}
+	IPC_PORT_UNLOCK(dstp);
+	IPC_PORT_UNLOCK(srcp);
 
 	return (0);
 }
@@ -437,7 +471,6 @@ ipc_port_send_page(struct ipc_header *ipch, struct vm_page *page)
 	struct ipc_message *ipcmsg;
 	struct ipc_port *ipcp;
 	struct task *task;
-	int error;
 
 	task = current_task();
 
@@ -468,12 +501,10 @@ ipc_port_send_page(struct ipc_header *ipch, struct vm_page *page)
 		return (ERROR_INVALID);
 	}
 
-	error = ipc_task_check_port_right(task, IPC_PORT_RIGHT_RECEIVE,
-					  ipch->ipchdr_src);
-	if (error != 0) {
+	if (!ipc_port_right_check(ipcp, task, IPC_PORT_RIGHT_RECEIVE)) {
 		IPC_PORT_UNLOCK(ipcp);
 		IPC_PORTS_UNLOCK();
-		return (error);
+		return (ERROR_NO_RIGHT);
 	}
 	IPC_PORT_UNLOCK(ipcp);
 
@@ -491,12 +522,10 @@ ipc_port_send_page(struct ipc_header *ipch, struct vm_page *page)
 
 	if ((ipcp->ipcp_flags & IPC_PORT_FLAG_PUBLIC) == 0 &&
 	    ipch->ipchdr_msg != IPC_MSG_NONE) {
-		error = ipc_task_check_port_right(task, IPC_PORT_RIGHT_SEND,
-						  ipch->ipchdr_dst);
-		if (error != 0) {
+		if (!ipc_port_right_check(ipcp, task, IPC_PORT_RIGHT_SEND)) {
 			IPC_PORT_UNLOCK(ipcp);
 			IPC_PORTS_UNLOCK();
-			return (error);
+			return (ERROR_NO_RIGHT);
 		}
 	}
 
@@ -518,7 +547,6 @@ ipc_port_wait(ipc_port_t port)
 {
 	struct ipc_port *ipcp;
 	struct task *task;
-	int error;
 
 	task = current_task();
 
@@ -533,12 +561,10 @@ ipc_port_wait(ipc_port_t port)
 		return (0);
 	}
 
-	error = ipc_task_check_port_right(task,
-					  IPC_PORT_RIGHT_RECEIVE, port);
-	if (error != 0) {
+	if (!ipc_port_right_check(ipcp, task, IPC_PORT_RIGHT_RECEIVE)) {
 		IPC_PORT_UNLOCK(ipcp);
 		IPC_PORTS_UNLOCK();
-		return (error);
+		return (ERROR_NO_RIGHT);
 	}
 
 	/* XXX refcount.  */
@@ -553,6 +579,10 @@ static struct ipc_port *
 ipc_port_alloc(void)
 {
 	struct ipc_port *ipcp;
+	struct task *task;
+	int error;
+
+	task = current_task();
 
 	ipcp = pool_allocate(&ipc_port_pool);
 	mutex_init(&ipcp->ipcp_mutex, "IPC Port", MUTEX_FLAG_DEFAULT);
@@ -561,6 +591,16 @@ ipc_port_alloc(void)
 	ipcp->ipcp_flags = IPC_PORT_FLAG_NEW;
 	TAILQ_INIT(&ipcp->ipcp_msgs);
 	BTREE_NODE_INIT(&ipcp->ipcp_link);
+	BTREE_ROOT_INIT(&ipcp->ipcp_rights);
+
+	/*
+	 * Insert a receive right.
+	 */
+	error = ipc_port_right_insert(ipcp, task, IPC_PORT_RIGHT_RECEIVE);
+	if (error != 0)
+		panic("%s: ipc_port_right_insert failed: %m", __func__,
+		      error);
+
 
 	return (ipcp);
 }
@@ -580,10 +620,9 @@ ipc_port_lookup(ipc_port_t port)
 }
 
 static int
-ipc_port_register(struct ipc_token **tokenp, struct ipc_port *ipcp, ipc_port_t port, ipc_port_flags_t flags)
+ipc_port_register(struct ipc_port *ipcp, ipc_port_t port, ipc_port_flags_t flags)
 {
 	struct ipc_port *old, *iter;
-	int error;
 
 	old = ipc_port_lookup(port);
 	if (old != NULL) {
@@ -600,18 +639,112 @@ ipc_port_register(struct ipc_token **tokenp, struct ipc_port *ipcp, ipc_port_t p
 	BTREE_INSERT(ipcp, iter, &ipc_ports, ipcp_link,
 		     (ipcp->ipcp_port < iter->ipcp_port));
 
-	/*
-	 * Create a receive right token.
-	 */
-	ASSERT(tokenp != NULL, "Must be able to yield a token.");
-	error = ipc_token_allocate(tokenp, ipcp->ipcp_port,
-				   IPC_PORT_RIGHT_RECEIVE);
-	if (error != 0)
-		panic("%s: ipc_token_allocate failed: %m", __func__,
-		      error);
-
 	ipcp->ipcp_flags &= ~IPC_PORT_FLAG_NEW;
 	ipcp->ipcp_flags |= flags;
 
 	return (0);
+}
+
+static bool
+ipc_port_right_check(struct ipc_port *ipcp, struct task *task, ipc_port_right_t right)
+{
+	struct ipc_port_right *ipcpr;
+
+	if ((right & IPC_PORT_RIGHT_SEND_ONCE) != 0)
+		panic("%s: must check for a send right, not a reply right.", __func__);
+
+	/*
+	 * XXX Assert that right is exactly one right.
+	 */
+
+	ipcpr = ipc_port_right_lookup(ipcp, task);
+	if (ipcpr == NULL)
+		return (false);
+
+	/*
+	 * If the port right includes a receive right, allow anything.
+	 */
+	if ((ipcpr->ipcpr_right & IPC_PORT_RIGHT_RECEIVE) != 0)
+		return (true);
+
+	/*
+	 * If there was no receive right, we must only be looking for a send right
+	 * to succeed.
+	 */
+	if (right != IPC_PORT_RIGHT_SEND)
+		return (false);
+
+	/*
+	 * If there is a send right, use it.
+	 */
+	if ((ipcpr->ipcpr_right & IPC_PORT_RIGHT_SEND) != 0)
+		return (true);
+
+	/*
+	 * If there is a send-once right, consume it.
+	 */
+	if ((ipcpr->ipcpr_right & IPC_PORT_RIGHT_SEND_ONCE) != 0) {
+		if (ipcpr->ipcpr_right == IPC_PORT_RIGHT_SEND_ONCE) {
+			/*
+			 * If there is only a send-once right, remove
+			 * this right and free it.
+			 * XXX TODO XXX
+			 */
+			ipcpr->ipcpr_right &= ~IPC_PORT_RIGHT_SEND_ONCE;
+		} else {
+			ipcpr->ipcpr_right &= ~IPC_PORT_RIGHT_SEND_ONCE;
+		}
+		return (true);
+	}
+
+	return (false);
+}
+
+static int
+ipc_port_right_insert(struct ipc_port *ipcp, struct task *task, ipc_port_right_t right)
+{
+	struct ipc_port_right *ipcpr, *iter;
+
+	/*
+	 * If this is not a receive right (i.e. it is a send right) and the port
+	 * is public, insert nothing.
+	 */
+	if ((right & IPC_PORT_RIGHT_RECEIVE) == 0) {
+		if ((ipcp->ipcp_flags & IPC_PORT_FLAG_PUBLIC) != 0)
+			return (0);
+	}
+
+	ipcpr = ipc_port_right_lookup(ipcp, task);
+	if (ipcpr != NULL) {
+		/*
+		 * XXX
+		 * This logic is not quite right, I guess.
+		 */
+		ipcpr->ipcpr_right |= right;
+		return (0);
+	}
+
+	/*
+	 * We've been asked to create an absent right.
+	 */
+	ipcpr = pool_allocate(&ipc_port_right_pool);
+	ipcpr->ipcpr_task = task;
+	ipcpr->ipcpr_right = right;
+	BTREE_NODE_INIT(&ipcpr->ipcpr_node);
+
+	BTREE_INSERT(ipcpr, iter, &ipcp->ipcp_rights, ipcpr_node,
+		     (ipcpr->ipcpr_task < iter->ipcpr_task));
+	STAILQ_INSERT_TAIL(&task->t_ipc.ipct_rights, ipcpr, ipcpr_link);
+
+	return (0);
+}
+
+static struct ipc_port_right *
+ipc_port_right_lookup(struct ipc_port *ipcp, struct task *task)
+{
+	struct ipc_port_right *ipcpr, *iter;
+
+	BTREE_FIND(&ipcpr, iter, &ipcp->ipcp_rights, ipcpr_node,
+		   (task < iter->ipcpr_task), (task == iter->ipcpr_task));
+	return (ipcpr);
 }

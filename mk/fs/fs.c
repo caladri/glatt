@@ -40,6 +40,7 @@ static int fs_file_ipc_close_handler(struct fs_file *, const struct ipc_header *
 #ifdef EXEC
 static int fs_file_ipc_exec_handler(struct fs_file *, const struct ipc_header *, void *);
 #endif
+static int fs_file_ipc_service_start(struct fs_file *, ipc_port_t *);
 
 int
 fs_register(const char *name, struct fs_ops *fso, fs_context_t fsc)
@@ -54,7 +55,7 @@ fs_register(const char *name, struct fs_ops *fso, fs_context_t fsc)
 	fs->fs_ops = fso;
 	fs->fs_context = fsc;
 
-	error = ipc_service(name, IPC_PORT_UNKNOWN, IPC_PORT_FLAG_PUBLIC, NULL,
+	error = ipc_service(name, IPC_PORT_UNKNOWN, IPC_PORT_FLAG_PUBLIC | IPC_PORT_FLAG_NEW,
 			    fs_ipc_handler, fs);
 	if (error != 0) {
 		free(fs);
@@ -107,11 +108,11 @@ fs_ipc_handler(void *softc, struct ipc_header *ipch, void *p)
 static int
 fs_ipc_open_file_handler(struct fs *fs, const struct ipc_header *reqh, void *p)
 {
-	struct ipc_service_context *svc;
 	struct fs_open_file_request *req;
 	struct ipc_header ipch;
 	fs_file_context_t fsfc;
 	struct fs_file *fsf;
+	ipc_port_t port;
 	int error;
 
 	if (reqh->ipchdr_recsize != sizeof *req || reqh->ipchdr_reccnt != 1 || p == NULL)
@@ -142,9 +143,11 @@ fs_ipc_open_file_handler(struct fs *fs, const struct ipc_header *reqh, void *p)
 	 * Add to that that we want this service to be refcounted and to go away
 	 * when all its send rights disappear, and this exposes quite a lot of
 	 * work that still needs to be done.
+	 *
+	 * NB: All ports will have to be refcounted in that way.
 	 */
-	error = ipc_service(req->path, IPC_PORT_UNKNOWN, IPC_PORT_FLAG_DEFAULT, &svc,
-			    fs_file_ipc_handler, fsf);
+
+	error = fs_file_ipc_service_start(fsf, &port);
 	if (error != 0) {
 		ipch = IPC_HEADER_ERROR(reqh, error);
 
@@ -154,17 +157,17 @@ fs_ipc_open_file_handler(struct fs *fs, const struct ipc_header *reqh, void *p)
 		if (error != 0)
 			panic("%s: file close failed: %m", __func__, error);
 	} else {
-		error = ipc_port_right_send(reqh->ipchdr_src, ipc_service_token(svc), IPC_PORT_RIGHT_SEND);
+		error = ipc_port_right_send(reqh->ipchdr_src, port, IPC_PORT_RIGHT_SEND);
 		if (error != 0) {
 			printf("%s: ipc_port_right_send failed: %m\n", __func__, error);
 			/* XXX Shut down the service?  */
 			return (error);
 		}
 
-		ipc_service_start(svc);
+		/* XXX ipc_port_right_drop? */
 
 		ipch = IPC_HEADER_REPLY(reqh);
-		ipch.ipchdr_param = ipc_service_port(svc);
+		ipch.ipchdr_param = port;
 	}
 
 	error = ipc_port_send_data(&ipch, NULL, 0);
@@ -300,6 +303,33 @@ fs_file_ipc_exec_handler(struct fs_file *fsf, const struct ipc_header *reqh, voi
 	return (0);
 }
 #endif
+
+static int
+fs_file_ipc_service_start(struct fs_file *fsf, ipc_port_t *portp)
+{
+	ipc_port_t port;
+	int error;
+
+	/*
+	 * XXX
+	 * Push all of this into one routine so then we can make the error reply
+	 * easier?  fs_file_service_start(&port, fsfc...);
+	 */
+	error = ipc_port_allocate(&port, IPC_PORT_FLAG_DEFAULT);
+	if (error != 0)
+		return (error);
+
+	error = ipc_service(fsf->fsf_path, port, IPC_PORT_FLAG_DEFAULT,
+			    fs_file_ipc_handler, fsf);
+	if (error != 0) {
+		/* XXX ipc_port_free */
+		return (error);
+	}
+
+	*portp = port;
+
+	return (0);
+}
 
 #ifdef EXEC
 #define	FS_AUTORUN_DIR		"/mu/servers"

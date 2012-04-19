@@ -9,7 +9,6 @@
 #include <core/console.h>
 #include <ipc/ipc.h>
 #include <ipc/port.h>
-#include <ipc/token.h>
 #include <vm/vm.h>
 #include <vm/vm_alloc.h>
 #include <vm/vm_page.h>
@@ -17,7 +16,6 @@
 int
 syscall(unsigned number, register_t *cnt, register_t *params)
 {
-	struct ipc_token *token;
 	struct ipc_header ipch;
 	struct thread *td;
 	ipc_port_t port;
@@ -58,12 +56,9 @@ syscall(unsigned number, register_t *cnt, register_t *params)
 	case SYSCALL_IPC_PORT_ALLOCATE:
 		if (*cnt != 1)
 			return (ERROR_ARG_COUNT);
-		error = ipc_port_allocate(&token, &port, (ipc_port_flags_t)params[0]);
+		error = ipc_port_allocate(&port, (ipc_port_flags_t)params[0]);
 		if (error != 0)
 			return (error);
-	 	error = ipc_port_right_grant(td->td_task, token, IPC_PORT_RIGHT_RECEIVE);
-		if (error != 0)
-			panic("%s: ipc_port_right_grant failed: %m", __func__, error);
 		*cnt = 1;
 		params[0] = port;
 		return (0);

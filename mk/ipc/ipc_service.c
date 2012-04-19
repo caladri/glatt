@@ -13,7 +13,6 @@
 #include <ipc/ipc.h>
 #include <ipc/port.h>
 #include <ipc/service.h>
-#include <ipc/token.h>
 #include <ns/ns.h>
 
 #if defined(VERBOSE) && 0
@@ -38,7 +37,6 @@ struct ipc_service_context {
 	ipc_port_flags_t ipcsc_port_flags;
 	struct task *ipcsc_task;
 	struct thread *ipcsc_thread;
-	struct ipc_token *ipcsc_token;
 };
 
 #ifdef SERVICE_TRACING
@@ -48,11 +46,10 @@ static void ipc_service_main(void *);
 
 int
 ipc_service(const char *name, ipc_port_t port, ipc_port_flags_t flags,
-	    struct ipc_service_context **ipcscp,
 	    ipc_service_t *handler, void *arg)
 {
 	struct ipc_service_context *ipcsc;
-	struct ipc_token *token;
+	bool allocated;
 	int error;
 
 	ipcsc = malloc(sizeof *ipcsc);
@@ -73,87 +70,48 @@ ipc_service(const char *name, ipc_port_t port, ipc_port_flags_t flags,
 	if (error != 0)
 		panic("%s: thread_create failed: %m", __func__, error);
 
-	switch (ipcsc->ipcsc_port) {
-	case IPC_PORT_UNKNOWN:
-		error = ipc_port_allocate(&ipcsc->ipcsc_token,
-					  &ipcsc->ipcsc_port, flags);
-		if (error != 0)
-			panic("%s: ipc_allocate failed: %m", __func__, error);
-		break;
-	default:
-		error = ipc_port_allocate_reserved(&ipcsc->ipcsc_token,
-						   ipcsc->ipcsc_port, flags);
-		if (error != 0)
-			panic("%s: ipc_allocate_reserved failed: %m", __func__,
-			      error);
-		break;
+	if ((flags & IPC_PORT_FLAG_NEW) != 0) {
+		flags &= ~IPC_PORT_FLAG_NEW;
+
+		switch (ipcsc->ipcsc_port) {
+		case IPC_PORT_UNKNOWN:
+			error = ipc_port_allocate(&ipcsc->ipcsc_port, flags);
+			if (error != 0)
+				panic("%s: ipc_allocate failed: %m", __func__, error);
+			break;
+		default:
+			error = ipc_port_allocate_reserved(ipcsc->ipcsc_port, flags);
+			if (error != 0)
+				panic("%s: ipc_allocate_reserved failed: %m", __func__,
+				      error);
+			break;
+		}
+		allocated = true;
+	} else {
+		if (ipcsc->ipcsc_port == IPC_PORT_UNKNOWN)
+			panic("%s: service %s requested to use unknown port.", __func__,
+			      ipcsc->ipcsc_name);
+		allocated = false;
 	}
 
-	/*
-	 * Grant a receive right to our task.
-	 */
-	error = ipc_token_allocate_child(ipcsc->ipcsc_token, &token,
-					 IPC_PORT_RIGHT_RECEIVE);
-	if (error != 0)
-		panic("%s: ipc_token_allocate_child failed: %m", __func__, error);
-
-	error = ipc_port_right_grant(ipcsc->ipcsc_task, token, IPC_PORT_RIGHT_RECEIVE);
+	error = ipc_port_right_grant(ipcsc->ipcsc_task, ipcsc->ipcsc_port, IPC_PORT_RIGHT_RECEIVE);
 	if (error != 0)
 		panic("%s: ipc_port_right_grant failed: %m", __func__, error);
 
 	/*
-	 * Don't allow the granting of receive rights with our token anymore.
+	 * If we allocated the port, then we should drop the receive
+	 * right for the current task.  If we did not allocate the
+	 * port, assume the caller knows what they're doing.
 	 */
-	error = ipc_token_restrict(ipcsc->ipcsc_token, IPC_PORT_RIGHT_SEND);
-	if (error != 0)
-		panic("%s: ipc_token_restrict failed: %m", __func__, error);
+	if (allocated) {
+		/* XXX ipc_port_right_drop? */
+	}
 
 	thread_set_upcall(ipcsc->ipcsc_thread, ipc_service_main, ipcsc);
 
-	if (ipcscp != NULL) {
-		*ipcscp = ipcsc;
-	} else {
-		/*
-		 * The caller has not asked for our context, so they
-		 * have no way to start us.  Do it for ourselves.
-		 */
-		ipc_service_start(ipcsc);
-	}
+	scheduler_thread_runnable(ipcsc->ipcsc_thread);
 
 	return (0);
-}
-
-ipc_port_t
-ipc_service_port(struct ipc_service_context *ipcsc)
-{
-	return (ipcsc->ipcsc_port);
-}
-
-struct ipc_token *
-ipc_service_token(struct ipc_service_context *ipcsc)
-{
-	struct ipc_token *token;
-	int error;
-
-	if (ipcsc->ipcsc_token == NULL)
-		panic("%s: called for service %s after tokens expired.", __func__, ipcsc->ipcsc_name);
-	error = ipc_token_allocate_child(ipcsc->ipcsc_token, &token,
-					 IPC_PORT_RIGHT_SEND);
-	if (error != 0)
-		panic("%s: ipc_token_allocate_child failed: %m", __func__, error);
-	return (token);
-}
-
-void
-ipc_service_start(struct ipc_service_context *ipcsc)
-{
-	/*
-	 * One the task starts, it handles rights.
-	 */
-	ipc_token_free(ipcsc->ipcsc_token);
-	ipcsc->ipcsc_token = NULL;
-
-	scheduler_thread_runnable(ipcsc->ipcsc_thread);
 }
 
 #ifdef SERVICE_TRACING

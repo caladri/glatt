@@ -76,7 +76,6 @@ std		ipc/ipc_port.c
 std		ipc/ipc_service.c
 std		ipc/ipc_system.c
 std		ipc/ipc_task.c
-std		ipc/ipc_token.c
 
 ns		ns/ns.c
 ns		ns/service_directory.c

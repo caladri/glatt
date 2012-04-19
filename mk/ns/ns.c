@@ -100,7 +100,7 @@ ns_startup(void *arg)
 
 	service_directory_init();
 
-	error = ipc_service("ns", IPC_PORT_NS, IPC_PORT_FLAG_PUBLIC, NULL,
+	error = ipc_service("ns", IPC_PORT_NS, IPC_PORT_FLAG_PUBLIC | IPC_PORT_FLAG_NEW,
 			    ns_handler, NULL);
 	if (error != 0)
 		panic("%s: ipc_service failed: %m", __func__, error);

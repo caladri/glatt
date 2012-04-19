@@ -23,6 +23,7 @@ int ipc_port_allocate(ipc_port_t *, ipc_port_flags_t) __non_null(1) __check_resu
 int ipc_port_allocate_reserved(ipc_port_t, ipc_port_flags_t) __check_result;
 #endif
 int ipc_port_receive(ipc_port_t, struct ipc_header *, void **) __non_null(2) __check_result;
+int ipc_port_right_drop(ipc_port_t, ipc_port_right_t) __check_result;
 #ifdef MK
 /*
  * XXX
@@ -30,8 +31,8 @@ int ipc_port_receive(ipc_port_t, struct ipc_header *, void **) __non_null(2) __c
  * That would be slower, but otherwise...?
  */
 int ipc_port_right_grant(struct task *, ipc_port_t, ipc_port_right_t) __non_null(1) __check_result;
-int ipc_port_right_send(ipc_port_t, ipc_port_t, ipc_port_right_t) __check_result;
 #endif
+int ipc_port_right_send(ipc_port_t, ipc_port_t, ipc_port_right_t) __check_result;
 int ipc_port_send(struct ipc_header *, void *) __non_null(1) __check_result;
 int ipc_port_send_data(struct ipc_header *, const void *, size_t) __non_null(1) __check_result;
 #ifdef MK

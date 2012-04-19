@@ -164,7 +164,7 @@ fs_ipc_open_file_handler(struct fs *fs, const struct ipc_header *reqh, void *p)
 			return (error);
 		}
 
-		/* XXX ipc_port_right_drop? */
+		ipc_port_right_drop(port, IPC_PORT_RIGHT_RECEIVE);
 
 		ipch = IPC_HEADER_REPLY(reqh);
 		ipch.ipchdr_param = port;
@@ -275,6 +275,12 @@ fs_file_ipc_close_handler(struct fs_file *fsf, const struct ipc_header *reqh, vo
 	error = ipc_port_send_data(&ipch, NULL, 0);
 	if (error != 0)
 		return (error);
+
+	/*
+	 * XXX
+	 * Check outstanding send rights and then ipc_port_right_drop.
+	 */
+
 	return (0);
 }
 
@@ -322,7 +328,7 @@ fs_file_ipc_service_start(struct fs_file *fsf, ipc_port_t *portp)
 	error = ipc_service(fsf->fsf_path, port, IPC_PORT_FLAG_DEFAULT,
 			    fs_file_ipc_handler, fsf);
 	if (error != 0) {
-		/* XXX ipc_port_free */
+		ipc_port_right_drop(port, IPC_PORT_RIGHT_RECEIVE);
 		return (error);
 	}
 

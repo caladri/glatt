@@ -75,6 +75,7 @@ static int ipc_port_register(struct ipc_port *, ipc_port_t, ipc_port_flags_t);
 static bool ipc_port_right_check(struct ipc_port *, struct task *, ipc_port_right_t);
 static int ipc_port_right_insert(struct ipc_port *, struct task *, ipc_port_right_t);
 static struct ipc_port_right *ipc_port_right_lookup(struct ipc_port *, struct task *);
+static int ipc_port_right_remove(struct ipc_port *, struct task *, ipc_port_right_t);
 
 void
 ipc_port_init(void)
@@ -278,6 +279,29 @@ ipc_port_receive(ipc_port_t port, struct ipc_header *ipch, void **vpagep)
 
 	free(ipcmsg);
 
+	return (0);
+}
+
+int
+ipc_port_right_drop(ipc_port_t port, ipc_port_right_t right)
+{
+	struct ipc_port *ipcp;
+	int error;
+
+	IPC_PORTS_LOCK();
+	ipcp = ipc_port_lookup(port);
+	if (ipcp == NULL) {
+		IPC_PORTS_UNLOCK();
+		return (ERROR_NOT_FOUND);
+	}
+	IPC_PORTS_UNLOCK();
+
+	error = ipc_port_right_remove(ipcp, current_task(), right);
+	if (error != 0) {
+		IPC_PORT_UNLOCK(ipcp);
+		return (error);
+	}
+	IPC_PORT_UNLOCK(ipcp);
 	return (0);
 }
 
@@ -738,4 +762,25 @@ ipc_port_right_lookup(struct ipc_port *ipcp, struct task *task)
 	BTREE_FIND(&ipcpr, iter, &ipcp->ipcp_rights, ipcpr_node,
 		   (task < iter->ipcpr_task), (task == iter->ipcpr_task));
 	return (ipcpr);
+}
+
+static int
+ipc_port_right_remove(struct ipc_port *ipcp, struct task *task, ipc_port_right_t right)
+{
+	struct ipc_port_right *ipcpr;
+
+	ipcpr = ipc_port_right_lookup(ipcp, task);
+	if (ipcpr == NULL)
+		return (ERROR_NO_RIGHT);
+
+	/* XXX
+	 * The logic here is wrong.
+	 * XXX TODO XXX
+	 * Decrement receive right count?
+	 * Handle send-once dropping?
+	 * Free!
+	 */
+	ipcpr->ipcpr_right &= ~right;
+
+	return (0);
 }

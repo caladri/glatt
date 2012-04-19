@@ -146,26 +146,24 @@ ipc_port_allocate_reserved(ipc_port_t port, ipc_port_flags_t flags)
 		return (ERROR_INVALID);
 
 	IPC_PORTS_LOCK();
-
 	old = ipc_port_lookup(port);
 	if (old != NULL) {
 		IPC_PORT_UNLOCK(old);
 		IPC_PORTS_UNLOCK();
 		return (ERROR_NOT_FREE);
 	}
+	IPC_PORTS_UNLOCK();
 
 	ipcp = ipc_port_alloc();
-	if (ipcp == NULL) {
-		IPC_PORTS_UNLOCK();
+	if (ipcp == NULL)
 		return (ERROR_EXHAUSTED);
-	}
 
+	IPC_PORTS_LOCK();
 	IPC_PORT_LOCK(ipcp);
 	error = ipc_port_register(ipcp, port, flags);
 	if (error != 0)
 		panic("%s: ipc_port_register failed: %m", __func__, error);
 	IPC_PORT_UNLOCK(ipcp);
-
 	IPC_PORTS_UNLOCK();
 
 	return (0);
@@ -196,16 +194,15 @@ ipc_port_receive(ipc_port_t port, struct ipc_header *ipch, void **vpagep)
 		IPC_PORTS_UNLOCK();
 		return (ERROR_NOT_FOUND);
 	}
+	IPC_PORTS_UNLOCK();
 
 	if (!ipc_port_right_check(ipcp, task, IPC_PORT_RIGHT_RECEIVE)) {
 		IPC_PORT_UNLOCK(ipcp);
-		IPC_PORTS_UNLOCK();
 		return (ERROR_NO_RIGHT);
 	}
 
 	if (TAILQ_EMPTY(&ipcp->ipcp_msgs)) {
 		IPC_PORT_UNLOCK(ipcp);
-		IPC_PORTS_UNLOCK();
 		return (ERROR_AGAIN);
 	}
 
@@ -229,8 +226,6 @@ ipc_port_receive(ipc_port_t port, struct ipc_header *ipch, void **vpagep)
 			      error);
 		IPC_PORT_UNLOCK(ipcp);
 	}
-
-	IPC_PORTS_UNLOCK();
 
 	if (ipcmsg->ipcmsg_page == NULL) {
 		if (vpagep != NULL)
@@ -298,13 +293,12 @@ ipc_port_right_grant(struct task *task, ipc_port_t src, ipc_port_right_t right)
 		IPC_PORTS_UNLOCK();
 		return (ERROR_NOT_FOUND);
 	}
+	IPC_PORTS_UNLOCK();
 
 	if (!ipc_port_right_check(ipcp, current_task(), IPC_PORT_RIGHT_RECEIVE)) {
 		IPC_PORT_UNLOCK(ipcp);
-		IPC_PORTS_UNLOCK();
 		return (ERROR_NO_RIGHT);
 	}
-	IPC_PORTS_UNLOCK();
 
 	error = ipc_port_right_insert(ipcp, task, right);
 	if (error != 0) {
@@ -328,20 +322,18 @@ ipc_port_right_send(ipc_port_t dst, ipc_port_t src, ipc_port_right_t right)
 		IPC_PORTS_UNLOCK();
 		return (ERROR_NOT_FOUND);
 	}
+	IPC_PORTS_UNLOCK();
 
 	if (!ipc_port_right_check(srcp, current_task(), IPC_PORT_RIGHT_RECEIVE)) {
 		IPC_PORT_UNLOCK(srcp);
-		IPC_PORTS_UNLOCK();
 		return (ERROR_NO_RIGHT);
 	}
 
 	dstp = ipc_port_lookup(dst);
 	if (dstp == NULL) {
 		IPC_PORT_UNLOCK(srcp);
-		IPC_PORTS_UNLOCK();
 		return (ERROR_NOT_FOUND);
 	}
-	IPC_PORTS_UNLOCK();
 
 	/*
 	 * For each task with a receive right on dst,
@@ -528,6 +520,7 @@ ipc_port_send_page(struct ipc_header *ipch, struct vm_page *page)
 			return (ERROR_NO_RIGHT);
 		}
 	}
+	IPC_PORTS_UNLOCK();
 
 	ipcmsg = malloc(sizeof *ipcmsg);
 	ipcmsg->ipcmsg_header = *ipch;
@@ -537,7 +530,6 @@ ipc_port_send_page(struct ipc_header *ipch, struct vm_page *page)
 	cv_signal(ipcp->ipcp_cv);
 
 	IPC_PORT_UNLOCK(ipcp);
-	IPC_PORTS_UNLOCK();
 
 	return (0);
 }
@@ -560,16 +552,15 @@ ipc_port_wait(ipc_port_t port)
 		IPC_PORTS_UNLOCK();
 		return (0);
 	}
+	IPC_PORTS_UNLOCK();
 
 	if (!ipc_port_right_check(ipcp, task, IPC_PORT_RIGHT_RECEIVE)) {
 		IPC_PORT_UNLOCK(ipcp);
-		IPC_PORTS_UNLOCK();
 		return (ERROR_NO_RIGHT);
 	}
 
 	/* XXX refcount.  */
 
-	IPC_PORTS_UNLOCK();
 	cv_wait(ipcp->ipcp_cv);
 
 	return (0);

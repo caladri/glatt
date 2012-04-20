@@ -3,6 +3,7 @@
 ##
 SUBDIRS+=	lib
 SUBDIRS+=	servers
+SUBDIRS+=	test
 
 SUBDIRS+=	etc
 

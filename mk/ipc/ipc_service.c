@@ -103,8 +103,11 @@ ipc_service(const char *name, ipc_port_t port, ipc_port_flags_t flags,
 	 * right for the current task.  If we did not allocate the
 	 * port, assume the caller knows what they're doing.
 	 */
-	if (allocated)
-		ipc_port_right_drop(ipcsc->ipcsc_port, IPC_PORT_RIGHT_RECEIVE);
+	if (allocated) {
+		error = ipc_port_right_drop(ipcsc->ipcsc_port, IPC_PORT_RIGHT_RECEIVE);
+		if (error != 0)
+			panic("%s: ipc_port_right_drop failed: %m", __func__, error);
+	}
 
 	thread_set_upcall(ipcsc->ipcsc_thread, ipc_service_main, ipcsc);
 

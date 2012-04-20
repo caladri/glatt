@@ -164,7 +164,8 @@ fs_ipc_open_file_handler(struct fs *fs, const struct ipc_header *reqh, void *p)
 			return (error);
 		}
 
-		ipc_port_right_drop(port, IPC_PORT_RIGHT_RECEIVE);
+		if (ipc_port_right_drop(port, IPC_PORT_RIGHT_RECEIVE) != 0)
+			panic("%s: ipc_port_right_drop failed.", __func__);
 
 		ipch = IPC_HEADER_REPLY(reqh);
 		ipch.ipchdr_param = port;
@@ -328,7 +329,8 @@ fs_file_ipc_service_start(struct fs_file *fsf, ipc_port_t *portp)
 	error = ipc_service(fsf->fsf_path, port, IPC_PORT_FLAG_DEFAULT,
 			    fs_file_ipc_handler, fsf);
 	if (error != 0) {
-		ipc_port_right_drop(port, IPC_PORT_RIGHT_RECEIVE);
+		if (ipc_port_right_drop(port, IPC_PORT_RIGHT_RECEIVE) != 0)
+			panic("%s: ipc_port_right_drop failed.", __func__);
 		return (error);
 	}
 

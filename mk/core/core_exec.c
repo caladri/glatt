@@ -13,28 +13,19 @@
 #include <vm/vm_index.h>
 #include <vm/vm_page.h>
 
-static int exec_elf64_load(struct thread *, fs_file_read_op_t *, fs_context_t, fs_file_context_t);
+static int exec_elf64_load(struct vm *, void **, fs_file_read_op_t *, fs_context_t, fs_file_context_t);
 static int exec_read(fs_file_read_op_t *, fs_context_t, fs_file_context_t, void *, off_t, size_t);
 
 int
-exec_load(struct task *task, const char *name, fs_file_read_op_t *readf, fs_context_t fsc, fs_file_context_t fsfc)
+exec_load(struct vm *vm, void **entryp, const char *name, fs_file_read_op_t *readf, fs_context_t fsc, fs_file_context_t fsfc)
 {
-	struct thread *td;
 	int error;
 
-	error = thread_create(&td, task, name, THREAD_DEFAULT);
-	if (error != 0) {
-		printf("%s: thread_create for %s failed: %m\n", __func__, name, error);
-		return (error);
-	}
-
-	error = exec_elf64_load(td, readf, fsc, fsfc);
+	error = exec_elf64_load(vm, entryp, readf, fsc, fsfc);
 	if (error != 0) {
 		printf("%s: exec_elf64_load for %s failed: %m\n", __func__, name, error);
 		return (error);
 	}
-
-	scheduler_thread_runnable(td);
 
 	return (0);
 }
@@ -42,22 +33,37 @@ exec_load(struct task *task, const char *name, fs_file_read_op_t *readf, fs_cont
 int
 exec_task(const char *name, fs_file_read_op_t *readf, fs_context_t fsc, fs_file_context_t fsfc)
 {
+	struct thread *td;
 	struct task *task;
+	void *entry;
 	int error;
 
 	error = task_create(&task, name, TASK_DEFAULT);
 	if (error != 0)
 		return (error);
 
-	error = exec_load(task, name, readf, fsc, fsfc);
+	error = thread_create(&td, task, name, THREAD_DEFAULT);
+	if (error != 0) {
+		printf("%s: thread_create for %s failed: %m\n", __func__, name, error);
+		return (error);
+	}
+
+	error = exec_load(task->t_vm, &entry, name, readf, fsc, fsfc);
 	if (error != 0)
 		return (error);
+
+	/*
+	 * Set up userland trampoline.
+	 */
+	thread_set_upcall(td, cpu_thread_user_trampoline, entry);
+
+	scheduler_thread_runnable(td);
 
 	return (0);
 }
 
 static int
-exec_elf64_load(struct thread *td, fs_file_read_op_t *readf, fs_context_t fsc, fs_file_context_t fsfc)
+exec_elf64_load(struct vm *vm, void **entryp, fs_file_read_op_t *readf, fs_context_t fsc, fs_file_context_t fsfc)
 {
 	struct elf64_program_header ph;
 	struct elf64_header eh;
@@ -169,7 +175,7 @@ exec_elf64_load(struct thread *td, fs_file_read_op_t *readf, fs_context_t fsc, f
 	/*
 	 * Wire program data address range into the kernel for program load.
 	 */
-	error = vm_alloc_range_wire(td->td_task->t_vm, low, high, &kvaddr);
+	error = vm_alloc_range_wire(vm, low, high, &kvaddr);
 	if (error != 0) {
 		printf("%s: could not allocate requested program address range: %m\n", __func__, error);
 		return (error);
@@ -201,10 +207,7 @@ exec_elf64_load(struct thread *td, fs_file_read_op_t *readf, fs_context_t fsc, f
 	if (error != 0)
 		panic("%s: could not unwire progam data: %m", __func__, error);
 
-	/*
-	 * Set up userland trampoline.
-	 */
-	thread_set_upcall(td, cpu_thread_user_trampoline, (void *)(uintptr_t)eh.eh_entry);
+	*entryp = (void *)(uintptr_t)eh.eh_entry;
 
 	return (0);
 }

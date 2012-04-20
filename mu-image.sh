@@ -10,6 +10,7 @@ mkdir img
 sudo mount ${dev} $PWD/img
 sudo mkdir -p $PWD/img/mu/etc
 sudo mkdir -p $PWD/img/mu/servers
+sudo mkdir -p $PWD/img/mu/test
 sudo make mu-install DESTDIR=$PWD/img
 sudo umount $PWD/img
 sudo mdconfig -d -u ${mdunit}

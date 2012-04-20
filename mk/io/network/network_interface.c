@@ -56,7 +56,6 @@ network_interface_receive(struct network_interface *netif,
 
 	ipch = netif->ni_receive_header;
 	ipch.ipchdr_recsize = datalen;
-	ipch.ipchdr_reccnt = 1;
 
 	error = ipc_port_send_data(&ipch, data, datalen);
 	if (error != 0) {
@@ -91,7 +90,7 @@ network_interface_ipc_handle_get_info(struct network_interface *netif, const str
 	uint8_t *data;
 	int error;
 
-	if (reqh->ipchdr_reccnt != 0 || reqh->ipchdr_recsize != 0 || p != NULL)
+	if (reqh->ipchdr_recsize != 0 || p != NULL)
 		return (ERROR_INVALID);
 
 	if (netif->ni_handler == NULL)
@@ -114,7 +113,6 @@ network_interface_ipc_handle_get_info(struct network_interface *netif, const str
 
 		ipch = IPC_HEADER_REPLY(reqh);
 		ipch.ipchdr_recsize = sizeof rhdr;
-		ipch.ipchdr_reccnt = 1;
 
 		error = ipc_port_send_data(&ipch, &rhdr, ipch.ipchdr_recsize);
 		if (error != 0) {
@@ -135,7 +133,6 @@ network_interface_ipc_handle_get_info(struct network_interface *netif, const str
 
 	ipch = IPC_HEADER_REPLY(reqh);
 	ipch.ipchdr_recsize = sizeof rhdr + rhdr.addrlen;
-	ipch.ipchdr_reccnt = 1;
 
 	error = ipc_port_send_data(&ipch, data, ipch.ipchdr_recsize);
 	if (error != 0) {
@@ -154,7 +151,7 @@ network_interface_ipc_handle_receive(struct network_interface *netif, const stru
 	struct ipc_header ipch;
 	int error;
 
-	if (reqh->ipchdr_reccnt != 0 || reqh->ipchdr_recsize != 0 || p != NULL)
+	if (reqh->ipchdr_recsize != 0 || p != NULL)
 		return (ERROR_INVALID);
 
 	if (reqh->ipchdr_right != IPC_PORT_RIGHT_SEND)
@@ -165,14 +162,12 @@ network_interface_ipc_handle_receive(struct network_interface *netif, const stru
 		netif->ni_receive_header = IPC_HEADER_REPLY(reqh);
 		netif->ni_receive_header.ipchdr_msg = NETWORK_INTERFACE_MSG_RECEIVE_PACKET;
 		netif->ni_receive_header.ipchdr_recsize = 0;
-		netif->ni_receive_header.ipchdr_reccnt = 0;
 
 		error = 0;
 	}
 
 	ipch = IPC_HEADER_REPLY(reqh);
 	ipch.ipchdr_recsize = sizeof error;
-	ipch.ipchdr_reccnt = 1;
 
 	error = ipc_port_send_data(&ipch, &error, sizeof error);
 	if (error != 0) {
@@ -189,7 +184,7 @@ network_interface_ipc_handle_transmit(struct network_interface *netif, const str
 	struct ipc_header ipch;
 	int error;
 
-	if (reqh->ipchdr_reccnt != 1 || p == NULL)
+	if (p == NULL)
 		return (ERROR_INVALID);
 
 	if (netif->ni_transmit == NULL)
@@ -205,7 +200,6 @@ network_interface_ipc_handle_transmit(struct network_interface *netif, const str
 
 	ipch = IPC_HEADER_REPLY(reqh);
 	ipch.ipchdr_recsize = sizeof error;
-	ipch.ipchdr_reccnt = 1;
 
 	error = ipc_port_send_data(&ipch, &error, sizeof error);
 	if (error != 0) {

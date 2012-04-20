@@ -160,10 +160,6 @@ ipc_dispatch_send(const struct ipc_dispatch *id, const struct ipc_dispatch_handl
 	else
 		ipch.ipchdr_cookie = idh->idh_cookie;
 	ipch.ipchdr_recsize = datalen;
-	if (page != NULL)
-		ipch.ipchdr_reccnt = 1;
-	else
-		ipch.ipchdr_reccnt = 0;
 
 	error = ipc_port_send(&ipch, page);
 	if (error != 0) {
@@ -199,10 +195,6 @@ ipc_dispatch_send_reply(const struct ipc_dispatch *id, const struct ipc_header *
 	ipch.ipchdr_src = id->id_port;
 	ipch.ipchdr_right = right;
 	ipch.ipchdr_recsize = datalen;
-	if (page != NULL)
-		ipch.ipchdr_reccnt = 1;
-	else
-		ipch.ipchdr_reccnt = 0;
 
 	error = ipc_port_send(&ipch, page);
 	if (error != 0) {

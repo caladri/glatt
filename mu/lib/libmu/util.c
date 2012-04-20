@@ -13,6 +13,15 @@ static int debug = 0;
 static void printf_putc(void *, char);
 static void printf_puts(void *, const char *, size_t);
 
+extern void main(void);
+
+void
+mu_main(void)
+{
+	main();
+	exit();
+}
+
 void
 fatal(const char *msg, int error)
 {
@@ -165,39 +174,24 @@ ipc_header_print(const struct ipc_header *ipch)
 	printf("Message: 0x%jx\n", (intmax_t)ipch->ipchdr_msg);
 	printf("Cookie: 0x%jx\n", (uintmax_t)ipch->ipchdr_cookie);
 	printf("Record size: %ju\n", (uintmax_t)ipch->ipchdr_recsize);
-	printf("Record count: %ju\n", (uintmax_t)ipch->ipchdr_reccnt);
 	printf("Param: 0x%jx\n", (uintmax_t)ipch->ipchdr_param);
 }
 
 void
 ipc_message_print(const struct ipc_header *ipch, const void *page)
 {
-	const uint8_t *bytes;
-	unsigned i;
-
 	ipc_header_print(ipch);
 
 	printf("Data page: %p\n", page);
 
-	if (ipch->ipchdr_recsize == 0 || ipch->ipchdr_reccnt == 0)
+	if (ipch->ipchdr_recsize == 0)
 		return;
 
 	if (ipch->ipchdr_recsize > PAGE_SIZE)
 		fatal("record size exceeds page size", ERROR_UNEXPECTED);
 
-	if (ipch->ipchdr_reccnt > PAGE_SIZE)
-		fatal("record count exceeds page size", ERROR_UNEXPECTED);
-
-	if (ipch->ipchdr_reccnt * ipch->ipchdr_recsize > PAGE_SIZE)
-		fatal("record size times record count exceeds page size", ERROR_UNEXPECTED);
-
-	bytes = page;
-	for (i = 0; i < ipch->ipchdr_reccnt; i++) {
-		printf("Record %u:\n", i);
-		hexdump(bytes, ipch->ipchdr_recsize);
-
-		bytes += ipch->ipchdr_recsize;
-	}
+	printf("Record:\n");
+	hexdump(page, ipch->ipchdr_recsize);
 }
 
 void

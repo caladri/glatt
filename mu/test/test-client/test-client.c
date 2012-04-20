@@ -53,7 +53,7 @@ test_response_handler(const struct ipc_dispatch *id, const struct ipc_dispatch_h
 	(void)idh;
 
 	if (ipch->ipchdr_msg != IPC_MSG_REPLY(1) ||
-	    ipch->ipchdr_recsize != 0 || ipch->ipchdr_reccnt != 0 ||
+	    ipch->ipchdr_recsize != 0 ||
 	    page != NULL) {
 		ipc_message_drop(ipch, page);
 		return;

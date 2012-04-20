@@ -144,7 +144,7 @@ if_get_info_callback(const struct ipc_dispatch *id, const struct ipc_dispatch_ha
 	(void)idh;
 
 	if (ipch->ipchdr_msg != IPC_MSG_REPLY(NETWORK_INTERFACE_MSG_GET_INFO) ||
-	    ipch->ipchdr_reccnt != 1 || ipch->ipchdr_recsize < sizeof rhdr || page == NULL) {
+	    ipch->ipchdr_recsize < sizeof rhdr || page == NULL) {
 		ipc_message_drop(ipch, page);
 		return;
 	}
@@ -172,7 +172,7 @@ if_receive_callback(const struct ipc_dispatch *id, const struct ipc_dispatch_han
 
 	switch (ipch->ipchdr_msg) {
 	case IPC_MSG_REPLY(NETWORK_INTERFACE_MSG_RECEIVE):
-		if (ipch->ipchdr_reccnt != 1 || ipch->ipchdr_recsize != sizeof *errorp || page == NULL) {
+		if (ipch->ipchdr_recsize != sizeof *errorp || page == NULL) {
 			ipc_message_drop(ipch, page);
 			return;
 		}
@@ -181,7 +181,7 @@ if_receive_callback(const struct ipc_dispatch *id, const struct ipc_dispatch_han
 			fatal("failed to register receive handler", *errorp);
 		return;
 	case NETWORK_INTERFACE_MSG_RECEIVE_PACKET:
-		if (ipch->ipchdr_reccnt != 1 || ipch->ipchdr_recsize == 0 || page == NULL) {
+		if (ipch->ipchdr_recsize == 0 || page == NULL) {
 			ipc_message_drop(ipch, page);
 			return;
 		}

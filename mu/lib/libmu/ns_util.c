@@ -93,7 +93,7 @@ ns_lookup_response_handler(const struct ipc_dispatch *id, const struct ipc_dispa
 
 	switch (ipch->ipchdr_msg) {
 	case IPC_MSG_REPLY(NS_MESSAGE_LOOKUP):
-		if (ipch->ipchdr_recsize != 0 || ipch->ipchdr_reccnt != 0 || page != NULL) {
+		if (ipch->ipchdr_recsize != 0 || page != NULL) {
 			ipc_message_drop(ipch, page);
 			return;
 		}
@@ -102,7 +102,7 @@ ns_lookup_response_handler(const struct ipc_dispatch *id, const struct ipc_dispa
 		nrw->nrw_port = ipch->ipchdr_param;
 		return;
 	case IPC_MSG_ERROR(NS_MESSAGE_LOOKUP):
-		if (ipch->ipchdr_recsize != 0 || ipch->ipchdr_reccnt != 0 || page != NULL) {
+		if (ipch->ipchdr_recsize != 0 || page != NULL) {
 			ipc_message_drop(ipch, page);
 			return;
 		}
@@ -125,7 +125,7 @@ ns_register_response_handler(const struct ipc_dispatch *id, const struct ipc_dis
 
 	switch (ipch->ipchdr_msg) {
 	case IPC_MSG_REPLY(NS_MESSAGE_REGISTER):
-		if (ipch->ipchdr_recsize != 0 || ipch->ipchdr_reccnt != 0 || page != NULL) {
+		if (ipch->ipchdr_recsize != 0 || page != NULL) {
 			ipc_message_drop(ipch, page);
 			return;
 		}
@@ -133,7 +133,7 @@ ns_register_response_handler(const struct ipc_dispatch *id, const struct ipc_dis
 		nrw->nrw_done = true;
 		return;
 	case IPC_MSG_ERROR(NS_MESSAGE_REGISTER):
-		if (ipch->ipchdr_recsize != 0 || ipch->ipchdr_reccnt != 0 || page != NULL) {
+		if (ipch->ipchdr_recsize != 0 || page != NULL) {
 			ipc_message_drop(ipch, page);
 			return;
 		}

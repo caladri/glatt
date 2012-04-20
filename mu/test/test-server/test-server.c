@@ -38,7 +38,7 @@ test_request_handler(const struct ipc_dispatch *id, const struct ipc_dispatch_ha
 
 	(void)idh;
 
-	if (reqh->ipchdr_recsize != 0 || reqh->ipchdr_reccnt != 0 ||
+	if (reqh->ipchdr_recsize != 0 ||
 	    page != NULL) {
 		ipc_message_drop(reqh, page);
 		return;

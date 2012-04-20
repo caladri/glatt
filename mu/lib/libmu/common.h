@@ -3,10 +3,12 @@
 
 #include "ipc_dispatch.h"
 
+void mu_main(void);
+
 int vm_page_get(void **);
 int vm_page_free(void *);
 
-void exit(void);
+void exit(void) __noreturn;
 int getchar(void);
 void putchar(int);
 void putsn(const char *, size_t);
@@ -24,7 +26,7 @@ void ipc_header_print(const struct ipc_header *);
 void ipc_message_print(const struct ipc_header *, const void *);
 void ipc_message_drop(const struct ipc_header *, void *);
 
-void *malloc(size_t);
+void *malloc(size_t) __malloc;
 void free(void *);
 
 int open(ipc_port_t, const char *, ipc_port_t *);

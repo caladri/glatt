@@ -7,9 +7,7 @@
 
 ENTRY(_start)
 	dla	gp, _gp
-	jal	main
-	nop
-	j	exit
+	jal	mu_main
 	nop
 END(_start)
 

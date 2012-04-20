@@ -30,7 +30,6 @@ struct ipc_header {
 	ipc_port_right_t ipchdr_right;	/* Right to give dst on src.  */
 	ipc_msg_t ipchdr_msg;		/* Opaque to IPC code, except IPC_MSG_NONE.  */
 	ipc_size_t ipchdr_recsize;	/* Opaque to IPC code.  */
-	ipc_size_t ipchdr_reccnt;	/* Opaque to IPC code.  */
 	ipc_cookie_t ipchdr_cookie;	/* Opaque to IPC code.  */
 	ipc_parameter_t ipchdr_param;	/* Opaque to IPC code.  */
 };
@@ -62,7 +61,6 @@ struct ipc_header {
 		.ipchdr_right = IPC_PORT_RIGHT_NONE,			\
 	 	.ipchdr_cookie = (ipchdrp)->ipchdr_cookie,		\
 	 	.ipchdr_recsize = 0,					\
-	 	.ipchdr_reccnt = 0,					\
 	 	.ipchdr_param = 0,					\
 	})
 
@@ -74,7 +72,6 @@ struct ipc_header {
 		.ipchdr_right = IPC_PORT_RIGHT_NONE,			\
 	 	.ipchdr_cookie = (ipchdrp)->ipchdr_cookie,		\
 	 	.ipchdr_recsize = 0,					\
-	 	.ipchdr_reccnt = 0,					\
 	 	.ipchdr_param = (error),				\
 	})
 

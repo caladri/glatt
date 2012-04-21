@@ -1,3 +1,8 @@
+o) Bound IPC ports, i.e. ipc_connect(my_port, ns) and then my_port can send to
+   ns, and ns can reply, but no other messages may come over it.  Either that, or
+   allow receive filters, so I can receive on a multiplexed port and handle
+   things in an asynchronous way.
+
 Need better locking around tasks and threads.
 
 Octeon.
@@ -30,7 +35,6 @@ Fundamentals:
 	o) Trap functionality.
 	o) IPC
 		o) Mailbox structure.
-		o) System call.
 		o) Think more about the rights model and rights passing.
 		o) More complete data model.
 	o) Clean up VM, pmap and exceptions.  Add vm objects and pv lists?
@@ -38,9 +42,6 @@ Fundamentals:
 		o) Support multiple page sizes.
 	o) Either implement preemption or declare preemption never.
 	o) Timekeeping or defer it.
-
-Binaries and servers:
-	o) Put a tiny, tiny VFS in front of UFS.
 
 Device drivers:
 	o) Memory/interrupt/ioport allocation from busses.

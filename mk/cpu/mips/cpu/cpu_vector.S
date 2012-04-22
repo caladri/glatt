@@ -172,12 +172,11 @@ STATIC_ENTRY(tlb_exception)
 	dmtc0	k1, CP0_TLBENTRYLO1
 
 	/*
-	 * The CPU has set up an entryhi, check if it is in the TLB.
-	 * XXX does the CPU also set index beforehand?
+	 * The CPU has set up an EntryHi, check if it is in the TLB.
 	 */
 	tlbp
 	/*
-	 * If the entryhi _was_ already in the TLB, update it at its existing
+	 * If the EntryHi _was_ already in the TLB, update it at its existing
 	 * location.  Otherwise, write into a random one.
 	 */
 	mfc0	k0, CP0_TLBINDEX

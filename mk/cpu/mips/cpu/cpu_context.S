@@ -11,6 +11,10 @@
 	 * t2 = pcpu.
 	 */
 ENTRY(cpu_context_restore)
+	/*
+	 * XXX Deactivate any previous thread.
+	 */
+
 	move	s0, a0
 	dla	a0, TD_CPUTHREAD(a0)
 	dla	a0, TD_TLBWIRED(a0)
@@ -77,10 +81,6 @@ ENTRY(cpu_context_save)
 	sd	s8, CONTEXT_S8(t0)
 	sd	sp, CONTEXT_SP(t0)
 	sd	ra, CONTEXT_RA(t0)
-
-	/*
-	 * XXX Deactivate this thread.
-	 */
 
 	/*
 	 * Return false to indicate this isn't a restore.

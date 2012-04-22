@@ -59,7 +59,7 @@ static void check(struct configuration *);
 static void config(struct configuration *);
 static void fatal(struct configuration *, int, const char *, ...);
 static void generate(struct configuration *);
-static const char *getline(FILE *);
+static const char *getsline(FILE *);
 static void imply(struct configuration *);
 static void include(struct configuration *, int, ...);
 static void load(struct configuration *);
@@ -364,7 +364,7 @@ generate(struct configuration *conf)
 }
 
 static const char *
-getline(FILE *input)
+getsline(FILE *input)
 {
 	static char buf[1024];
 	char *p;
@@ -525,7 +525,7 @@ parse(struct configuration *conf, int rootdir, FILE *file)
 	size_t offset;
 	const char *line;
 
-	while ((line = getline(file)) != NULL) {
+	while ((line = getsline(file)) != NULL) {
 		if (line[0] == '#' || line[0] == '\0')
 			continue;
 

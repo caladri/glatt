@@ -21,6 +21,8 @@
 #define	SYSCALL_VM_PAGE_GET		(SYSCALL_VM_BASE + 0x00)
 #define	SYSCALL_VM_PAGE_FREE		(SYSCALL_VM_BASE + 0x01)
 
+#define	SYSCALL_LAST			(SYSCALL_VM_PAGE_FREE)
+
 #ifdef MK
 #ifndef	ASSEMBLER
 int syscall(unsigned, register_t *, register_t *);

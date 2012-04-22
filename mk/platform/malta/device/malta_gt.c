@@ -48,6 +48,8 @@ gt_enumerate_children(struct bus_instance *bi)
 
 	pci = bus_parent_data_allocate(child, sizeof *pci);
 
+	pci->pci_domain = 0;
+
 	pci->pci_cs_read = gt_pci_cs_read;
 
 	pci->pci_io_enable = true;

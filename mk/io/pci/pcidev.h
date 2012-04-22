@@ -3,13 +3,8 @@
 
 struct bus_attachment;
 
-/*
- * XXX
- * Multi-function devices?
- * Domains.
- */
-
 struct pci_device {
+	unsigned pd_domain;
 	unsigned pd_bus;
 	unsigned pd_slot;
 	unsigned pd_function;

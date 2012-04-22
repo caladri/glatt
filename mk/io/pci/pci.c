@@ -115,9 +115,6 @@ pci_attachment_find(struct pci_attachment **attachment2p,
 	return;
 }
 
-/*
- * XXX domain.
- */
 static int
 pci_enumerate_child(struct pci_softc *sc, pci_bus_t bus, pci_slot_t slot,
 		    pci_function_t function)
@@ -140,6 +137,7 @@ pci_enumerate_child(struct pci_softc *sc, pci_bus_t bus, pci_slot_t slot,
 	sc->sc_interface->pci_cs_read(sc->sc_interface, tag,
 				      PCI_REG_CS_CLASS, &class);
 
+	pd.pd_domain = sc->sc_interface->pci_domain;
 	pd.pd_bus = bus;
 	pd.pd_slot = slot;
 	pd.pd_function = function;

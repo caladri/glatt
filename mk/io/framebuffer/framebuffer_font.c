@@ -41,7 +41,7 @@
  */
 
 #include <core/types.h>
-#include <io/console/framebuffer.h>
+#include <io/framebuffer/framebuffer.h>
 
 static uint8_t framebuffer_font_miklic_bold8x16_data[] = {
 	/* \00 */

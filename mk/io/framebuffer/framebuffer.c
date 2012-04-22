@@ -1,7 +1,7 @@
 #include <core/types.h>
 #include <core/error.h>
 #include <core/string.h>
-#include <io/console/framebuffer.h>
+#include <io/framebuffer/framebuffer.h>
 #include <vm/vm.h>
 #include <vm/vm_alloc.h>
 #include <vm/vm_page.h>

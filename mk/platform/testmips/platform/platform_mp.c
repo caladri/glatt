@@ -207,11 +207,16 @@ platform_mp_start_one(cpu_id_t cpu)
 	       "Must not have a page pending for PCPU usage.");
 	platform_mp_pcpu_addr = page_address(pcpu_page);
 
+	/*
+	 * XXX
+	 * Abusing startup_early here is awful.  Checking whether the
+	 * CPU is running seems better?
+	 */
 	startup_early = true;
 	TEST_MP_DEV_WRITE(TEST_MP_DEV_STARTADDR,
 			  (uintptr_t)platform_mp_start_cpu);
 	/*
-	 * TODO
+	 * NB:
 	 * Would like to use 'tempstack' for all CPUs, but that means waiting
 	 * until each is running threads, not just !startup_early.
 	 */

@@ -571,12 +571,18 @@ ipc_port_wait(ipc_port_t port)
 	IPC_PORTS_LOCK();
 	ipcp = ipc_port_lookup(port);
 	ASSERT(ipcp != NULL, "Must have a port to wait on.");
+	IPC_PORTS_UNLOCK();
 	if (!TAILQ_EMPTY(&ipcp->ipcp_msgs)) {
+		/*
+		 * XXX
+		 * Should we do the right check first?
+		 * Is there a security issue with letting
+		 * other tasks work out whether a port has
+		 * messages pending?  Probably.
+		 */
 		IPC_PORT_UNLOCK(ipcp);
-		IPC_PORTS_UNLOCK();
 		return (0);
 	}
-	IPC_PORTS_UNLOCK();
 
 	if (!ipc_port_right_check(ipcp, task, IPC_PORT_RIGHT_RECEIVE)) {
 		IPC_PORT_UNLOCK(ipcp);

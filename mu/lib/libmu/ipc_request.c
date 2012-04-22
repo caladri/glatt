@@ -83,29 +83,30 @@ ipc_request(const struct ipc_request_message *req, struct ipc_response_message *
 	}
 
 	for (;;) {
-		error = ipc_port_wait(req_port);
-		if (error != 0) {
-			if (error == ERROR_AGAIN)
-				continue;
-			/*
-			 * XXX
-			 * Free req_port.
-			 */
-			return (error);
-		}
-
 		if (resp->data)
 			error = ipc_port_receive(req_port, &ipch, &page);
 		else
 			error = ipc_port_receive(req_port, &ipch, NULL);
 		if (error != 0) {
-			if (error == ERROR_AGAIN)
-				continue;
-			/*
-			 * XXX
-			 * Free req_port.
-			 */
-			return (error);
+			if (error != ERROR_AGAIN) {
+				/*
+				 * XXX
+				 * Free req_port.
+				 */
+				return (error);
+			}
+
+			error = ipc_port_wait(req_port);
+			if (error != 0) {
+				if (error != ERROR_AGAIN) {
+					/*
+					 * XXX
+					 * Free req_port.
+					 */
+					return (error);
+				}
+			}
+			continue;
 		}
 
 		/*

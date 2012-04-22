@@ -100,6 +100,8 @@ ufs_mount(struct storage_device *sdev)
 	}
 
 	error = fs_register("ufs0"/*XXX*/, &ufs_fs_ops, um);
+	if (error != 0)
+		panic("%s: fs_register failed: %m", __func__, error);
 
 	return (0);
 }

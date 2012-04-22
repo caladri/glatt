@@ -14,7 +14,7 @@ ENTRY(start)
 	li	t0, CP0_STATUS_SR
 
 	/*
-	 * Set these bits. XXX enable FPU and start it up!
+	 * Set these bits.
 	 */
 	li	t1, CP0_STATUS_BEV | CP0_STATUS_KX
 

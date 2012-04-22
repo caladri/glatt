@@ -57,7 +57,7 @@ struct configuration {
 
 static void check(struct configuration *);
 static void config(struct configuration *);
-static void fatal(struct configuration *, int, const char *, ...);
+static void fatal(struct configuration *, int, const char *, ...) __attribute__ ((__noreturn__));
 static void generate(struct configuration *);
 static const char *getsline(FILE *);
 static void imply(struct configuration *);

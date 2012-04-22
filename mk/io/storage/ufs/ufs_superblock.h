@@ -36,9 +36,8 @@ struct ufs_superblock {
 #define	UFS_INOPB(sb)							\
 	(1 << UFS_LOG2INOPB((sb)))
 
-/* XXX 8 is the size of the indirect block entries, the address width.  */
 #define	UFS_INDIRECTBLOCKS(sb, level)					\
-	((uint64_t)1 << ((sb)->sb_bshift - LOG2(8)) * ((level) + 1))
+	((uint64_t)1 << ((sb)->sb_bshift - LOG2(sizeof (uint64_t))) * ((level) + 1))
 
 #define	UFS_LOG2INOPB(sb)						\
 	((sb)->sb_bshift - LOG2(sizeof (struct ufs2_inode)))

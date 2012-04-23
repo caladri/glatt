@@ -1,5 +1,6 @@
 LIB=	mu
 
+SRCS+=	console_io.c
 SRCS+=	file_io.c
 SRCS+=	ipc_dispatch.c
 SRCS+=	ipc_request.c

@@ -1,8 +1,6 @@
 #ifndef	COMMON_H
 #define	COMMON_H
 
-#include "ipc_dispatch.h"
-
 void mu_main(void);
 
 int vm_page_get(void **);

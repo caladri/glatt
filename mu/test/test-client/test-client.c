@@ -7,6 +7,7 @@
 #include <vm/vm_page.h>
 
 #include <libmu/common.h>
+#include <libmu/ipc_dispatch.h>
 
 static void test_request(const struct ipc_dispatch *, const struct ipc_dispatch_handler *, ipc_port_t server);
 static void test_response_handler(const struct ipc_dispatch *, const struct ipc_dispatch_handler *, const struct ipc_header *, void *);

@@ -8,6 +8,7 @@
 #include <vm/vm_page.h>
 
 #include <libmu/common.h>
+#include <libmu/ipc_dispatch.h>
 #include <libmu/ipc_request.h>
 
 #define	ETHERNET_ADDRESS_SIZE	6

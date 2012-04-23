@@ -7,6 +7,7 @@
 #include <vm/vm_page.h>
 
 #include <libmu/common.h>
+#include <libmu/ipc_dispatch.h>
 
 static void ipc_dispatch_message(const struct ipc_dispatch *, const struct ipc_header *, void *);
 

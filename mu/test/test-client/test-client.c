@@ -23,11 +23,9 @@ main(void)
 	/*
 	 * Wait for the test-server.
 	 */
-	printf("test-server lookup!\n");
 	while ((server = ns_lookup("test-server")) == IPC_PORT_UNKNOWN)
 		continue;
 
-	printf("test!\n");
 	id = ipc_dispatch_allocate(IPC_PORT_UNKNOWN, IPC_PORT_FLAG_DEFAULT);
 
 	idh = ipc_dispatch_register(id, test_response_handler, NULL);

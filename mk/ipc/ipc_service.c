@@ -147,7 +147,6 @@ ipc_service_main(void *arg)
 		ipch.ipchdr_msg = NS_MESSAGE_REGISTER;
 		ipch.ipchdr_right = IPC_PORT_RIGHT_SEND_ONCE;
 		ipch.ipchdr_cookie = 0;
-		ipch.ipchdr_recsize = sizeof nsreq;
 
 		strlcpy(nsreq.service_name, ipcsc->ipcsc_name,
 			NS_SERVICE_NAME_LENGTH);
@@ -204,14 +203,6 @@ ipc_service_main(void *arg)
 			if (ipch.ipchdr_cookie != 0) {
 #ifdef SERVICE_TRACING
 				printf("%s: unexpected cookie from ns.\n",
-					 ipcsc->ipcsc_name);
-#endif
-				continue;
-			}
-
-			if (ipch.ipchdr_recsize != 0) {
-#ifdef SERVICE_TRACING
-				printf("%s: response record from ns has wrong size.\n",
 					 ipcsc->ipcsc_name);
 #endif
 				continue;

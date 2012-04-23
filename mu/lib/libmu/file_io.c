@@ -71,7 +71,7 @@ fs_open_file_response_handler(const struct ipc_dispatch *id, const struct ipc_di
 
 	switch (ipch->ipchdr_msg) {
 	case IPC_MSG_REPLY(FS_MSG_OPEN_FILE):
-		if (ipch->ipchdr_recsize != 0 || page != NULL) {
+		if (page != NULL) {
 			ipc_message_drop(ipch, page);
 			return;
 		}
@@ -80,7 +80,7 @@ fs_open_file_response_handler(const struct ipc_dispatch *id, const struct ipc_di
 		fw->fw_port = ipch->ipchdr_param;
 		return;
 	case IPC_MSG_ERROR(FS_MSG_OPEN_FILE):
-		if (ipch->ipchdr_recsize != 0 || page != NULL) {
+		if (page != NULL) {
 			ipc_message_drop(ipch, page);
 			return;
 		}
@@ -147,10 +147,10 @@ fs_file_read_response_handler(const struct ipc_dispatch *id, const struct ipc_di
 		frw->frw_done = true;
 		frw->frw_error = 0;
 		frw->frw_buf = page;
-		frw->frw_length = ipch->ipchdr_recsize;
+		frw->frw_length = ipch->ipchdr_param;
 		return;
 	case IPC_MSG_ERROR(FS_FILE_MSG_READ):
-		if (ipch->ipchdr_recsize != 0 || page != NULL) {
+		if (page != NULL) {
 			ipc_message_drop(ipch, page);
 			return;
 		}
@@ -202,7 +202,7 @@ fs_file_close_response_handler(const struct ipc_dispatch *id, const struct ipc_d
 
 	switch (ipch->ipchdr_msg) {
 	case IPC_MSG_REPLY(FS_FILE_MSG_CLOSE):
-		if (ipch->ipchdr_recsize != 0 || page != NULL) {
+		if (page != NULL) {
 			ipc_message_drop(ipch, page);
 			return;
 		}
@@ -211,7 +211,7 @@ fs_file_close_response_handler(const struct ipc_dispatch *id, const struct ipc_d
 		fw->fw_error = 0;
 		return;
 	case IPC_MSG_ERROR(FS_FILE_MSG_CLOSE):
-		if (ipch->ipchdr_recsize != 0 || page != NULL) {
+		if (page != NULL) {
 			ipc_message_drop(ipch, page);
 			return;
 		}
@@ -263,7 +263,7 @@ fs_file_exec_response_handler(const struct ipc_dispatch *id, const struct ipc_di
 
 	switch (ipch->ipchdr_msg) {
 	case IPC_MSG_REPLY(FS_FILE_MSG_EXEC):
-		if (ipch->ipchdr_recsize != 0 || page != NULL) {
+		if (page != NULL) {
 			ipc_message_drop(ipch, page);
 			return;
 		}
@@ -272,7 +272,7 @@ fs_file_exec_response_handler(const struct ipc_dispatch *id, const struct ipc_di
 		fw->fw_error = 0;
 		return;
 	case IPC_MSG_ERROR(FS_FILE_MSG_EXEC):
-		if (ipch->ipchdr_recsize != 0 || page != NULL) {
+		if (page != NULL) {
 			ipc_message_drop(ipch, page);
 			return;
 		}

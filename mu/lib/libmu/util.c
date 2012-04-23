@@ -173,7 +173,6 @@ ipc_header_print(const struct ipc_header *ipch)
 	}
 	printf("Message: 0x%jx\n", (intmax_t)ipch->ipchdr_msg);
 	printf("Cookie: 0x%jx\n", (uintmax_t)ipch->ipchdr_cookie);
-	printf("Record size: %ju\n", (uintmax_t)ipch->ipchdr_recsize);
 	printf("Param: 0x%jx\n", (uintmax_t)ipch->ipchdr_param);
 }
 
@@ -184,14 +183,11 @@ ipc_message_print(const struct ipc_header *ipch, const void *page)
 
 	printf("Data page: %p\n", page);
 
-	if (ipch->ipchdr_recsize == 0)
+	if (page == NULL)
 		return;
 
-	if (ipch->ipchdr_recsize > PAGE_SIZE)
-		fatal("record size exceeds page size", ERROR_UNEXPECTED);
-
-	printf("Record:\n");
-	hexdump(page, ipch->ipchdr_recsize);
+	printf("Data:\n");
+	hexdump(page, PAGE_SIZE);
 }
 
 void

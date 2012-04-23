@@ -17,7 +17,6 @@ struct ipc_request_message {
 	 * Or they can flip a page.
 	 */
 	void *page;
-	ipc_size_t recsize; /* XXX This should go away soon! */
 };
 
 struct ipc_response_message {
@@ -38,6 +37,6 @@ struct ipc_response_message {
 	int error;
 };
 
-int ipc_request(const struct ipc_request_message *, struct ipc_response_message *) __non_null(1, 2) __check_result;
+int ipc_request(const struct ipc_request_message *, struct ipc_response_message *) __non_null(1) __check_result;
 
 #endif /* !IPC_REQUEST_H */

@@ -23,9 +23,11 @@ main(void)
 	/*
 	 * Wait for the test-server.
 	 */
+	printf("test-server lookup!\n");
 	while ((server = ns_lookup("test-server")) == IPC_PORT_UNKNOWN)
 		continue;
 
+	printf("test!\n");
 	id = ipc_dispatch_allocate(IPC_PORT_UNKNOWN, IPC_PORT_FLAG_DEFAULT);
 
 	idh = ipc_dispatch_register(id, test_response_handler, NULL);
@@ -53,7 +55,6 @@ test_response_handler(const struct ipc_dispatch *id, const struct ipc_dispatch_h
 	(void)idh;
 
 	if (ipch->ipchdr_msg != IPC_MSG_REPLY(1) ||
-	    ipch->ipchdr_recsize != 0 ||
 	    page != NULL) {
 		ipc_message_drop(ipch, page);
 		return;

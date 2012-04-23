@@ -25,6 +25,9 @@
  * to handle the case where the right sent is anything but
  * SEND_ONCE -- if it's SEND, you'll need a handler loop
  * anyway and aren't expecting a mere response.
+ *
+ * Builtin support for reply timeouts would make programming
+ * much easier.
  */
 
 int
@@ -62,16 +65,13 @@ ipc_request(const struct ipc_request_message *req, struct ipc_response_message *
 
 	ipch.ipchdr_src = req_port;
 	ipch.ipchdr_dst = req->dst;
-	ipch.ipchdr_right = IPC_PORT_RIGHT_SEND_ONCE;
+	if (resp != NULL)
+		ipch.ipchdr_right = IPC_PORT_RIGHT_SEND_ONCE;
+	else
+		ipch.ipchdr_right = IPC_PORT_RIGHT_NONE;
 	ipch.ipchdr_msg = req->msg;
 	ipch.ipchdr_cookie = (ipc_cookie_t)(uintptr_t)req;
 	ipch.ipchdr_param = req->param;
-	if (req->data != NULL)
-		ipch.ipchdr_recsize = req->datalen;
-	else if (req->page != NULL)
-		ipch.ipchdr_recsize = req->recsize;
-	else
-		ipch.ipchdr_recsize = 0;
 
 	error = ipc_port_send(&ipch, page);
 	if (error != 0) {
@@ -81,6 +81,9 @@ ipc_request(const struct ipc_request_message *req, struct ipc_response_message *
 		 */
 		return (error);
 	}
+
+	if (resp == NULL)
+		return (0);
 
 	for (;;) {
 		if (resp->data)

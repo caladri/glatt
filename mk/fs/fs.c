@@ -115,7 +115,7 @@ fs_ipc_open_file_handler(struct fs *fs, const struct ipc_header *reqh, void *p)
 	ipc_port_t port;
 	int error;
 
-	if (reqh->ipchdr_recsize != sizeof *req || p == NULL)
+	if (p == NULL)
 		return (ERROR_INVALID);
 	req = p;
 
@@ -210,7 +210,7 @@ fs_file_ipc_read_handler(struct fs_file *fsf, const struct ipc_header *reqh, voi
 	size_t length;
 	int error;
 
-	if (reqh->ipchdr_recsize != sizeof *req || p == NULL)
+	if (p == NULL)
 		return (ERROR_INVALID);
 	req = p;
 
@@ -228,7 +228,7 @@ fs_file_ipc_read_handler(struct fs_file *fsf, const struct ipc_header *reqh, voi
 		error = ipc_port_send_data(&ipch, NULL, 0);
 	} else {
 		ipch = IPC_HEADER_REPLY(reqh);
-		ipch.ipchdr_recsize = length;
+		ipch.ipchdr_param = length;
 
 		/*
 		 * XXX
@@ -252,7 +252,7 @@ fs_file_ipc_close_handler(struct fs_file *fsf, const struct ipc_header *reqh, vo
 	struct ipc_header ipch;
 	int error;
 
-	if (reqh->ipchdr_recsize != 0 || p != NULL)
+	if (p != NULL)
 		return (ERROR_INVALID);
 
 	/*
@@ -290,7 +290,7 @@ fs_file_ipc_exec_handler(struct fs_file *fsf, const struct ipc_header *reqh, voi
 	struct ipc_header ipch;
 	int error;
 
-	if (reqh->ipchdr_recsize != 0 || p != NULL)
+	if (p != NULL)
 		return (ERROR_INVALID);
 
 	error = exec_task(fsf->fsf_path, fs->fs_ops->fs_file_read, fs->fs_context, fsfc);

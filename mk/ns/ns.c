@@ -29,7 +29,7 @@ ns_handle_lookup(const struct ipc_header *reqh, void *p)
 	ipc_port_t port;
 	int error;
 
-	if (p == NULL || reqh->ipchdr_recsize != sizeof *req)
+	if (p == NULL)
 		return (ns_handle_gibberish(reqh));
 
 	req = p;
@@ -58,7 +58,7 @@ ns_handle_register(const struct ipc_header *reqh, void *p)
 	struct ipc_header ipch;
 	int error;
 
-	if (p == NULL || reqh->ipchdr_recsize != sizeof *req)
+	if (p == NULL)
 		return (ns_handle_gibberish(reqh));
 
 	req = p;

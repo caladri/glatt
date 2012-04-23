@@ -8,6 +8,7 @@
 #include <vm/vm_page.h>
 
 #include <libmu/common.h>
+#include <libmu/ipc_request.h>
 
 #define	ETHERNET_ADDRESS_SIZE	6
 
@@ -33,7 +34,6 @@ struct if_context {
 	struct ipc_dispatch *ifc_dispatch;
 	const struct ipc_dispatch_handler *ifc_get_info_handler;
 	const struct ipc_dispatch_handler *ifc_receive_handler;
-	const struct ipc_dispatch_handler *ifc_transmit_handler;
 	ipc_port_t ifc_ifport;
 };
 
@@ -41,7 +41,6 @@ static void arp_request(struct if_context *, const uint8_t *, uint32_t, uint32_t
 static void if_get_info_callback(const struct ipc_dispatch *, const struct ipc_dispatch_handler *, const struct ipc_header *, void *);
 static void if_receive_callback(const struct ipc_dispatch *, const struct ipc_dispatch_handler *, const struct ipc_header *, void *);
 static void if_transmit(struct if_context *, const void *, size_t);
-static void if_transmit_callback(const struct ipc_dispatch *, const struct ipc_dispatch_handler *, const struct ipc_header *, void *);
 
 void
 main(void)
@@ -68,8 +67,6 @@ main(void)
 	error = ipc_dispatch_send(ifc.ifc_dispatch, ifc.ifc_receive_handler, ifc.ifc_ifport, NETWORK_INTERFACE_MSG_RECEIVE, IPC_PORT_RIGHT_SEND, NULL, 0);
 	if (error != 0)
 		fatal("could not send receive registration message", error);
-
-	ifc.ifc_transmit_handler = ipc_dispatch_register(ifc.ifc_dispatch, if_transmit_callback, &ifc);
 
 	ipc_dispatch(ifc.ifc_dispatch);
 
@@ -144,7 +141,7 @@ if_get_info_callback(const struct ipc_dispatch *id, const struct ipc_dispatch_ha
 	(void)idh;
 
 	if (ipch->ipchdr_msg != IPC_MSG_REPLY(NETWORK_INTERFACE_MSG_GET_INFO) ||
-	    ipch->ipchdr_recsize < sizeof rhdr || page == NULL) {
+	    ipch->ipchdr_param < sizeof rhdr || page == NULL) {
 		ipc_message_drop(ipch, page);
 		return;
 	}
@@ -165,23 +162,24 @@ if_get_info_callback(const struct ipc_dispatch *id, const struct ipc_dispatch_ha
 static void
 if_receive_callback(const struct ipc_dispatch *id, const struct ipc_dispatch_handler *idh, const struct ipc_header *ipch, void *page)
 {
-	int *errorp;
-
 	(void)id;
 	(void)idh;
 
 	switch (ipch->ipchdr_msg) {
-	case IPC_MSG_REPLY(NETWORK_INTERFACE_MSG_RECEIVE):
-		if (ipch->ipchdr_recsize != sizeof *errorp || page == NULL) {
+	case IPC_MSG_ERROR(NETWORK_INTERFACE_MSG_RECEIVE):
+		if (page == NULL) {
 			ipc_message_drop(ipch, page);
 			return;
 		}
-		errorp = page;
-		if (*errorp != 0)
-			fatal("failed to register receive handler", *errorp);
+		fatal("failed to register receive handler", ipch->ipchdr_param);
+	case IPC_MSG_REPLY(NETWORK_INTERFACE_MSG_RECEIVE):
+		if (page == NULL) {
+			ipc_message_drop(ipch, page);
+			return;
+		}
 		return;
 	case NETWORK_INTERFACE_MSG_RECEIVE_PACKET:
-		if (ipch->ipchdr_recsize == 0 || page == NULL) {
+		if (ipch->ipchdr_param == 0 || page == NULL) {
 			ipc_message_drop(ipch, page);
 			return;
 		}
@@ -193,24 +191,23 @@ if_receive_callback(const struct ipc_dispatch *id, const struct ipc_dispatch_han
 	}
 
 	printf("Received packet:\n");
-	ipc_message_print(ipch, page);
+	hexdump(page, ipch->ipchdr_param);
 }
 
 static void
 if_transmit(struct if_context *ifc, const void *data, size_t datalen)
 {
+	struct ipc_request_message req;
 	int error;
 
-	error = ipc_dispatch_send(ifc->ifc_dispatch, ifc->ifc_transmit_handler, ifc->ifc_ifport, NETWORK_INTERFACE_MSG_TRANSMIT, IPC_PORT_RIGHT_NONE, data, datalen);
+	req.src = IPC_PORT_UNKNOWN;
+	req.dst = ifc->ifc_ifport;
+	req.msg = NETWORK_INTERFACE_MSG_TRANSMIT;
+	req.param = datalen;
+	req.data = data;
+	req.datalen = datalen;
+
+	error = ipc_request(&req, NULL);
 	if (error != 0)
-		fatal("ipc_dispatch_send failed", error);
-}
-
-static void
-if_transmit_callback(const struct ipc_dispatch *id, const struct ipc_dispatch_handler *idh, const struct ipc_header *ipch, void *page)
-{
-	(void)id;
-	(void)idh;
-
-	ipc_message_drop(ipch, page);
+		fatal("ipc_request failed", error);
 }

@@ -33,7 +33,7 @@ ns_lookup(const char *service)
 		return (IPC_PORT_UNKNOWN);
 
 	if (resp.error != 0)
-		return (resp.error);
+		return (IPC_PORT_UNKNOWN);
 
 	return (resp.param);
 }

@@ -8,280 +8,130 @@
 #include <vm/vm_page.h>
 
 #include <libmu/common.h>
-
-struct fs_wait {
-	bool fw_done;
-	int fw_error;
-	ipc_port_t fw_port;
-};
-
-struct fs_read_wait {
-	bool frw_done;
-	int frw_error;
-	void *frw_buf;
-	size_t frw_length;
-};
-
-static void fs_open_file_response_handler(const struct ipc_dispatch *, const struct ipc_dispatch_handler *, const struct ipc_header *, void *);
-static void fs_file_read_response_handler(const struct ipc_dispatch *, const struct ipc_dispatch_handler *, const struct ipc_header *, void *);
-static void fs_file_close_response_handler(const struct ipc_dispatch *, const struct ipc_dispatch_handler *, const struct ipc_header *, void *);
-static void fs_file_exec_response_handler(const struct ipc_dispatch *, const struct ipc_dispatch_handler *, const struct ipc_header *, void *);
+#include <libmu/ipc_request.h>
 
 int
 open(ipc_port_t fs, const char *path, ipc_port_t *filep)
 {
-	const struct ipc_dispatch_handler *idh;
+	struct ipc_request_message req;
+	struct ipc_response_message resp;
 	struct fs_open_file_request fsreq;
-	struct ipc_dispatch *id;
-	struct fs_wait fw;
 	int error;
 
-	id = ipc_dispatch_allocate(IPC_PORT_UNKNOWN, IPC_PORT_FLAG_DEFAULT);
-	idh = ipc_dispatch_register(id, fs_open_file_response_handler, &fw);
-
+	memset(&req, 0, sizeof req);
+	memset(&resp, 0, sizeof resp);
 	memset(&fsreq, 0, sizeof fsreq);
+
 	strlcpy(fsreq.path, path, sizeof fsreq.path);
 
-	error = ipc_dispatch_send(id, idh, fs, FS_MSG_OPEN_FILE, IPC_PORT_RIGHT_SEND_ONCE, &fsreq, sizeof fsreq);
+	req.src = IPC_PORT_UNKNOWN;
+	req.dst = fs;
+	req.msg = FS_MSG_OPEN_FILE;
+	req.param = 0;
+	req.data = &fsreq;
+	req.datalen = sizeof fsreq;
+
+	resp.data = false;
+
+	error = ipc_request(&req, &resp);
 	if (error != 0)
-		fatal("ipc_dispatch_send failed", error);
+		return (error);
 
-	fw.fw_done = false;
-	fw.fw_error = 0;
-	fw.fw_port = IPC_PORT_UNKNOWN;
-	for (;;) {
-		ipc_dispatch_poll(id);
-		if (fw.fw_done)
-			break;
-		ipc_dispatch_wait(id);
-	}
+	if (resp.error != 0)
+		return (resp.error);
 
-	ipc_dispatch_free(id);
+	*filep = resp.param;
 
-	*filep = fw.fw_port;
-	return (fw.fw_error);
-}
-
-static void
-fs_open_file_response_handler(const struct ipc_dispatch *id, const struct ipc_dispatch_handler *idh, const struct ipc_header *ipch, void *page)
-{
-	struct fs_wait *fw = idh->idh_softc;
-
-	(void)id;
-
-	switch (ipch->ipchdr_msg) {
-	case IPC_MSG_REPLY(FS_MSG_OPEN_FILE):
-		if (page != NULL) {
-			ipc_message_drop(ipch, page);
-			return;
-		}
-
-		fw->fw_done = true;
-		fw->fw_port = ipch->ipchdr_param;
-		return;
-	case IPC_MSG_ERROR(FS_MSG_OPEN_FILE):
-		if (page != NULL) {
-			ipc_message_drop(ipch, page);
-			return;
-		}
-
-		fw->fw_done = true;
-		fw->fw_error = ipch->ipchdr_param;
-		return;
-	default:
-		ipc_message_drop(ipch, page);
-		return;
-	}
+	return (0);
 }
 
 int
 read(ipc_port_t file, void **bufp, off_t off, size_t *lenp)
 {
-	const struct ipc_dispatch_handler *idh;
+	struct ipc_request_message req;
+	struct ipc_response_message resp;
 	struct fs_file_read_request fsreq;
-	struct ipc_dispatch *id;
-	struct fs_read_wait frw;
 	int error;
 
-	id = ipc_dispatch_allocate(IPC_PORT_UNKNOWN, IPC_PORT_FLAG_DEFAULT);
-	idh = ipc_dispatch_register(id, fs_file_read_response_handler, &frw);
-
+	memset(&req, 0, sizeof req);
+	memset(&resp, 0, sizeof resp);
 	memset(&fsreq, 0, sizeof fsreq);
+
 	fsreq.offset = off;
 	fsreq.length = *lenp;
 
-	error = ipc_dispatch_send(id, idh, file, FS_FILE_MSG_READ, IPC_PORT_RIGHT_SEND_ONCE, &fsreq, sizeof fsreq);
+	req.src = IPC_PORT_UNKNOWN;
+	req.dst = file;
+	req.msg = FS_FILE_MSG_READ;
+	req.param = 0;
+	req.data = &fsreq;
+	req.datalen = sizeof fsreq;
+
+	resp.data = true;
+
+	error = ipc_request(&req, &resp);
 	if (error != 0)
-		fatal("ipc_dispatch_send failed", error);
+		return (error);
 
-	frw.frw_done = false;
-	frw.frw_error = 0;
-	frw.frw_buf = NULL;
-	frw.frw_length = 0;
-	for (;;) {
-		ipc_dispatch_poll(id);
-		if (frw.frw_done)
-			break;
-		ipc_dispatch_wait(id);
-	}
-	
-	if (frw.frw_error == 0) {
-		*bufp = frw.frw_buf;
-		*lenp = frw.frw_length;
-	}
+	if (resp.error != 0)
+		return (resp.error);
 
-	ipc_dispatch_free(id);
+	*bufp = resp.page;
+	*lenp = resp.param;
 
-	return (frw.frw_error);
-}
-
-static void
-fs_file_read_response_handler(const struct ipc_dispatch *id, const struct ipc_dispatch_handler *idh, const struct ipc_header *ipch, void *page)
-{
-	struct fs_read_wait *frw = idh->idh_softc;
-
-	(void)id;
-
-	switch (ipch->ipchdr_msg) {
-	case IPC_MSG_REPLY(FS_FILE_MSG_READ):
-		frw->frw_done = true;
-		frw->frw_error = 0;
-		frw->frw_buf = page;
-		frw->frw_length = ipch->ipchdr_param;
-		return;
-	case IPC_MSG_ERROR(FS_FILE_MSG_READ):
-		if (page != NULL) {
-			ipc_message_drop(ipch, page);
-			return;
-		}
-
-		frw->frw_done = true;
-		frw->frw_error = ipch->ipchdr_param;
-		return;
-	default:
-		ipc_message_drop(ipch, page);
-		return;
-	}
+	return (0);
 }
 
 int
 close(ipc_port_t file)
 {
-	const struct ipc_dispatch_handler *idh;
-	struct ipc_dispatch *id;
-	struct fs_wait fw;
+	struct ipc_request_message req;
+	struct ipc_response_message resp;
 	int error;
 
-	id = ipc_dispatch_allocate(IPC_PORT_UNKNOWN, IPC_PORT_FLAG_DEFAULT);
-	idh = ipc_dispatch_register(id, fs_file_close_response_handler, &fw);
+	memset(&req, 0, sizeof req);
+	memset(&resp, 0, sizeof resp);
 
-	error = ipc_dispatch_send(id, idh, file, FS_FILE_MSG_CLOSE, IPC_PORT_RIGHT_SEND_ONCE, NULL, 0);
+	req.src = IPC_PORT_UNKNOWN;
+	req.dst = file;
+	req.msg = FS_FILE_MSG_CLOSE;
+	req.param = 0;
+
+	resp.data = false;
+
+	error = ipc_request(&req, &resp);
 	if (error != 0)
-		fatal("ipc_dispatch_send failed", error);
+		return (error);
 
-	fw.fw_done = false;
-	fw.fw_error = 0;
-	for (;;) {
-		ipc_dispatch_poll(id);
-		if (fw.fw_done)
-			break;
-		ipc_dispatch_wait(id);
-	}
+	if (resp.error != 0)
+		return (resp.error);
 
-	ipc_dispatch_free(id);
-
-	return (fw.fw_error);
-}
-
-static void
-fs_file_close_response_handler(const struct ipc_dispatch *id, const struct ipc_dispatch_handler *idh, const struct ipc_header *ipch, void *page)
-{
-	struct fs_wait *fw = idh->idh_softc;
-
-	(void)id;
-
-	switch (ipch->ipchdr_msg) {
-	case IPC_MSG_REPLY(FS_FILE_MSG_CLOSE):
-		if (page != NULL) {
-			ipc_message_drop(ipch, page);
-			return;
-		}
-
-		fw->fw_done = true;
-		fw->fw_error = 0;
-		return;
-	case IPC_MSG_ERROR(FS_FILE_MSG_CLOSE):
-		if (page != NULL) {
-			ipc_message_drop(ipch, page);
-			return;
-		}
-
-		fw->fw_done = true;
-		fw->fw_error = ipch->ipchdr_param;
-		return;
-	default:
-		ipc_message_drop(ipch, page);
-		return;
-	}
+	return (0);
 }
 
 int
 exec(ipc_port_t file)
 {
-	const struct ipc_dispatch_handler *idh;
-	struct ipc_dispatch *id;
-	struct fs_wait fw;
+	struct ipc_request_message req;
+	struct ipc_response_message resp;
 	int error;
 
-	id = ipc_dispatch_allocate(IPC_PORT_UNKNOWN, IPC_PORT_FLAG_DEFAULT);
-	idh = ipc_dispatch_register(id, fs_file_exec_response_handler, &fw);
+	memset(&req, 0, sizeof req);
+	memset(&resp, 0, sizeof resp);
 
-	error = ipc_dispatch_send(id, idh, file, FS_FILE_MSG_EXEC, IPC_PORT_RIGHT_SEND_ONCE, NULL, 0);
+	req.src = IPC_PORT_UNKNOWN;
+	req.dst = file;
+	req.msg = FS_FILE_MSG_EXEC;
+	req.param = 0;
+
+	resp.data = false;
+
+	error = ipc_request(&req, &resp);
 	if (error != 0)
-		fatal("ipc_dispatch_send failed", error);
+		return (error);
 
-	fw.fw_done = false;
-	fw.fw_error = 0;
-	for (;;) {
-		ipc_dispatch_poll(id);
-		if (fw.fw_done)
-			break;
-		ipc_dispatch_wait(id);
-	}
+	if (resp.error != 0)
+		return (resp.error);
 
-	ipc_dispatch_free(id);
-
-	return (fw.fw_error);
-}
-
-static void
-fs_file_exec_response_handler(const struct ipc_dispatch *id, const struct ipc_dispatch_handler *idh, const struct ipc_header *ipch, void *page)
-{
-	struct fs_wait *fw = idh->idh_softc;
-
-	(void)id;
-
-	switch (ipch->ipchdr_msg) {
-	case IPC_MSG_REPLY(FS_FILE_MSG_EXEC):
-		if (page != NULL) {
-			ipc_message_drop(ipch, page);
-			return;
-		}
-
-		fw->fw_done = true;
-		fw->fw_error = 0;
-		return;
-	case IPC_MSG_ERROR(FS_FILE_MSG_EXEC):
-		if (page != NULL) {
-			ipc_message_drop(ipch, page);
-			return;
-		}
-
-		fw->fw_done = true;
-		fw->fw_error = ipch->ipchdr_param;
-		return;
-	default:
-		ipc_message_drop(ipch, page);
-		return;
-	}
+	return (0);
 }

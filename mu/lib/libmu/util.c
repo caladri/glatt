@@ -113,7 +113,8 @@ ipc_header_print(const struct ipc_header *ipch)
 		printf("Grants reply right.\n");
 		break;
 	default:
-		printf("Grants unrecognized right mask: 0x%jx\n", (uintmax_t)ipch->ipchdr_right);
+		printf("Grants unrecognized right mask: 0x%jx\n",
+		       (uintmax_t)ipch->ipchdr_right);
 		break;
 	}
 	printf("Message: 0x%jx\n", (intmax_t)ipch->ipchdr_msg);
@@ -158,7 +159,8 @@ malloc(size_t len)
 	int error;
 
 	if (len > PAGE_SIZE)
-		fatal("request to allocate more than a page", ERROR_NOT_IMPLEMENTED);
+		fatal("request to allocate more than a page",
+		      ERROR_NOT_IMPLEMENTED);
 	if (len == 0)
 		fatal("request to allocate 0 bytes", ERROR_INVALID);
 
@@ -176,7 +178,9 @@ free(void *ptr)
 	int error;
 
 	if (ptr == NULL)
-		fatal("request to free NULL; what do you think this is, plain old C?", ERROR_NOT_IMPLEMENTED);
+		fatal("request to free NULL; "
+		      "what do you think this is, plain old C?",
+		      ERROR_NOT_IMPLEMENTED);
 
 	page = ptr;
 

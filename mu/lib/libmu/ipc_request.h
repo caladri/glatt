@@ -37,6 +37,7 @@ struct ipc_response_message {
 	int error;
 };
 
-int ipc_request(const struct ipc_request_message *, struct ipc_response_message *) __non_null(1) __check_result;
+int ipc_request(const struct ipc_request_message *,
+		struct ipc_response_message *) __non_null(1) __check_result;
 
 #endif /* !IPC_REQUEST_H */

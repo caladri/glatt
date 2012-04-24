@@ -38,9 +38,14 @@ struct if_context {
 	ipc_port_t ifc_ifport;
 };
 
-static void arp_request(struct if_context *, const uint8_t *, uint32_t, uint32_t);
-static void if_get_info_callback(const struct ipc_dispatch *, const struct ipc_dispatch_handler *, const struct ipc_header *, void *);
-static void if_receive_callback(const struct ipc_dispatch *, const struct ipc_dispatch_handler *, const struct ipc_header *, void *);
+static void arp_request(struct if_context *, const uint8_t *, uint32_t,
+			uint32_t);
+static void if_get_info_callback(const struct ipc_dispatch *,
+				 const struct ipc_dispatch_handler *,
+				 const struct ipc_header *, void *);
+static void if_receive_callback(const struct ipc_dispatch *,
+				const struct ipc_dispatch_handler *,
+				const struct ipc_header *, void *);
 static void if_transmit(struct if_context *, const void *, size_t);
 
 void
@@ -57,15 +62,26 @@ main(void)
 	while ((ifc.ifc_ifport = ns_lookup("tmether0")) == IPC_PORT_UNKNOWN)
 		continue;
 
-	ifc.ifc_dispatch = ipc_dispatch_allocate(IPC_PORT_UNKNOWN, IPC_PORT_FLAG_DEFAULT);
+	ifc.ifc_dispatch = ipc_dispatch_allocate(IPC_PORT_UNKNOWN,
+						 IPC_PORT_FLAG_DEFAULT);
 
-	ifc.ifc_get_info_handler = ipc_dispatch_register(ifc.ifc_dispatch, if_get_info_callback, &ifc);
-	error = ipc_dispatch_send(ifc.ifc_dispatch, ifc.ifc_get_info_handler, ifc.ifc_ifport, NETWORK_INTERFACE_MSG_GET_INFO, IPC_PORT_RIGHT_SEND_ONCE, NULL, 0);
+	ifc.ifc_get_info_handler = ipc_dispatch_register(ifc.ifc_dispatch,
+							 if_get_info_callback,
+							 &ifc);
+	error = ipc_dispatch_send(ifc.ifc_dispatch, ifc.ifc_get_info_handler,
+				  ifc.ifc_ifport,
+				  NETWORK_INTERFACE_MSG_GET_INFO,
+				  IPC_PORT_RIGHT_SEND_ONCE, NULL, 0);
 	if (error != 0)
 		fatal("could not send get info message", error);
 
-	ifc.ifc_receive_handler = ipc_dispatch_register(ifc.ifc_dispatch, if_receive_callback, &ifc);
-	error = ipc_dispatch_send(ifc.ifc_dispatch, ifc.ifc_receive_handler, ifc.ifc_ifport, NETWORK_INTERFACE_MSG_RECEIVE, IPC_PORT_RIGHT_SEND, NULL, 0);
+	ifc.ifc_receive_handler = ipc_dispatch_register(ifc.ifc_dispatch,
+							if_receive_callback,
+							&ifc);
+	error = ipc_dispatch_send(ifc.ifc_dispatch, ifc.ifc_receive_handler,
+				  ifc.ifc_ifport,
+				  NETWORK_INTERFACE_MSG_RECEIVE,
+				  IPC_PORT_RIGHT_SEND, NULL, 0);
 	if (error != 0)
 		fatal("could not send receive registration message", error);
 
@@ -75,7 +91,8 @@ main(void)
 }
 
 static void
-arp_request(struct if_context *ifc, const uint8_t *ether_src, uint32_t ip_src, uint32_t ip_dst)
+arp_request(struct if_context *ifc, const uint8_t *ether_src, uint32_t ip_src,
+	    uint32_t ip_dst)
 {
 	struct ethernet_header eh;
 	struct arp_header ah;
@@ -83,7 +100,8 @@ arp_request(struct if_context *ifc, const uint8_t *ether_src, uint32_t ip_src, u
 	uint8_t *pkt;
 	uint8_t *p;
 
-	pktlen = sizeof eh + sizeof ah + (2 * sizeof eh.eh_shost) + (2 * sizeof ip_src);
+	pktlen = sizeof eh + sizeof ah + (2 * sizeof eh.eh_shost) +
+		(2 * sizeof ip_src);
 	pkt = malloc(pktlen);
 	if (pkt == NULL)
 		fatal("could not allocate memory for packet", ERROR_UNEXPECTED);
@@ -100,7 +118,7 @@ arp_request(struct if_context *ifc, const uint8_t *ether_src, uint32_t ip_src, u
 	memcpy(p, &eh, sizeof eh);
 	p += sizeof eh;
 
-	ah.ah_hrd[0] = 0; /* Ethernet's hardware protocol number for ARP is 1.  */
+	ah.ah_hrd[0] = 0; /* Ethernet's protocol number for ARP is 1.  */
 	ah.ah_hrd[1] = 1;
 	ah.ah_pro[0] = 0x08; /* IP's Ethernet protocol type is 0x0800.  */
 	ah.ah_pro[1] = 0x00;
@@ -129,7 +147,9 @@ arp_request(struct if_context *ifc, const uint8_t *ether_src, uint32_t ip_src, u
 }
 
 static void
-if_get_info_callback(const struct ipc_dispatch *id, const struct ipc_dispatch_handler *idh, const struct ipc_header *ipch, void *page)
+if_get_info_callback(const struct ipc_dispatch *id,
+		     const struct ipc_dispatch_handler *idh,
+		     const struct ipc_header *ipch, void *page)
 {
 	struct network_interface_get_info_response_header rhdr;
 	struct if_context *ifc;
@@ -153,7 +173,8 @@ if_get_info_callback(const struct ipc_dispatch *id, const struct ipc_dispatch_ha
 
 	printf("Interface address:");
 	for (i = 0; i < rhdr.addrlen; i++)
-		printf("%c%x%x", i == 0 ? ' ' : ':', (addr[i] & 0xf0) >> 4, addr[i] & 0x0f);
+		printf("%c%x%x", i == 0 ? ' ' : ':', (addr[i] & 0xf0) >> 4,
+		       addr[i] & 0x0f);
 	printf("\n");
 
 	printf("Sending ARP request.\n");
@@ -161,7 +182,9 @@ if_get_info_callback(const struct ipc_dispatch *id, const struct ipc_dispatch_ha
 }
 
 static void
-if_receive_callback(const struct ipc_dispatch *id, const struct ipc_dispatch_handler *idh, const struct ipc_header *ipch, void *page)
+if_receive_callback(const struct ipc_dispatch *id,
+		    const struct ipc_dispatch_handler *idh,
+		    const struct ipc_header *ipch, void *page)
 {
 	(void)id;
 	(void)idh;

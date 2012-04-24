@@ -31,7 +31,8 @@
  */
 
 int
-ipc_request(const struct ipc_request_message *req, struct ipc_response_message *resp)
+ipc_request(const struct ipc_request_message *req,
+	    struct ipc_response_message *resp)
 {
 	struct ipc_header ipch;
 	ipc_port_t req_port;

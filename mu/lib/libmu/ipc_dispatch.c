@@ -9,7 +9,8 @@
 #include <libmu/common.h>
 #include <libmu/ipc_dispatch.h>
 
-static void ipc_dispatch_message(const struct ipc_dispatch *, const struct ipc_header *, void *);
+static void ipc_dispatch_message(const struct ipc_dispatch *,
+				 const struct ipc_header *, void *);
 
 struct ipc_dispatch *
 ipc_dispatch_allocate(ipc_port_t port, ipc_port_flags_t flags)
@@ -19,7 +20,8 @@ ipc_dispatch_allocate(ipc_port_t port, ipc_port_flags_t flags)
 
 	id = malloc(sizeof *id);
 	if (id == NULL)
-		fatal("could not allocate memory for dispatch", ERROR_EXHAUSTED);
+		fatal("could not allocate memory for dispatch",
+		      ERROR_EXHAUSTED);
 
 	if (port == IPC_PORT_UNKNOWN) {
 		error = ipc_port_allocate(&port, flags);
@@ -96,7 +98,8 @@ ipc_dispatch_poll(const struct ipc_dispatch *id)
 }
 
 const struct ipc_dispatch_handler *
-ipc_dispatch_register(struct ipc_dispatch *id, ipc_dispatch_callback_t *cb, void *softc)
+ipc_dispatch_register(struct ipc_dispatch *id, ipc_dispatch_callback_t *cb,
+		      void *softc)
 {
 	struct ipc_dispatch_handler *idh;
 
@@ -114,12 +117,14 @@ ipc_dispatch_register(struct ipc_dispatch *id, ipc_dispatch_callback_t *cb, void
 }
 
 const struct ipc_dispatch_handler *
-ipc_dispatch_register_default(struct ipc_dispatch *id, ipc_dispatch_callback_t *cb, void *softc)
+ipc_dispatch_register_default(struct ipc_dispatch *id,
+			      ipc_dispatch_callback_t *cb, void *softc)
 {
 	struct ipc_dispatch_handler *idh;
 
 	if (id->id_default != NULL)
-		fatal("attempt to register two default handlers", ERROR_UNEXPECTED);
+		fatal("attempt to register two default handlers",
+		      ERROR_UNEXPECTED);
 
 	idh = malloc(sizeof *idh);
 	if (idh == NULL)
@@ -135,7 +140,10 @@ ipc_dispatch_register_default(struct ipc_dispatch *id, ipc_dispatch_callback_t *
 }
 
 int
-ipc_dispatch_send(const struct ipc_dispatch *id, const struct ipc_dispatch_handler *idh, ipc_port_t dst, ipc_msg_t msg, ipc_port_right_t right, const void *data, size_t datalen)
+ipc_dispatch_send(const struct ipc_dispatch *id,
+		  const struct ipc_dispatch_handler *idh,
+		  ipc_port_t dst, ipc_msg_t msg, ipc_port_right_t right,
+		  const void *data, size_t datalen)
 {
 	struct ipc_header ipch;
 	void *page;
@@ -174,7 +182,9 @@ ipc_dispatch_send(const struct ipc_dispatch *id, const struct ipc_dispatch_handl
 }
 
 int
-ipc_dispatch_send_reply(const struct ipc_dispatch *id, const struct ipc_header *reqh, ipc_port_right_t right, const void *data, size_t datalen)
+ipc_dispatch_send_reply(const struct ipc_dispatch *id,
+			const struct ipc_header *reqh, ipc_port_right_t right,
+			const void *data, size_t datalen)
 {
 	struct ipc_header ipch;
 	void *page;
@@ -219,7 +229,8 @@ ipc_dispatch_wait(const struct ipc_dispatch *id)
 }
 
 static void
-ipc_dispatch_message(const struct ipc_dispatch *id, const struct ipc_header *ipch, void *page)
+ipc_dispatch_message(const struct ipc_dispatch *id,
+		     const struct ipc_header *ipch, void *page)
 {
 	struct ipc_dispatch_handler *idh;
 

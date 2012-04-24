@@ -9,7 +9,9 @@
 #include <libmu/common.h>
 #include <libmu/ipc_dispatch.h>
 
-static void test_request_handler(const struct ipc_dispatch *id, const struct ipc_dispatch_handler *, const struct ipc_header *, void *);
+static void test_request_handler(const struct ipc_dispatch *id,
+				 const struct ipc_dispatch_handler *,
+				 const struct ipc_header *, void *);
 
 void
 main(void)
@@ -19,7 +21,9 @@ main(void)
 
 	puts("Starting test-server.\n");
 
-	id = ipc_dispatch_allocate(IPC_PORT_UNKNOWN, IPC_PORT_FLAG_DEFAULT | IPC_PORT_FLAG_PUBLIC);
+	id = ipc_dispatch_allocate(IPC_PORT_UNKNOWN,
+				   IPC_PORT_FLAG_DEFAULT |
+				   IPC_PORT_FLAG_PUBLIC);
 
 	error = ns_register("test-server", id->id_port);
 	if (error != 0)
@@ -33,7 +37,9 @@ main(void)
 }
 
 static void
-test_request_handler(const struct ipc_dispatch *id, const struct ipc_dispatch_handler *idh, const struct ipc_header *reqh, void *page)
+test_request_handler(const struct ipc_dispatch *id,
+		     const struct ipc_dispatch_handler *idh,
+		     const struct ipc_header *reqh, void *page)
 {
 	int error;
 

@@ -46,6 +46,13 @@ struct option {
 	struct option *o_next;
 };
 
+#define	FOREACH_FILE(file, option)					\
+	for (file = (option)->o_files; file != NULL; file = file->f_next)
+
+#define	FOREACH_REQUIREMENT(requirement, option)			\
+	for (requirement = (option)->o_requirements;			\
+	     requirement != NULL; requirement = requirement->r_next)
+
 struct configuration {
 	struct option *c_options;
 	struct setting *c_settings;
@@ -54,6 +61,14 @@ struct configuration {
 	const char *c_configstr;
 	const char *c_cpu;
 };
+
+#define	FOREACH_OPTION(option, conf)					\
+	for (option = (conf)->c_options; option != NULL;		\
+	     option = option->o_next)
+
+#define	FOREACH_SETTING(setting, conf)					\
+	for (setting = (conf)->c_settings; setting != NULL;		\
+	     setting = setting->s_next)
 
 static void check(struct configuration *);
 static void config(struct configuration *);
@@ -149,10 +164,8 @@ check(struct configuration *conf)
 	for (requirep = conf_required; *requirep != NULL; requirep++)
 		require(conf, *requirep);
 
-	for (option = conf->c_options; option != NULL;
-	     option = option->o_next) {
-		for (requirement = option->o_requirements; requirement != NULL;
-		     requirement = requirement->r_next) {
+	FOREACH_OPTION(option, conf) {
+		FOREACH_REQUIREMENT(requirement, option) {
 			switch (requirement->r_type) {
 			case Implies:
 				continue;
@@ -231,18 +244,14 @@ config(struct configuration *conf)
 	 *
 	 * NB: The first and second steps are both covered by this first loop.
 	 */
-	for (setting = conf->c_settings; setting != NULL;
-	     setting = setting->s_next) {
+	FOREACH_SETTING(setting, conf)
 		setting->s_option->o_enable = setting->s_enable;
-	}
 
 	imply(conf);
 
-	for (setting = conf->c_settings; setting != NULL;
-	     setting = setting->s_next) {
+	FOREACH_SETTING(setting, conf)
 		if (!setting->s_enable)
 			setting->s_option->o_enable = false;
-	}
 }
 
 static void
@@ -333,8 +342,7 @@ generate(struct configuration *conf)
 	fprintf(config_mk, "CPU=%s\n", conf->c_cpu);
 	fprintf(config_mk, "CONFIGSTR=%s\n", conf->c_configstr);
 
-	for (option = conf->c_options; option != NULL;
-	     option = option->o_next) {
+	FOREACH_OPTION(option, conf) {
 		struct file *file;
 		char uppercase[1024], *q;
 		const char *p;
@@ -349,8 +357,7 @@ generate(struct configuration *conf)
 		else
 			fprintf(config_mk, ".undef %s\n", uppercase);
 
-		for (file = option->o_files; file != NULL;
-		     file = file->f_next) {
+		FOREACH_FILE(file, option) {
 			if (file->f_onenable != option->o_enable)
 				continue;
 			fprintf(config_mk, ".PATH: %s/%s\n",
@@ -385,10 +392,8 @@ imply(struct configuration *conf)
 	struct option *option;
 
 restart:
-	for (option = conf->c_options; option != NULL;
-	     option = option->o_next) {
-		for (requirement = option->o_requirements; requirement != NULL;
-		     requirement = requirement->r_next) {
+	FOREACH_OPTION(option, conf) {
+		FOREACH_REQUIREMENT(requirement, option) {
 			if (requirement->r_type != Implies)
 				continue;
 			if (!option->o_enable)
@@ -502,8 +507,7 @@ mksetting(struct configuration *conf, const char *name, bool enabled)
 	if (option == NULL)
 		fatal(conf, 0, "cannot configure non-existant option %s", name);
 
-	for (setting = conf->c_settings; setting != NULL;
-	     setting = setting->s_next) {
+	FOREACH_SETTING(setting, conf) {
 		if (setting->s_option == option) {
 			setting->s_enable = enabled;
 			return;
@@ -610,7 +614,7 @@ search(struct configuration *conf, const char *name)
 {
 	struct option *option;
 
-	for (option = conf->c_options; option != NULL; option = option->o_next)
+	FOREACH_OPTION(option, conf)
 		if (strcasecmp(option->o_name, name) == 0)
 			return (option);
 	return (NULL);
@@ -622,17 +626,14 @@ show(struct configuration *conf)
 	struct option *option;
 
 	printf("configuration:\n");
-	for (option = conf->c_options; option != NULL;
-	     option = option->o_next) {
+	FOREACH_OPTION(option, conf) {
 		printf("\t%c%s\n", option->o_enable ? '+' : '-',
 		       option->o_name);
 		if (option->o_requirements != NULL) {
 			struct requirement *requirement;
 
 			printf("\t\trequirements:\n");
-			for (requirement = option->o_requirements;
-			     requirement != NULL;
-			     requirement = requirement->r_next) {
+			FOREACH_REQUIREMENT(requirement, option) {
 				switch (requirement->r_type) {
 				case Implies:
 					printf("\t\t\timplies %s\n",
@@ -655,8 +656,7 @@ show(struct configuration *conf)
 			struct file *file;
 
 			printf("\t\tfiles:\n");
-			for (file = option->o_files; file != NULL;
-			     file = file->f_next)
+			FOREACH_FILE(file, option)
 				printf("\t\t\t%s%s\n", file->f_onenable ?
 				       "on enable " : "on disable ",
 				       file->f_path);

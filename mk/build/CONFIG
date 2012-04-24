@@ -43,6 +43,7 @@ db		db/db_misc.c
 enter_debugger	requires: db
 
 fs		fs/fs.c
+fs		requires: ns
 
 framebuffer	io/framebuffer/framebuffer.c
 framebuffer	io/framebuffer/framebuffer_font.c
@@ -52,6 +53,7 @@ std		io/bus/bus_internal.c
 std		io/bus/bus_root.c
 
 network		io/network/network_interface.c
+network		requires: ns
 
 ofw		io/ofw/ofw.c
 ofw		io/ofw/ofw_console.c

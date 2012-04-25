@@ -535,16 +535,15 @@ ipc_port_send_page(struct ipc_header *ipch, struct vm_page *page)
 		IPC_PORTS_UNLOCK();
 		return (ERROR_NOT_FOUND);
 	}
+	IPC_PORTS_UNLOCK();
 
 	if ((ipcp->ipcp_flags & IPC_PORT_FLAG_PUBLIC) == 0 &&
 	    ipch->ipchdr_msg != IPC_MSG_NONE) {
 		if (!ipc_port_right_check(ipcp, task, IPC_PORT_RIGHT_SEND)) {
 			IPC_PORT_UNLOCK(ipcp);
-			IPC_PORTS_UNLOCK();
 			return (ERROR_NO_RIGHT);
 		}
 	}
-	IPC_PORTS_UNLOCK();
 
 	ipcmsg = malloc(sizeof *ipcmsg);
 	ipcmsg->ipcmsg_header = *ipch;
@@ -570,8 +569,12 @@ ipc_port_wait(ipc_port_t port)
 
 	IPC_PORTS_LOCK();
 	ipcp = ipc_port_lookup(port);
-	ASSERT(ipcp != NULL, "Must have a port to wait on.");
+	if (ipcp == NULL) {
+		IPC_PORTS_UNLOCK();
+		return (ERROR_NOT_FOUND);
+	}
 	IPC_PORTS_UNLOCK();
+
 	if (!TAILQ_EMPTY(&ipcp->ipcp_msgs)) {
 		/*
 		 * XXX

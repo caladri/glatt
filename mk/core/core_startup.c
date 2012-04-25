@@ -13,7 +13,7 @@
 #include <db/db.h>
 #endif
 #include <core/console.h>
-#include <ipc/system.h>
+#include <ipc/port.h>
 #include <vm/vm.h>
 
 /* Some compile-time assertions for every build.  */
@@ -62,9 +62,9 @@ startup_init(void)
 	scheduler_init();
 
 	/*
-	 * Initialize IPC functionality.
+	 * Initialize IPC port infrastructure.
 	 */
-	ipc_init();
+	ipc_port_init();
 
 	/*
 	 * Initialize task and thread data structures.

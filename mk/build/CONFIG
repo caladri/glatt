@@ -76,7 +76,6 @@ ufs		requires: fs
 
 std		ipc/ipc_port.c
 std		ipc/ipc_service.c
-std		ipc/ipc_system.c
 std		ipc/ipc_task.c
 
 ns		ns/ns.c

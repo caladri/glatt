@@ -324,12 +324,14 @@ bus_attachment_find(struct bus_attachment **attachment2p, struct bus *parent,
 static void
 bus_instance_describe(struct bus_instance *bi)
 {
+#ifdef VERBOSE
 	bus_instance_print(bi);
 	if (bi->bi_parent != NULL) {
 		printf(" at ");
 		bus_instance_print(bi->bi_parent);
 	}
 	printf("\n");
+#endif
 	if (bi->bi_description[0] == '\0')
 		return;
 	bus_instance_printf(bi, "%s", bi->bi_description);

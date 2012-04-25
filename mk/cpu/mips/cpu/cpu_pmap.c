@@ -95,7 +95,7 @@ pmap_bootstrap(void)
 {
 	int error;
 
-#ifdef VERBOSE
+#ifdef VERBOSE_DEBUG
 	printf("PMAP: %u level 0 pointers in each pmap.\n", NL0PMAP);
 	printf("PMAP: %lu level 1 pointers in each level 0 page.\n", NL1PL0);
 	printf("PMAP: %lu PTEs in each level 1 page.\n", NPTEL1);

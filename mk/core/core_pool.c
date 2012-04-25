@@ -152,7 +152,7 @@ pool_create(struct pool *pool, const char *name, size_t size, unsigned flags)
 	pool->pool_freeitems = 0;
 	SLIST_INIT(&pool->pool_pages);
 	pool->pool_flags = flags | POOL_VALID;
-#ifdef VERBOSE
+#ifdef VERBOSE_DEBUG
 	printf("POOL: Created pool \"%s\" of size %zu (%zu/pg)\n",
 		 pool->pool_name, pool->pool_size, pool->pool_maxitems);
 #endif

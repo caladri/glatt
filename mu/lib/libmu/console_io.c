@@ -47,6 +47,90 @@ again:		ch = getchar();
 	return (ERROR_FULL);
 }
 
+/*
+ * XXX
+ * From DB.  Should we really duplicate?
+ */
+int
+getargs(char *buf, size_t len, unsigned *argcp, const char **argv, size_t avlen, const char *sep)
+{
+	unsigned argc;
+	int error;
+	unsigned c;
+
+	error = getline(buf, len);
+	if (error != 0)
+		return (error);
+
+	argc = 0;
+	argv[0] = buf;
+	c = 0;
+
+	for (;;) {
+		/*
+		 * Skip leading non-blanks.
+		 */
+		for (;;) {
+			if (buf[c] == '\0' ||
+			    strchr(sep, buf[c]) != NULL) {
+				break;
+			}
+			c++;
+		}
+
+		/*
+		 * Nullify any argument separators.
+		 */
+		while (buf[c] != '\0' &&
+		       strchr(sep, buf[c]) != NULL) {
+			buf[c++] = '\0';
+		}
+
+		/*
+		 * If this argument is not empty, increment
+		 * the argument count.
+		 */
+		if (argv[argc][0] != '\0') {
+			if (argc < avlen) {
+				argv[++argc] = &buf[c];
+			} else {
+				/*
+				 * Strip any trailing separators.
+				 */
+				while (buf[c] != '\0' &&
+				       strchr(sep, buf[c]) != NULL) {
+					buf[c++] = '\0';
+				}
+
+				/*
+				 * If there are any more arguments,
+				 * it's an error.
+				 */
+				if (buf[c] != '\0') {
+#if 0
+					printf("DB: too many arguments.\n");
+#endif
+					return (ERROR_EXHAUSTED);
+				}
+			}
+		} else {
+			/*
+			 * Just adjust the start of the current argument.
+			 */
+			argv[argc] = &buf[c];
+		}
+
+		/*
+		 * If this is the end of the line, return.
+		 */
+		if (buf[c] == '\0') {
+			*argcp = argc;
+			return (0);
+		}
+	}
+}
+
+
 void
 printf(const char *fmt, ...)
 {

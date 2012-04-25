@@ -11,6 +11,7 @@ int getchar(void);
 void putchar(int);
 void putsn(const char *, size_t);
 int getline(char *, size_t);
+int getargs(char *, size_t, unsigned *, const char **, size_t, const char *);
 
 void fatal(const char *, int);
 void puts(const char *);

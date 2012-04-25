@@ -35,6 +35,8 @@ struct ipc_header {
 
 /*
  * Message field encoding.
+ *
+ * XXX Is this still a desirable idea?
  */
 #define	IPC_MSG_NONE		(0)	/* Requires no right to send, may not have data.  */
 

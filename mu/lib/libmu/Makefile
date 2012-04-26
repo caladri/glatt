@@ -5,6 +5,7 @@ SRCS+=	file_io.c
 SRCS+=	ipc_dispatch.c
 SRCS+=	ipc_request.c
 SRCS+=	ns_util.c
+SRCS+=	process.c
 SRCS+=	syscalls.S
 SRCS+=	util.c
 

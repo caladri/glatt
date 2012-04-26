@@ -115,12 +115,7 @@ exec(ipc_port_t file, ipc_port_t *taskp, unsigned argc, const char **argv)
 {
 	struct ipc_request_message req;
 	struct ipc_response_message resp;
-	uintptr_t *reloc;
-	const char *arg;
 	ipc_port_t task;
-	char *argp;
-	unsigned i;
-	void *page;
 	int error;
 
 	memset(&req, 0, sizeof req);
@@ -155,25 +150,13 @@ exec(ipc_port_t file, ipc_port_t *taskp, unsigned argc, const char **argv)
 
 	resp.data = false;
 
-	if (argc != 0) {
-		error = vm_page_get(&page);
-		if (error != 0) {
-			/*
-			 * XXX
-			 * Teardown task?
-			 */
-			return (error);
-		}
-		reloc = page;
-		argp = (char *)page + (argc * sizeof argp);
-		/* XXX Bounds check.  */
-		for (i = 0; i < argc; i++) {
-			reloc[i] = argp - (char *)page;
-			arg = argv[i];
-			while ((*argp++ = *arg++) != '\0')
-				continue;
-		}
-		req.page = page;
+	error = process_start_data(&req.page, argc, argv);
+	if (error != 0) {
+		/*
+		 * XXX
+		 * Teardown task?
+		 */
+		return (error);
 	}
 
 	error = ipc_request(&req, &resp);

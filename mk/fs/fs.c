@@ -78,7 +78,7 @@ fs_exec(struct fs *fs, const char *path)
 	if (error != 0)
 		return (error);
 
-	error = exec_task(path, fs->fs_ops->fs_file_read, fs->fs_context, fsfc);
+	error = exec_task(IPC_PORT_UNKNOWN, NULL, path, fs->fs_ops->fs_file_read, fs->fs_context, fsfc);
 
 	error2 = fs->fs_ops->fs_file_close(fs->fs_context, fsfc);
 	if (error2 != 0)
@@ -288,16 +288,18 @@ fs_file_ipc_exec_handler(struct fs_file *fsf, const struct ipc_header *reqh, voi
 	fs_file_context_t fsfc = fsf->fsf_context;
 	struct fs *fs = fsf->fsf_fs;
 	struct ipc_header ipch;
+	ipc_port_t child;
 	int error;
 
 	if (p != NULL)
 		return (ERROR_INVALID);
 
-	error = exec_task(fsf->fsf_path, fs->fs_ops->fs_file_read, fs->fs_context, fsfc);
+	error = exec_task(reqh->ipchdr_src, &child, fsf->fsf_path, fs->fs_ops->fs_file_read, fs->fs_context, fsfc);
 	if (error != 0) {
 		ipch = IPC_HEADER_ERROR(reqh, error);
 	} else {
 		ipch = IPC_HEADER_REPLY(reqh);
+		ipch.ipchdr_param = child;
 	}
 
 	error = ipc_port_send_data(&ipch, NULL, 0);

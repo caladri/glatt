@@ -30,7 +30,8 @@ static syscall_handler_t syscall_console_putc,
 static syscall_handler_t syscall_ipc_port_allocate,
 			 syscall_ipc_port_send,
 			 syscall_ipc_port_wait,
-			 syscall_ipc_port_receive;
+			 syscall_ipc_port_receive,
+			 syscall_ipc_task_port;
 
 static syscall_handler_t syscall_vm_page_get,
 			 syscall_vm_page_free;
@@ -46,6 +47,7 @@ static struct syscall_vector syscall_vector[SYSCALL_LAST + 1] = {
 	[SYSCALL_IPC_PORT_SEND] =	{ 2, 0, syscall_ipc_port_send },
 	[SYSCALL_IPC_PORT_WAIT] =	{ 1, 0, syscall_ipc_port_wait },
 	[SYSCALL_IPC_PORT_RECEIVE] =	{ 2, 1, syscall_ipc_port_receive },
+	[SYSCALL_IPC_TASK_PORT] =	{ 0, 1, syscall_ipc_task_port },
 
 	[SYSCALL_VM_PAGE_GET] =		{ 0, 1, syscall_vm_page_get },
 	[SYSCALL_VM_PAGE_FREE] =	{ 1, 0, syscall_vm_page_free },
@@ -166,6 +168,17 @@ syscall_ipc_port_receive(register_t *params)
 
 	params[0] = (register_t)(intptr_t)p;
 	memcpy((void *)(uintptr_t)params[1], &ipch, sizeof ipch); /* XXX copyout */
+	return (0);
+}
+
+static int
+syscall_ipc_task_port(register_t *params)
+{
+	struct thread *td;
+
+	td = current_thread();
+
+	params[0] = td->td_task->t_ipc.ipct_task_port;
 	return (0);
 }
 

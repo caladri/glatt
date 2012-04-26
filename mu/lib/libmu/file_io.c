@@ -9,6 +9,7 @@
 
 #include <libmu/common.h>
 #include <libmu/ipc_request.h>
+#include <libmu/process.h>
 
 int
 open(ipc_port_t fs, const char *path, ipc_port_t *filep)
@@ -110,10 +111,16 @@ close(ipc_port_t file)
 }
 
 int
-exec(ipc_port_t file)
+exec(ipc_port_t file, ipc_port_t *taskp, unsigned argc, const char **argv)
 {
 	struct ipc_request_message req;
 	struct ipc_response_message resp;
+	uintptr_t *reloc;
+	const char *arg;
+	ipc_port_t task;
+	char *argp;
+	unsigned i;
+	void *page;
 	int error;
 
 	memset(&req, 0, sizeof req);
@@ -132,6 +139,62 @@ exec(ipc_port_t file)
 
 	if (resp.error != 0)
 		return (resp.error);
+
+	/*
+	 * Now send process information to the task port.
+	 */
+	task = resp.param;
+
+	memset(&req, 0, sizeof req);
+	memset(&resp, 0, sizeof resp);
+
+	req.src = IPC_PORT_UNKNOWN;
+	req.dst = task;
+	req.msg = PROCESS_MSG_START;
+	req.param = argc;
+
+	resp.data = false;
+
+	if (argc != 0) {
+		error = vm_page_get(&page);
+		if (error != 0) {
+			/*
+			 * XXX
+			 * Teardown task?
+			 */
+			return (error);
+		}
+		reloc = page;
+		argp = (char *)page + (argc * sizeof argp);
+		/* XXX Bounds check.  */
+		for (i = 0; i < argc; i++) {
+			reloc[i] = argp - (char *)page;
+			arg = argv[i];
+			while ((*argp++ = *arg++) != '\0')
+				continue;
+		}
+		req.page = page;
+	}
+
+	error = ipc_request(&req, &resp);
+	if (error != 0) {
+		/*
+		 * XXX
+		 * Teardown task?
+		 */
+		return (error);
+	}
+
+	if (resp.error != 0) {
+		/*
+		 * XXX
+		 * Teardown task?
+		 */
+		return (resp.error);
+	}
+
+	if (taskp != NULL)
+		*taskp = task;
 
 	return (0);
 }

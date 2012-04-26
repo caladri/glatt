@@ -20,7 +20,7 @@ task_init(void)
 }
 
 int
-task_create(struct task **taskp, const char *name, unsigned flags)
+task_create(ipc_port_t parent, struct task **taskp, const char *name, unsigned flags)
 {
 	struct task *task;
 	int error;
@@ -42,7 +42,7 @@ task_create(struct task **taskp, const char *name, unsigned flags)
 		      __func__, error);
 	}
 
-	error = ipc_task_setup(task);
+	error = ipc_task_setup(parent, task);
 	if (error != 0) {
 		panic("%s: need to destroy task, ipc_task_setup failed: %m",
 		      __func__, error);

@@ -31,16 +31,19 @@ exec_load(struct vm *vm, void **entryp, const char *name, fs_file_read_op_t *rea
 }
 
 int
-exec_task(const char *name, fs_file_read_op_t *readf, fs_context_t fsc, fs_file_context_t fsfc)
+exec_task(ipc_port_t parent, ipc_port_t *childp, const char *name, fs_file_read_op_t *readf, fs_context_t fsc, fs_file_context_t fsfc)
 {
 	struct thread *td;
 	struct task *task;
 	void *entry;
 	int error;
 
-	error = task_create(&task, name, TASK_DEFAULT);
+	error = task_create(parent, &task, name, TASK_DEFAULT);
 	if (error != 0)
 		return (error);
+
+	if (childp != NULL)
+		*childp = task->t_ipc.ipct_task_port;
 
 	error = thread_create(&td, task, name, THREAD_DEFAULT);
 	if (error != 0) {

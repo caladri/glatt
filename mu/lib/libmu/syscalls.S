@@ -110,6 +110,18 @@ ENTRY(ipc_port_receive)
 	nop
 END(ipc_port_receive)
 
+ENTRY(ipc_task_port)
+	li	v0, SYSCALL_IPC_TASK_PORT
+	li	v1, 0
+	syscall
+
+	/* Cannot fail.  Just return the port.  */
+	move	v0, a0
+
+	jr	ra
+	nop
+END(ipc_task_port)
+
 ENTRY(vm_page_get)
 	move	t0, a0
 

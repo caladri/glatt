@@ -61,7 +61,7 @@ ipc_service(const char *name, ipc_port_t port, ipc_port_flags_t flags,
 	ipcsc->ipcsc_task = NULL;
 	ipcsc->ipcsc_thread = NULL;
 
-	error = task_create(&ipcsc->ipcsc_task, ipcsc->ipcsc_name, TASK_KERNEL);
+	error = task_create(IPC_PORT_UNKNOWN, &ipcsc->ipcsc_task, ipcsc->ipcsc_name, TASK_KERNEL);
 	if (error != 0)
 		panic("%s: task_create failed: %m", __func__, error);
 

@@ -10,7 +10,7 @@
 #include <libmu/common.h>
 
 void
-main(void)
+bootstrap_main(void)
 {
 	ipc_port_t fs, file;
 	const char *argv[16];
@@ -60,7 +60,7 @@ main(void)
 			hexdump(p, len);
 			vm_page_free(p);
 		} else if (strcmp(argv[0], "exec") == 0) {
-			error = exec(file);
+			error = exec(file, NULL, argc - 1, argv + 1);
 			if (error != 0) {
 				printf("Could not exec %s: %m\n", buf, error);
 				continue;

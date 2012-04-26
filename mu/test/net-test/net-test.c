@@ -49,12 +49,16 @@ static void if_receive_callback(const struct ipc_dispatch *,
 static void if_transmit(struct if_context *, const void *, size_t);
 
 void
-main(void)
+main(int argc, char *argv[])
 {
 	struct if_context ifc;
 	int error;
+	int i;
 
 	puts("Starting net-test.\n");
+
+	for (i = 0; i < argc; i++)
+		printf("argv[%u] = %s\n", i, argv[i]);
 
 	/*
 	 * Wait for the network interface.

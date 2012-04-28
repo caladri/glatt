@@ -1,13 +1,9 @@
 #ifndef	COMMON_H
 #define	COMMON_H
 
-void bootstrap_main(void);
-void mu_main(void);
-
 int vm_page_get(void **);
 int vm_page_free(void *);
 
-void exit(void) __noreturn;
 int getchar(void);
 void putchar(int);
 void putsn(const char *, size_t);

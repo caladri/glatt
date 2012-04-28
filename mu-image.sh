@@ -9,6 +9,7 @@ rm -rf img
 mkdir img
 sudo mount ${dev} $PWD/img
 sudo mkdir -p $PWD/img/mu/etc
+sudo mkdir -p $PWD/img/mu/sbin
 sudo mkdir -p $PWD/img/mu/servers
 sudo mkdir -p $PWD/img/mu/test
 sudo make mu-install DESTDIR=$PWD/img

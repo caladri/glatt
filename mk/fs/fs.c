@@ -338,75 +338,27 @@ fs_file_ipc_service_start(struct fs_file *fsf, ipc_port_t *portp)
 }
 
 #ifdef EXEC
-#define	FS_AUTORUN_DIR		"/mu/servers"
-static char fs_autorun_path[1024];
-static struct fs_directory_entry fs_autorun_entry;
-
+#define	FS_BOOTSTRAP_PATH	"/mu/sbin/bootstrap"
 static void
 fs_autorun(void *arg)
 {
-	fs_directory_context_t fsdc;
 	struct fs *fs;
-	off_t offset;
-	size_t cnt;
+	unsigned cnt;
 	int error;
 
 	(void)arg;
 
-	/*
-	 * XXX
-	 * This leaks files and directories.
-	 */
+	cnt = 0;
 	STAILQ_FOREACH(fs, &fs_list, fs_link) {
-		if (fs->fs_ops->fs_directory_open == NULL) {
-#ifdef VERBOSE
-			printf("%s: skipping filesystem without directory open method.\n", __func__);
-#endif
+		error = fs_exec(fs, FS_BOOTSTRAP_PATH);
+		if (error != 0)
 			continue;
-		}
-		if (fs->fs_ops->fs_file_open == NULL) {
-#ifdef VERBOSE
-			printf("%s: skipping filesystem without file open method.\n", __func__);
-#endif
-			continue;
-		}
-
-		error = fs->fs_ops->fs_directory_open(fs->fs_context, FS_AUTORUN_DIR, &fsdc);
-		if (error != 0) {
-			printf("%s: directory open failed: %m\n", __func__, error);
-			continue;
-		}
-
-		offset = 0;
-		for (;;) {
-			cnt = 1;
-			error = fs->fs_ops->fs_directory_read(fs->fs_context, fsdc, &fs_autorun_entry, &offset, &cnt);
-			if (error != 0) {
-				printf("%s: directory read failed: %m\n", __func__, error);
-				break;
-			}
-
-			if (cnt == 0)
-				break;
-
-			if (cnt != 1)
-				panic("%s: implausible number of directory entries: %zu", __func__, cnt);
-
-			/*
-			 * Skip files with leading dot.
-			 */
-			if (fs_autorun_entry.name[0] == '.')
-				continue;
-
-			snprintf(fs_autorun_path, sizeof fs_autorun_path, "%s/%s", FS_AUTORUN_DIR, fs_autorun_entry.name);
-
-			error = fs_exec(fs, fs_autorun_path);
-			if (error != 0) {
-				printf("%s: file exec failed: %m", __func__, error);
-				continue;
-			}
-		}
+		cnt++;
 	}
+	if (cnt == 0)
+		printf("%s: No bootstrap found.", __func__);
+	else if (cnt != 1)
+		printf("%s: Multiple bootstraps found.", __func__);
 }
 STARTUP_ITEM(fs_autorun, STARTUP_SERVERS, STARTUP_SECOND, fs_autorun, NULL);
 #endif

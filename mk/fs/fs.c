@@ -338,7 +338,7 @@ fs_file_ipc_service_start(struct fs_file *fsf, ipc_port_t *portp)
 }
 
 #ifdef EXEC
-#define	FS_BOOTSTRAP_PATH	"/mu/sbin/bootstrap"
+#define	FS_BOOTSTRAP_PATH	"/sbin/bootstrap"
 static void
 fs_autorun(void *arg)
 {
@@ -356,9 +356,9 @@ fs_autorun(void *arg)
 		cnt++;
 	}
 	if (cnt == 0)
-		printf("%s: No bootstrap found.", __func__);
+		printf("%s: No bootstrap found.\n", __func__);
 	else if (cnt != 1)
-		printf("%s: Multiple bootstraps found.", __func__);
+		printf("%s: Multiple bootstraps found.\n", __func__);
 }
 STARTUP_ITEM(fs_autorun, STARTUP_SERVERS, STARTUP_SECOND, fs_autorun, NULL);
 #endif

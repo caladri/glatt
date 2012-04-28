@@ -1,1 +1,1 @@
-BINDIR?=	/mu/sbin
+BINDIR?=	/sbin

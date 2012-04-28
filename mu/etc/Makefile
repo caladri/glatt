@@ -7,4 +7,5 @@ clean:
 	@true
 
 install:
-	cp ${FILES} ${DESTDIR}/mu/etc/
+	mkdir -p ${DESTDIR}/etc
+	cp ${FILES} ${DESTDIR}/etc

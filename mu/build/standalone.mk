@@ -38,6 +38,7 @@ ${PROGRAM}: ${OBJS}
 	${CC} ${CFLAGS} ${LDFLAGS} -o $@ $> ${LDADD}
 
 install:
+	@[ -d ${DESTDIR}${BINDIR} ] || mkdir -p ${DESTDIR}${BINDIR}
 	cp ${PROGRAM} ${DESTDIR}${BINDIR}/${PROGRAM}
 
 clean:

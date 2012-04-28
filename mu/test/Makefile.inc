@@ -1,1 +1,1 @@
-BINDIR?=	/mu/test
+BINDIR?=	/test

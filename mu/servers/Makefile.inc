@@ -1,1 +1,1 @@
-BINDIR?=	/mu/servers
+BINDIR?=	/servers

@@ -5,7 +5,8 @@
 .include "${GLATT_SRC}/aux/build/vars.mk"
 
 .if empty(SUBDIRS)
-.error "Recursive build must define SUBIDRS."
+${.TARGETS}::
+	@echo ">>> No subdirectories defined."
 .endif
 
 .for _dir in ${SUBDIRS}

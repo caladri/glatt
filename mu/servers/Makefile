@@ -1,7 +1,7 @@
 ##
 # Figure out what components to build.
 ##
-SUBDIRS+=	mu-shell
+SUBDIRS+=	
 
 .if !defined(GLATT_SRC) && exists(${.CURDIR}/../../config.mk)
 GLATT_SRC=	${.CURDIR}/../..

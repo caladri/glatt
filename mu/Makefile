@@ -2,6 +2,7 @@
 # Figure out what components to build.
 ##
 SUBDIRS+=	lib
+SUBDIRS+=	sbin
 SUBDIRS+=	servers
 SUBDIRS+=	test
 

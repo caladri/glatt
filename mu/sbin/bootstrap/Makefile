@@ -1,4 +1,4 @@
-PROGRAM=mu-shell
-SRCS+=	mu-shell.c
+PROGRAM=bootstrap
+SRCS+=	bootstrap.c
 
 .include "${GLATT_SRC}/mu/build/standalone.mk"

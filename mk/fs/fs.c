@@ -7,6 +7,8 @@
 #include <core/spinlock.h>
 #include <core/startup.h>
 #include <core/string.h>
+#include <core/task.h>
+#include <core/thread.h>
 #include <core/console.h>
 #include <ipc/ipc.h>
 #include <ipc/port.h>
@@ -14,6 +16,8 @@
 #include <ipc/task.h>
 #include <fs/fs.h>
 #include <fs/fs_ops.h>
+#include <vm/vm.h>
+#include <vm/vm_alloc.h>
 
 struct fs {
 	struct fs_ops *fs_ops;
@@ -236,7 +240,14 @@ fs_file_ipc_read_handler(struct fs_file *fsf, const struct ipc_header *reqh, voi
 		 * messy about whether pages are freed or not, to say nothing
 		 * of error handling.  Better to copy for now.
 		 */
-		error = ipc_port_send_data(&ipch, p, length);
+		if (length == 0) {
+			error = vm_free_page(&kernel_vm, (vaddr_t)p);
+			if (error != 0)
+				panic("%s: vm_free_page failed: %m", __func__, error);
+			error = ipc_port_send_data(&ipch, NULL, 0);
+		} else {
+			error = ipc_port_send_data(&ipch, p, length);
+		}
 	}
 
 	if (error != 0)

@@ -1,3 +1,4 @@
+o) Is it really desirable to allow multiple receive rights?
 o) Bound IPC ports, i.e. ipc_connect(my_port, ns) and then my_port can send to
    ns, and ns can reply, but no other messages may come over it.  Either that, or
    allow receive filters, so I can receive on a multiplexed port and handle

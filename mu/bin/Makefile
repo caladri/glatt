@@ -2,6 +2,7 @@
 # Figure out what components to build.
 ##
 SUBDIRS+=	cat
+SUBDIRS+=	sh
 
 .if !defined(GLATT_SRC) && exists(${.CURDIR}/../../config.mk)
 GLATT_SRC=	${.CURDIR}/../..

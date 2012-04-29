@@ -3,3 +3,5 @@
 /bin/cat /etc/motd
 
 /servers/netserver tmether0
+
+/bin/sh

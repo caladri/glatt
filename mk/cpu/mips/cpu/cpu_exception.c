@@ -184,8 +184,9 @@ exception(struct frame *frame)
 			handled = true;
 			break;
 		}
-		printf("Userland page fault.  Not yet implemented.\n");
-		break;
+		printf("Userland page fault.  Thread exiting.\n");
+		thread_exit();
+		/* NOTREACHED */
 	case EXCEPTION_BREAKPOINT:
 		break;
 	default:

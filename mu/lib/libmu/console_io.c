@@ -54,13 +54,24 @@ again:		ch = getchar();
 int
 getargs(char *buf, size_t len, unsigned *argcp, const char **argv, size_t avlen, const char *sep)
 {
-	unsigned argc;
 	int error;
-	unsigned c;
 
 	error = getline(buf, len);
 	if (error != 0)
 		return (error);
+
+	error = splitargs(buf, argcp, argv, avlen, sep);
+	if (error != 0)
+		return (error);
+
+	return (0);
+}
+
+int
+splitargs(char *buf, unsigned *argcp, const char **argv, size_t avlen, const char *sep)
+{
+	unsigned argc;
+	unsigned c;
 
 	argc = 0;
 	argv[0] = buf;

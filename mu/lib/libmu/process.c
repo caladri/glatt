@@ -1,11 +1,14 @@
 #include <core/types.h>
 #include <core/error.h>
+#include <core/string.h>
 #include <ipc/ipc.h>
 #include <ipc/task.h>
 #include <vm/vm_page.h>
 
 #include <libmu/common.h>
 #include <libmu/process.h>
+
+char __progname[128];
 
 void bootstrap_main(void) __attribute__ ((__weak__));
 int main(int, char *[]) __attribute__ ((__weak__));
@@ -23,6 +26,8 @@ mu_main(void)
 	int error;
 
 	if (bootstrap_main != NULL) {
+		strlcpy(__progname, "bootstrap", sizeof __progname);
+
 		/*
 		 * The bootstrap task -- no exec args.
 		 */
@@ -75,6 +80,8 @@ mu_main(void)
 		if (error != 0)
 			fatal("could not send start reply to parent", error);
 
+		if (argc != 0)
+			strlcpy(__progname, argv[0], sizeof __progname);
 		main(argc, argv);
 		exit();
 	}

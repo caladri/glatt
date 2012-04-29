@@ -13,7 +13,7 @@ static int debug = 0;
 void
 fatal(const char *msg, int error)
 {
-	printf("fatal: %s: %m\n", msg, error);
+	printf("%s: %s: %m\n", __progname, msg, error);
 	exit();
 }
 

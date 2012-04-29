@@ -1,3 +1,5 @@
 # MU startup script.  Run by the bootstrap.
 
 /bin/cat /etc/motd
+
+/servers/netserver tmether0

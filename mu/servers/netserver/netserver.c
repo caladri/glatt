@@ -10,6 +10,7 @@
 #include <libmu/common.h>
 #include <libmu/ipc_dispatch.h>
 #include <libmu/ipc_request.h>
+#include <libmu/process.h>
 
 #define	ETHERNET_ADDRESS_SIZE	6
 
@@ -47,23 +48,21 @@ static void if_receive_callback(const struct ipc_dispatch *,
 				const struct ipc_dispatch_handler *,
 				const struct ipc_header *, void *);
 static void if_transmit(struct if_context *, const void *, size_t);
+static void usage(void);
 
 void
 main(int argc, char *argv[])
 {
 	struct if_context ifc;
 	int error;
-	int i;
 
-	puts("Starting net-test.\n");
-
-	for (i = 0; i < argc; i++)
-		printf("argv[%u] = %s\n", i, argv[i]);
+	if (argc != 2)
+		usage();
 
 	/*
 	 * Wait for the network interface.
 	 */
-	while ((ifc.ifc_ifport = ns_lookup("tmether0")) == IPC_PORT_UNKNOWN)
+	while ((ifc.ifc_ifport = ns_lookup(argv[1])) == IPC_PORT_UNKNOWN)
 		continue;
 
 	ifc.ifc_dispatch = ipc_dispatch_allocate(IPC_PORT_UNKNOWN,
@@ -238,4 +237,11 @@ if_transmit(struct if_context *ifc, const void *data, size_t datalen)
 	error = ipc_request(&req, NULL);
 	if (error != 0)
 		fatal("ipc_request failed", error);
+}
+
+static void
+usage(void)
+{
+	printf("usage: netserver interface\n");
+	exit();
 }

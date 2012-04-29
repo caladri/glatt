@@ -13,7 +13,7 @@ vm_alloc(struct vm *vm, size_t size, vaddr_t *vaddrp)
 	vaddr_t vaddr;
 	int error;
 
-	if (size < pool_max_alloc)
+	if (vm == &kernel_vm && size < pool_max_alloc)
 		panic("%s: allocation too small, use pool instead.", __func__);
 
 	pages = PAGE_COUNT(size);

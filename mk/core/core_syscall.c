@@ -34,7 +34,9 @@ static syscall_handler_t syscall_ipc_port_allocate,
 			 syscall_ipc_task_port;
 
 static syscall_handler_t syscall_vm_page_get,
-			 syscall_vm_page_free;
+			 syscall_vm_page_free,
+			 syscall_vm_alloc,
+			 syscall_vm_free;
 
 static struct syscall_vector syscall_vector[SYSCALL_LAST + 1] = {
 	[SYSCALL_EXIT] =		{ 0, 0, syscall_exit },
@@ -51,6 +53,8 @@ static struct syscall_vector syscall_vector[SYSCALL_LAST + 1] = {
 
 	[SYSCALL_VM_PAGE_GET] =		{ 0, 1, syscall_vm_page_get },
 	[SYSCALL_VM_PAGE_FREE] =	{ 1, 0, syscall_vm_page_free },
+	[SYSCALL_VM_ALLOC] =		{ 1, 1, syscall_vm_alloc },
+	[SYSCALL_VM_FREE] =		{ 2, 0, syscall_vm_free },
 };
 
 int
@@ -207,6 +211,38 @@ syscall_vm_page_free(register_t *params)
 	td = current_thread();
 
 	error = vm_free_page(td->td_task->t_vm, (vaddr_t)params[0]);
+	if (error != 0)
+		return (error);
+
+	return (0);
+}
+
+static int
+syscall_vm_alloc(register_t *params)
+{
+	struct thread *td;
+	vaddr_t vaddr;
+	int error;
+
+	td = current_thread();
+
+	error = vm_alloc(td->td_task->t_vm, (size_t)params[0], &vaddr);
+	if (error != 0)
+		return (error);
+	params[0] = vaddr;
+
+	return (0);
+}
+
+static int
+syscall_vm_free(register_t *params)
+{
+	struct thread *td;
+	int error;
+
+	td = current_thread();
+
+	error = vm_free(td->td_task->t_vm, (size_t)params[1], (vaddr_t)params[0]);
 	if (error != 0)
 		return (error);
 

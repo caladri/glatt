@@ -145,3 +145,28 @@ ENTRY(vm_page_free)
 	jr	ra
 	nop
 END(vm_page_free)
+
+ENTRY(vm_alloc)
+	move	t0, a0
+	move	a0, a1
+
+	li	v0, SYSCALL_VM_ALLOC
+	li	v1, 1
+	syscall
+
+	beqz	v1, 1f
+	nop
+
+	sd	a0, 0(t0)
+
+1:	jr	ra
+	nop
+END(vm_alloc)
+
+ENTRY(vm_free)
+	li	v0, SYSCALL_VM_FREE
+	li	v1, 2
+	syscall
+	jr	ra
+	nop
+END(vm_free)

@@ -3,8 +3,6 @@
 #include <core/printf.h>
 #include <core/string.h>
 #include <ipc/ipc.h>
-#include <ipc/task.h>
-#include <ns/ns.h>
 #include <vm/vm_page.h>
 
 #include <libmu/common.h>

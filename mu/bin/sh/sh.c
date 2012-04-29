@@ -1,11 +1,9 @@
 #include <core/types.h>
 #include <core/error.h>
 #include <core/printf.h>
-#include <core/string.h>
 #include <fs/fs.h>
 #include <ipc/ipc.h>
 #include <ns/ns.h>
-#include <vm/vm_page.h>
 
 #include <libmu/common.h>
 

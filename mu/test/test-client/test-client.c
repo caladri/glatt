@@ -7,21 +7,15 @@
 #include <vm/vm_page.h>
 
 #include <libmu/common.h>
-#include <libmu/ipc_dispatch.h>
-
-static void test_request(const struct ipc_dispatch *,
-			 const struct ipc_dispatch_handler *,
-			 ipc_port_t server);
-static void test_response_handler(const struct ipc_dispatch *,
-				  const struct ipc_dispatch_handler *,
-				  const struct ipc_header *, void *);
+#include <libmu/ipc_request.h>
 
 void
 main(void)
 {
-	const struct ipc_dispatch_handler *idh;
-	struct ipc_dispatch *id;
+	struct ipc_request_message req;
+	struct ipc_response_message resp;
 	ipc_port_t server;
+	int error;
 
 	puts("Starting test-client.\n");
 
@@ -31,44 +25,20 @@ main(void)
 	while ((server = ns_lookup("test-server")) == IPC_PORT_UNKNOWN)
 		continue;
 
-	id = ipc_dispatch_allocate(IPC_PORT_UNKNOWN, IPC_PORT_FLAG_DEFAULT);
+	memset(&req, 0, sizeof req);
+	memset(&resp, 0, sizeof resp);
 
-	idh = ipc_dispatch_register(id, test_response_handler, NULL);
-	test_request(id, idh, server);
+	req.src = IPC_PORT_UNKNOWN;
+	req.dst = server;
+	req.msg = 1;
+	req.param = 0;
 
-	ipc_dispatch(id);
-
-	ipc_dispatch_free(id);
-}
-
-static void
-test_request(const struct ipc_dispatch *id,
-	     const struct ipc_dispatch_handler *idh, ipc_port_t server)
-{
-	int error;
-
-	error = ipc_dispatch_send(id, idh, server, 1, IPC_PORT_RIGHT_SEND_ONCE,
-				  NULL, 0);
+	error = ipc_request(&req, &resp);
 	if (error != 0)
-		fatal("ipc_dispatch_send failed", error);
-}
+		fatal("ipc_request failed", error);
 
-static void
-test_response_handler(const struct ipc_dispatch *id,
-		      const struct ipc_dispatch_handler *idh,
-		      const struct ipc_header *ipch, void *page)
-{
-	(void)id;
-	(void)idh;
-
-	if (ipch->ipchdr_msg != IPC_MSG_REPLY(1) ||
-	    page != NULL) {
-		ipc_message_drop(ipch, page);
-		return;
-	}
-
-	printf("Reply from test-server:\n");
-	ipc_message_print(ipch, page);
+	if (resp.error != 0)
+		fatal("error from test-server", resp.error);
 
 	fatal("Finished!", 0);
 }

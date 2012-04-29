@@ -1,4 +1,5 @@
-FILES=	motd
+FILES+=	motd
+FILES+=	rc
 
 all:
 	@true

@@ -1,0 +1,3 @@
+# MU startup script.  Run by the bootstrap.
+
+/bin/cat /etc/motd

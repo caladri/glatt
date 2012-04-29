@@ -46,10 +46,6 @@ Fundamentals:
 Device drivers:
 	o) Memory/interrupt/ioport allocation from busses.
 	o) Write mu-tune for device hints, perhaps other things.
-	o) Ports for device drivers.
-	o) Networking
-		o) Simple ethernet stack.
-	o) Simple storage stack.
 
 Ongoing / aesthetic:
 	o) Go over every bit of code and comment major functions and confusing

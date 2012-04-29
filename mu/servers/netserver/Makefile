@@ -1,4 +1,4 @@
-PROGRAM=net-test
-SRCS+=	net-test.c
+PROGRAM=netserver
+SRCS+=	netserver.c
 
 .include "${GLATT_SRC}/mu/build/standalone.mk"

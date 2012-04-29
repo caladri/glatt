@@ -1,6 +1,3 @@
-##
-# Figure out what components to build.
-##
 SUBDIRS+=	netserver
 
 .if !defined(GLATT_SRC) && exists(${.CURDIR}/../../config.mk)

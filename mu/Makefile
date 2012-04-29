@@ -1,6 +1,3 @@
-##
-# Figure out what components to build.
-##
 SUBDIRS+=	lib
 SUBDIRS+=	bin
 SUBDIRS+=	sbin

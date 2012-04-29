@@ -37,16 +37,19 @@ struct if_context {
 	const struct ipc_dispatch_handler *ifc_get_info_handler;
 	const struct ipc_dispatch_handler *ifc_receive_handler;
 	ipc_port_t ifc_ifport;
+
+	uint8_t ifc_addr[ETHERNET_ADDRESS_SIZE];
 };
 
-static void arp_request(struct if_context *, const uint8_t *, uint32_t,
-			uint32_t);
+static void arp_input(struct if_context *, const void *, size_t);
+static void arp_request(struct if_context *, uint32_t, uint32_t);
 static void if_get_info_callback(const struct ipc_dispatch *,
 				 const struct ipc_dispatch_handler *,
 				 const struct ipc_header *, void *);
 static void if_receive_callback(const struct ipc_dispatch *,
 				const struct ipc_dispatch_handler *,
 				const struct ipc_header *, void *);
+static void if_input(struct if_context *, const void *, size_t);
 static void if_transmit(struct if_context *, const void *, size_t);
 static void usage(void);
 
@@ -94,8 +97,16 @@ main(int argc, char *argv[])
 }
 
 static void
-arp_request(struct if_context *ifc, const uint8_t *ether_src, uint32_t ip_src,
-	    uint32_t ip_dst)
+arp_input(struct if_context *ifc, const void *data, size_t datalen)
+{
+	(void)ifc;
+
+	printf("Received ARP packet:\n");
+	hexdump(data, datalen);
+}
+
+static void
+arp_request(struct if_context *ifc, uint32_t ip_src, uint32_t ip_dst)
 {
 	struct ethernet_header eh;
 	struct arp_header ah;
@@ -111,10 +122,7 @@ arp_request(struct if_context *ifc, const uint8_t *ether_src, uint32_t ip_src,
 	p = pkt;
 
 	memset(eh.eh_dhost, 0xff, sizeof eh.eh_dhost);
-	if (ether_src != NULL)
-		memcpy(eh.eh_shost, ether_src, sizeof eh.eh_shost);
-	else
-		memset(eh.eh_shost, 0x00, sizeof eh.eh_shost);
+	memcpy(eh.eh_shost, ifc->ifc_addr, sizeof eh.eh_shost);
 	eh.eh_type[0] = 0x08; /* ARP's Ethernet protocol type is 0x0806.  */
 	eh.eh_type[1] = 0x06;
 
@@ -162,7 +170,6 @@ if_get_info_callback(const struct ipc_dispatch *id,
 	ifc = idh->idh_softc;
 
 	(void)id;
-	(void)idh;
 
 	if (ipch->ipchdr_msg != IPC_MSG_REPLY(NETWORK_INTERFACE_MSG_GET_INFO) ||
 	    ipch->ipchdr_param < sizeof rhdr || page == NULL) {
@@ -174,6 +181,12 @@ if_get_info_callback(const struct ipc_dispatch *id,
 	addr = page;
 	addr += sizeof rhdr;
 
+	if (rhdr.addrlen != sizeof ifc->ifc_addr) {
+		printf("%s: preposterous interface address length.\n", __func__);
+		return;
+	}
+	memcpy(ifc->ifc_addr, addr, rhdr.addrlen);
+
 	printf("Interface address:");
 	for (i = 0; i < rhdr.addrlen; i++)
 		printf("%c%x%x", i == 0 ? ' ' : ':', (addr[i] & 0xf0) >> 4,
@@ -181,7 +194,7 @@ if_get_info_callback(const struct ipc_dispatch *id,
 	printf("\n");
 
 	printf("Sending ARP request.\n");
-	arp_request(ifc, addr, 0x0a000001, 0x0a0000fe);
+	arp_request(ifc, 0x0a000001, 0x0a0000fe);
 }
 
 static void
@@ -189,8 +202,11 @@ if_receive_callback(const struct ipc_dispatch *id,
 		    const struct ipc_dispatch_handler *idh,
 		    const struct ipc_header *ipch, void *page)
 {
+	struct if_context *ifc;
+
+	ifc = idh->idh_softc;
+
 	(void)id;
-	(void)idh;
 
 	switch (ipch->ipchdr_msg) {
 	case IPC_MSG_ERROR(NETWORK_INTERFACE_MSG_RECEIVE):
@@ -217,8 +233,29 @@ if_receive_callback(const struct ipc_dispatch *id,
 		return;
 	}
 
-	printf("Received packet:\n");
-	hexdump(page, ipch->ipchdr_param);
+	if_input(ifc, page, ipch->ipchdr_param);
+}
+
+
+static void
+if_input(struct if_context *ifc, const void *data, size_t datalen)
+{
+	const struct ethernet_header *eh;
+
+	if (datalen < sizeof *eh) {
+		printf("%s: runt packet.\n", __func__);
+		return;
+	}
+	eh = data;
+
+	switch (((uint16_t)eh->eh_type[0] << 8) | eh->eh_type[1]) {
+	case 0x0806:
+		arp_input(ifc, data, datalen);
+		break;
+	default:
+		printf("%s: unrecognized packet type.\n", __func__);
+		return;
+	}
 }
 
 static void

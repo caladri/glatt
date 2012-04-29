@@ -271,6 +271,10 @@ fs_file_ipc_close_handler(struct fs_file *fsf, const struct ipc_header *reqh, vo
 	 * Need to reference-count the service and only do this close once all
 	 * users are done, and drop the receive right, and have dropping the
 	 * receive right lead to garbage-collecting the port.
+	 *
+	 * At that point, do we even need a close(), or can the caller just drop
+	 * the right to this port?  But then they need to refcount rights and be
+	 * sure they only have this file open once.
 	 */
 
 	error = fs->fs_ops->fs_file_close(fs->fs_context, fsfc);

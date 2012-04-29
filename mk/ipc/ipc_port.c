@@ -18,6 +18,11 @@
 
 struct ipc_port;
 
+/*
+ * XXX
+ * Should we include the sending task or its VM?  That would
+ * ease some in-kernel facilities, such as exec_load perhaps.
+ */
 struct ipc_message {
 	struct ipc_header ipcmsg_header;
 	struct vm_page *ipcmsg_page;

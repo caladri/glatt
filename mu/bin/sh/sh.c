@@ -39,34 +39,16 @@ main(int argc, char *argv[])
 static void
 process_console_line(ipc_port_t fs)
 {
-	const char *argv[16];
 	char buf[1024];
-	ipc_port_t file;
-	unsigned argc;
 	int error;
 
-	error = getargs(buf, sizeof buf, &argc, argv, 16, " ");
+	error = getline(buf, sizeof buf);
 	if (error != 0)
-		fatal("getargs failed", error);
+		fatal("getline failed", error);
 
-	if (argc == 0)
-		return;
-
-	error = open(fs, argv[0], &file);
-	if (error != 0) {
-		printf("Could not open %s: %m\n", argv[0], error);
-		return;
-	}
-
-	error = exec(file, NULL, argc, argv);
-	if (error != 0) {
-		printf("Could not exec %s: %m\n", buf, error);
-		return;
-	}
-
-	error = close(file);
+	error = process_line(fs, buf);
 	if (error != 0)
-		fatal("close failed", error);
+		fatal("exec line failed", error);
 }
 
 static void

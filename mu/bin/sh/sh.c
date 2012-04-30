@@ -7,44 +7,155 @@
 
 #include <libmu/common.h>
 
-void
-bootstrap_main(void)
-{
-	ipc_port_t fs, file;
-	const char *argv[16];
-	char buf[1024];
-	unsigned argc;
-	int error;
+static void process_console_line(ipc_port_t);
+static void process_file(ipc_port_t, const char *);
+static int process_line(ipc_port_t, char *);
 
-	printf("MU Experimental Shell.\n");
+void
+main(int argc, char *argv[])
+{
+	ipc_port_t fs;
 
 	while ((fs = ns_lookup("ufs0")) == IPC_PORT_UNKNOWN)
 		continue;
 
-	for (;;) {
-		printf("# ");
+	if (argc == 1) {
+		printf("MU Experimental Shell.\n");
 
-		error = getargs(buf, sizeof buf, &argc, argv, 16, " ");
-		if (error != 0)
-			fatal("getargs failed", error);
+		for (;;) {
+			printf("# ");
 
-		if (argc == 0)
-			continue;
-
-		error = open(fs, argv[0], &file);
-		if (error != 0) {
-			printf("Could not open %s: %m\n", argv[0], error);
-			continue;
+			process_console_line(fs);
 		}
+	} else {
+		while (--argc) {
+			const char *path = *++argv;
 
-		error = exec(file, NULL, argc, argv);
-		if (error != 0) {
-			printf("Could not exec %s: %m\n", buf, error);
-			continue;
+			process_file(fs, path);
 		}
-
-		error = close(file);
-		if (error != 0)
-			fatal("close failed", error);
 	}
+}
+
+static void
+process_console_line(ipc_port_t fs)
+{
+	const char *argv[16];
+	char buf[1024];
+	ipc_port_t file;
+	unsigned argc;
+	int error;
+
+	error = getargs(buf, sizeof buf, &argc, argv, 16, " ");
+	if (error != 0)
+		fatal("getargs failed", error);
+
+	if (argc == 0)
+		return;
+
+	error = open(fs, argv[0], &file);
+	if (error != 0) {
+		printf("Could not open %s: %m\n", argv[0], error);
+		return;
+	}
+
+	error = exec(file, NULL, argc, argv);
+	if (error != 0) {
+		printf("Could not exec %s: %m\n", buf, error);
+		return;
+	}
+
+	error = close(file);
+	if (error != 0)
+		fatal("close failed", error);
+}
+
+static void
+process_file(ipc_port_t fs, const char *path)
+{
+	ipc_port_t file;
+	off_t offset;
+	void *page;
+	int error;
+
+	error = open(fs, path, &file);
+	if (error != 0) {
+		printf("%s: open %s failed: %m\n", __func__, path, error);
+		return;
+	}
+
+	offset = 0;
+	for (;;) {
+		unsigned i;
+		size_t len;
+		char *buf;
+
+		len = PAGE_SIZE;
+		error = read(file, &page, offset, &len);
+		if (error != 0) {
+			printf("%s: read failed: %m\n", __func__, error);
+			return;
+		}
+		if (len == 0)
+			break;
+
+		buf = page;
+		for (i = 0; i < len; i++) {
+			if (buf[i] == '\0')
+				fatal("file contains embedded NUL", ERROR_UNEXPECTED);
+			if (buf[i] != '\n')
+				continue;
+			buf[i] = '\0';
+			break;
+		}
+		if (i == len)
+			fatal("line longer than a page", ERROR_UNEXPECTED);
+
+		error = process_line(fs, buf);
+		if (error != 0)
+			fatal("exec line failed", error);
+
+		offset += i + 1;
+		vm_page_free(page);
+	}
+
+	error = close(file);
+	if (error != 0)
+		fatal("close failed", error);
+}
+
+static int
+process_line(ipc_port_t fs, char *line)
+{
+	const char *argv[16];
+	ipc_port_t file;
+	unsigned argc;
+	int error;
+
+	if (line[0] == '\0' || line[0] == '#')
+		return (0);
+
+	error = splitargs(line, &argc, argv, 16, " ");
+	if (error != 0)
+		fatal("splitargs failed", error);
+
+	error = open(fs, argv[0], &file);
+	if (error != 0) {
+		printf("%s: unable to open %s: %m\n", __func__, argv[0], error);
+		return (error);
+	}
+
+	/*
+	 * XXX wait?
+	 */
+	error = exec(file, NULL, argc, argv);
+	if (error != 0) {
+		printf("%s: exec of %s failed: %m\n", __func__, argv[0], error);
+		return (error);
+	}
+	
+	error = close(file);
+	if (error != 0)
+		fatal("close failed", error);
+
+	return (0);
 }

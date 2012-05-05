@@ -89,6 +89,7 @@ ENTRY(cpu_context_save)
 	li	v0, FALSE
 END(cpu_context_save)
 
+#ifdef EXEC
 	/*
 	 * void cpu_thread_user_trampoline(void *a0);
 	 * a0 = entry.
@@ -112,3 +113,4 @@ ENTRY(cpu_thread_user_trampoline)
 	dmtc0	v0, CP0_EXCPC
 	eret
 END(cpu_thread_user_trampoline)
+#endif

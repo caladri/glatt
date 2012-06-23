@@ -15,7 +15,7 @@ int getargs(char *, size_t, unsigned *, const char **, size_t, const char *);
 
 int splitargs(char *, unsigned *, const char **, size_t, const char *);
 
-void fatal(const char *, int);
+void fatal(const char *, int) __noreturn;
 void puts(const char *);
 
 void printf(const char *, ...);

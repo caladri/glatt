@@ -79,6 +79,10 @@ platform_start(void)
 	 */
 	page_init();
 
+	/*
+	 * XXX
+	 * Need to skip any memory-mapped devices in this range.
+	 */
 	error = page_insert_pages(KERNEL_PHYSICAL_BASE, ADDR_TO_PAGE(membytes));
 	if (error != 0)
 		panic("page_insert_pages %lx..%lx failed: %m",

@@ -68,7 +68,6 @@ END(cpu_context_restore)
 	 * Returns true on restore, false on save.
 	 */
 ENTRY(cpu_context_save)
-	move	t0, a0
 	dla	t0, TD_CONTEXT(a0)
 	sd	s0, CONTEXT_S0(t0)
 	sd	s1, CONTEXT_S1(t0)

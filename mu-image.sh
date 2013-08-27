@@ -1,14 +1,8 @@
 #! /bin/sh
 
-rm -f mu.img
-truncate -s 128m mu.img
-mdunit=`sudo mdconfig -a -t vnode -f mu.img -n`
-dev=/dev/md${mdunit}
-sudo newfs -O 2 ${dev}
 rm -rf img
 mkdir img
-sudo mount ${dev} $PWD/img
 sudo make mu-install DESTDIR=$PWD/img
-sudo umount $PWD/img
-sudo mdconfig -d -u ${mdunit}
-bswapfs -y mu.img
+
+rm -f mu.img
+makefs -B big -o version=2 mu.img $PWD/img

@@ -1,11 +1,16 @@
 #include <core/types.h>
 #include <core/error.h>
 #include <core/printf.h>
+#include <core/string.h>
 #include <fs/fs.h>
 #include <ipc/ipc.h>
 #include <ns/ns.h>
 
 #include <libmu/common.h>
+
+static const char *paths[] = {
+	"/bin", "/sbin", NULL
+};
 
 static void process_console_line(ipc_port_t);
 static void process_file(ipc_port_t, const char *);
@@ -48,7 +53,7 @@ process_console_line(ipc_port_t fs)
 
 	error = process_line(fs, buf);
 	if (error != 0)
-		fatal("exec line failed", error);
+		printf("sh: exec line failed: %m\n", error);
 }
 
 static void
@@ -108,7 +113,10 @@ process_file(ipc_port_t fs, const char *path)
 static int
 process_line(ipc_port_t fs, char *line)
 {
+	const char **prefixp;
 	const char *argv[16];
+	char pathbuf[1024];
+	const char *path;
 	ipc_port_t file;
 	unsigned argc;
 	int error;
@@ -120,10 +128,27 @@ process_line(ipc_port_t fs, char *line)
 	if (error != 0)
 		fatal("splitargs failed", error);
 
-	error = open(fs, argv[0], &file);
-	if (error != 0) {
-		printf("%s: unable to open %s: %m\n", __func__, argv[0], error);
-		return (error);
+	path = argv[0];
+	if (path[0] == '/') {
+		error = open(fs, path, &file);
+		if (error != 0)
+			return (error);
+	} else {
+		file = IPC_PORT_UNKNOWN;
+
+		for (prefixp = paths; *prefixp != NULL; prefixp++) {
+			strlcpy(pathbuf, *prefixp, sizeof pathbuf);
+			strlcat(pathbuf, "/", sizeof pathbuf);
+			strlcat(pathbuf, path, sizeof pathbuf);
+
+			error = open(fs, pathbuf, &file);
+			if (error != 0)
+				continue;
+			argv[0] = pathbuf;
+			break;
+		}
+		if (file == IPC_PORT_UNKNOWN)
+			return (ERROR_NOT_FOUND);
 	}
 
 	/*

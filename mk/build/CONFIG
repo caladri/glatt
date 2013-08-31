@@ -43,6 +43,7 @@ db		db/db_misc.c
 enter_debugger	requires: db
 
 fs		fs/fs.c
+fs		fs/fs_ipc.c
 fs		requires: ns
 
 framebuffer	io/framebuffer/framebuffer.c

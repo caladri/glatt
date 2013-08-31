@@ -1,12 +1,22 @@
 #ifndef	_FS_FS_OPS_H_
 #define	_FS_FS_OPS_H_
 
+#include <core/queue.h>
+
+struct fs_ops;
+
 /*
  * These are aids to the reader.
  */
 typedef	void *fs_context_t;
 typedef	void *fs_file_context_t;
 typedef	void *fs_directory_context_t;
+
+struct fs {
+	struct fs_ops *fs_ops;
+	fs_context_t fs_context;
+	STAILQ_ENTRY(struct fs) fs_link;
+};
 
 struct fs_directory_entry {
 	char name[1024];

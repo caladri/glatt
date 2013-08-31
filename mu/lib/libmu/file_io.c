@@ -2,6 +2,7 @@
 #include <core/error.h>
 #include <core/string.h>
 #include <fs/fs.h>
+#include <fs/fs_ipc.h>
 #include <ipc/ipc.h>
 
 #include <libmu/common.h>

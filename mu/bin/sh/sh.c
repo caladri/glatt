@@ -5,6 +5,7 @@
 #include <fs/fs.h>
 #include <ipc/ipc.h>
 #include <ns/ns.h>
+#include <vm/vm_page.h>
 
 #include <libmu/common.h>
 

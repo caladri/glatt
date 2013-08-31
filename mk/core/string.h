@@ -9,6 +9,7 @@ static inline void memset(void *, int, size_t) __non_null(1);
 static inline const char *strchr(const char *, char) __non_null(1) __check_result;
 static inline int strcmp(const char *, const char *) __non_null(1, 2) __check_result;
 static inline size_t strlcpy(char *, const char *, size_t) __non_null(1, 2);
+static inline size_t strlcat(char *, const char *, size_t) __non_null(1, 2);
 static inline size_t strlen(const char *) __non_null(1) __check_result;
 static inline int strncmp(const char *, const char *, size_t) __non_null(1, 2) __check_result;
 
@@ -145,6 +146,19 @@ strlcpy(char *dst, const char *src, size_t len)
 count:	while (*s++ != '\0')
 		continue;
 	return (s - src);
+}
+
+/*
+ * XXX
+ * Half-assed.  Do some real testing.
+ */
+static inline size_t
+strlcat(char *dst, const char *src, size_t len)
+{
+	size_t dlen;
+
+	dlen = strlen(dst);
+	return (dlen + strlcpy(dst + dlen, src, len - dlen));
 }
 
 static inline size_t

@@ -1,6 +1,6 @@
 #! /bin/sh
 
-rm -rf img
+sudo rm -rf img
 mkdir img
 sudo make mu-install DESTDIR=$PWD/img
 

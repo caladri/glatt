@@ -18,6 +18,11 @@ struct fs_open_file_request {
 	char path[FS_PATH_MAX];
 };
 
+#ifdef MK
+ipc_service_t fs_ipc_handler;
+int fs_ipc_open_file_handler(struct fs *, const struct ipc_header *, void *);
+#endif
+
 /*
  * File IPC.
  */
@@ -30,9 +35,5 @@ struct fs_file_read_request {
 	off_t offset;
 	size_t length;
 };
-
-#ifdef MK
-ipc_service_t fs_ipc_handler;
-#endif
 
 #endif /* !_FS_FS_IPC_H_ */

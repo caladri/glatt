@@ -156,7 +156,6 @@ vprintf(const char *fmt, va_list ap)
 	kfvprintf(printf_putc, printf_puts, NULL, fmt, ap);
 }
 
-
 static void
 printf_putc(void *arg, char ch)
 {

@@ -40,6 +40,9 @@ ${PROGRAM}: ${OBJS}
 install:
 	@[ -d ${DESTDIR}${BINDIR} ] || mkdir -p ${DESTDIR}${BINDIR}
 	cp ${PROGRAM} ${DESTDIR}${BINDIR}/${PROGRAM}
+.for _link in ${LINKS}
+	ln ${DESTDIR}${BINDIR}/${PROGRAM} ${DESTDIR}${BINDIR}/${_link}
+.endfor
 
 clean:
 	rm -f ${PROGRAM} ${OBJS}

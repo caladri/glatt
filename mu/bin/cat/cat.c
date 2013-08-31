@@ -1,6 +1,7 @@
 #include <core/types.h>
 #include <core/error.h>
 #include <core/printf.h>
+#include <core/string.h>
 #include <fs/fs.h>
 #include <ipc/ipc.h>
 #include <ns/ns.h>
@@ -11,8 +12,11 @@
 void
 main(int argc, char *argv[])
 {
+	bool is_hexdump;
 	ipc_port_t fs;
 	int error;
+
+	is_hexdump = strcmp(argv[0], "/bin/hexdump") == 0;
 
 	while ((fs = ns_lookup("ufs0")) == IPC_PORT_UNKNOWN)
 		continue;
@@ -41,7 +45,10 @@ main(int argc, char *argv[])
 
 			if (len == 0)
 				break;
-			putsn(page, len);
+			if (!is_hexdump)
+				putsn(page, len);
+			else
+				hexdump(page, len);
 			offset += len;
 			vm_page_free(page);
 		}

@@ -35,4 +35,9 @@ int read(ipc_port_t, void **, off_t, size_t *);
 int close(ipc_port_t);
 int exec(ipc_port_t, ipc_port_t *, unsigned, const char **);
 
+struct fs_directory_entry;
+int opendir(ipc_port_t, const char *, ipc_port_t *);
+int readdir(ipc_port_t, struct fs_directory_entry *, off_t *);
+int closedir(ipc_port_t);
+
 #endif /* !COMMON_H */

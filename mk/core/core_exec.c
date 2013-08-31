@@ -196,6 +196,7 @@ exec_elf64_load(struct vm *vm, void **entryp, fs_file_read_op_t *readf, fs_conte
 		if (ph.ph_type != ELF_PROGRAM_HEADER_TYPE_LOAD)
 			continue;
 
+		/* XXX Where memorysize is > filesize do we need to zero?  */
 		len = MIN(ph.ph_memorysize, ph.ph_filesize);
 		begin = kvaddr + (ph.ph_vaddr - low);
 		error = exec_read(readf, fsc, fsfc, (void *)begin, ph.ph_off, len);
@@ -231,6 +232,7 @@ exec_read(fs_file_read_op_t *readf, fs_context_t fsc, fs_file_context_t fsfc, vo
 		if (len == resid)
 			return (0);
 		buf = (void *)((uintptr_t)buf + len);
+		off += len;
 		resid -= len;
 		len = resid;
 	}

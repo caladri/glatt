@@ -18,10 +18,6 @@ struct fs {
 	STAILQ_ENTRY(struct fs) fs_link;
 };
 
-struct fs_directory_entry {
-	char name[1024];
-};
-
 typedef	int fs_file_open_op_t(fs_context_t, const char *, fs_file_context_t *) __non_null(2, 3);
 typedef	int fs_file_read_op_t(fs_context_t, fs_file_context_t, void *, off_t, size_t *) __non_null(3, 5);
 typedef	int fs_file_close_op_t(fs_context_t, fs_file_context_t);

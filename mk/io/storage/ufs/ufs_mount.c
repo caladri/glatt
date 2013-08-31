@@ -8,6 +8,7 @@
 #include <io/storage/ufs/ufs_mount.h>
 #include <io/storage/ufs/ufs_param.h>
 #include <io/storage/ufs/ufs_superblock.h>
+#include <fs/fs.h>
 #include <fs/fs_ops.h>
 #include <vm/vm.h>
 #include <vm/vm_alloc.h>

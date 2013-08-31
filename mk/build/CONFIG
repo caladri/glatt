@@ -44,6 +44,7 @@ enter_debugger	requires: db
 
 fs		fs/fs.c
 fs		fs/fs_ipc.c
+fs		fs/fs_ipc_directory.c
 fs		fs/fs_ipc_file.c
 fs		requires: ns
 

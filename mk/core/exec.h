@@ -1,6 +1,7 @@
 #ifndef	_CORE_EXEC_H_
 #define	_CORE_EXEC_H_
 
+#include <fs/fs.h>
 #include <fs/fs_ops.h>
 #include <ipc/ipc.h>
 

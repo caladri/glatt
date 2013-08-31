@@ -105,6 +105,9 @@ ENTRY(cpu_thread_user_trampoline)
 	ori	t0, CP0_STATUS_EXL
 	mtc0	t0, CP0_STATUS
 
+	/*
+	 * XXX Should we be anding off more bits?
+	 */
 	dli	sp, USER_STACK_TOP
 	dli	t0, ~7
 	and	sp, t0

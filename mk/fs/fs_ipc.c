@@ -28,6 +28,8 @@ fs_ipc_handler(void *softc, struct ipc_header *ipch, void *p)
 	switch (ipch->ipchdr_msg) {
 	case FS_MSG_OPEN_FILE:
 		return (fs_ipc_open_file_handler(fs, ipch, p));
+	case FS_MSG_OPEN_DIRECTORY:
+		return (fs_ipc_open_directory_handler(fs, ipch, p));
 	default:
 		/* Don't respond to nonsense.  */
 		return (ERROR_INVALID);

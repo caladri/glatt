@@ -17,7 +17,7 @@ struct fs;
  */
 
 #define	FS_MSG_OPEN_FILE	(1)
-#define	FS_MSG_OPEN_DIRECTORY	(1)
+#define	FS_MSG_OPEN_DIRECTORY	(2)
 
 struct fs_open_file_request {
 	char path[FS_PATH_MAX];

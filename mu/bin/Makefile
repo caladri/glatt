@@ -1,4 +1,5 @@
 SUBDIRS+=	cat
+SUBDIRS+=	ls
 SUBDIRS+=	sh
 
 .if !defined(GLATT_SRC) && exists(${.CURDIR}/../../config.mk)

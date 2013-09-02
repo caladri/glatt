@@ -115,7 +115,7 @@ static int
 process_line(ipc_port_t fs, char *line)
 {
 	const char **prefixp;
-	const char *argv[16];
+	const char *argv[128];
 	char pathbuf[1024];
 	const char *path;
 	ipc_port_t file;
@@ -125,7 +125,7 @@ process_line(ipc_port_t fs, char *line)
 	if (line[0] == '\0' || line[0] == '#')
 		return (0);
 
-	error = splitargs(line, &argc, argv, 16, " ");
+	error = splitargs(line, &argc, argv, 128, " ");
 	if (error != 0)
 		fatal("splitargs failed", error);
 

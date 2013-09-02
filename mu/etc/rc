@@ -1,7 +1,10 @@
 # MU startup script.  Run by the bootstrap.
 
+echo MOTD:
 /bin/cat /etc/motd
 
+echo Starting netserver.
 /servers/netserver tmether0
 
+echo Launching single-user shell.
 /bin/sh

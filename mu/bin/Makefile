@@ -1,4 +1,5 @@
 SUBDIRS+=	cat
+SUBDIRS+=	echo
 SUBDIRS+=	ls
 SUBDIRS+=	sh
 

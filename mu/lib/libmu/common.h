@@ -1,6 +1,8 @@
 #ifndef	COMMON_H
 #define	COMMON_H
 
+#include <ipc/ipc.h>
+
 int vm_page_get(void **);
 int vm_page_free(void *);
 

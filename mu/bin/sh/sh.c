@@ -138,9 +138,7 @@ process_line(ipc_port_t fs, char *line)
 		file = IPC_PORT_UNKNOWN;
 
 		for (prefixp = paths; *prefixp != NULL; prefixp++) {
-			strlcpy(pathbuf, *prefixp, sizeof pathbuf);
-			strlcat(pathbuf, "/", sizeof pathbuf);
-			strlcat(pathbuf, path, sizeof pathbuf);
+			snprintf(pathbuf, sizeof pathbuf, "%s/%s", *prefixp, path);
 
 			error = open(fs, pathbuf, &file);
 			if (error != 0)

@@ -10,6 +10,9 @@
 void
 cpu_syscall(struct frame *frame)
 {
+	if ((frame->f_regs[FRAME_STATUS] & CP0_STATUS_U) == 0)
+		panic("%s: system call in kernel mode.", __func__);
+
 	if (frame->f_regs[FRAME_V1] > 4) {
 		/*
 		 * If there are more than 4 arguments to this syscall, error.

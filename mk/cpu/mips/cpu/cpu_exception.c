@@ -11,7 +11,6 @@
 #include <cpu/pcpu.h>
 #include <cpu/register.h>
 #include <cpu/startup.h>
-#include <cpu/syscall.h>
 #ifdef DB
 #include <db/db.h>
 #include <db/db_command.h>
@@ -158,14 +157,6 @@ exception(struct frame *frame)
 	switch (code) {
 	case EXCEPTION_INT:
 		cpu_interrupt();
-		handled = true;
-		break;
-	case EXCEPTION_SYSCALL:
-		if (!user) {
-			printf("Kernel-originated system call.\n");
-			break;
-		}
-		cpu_syscall(frame);
 		handled = true;
 		break;
 	case EXCEPTION_TLB_LOAD:

@@ -13,7 +13,7 @@ exception_table:
 	.dword	generic_exception	/* AdES */
 	.dword	generic_exception	/* IBE */
 	.dword	generic_exception	/* DBE */
-	.dword	generic_exception	/* Sys */
+	.dword	syscall_exception	/* Sys */
 	.dword	generic_exception	/* Bp */
 	.dword	generic_exception	/* RI */
 	.dword	generic_exception	/* CpU */
@@ -91,6 +91,20 @@ STATIC_ENTRY(generic_exception)
 	nop
 	.set at
 END(generic_exception)
+
+STATIC_ENTRY(syscall_exception)
+	.set noat
+	dla	k0, 1f
+	j	exception_frame_save
+	nop
+
+1:	jal	cpu_syscall
+	move	a0, sp
+
+	j	exception_frame_restore
+	nop
+	.set at
+END(syscall_exception)
 
 STATIC_ENTRY(tlb_exception)
 	.set noat

@@ -155,10 +155,6 @@ exception(struct frame *frame)
 	handled = false;
 
 	switch (code) {
-	case EXCEPTION_INT:
-		cpu_interrupt();
-		handled = true;
-		break;
 	case EXCEPTION_TLB_LOAD:
 	case EXCEPTION_TLB_STORE:
 		if (!user) {

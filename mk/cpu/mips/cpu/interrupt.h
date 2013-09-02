@@ -4,6 +4,8 @@
 #include <core/queue.h>
 #include <cpu/register.h>
 
+struct frame;
+
 #define	CPU_INTERRUPT_COUNT	(8)
 
 typedef	void (interrupt_t)(void *, int);
@@ -16,7 +18,7 @@ struct interrupt_handler {
 
 void cpu_interrupt_establish(int, interrupt_t *, void *) __non_null(2);
 
-void cpu_interrupt(void);
+void cpu_interrupt(struct frame *);
 void cpu_interrupt_setup(void);
 
 register_t cpu_interrupt_disable(void);

@@ -3,6 +3,7 @@
 #include <core/pool.h>
 #include <core/startup.h>
 #include <cpu/cpu.h>
+#include <cpu/frame.h>
 #include <cpu/interrupt.h>
 #include <cpu/pcpu.h>
 #include <core/console.h>
@@ -35,18 +36,18 @@ cpu_interrupt_establish(int interrupt, interrupt_t *func, void *arg)
 }
 
 void
-cpu_interrupt(void)
+cpu_interrupt(struct frame *frame)
 {
 	struct interrupt_handler *ih;
 	unsigned cause, interrupts;
 	unsigned interrupt;
 
-	cause = cpu_read_cause();
+	cause = frame->f_regs[FRAME_CAUSE];
 	interrupts = cause & CP0_CAUSE_INTERRUPT_MASK;
 	interrupts &= PCPU_GET(interrupt_mask);
 	interrupts >>= CP0_CAUSE_INTERRUPT_SHIFT;
 	cause &= ~CP0_CAUSE_INTERRUPT_MASK;
-	cpu_write_cause(cause);
+	frame->f_regs[FRAME_CAUSE] = cause;
 
 	ASSERT(interrupts != 0, "need interrupts to service");
 

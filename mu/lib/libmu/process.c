@@ -97,23 +97,22 @@ process_start_data(void **pagep, unsigned argc, const char **argv)
 	void *page;
 	int error;
 
-	if (argc != 0) {
-		error = vm_page_get(&page);
-		if (error != 0)
-			return (error);
-		reloc = page;
-		argp = (char *)page + (argc * sizeof argp);
-		/* XXX Bounds check.  */
-		for (i = 0; i < argc; i++) {
-			reloc[i] = argp - (char *)page;
-			arg = argv[i];
-			while ((*argp++ = *arg++) != '\0')
-				continue;
-		}
-		*pagep = page;
-	} else {
-		*pagep = NULL;
+	if (argc == 0)
+		fatal("process start data contains no arguments", ERROR_UNEXPECTED);
+
+	error = vm_page_get(&page);
+	if (error != 0)
+		return (error);
+	reloc = page;
+	argp = (char *)page + (argc * sizeof argp);
+	/* XXX Bounds check.  */
+	for (i = 0; i < argc; i++) {
+		reloc[i] = argp - (char *)page;
+		arg = argv[i];
+		while ((*argp++ = *arg++) != '\0')
+			continue;
 	}
+	*pagep = page;
 
 	return (0);
 }

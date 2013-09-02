@@ -5,7 +5,7 @@
 	/* Vectors for exception, interrupt and TLB miss handling.  */
 	.data
 exception_table:
-	.dword	interrupt_exception	/* Int */
+	.dword	interrupt_vector	/* Int */
 	.dword	tlbmod_exception	/* TLBMod */
 	.dword	tlb_exception		/* TLBL */
 	.dword	tlb_exception		/* TLBS */
@@ -92,7 +92,7 @@ STATIC_ENTRY(generic_exception)
 	.set at
 END(generic_exception)
 
-STATIC_ENTRY(interrupt_exception)
+VECTOR_ENTRY(interrupt)
 	.set noat
 	dla	k0, 1f
 	j	exception_frame_save
@@ -104,7 +104,7 @@ STATIC_ENTRY(interrupt_exception)
 	j	exception_frame_restore
 	nop
 	.set at
-END(interrupt_exception)
+VECTOR_END(interrupt)
 
 STATIC_ENTRY(syscall_exception)
 	.set noat

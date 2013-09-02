@@ -97,6 +97,7 @@ static const char *cpu_exception_names[] = {
 extern char utlb_vector[], utlb_vector_end[];
 extern char exception_vector[], exception_vector_end[];
 extern char xtlb_vector[], xtlb_vector_end[];
+extern char interrupt_vector[], interrupt_vector_end[];
 
 static void cpu_exception_vector_install(void *, const char *, const char *);
 static void cpu_exception_frame_dump(struct frame *);
@@ -111,8 +112,8 @@ cpu_exception_init(void)
 				     exception_vector_end);
 	cpu_exception_vector_install(EXCEPTION_BASE_XTLBMISS, xtlb_vector,
 				     xtlb_vector_end);
-	cpu_exception_vector_install(EXCEPTION_BASE_INTERRUPT, exception_vector,
-				     exception_vector_end);
+	cpu_exception_vector_install(EXCEPTION_BASE_INTERRUPT, interrupt_vector,
+				     interrupt_vector_end);
 	cpu_write_status(cpu_read_status() & ~CP0_STATUS_BEV);
 
 	/*

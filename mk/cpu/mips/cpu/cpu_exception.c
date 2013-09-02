@@ -173,6 +173,7 @@ exception(struct frame *frame)
 			break;
 		}
 		printf("Userland page fault.  Thread exiting.\n");
+		cpu_exception_state_dump();
 		thread_exit();
 		/* NOTREACHED */
 	case EXCEPTION_BREAKPOINT:

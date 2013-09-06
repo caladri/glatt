@@ -63,19 +63,27 @@ syscall(unsigned number, register_t *cnt, register_t *params)
 	struct syscall_vector *sv;
 	int error;
 
-	if (number > SYSCALL_LAST)
+	if (number > SYSCALL_LAST) {
+		*cnt = 0;
 		return (ERROR_NOT_AVAILABLE);
+	}
 
 	sv = &syscall_vector[number];
-	if (sv->sv_handler == NULL)
+	if (sv->sv_handler == NULL) {
+		*cnt = 0;
 		return (ERROR_NOT_AVAILABLE);
+	}
 
-	if (*cnt != sv->sv_inputs)
+	if (*cnt != sv->sv_inputs) {
+		*cnt = 0;
 		return (ERROR_ARG_COUNT);
+	}
 
 	error = sv->sv_handler(params);
-	if (error != 0)
+	if (error != 0) {
+		*cnt = 0;
 		return (error);
+	}
 
 	*cnt = sv->sv_outputs;
 	return (0);

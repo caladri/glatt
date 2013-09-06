@@ -78,7 +78,7 @@ VECTOR_ENTRY(xtlb)
 	.set at
 VECTOR_END(xtlb)
 
-STATIC_ENTRY(generic_exception)
+ENTRY(generic_exception)
 	.set noat
 	dla	k0, 1f
 	j	exception_frame_save
@@ -106,7 +106,7 @@ VECTOR_ENTRY(interrupt)
 	.set at
 VECTOR_END(interrupt)
 
-STATIC_ENTRY(syscall_exception)
+ENTRY(syscall_exception)
 	.set noat
 	dla	k0, 1f
 	j	exception_frame_save
@@ -120,7 +120,7 @@ STATIC_ENTRY(syscall_exception)
 	.set at
 END(syscall_exception)
 
-STATIC_ENTRY(tlb_exception)
+ENTRY(tlb_exception)
 	.set noat
 	dmfc0	k0, CP0_BADVADDR
 
@@ -227,7 +227,7 @@ STATIC_ENTRY(tlb_exception)
 	.set at
 END(tlb_exception)
 
-STATIC_ENTRY(tlbmod_exception)
+ENTRY(tlbmod_exception)
 	.set noat
 	dla	k0, 1f
 	j	exception_frame_save
@@ -241,14 +241,14 @@ STATIC_ENTRY(tlbmod_exception)
 	.set at
 END(tlbmod_exception)
 
-STATIC_ENTRY(cache_exception)
+ENTRY(cache_exception)
 	.set noat
 	j	generic_exception
 	nop
 	.set at
 END(cache_exception)
 
-STATIC_ENTRY(exception_frame_save)		/* Return address is k0.  */
+ENTRY(exception_frame_save)		/* Return address is k0.  */
 	.set noat
 	mfc0	k1, CP0_STATUS
 	andi	k1, CP0_STATUS_U
@@ -343,7 +343,7 @@ STATIC_ENTRY(exception_frame_save)		/* Return address is k0.  */
 	.set at
 END(exception_frame_save)
 
-STATIC_ENTRY(exception_frame_restore)		/* Does not return.  */
+ENTRY(exception_frame_restore)		/* Does not return.  */
 	.set noat
 
 	/* Enter kernel mode, EXL=1.  */

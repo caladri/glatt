@@ -11,6 +11,7 @@ struct mutex {
 	struct sleepq mtx_sleepq;
 	struct thread *mtx_owner;
 	unsigned mtx_nested;
+	unsigned mtx_waiters;
 	unsigned mtx_flags;
 };
 

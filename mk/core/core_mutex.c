@@ -13,6 +13,7 @@ mutex_init(struct mutex *mtx, const char *name, unsigned flags)
 	sleepq_init(&mtx->mtx_sleepq, &mtx->mtx_lock);
 	mtx->mtx_owner = NULL;
 	mtx->mtx_nested = 0;
+	mtx->mtx_waiters = 0;
 	mtx->mtx_flags = flags;
 }
 
@@ -60,7 +61,9 @@ mutex_lock(struct mutex *mtx)
 			/* Try spinning for a while.  */
 			continue;
 		}
+		mtx->mtx_waiters++;
 		sleepq_enter(&mtx->mtx_sleepq);
+		mtx->mtx_waiters--;
 	}
 }
 
@@ -77,7 +80,8 @@ mutex_unlock(struct mutex *mtx)
 	ASSERT(mtx->mtx_owner == td, "Not my lock to unlock.");
 	if (mtx->mtx_nested-- == 1) {
 		mtx->mtx_owner = NULL;
-		sleepq_signal_one(&mtx->mtx_sleepq);
+		if (mtx->mtx_waiters != 0)
+			sleepq_signal_one(&mtx->mtx_sleepq);
 	}
 	MTX_SPINUNLOCK(mtx);
 }

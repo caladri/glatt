@@ -32,7 +32,8 @@ typedef	void (mp_ipi_handler_t)(void *, enum ipi_type);
 #endif
 
 #ifndef	UNIPROCESSOR
-cpu_id_t mp_whoami(void) __check_result;
+cpu_id_t mp_whoami_pcpu(void);
+cpu_id_t (*mp_whoami)(void) __check_result;
 #else
 #define	mp_whoami()	((cpu_id_t)0)
 #define	CPU_ID_INVALID	((cpu_id_t)~0)

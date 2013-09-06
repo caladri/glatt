@@ -6,18 +6,11 @@
 #define	MTX_SPINLOCK(mtx)	spinlock_lock(&(mtx)->mtx_lock)
 #define	MTX_SPINUNLOCK(mtx)	spinlock_unlock(&(mtx)->mtx_lock)
 
-/*
- * Set the odd bit of the mutex address when turning it into a sleepq address.
- * If the mutex is embedded at the start of a structure that is slept on, we
- * could make or generate spurious wakeups and waits.  Nothing should be
- * sleeping on something internal to the mutex (and misaligned.)
- */
-#define	MTX_CHANNEL(mtx)	((const void *)((uintptr_t)(mtx) | 1))
-
 void
 mutex_init(struct mutex *mtx, const char *name, unsigned flags)
 {
 	spinlock_init(&mtx->mtx_lock, name, SPINLOCK_FLAG_DEFAULT);
+	sleepq_init(&mtx->mtx_sleepq, &mtx->mtx_lock);
 	mtx->mtx_owner = NULL;
 	mtx->mtx_nested = 0;
 	mtx->mtx_flags = flags;
@@ -67,7 +60,7 @@ mutex_lock(struct mutex *mtx)
 			/* Try spinning for a while.  */
 			continue;
 		}
-		sleepq_enter(MTX_CHANNEL(mtx), &mtx->mtx_lock);
+		sleepq_enter(&mtx->mtx_sleepq);
 	}
 }
 
@@ -84,7 +77,7 @@ mutex_unlock(struct mutex *mtx)
 	ASSERT(mtx->mtx_owner == td, "Not my lock to unlock.");
 	if (mtx->mtx_nested-- == 1) {
 		mtx->mtx_owner = NULL;
-		sleepq_signal_one(MTX_CHANNEL(mtx));
+		sleepq_signal_one(&mtx->mtx_sleepq);
 	}
 	MTX_SPINUNLOCK(mtx);
 }

@@ -10,6 +10,7 @@
 struct cv {
 	struct spinlock cv_spinlock;
 	struct mutex *cv_mutex;
+	struct sleepq cv_sleepq;
 };
 
 static struct pool cv_pool;
@@ -30,6 +31,7 @@ cv_create(struct mutex *mtx)
 	cv = pool_allocate(&cv_pool);
 	spinlock_init(&cv->cv_spinlock, "CV", SPINLOCK_FLAG_DEFAULT);
 	cv->cv_mutex = mtx;
+	sleepq_init(&cv->cv_sleepq, &cv->cv_spinlock);
 	return (cv);
 }
 
@@ -39,7 +41,7 @@ cv_signal(struct cv *cv)
 	CV_ASSERT_MUTEX_HELD(cv);
 
 	CV_LOCK(cv);
-	sleepq_signal_one(cv);
+	sleepq_signal_one(&cv->cv_sleepq);
 	CV_UNLOCK(cv);
 }
 
@@ -49,7 +51,7 @@ cv_signal_broadcast(struct cv *cv)
 	CV_ASSERT_MUTEX_HELD(cv);
 
 	CV_LOCK(cv);
-	sleepq_signal(cv);
+	sleepq_signal(&cv->cv_sleepq);
 	CV_UNLOCK(cv);
 }
 
@@ -60,7 +62,7 @@ cv_wait(struct cv *cv)
 
 	CV_LOCK(cv);
 	mutex_unlock(cv->cv_mutex);
-	sleepq_enter(cv, &cv->cv_spinlock);
+	sleepq_enter(&cv->cv_sleepq);
 }
 
 static void

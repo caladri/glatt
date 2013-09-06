@@ -1,12 +1,14 @@
 #ifndef	_CORE_MUTEX_H_
 #define	_CORE_MUTEX_H_
 
+#include <core/sleepq.h>
 #include <core/spinlock.h>
 
 struct thread;
 
 struct mutex {
 	struct spinlock mtx_lock;
+	struct sleepq mtx_sleepq;
 	struct thread *mtx_owner;
 	unsigned mtx_nested;
 	unsigned mtx_flags;

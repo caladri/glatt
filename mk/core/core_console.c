@@ -6,6 +6,7 @@
 #include <core/console.h>
 #include <core/consoledev.h>
 
+static struct sleepq kernel_console_sleepq;
 static struct console *kernel_console;
 
 static void cflush(struct console *);
@@ -19,6 +20,12 @@ void
 console_init(struct console *console)
 {
 	spinlock_init(&console->c_lock, "console", SPINLOCK_FLAG_DEFAULT);
+	/* XXX Push sleepq into console?  */
+	if (kernel_console == NULL)
+		sleepq_init(&kernel_console_sleepq, &console->c_lock);
+	else
+		kernel_console_sleepq.sq_lock = &console->c_lock; /* XXX Filthy.  */
+
 	kernel_console = console;
 	printf("Switched to console: %s\n", console->c_name);
 }
@@ -49,7 +56,7 @@ kcgetc_wait(char *chp)
 		error = kernel_console->c_getc(kernel_console->c_softc, &ch);
 		switch (error) {
 		case ERROR_AGAIN:
-			sleepq_enter(kernel_console, &kernel_console->c_lock);
+			sleepq_enter(&kernel_console_sleepq);
 			/* sleepq_enter drops console lock.  */
 			continue;
 		default:
@@ -66,9 +73,9 @@ void
 kcgetc_wakeup(bool broadcast)
 {
 	if (broadcast)
-		sleepq_signal(kernel_console);
+		sleepq_signal(&kernel_console_sleepq);
 	else
-		sleepq_signal_one(kernel_console);
+		sleepq_signal_one(&kernel_console_sleepq);
 }
 
 void

@@ -91,7 +91,7 @@ ENTRY(ipc_port_receive)
 	beqz	v1, 1f
 	nop
 
-	beqz	a2, 1f
+	beqz	t0, 1f
 	nop
 
 	/* 

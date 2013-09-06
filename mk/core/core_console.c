@@ -72,10 +72,12 @@ kcgetc_wait(char *chp)
 void
 kcgetc_wakeup(bool broadcast)
 {
+	CONSOLE_LOCK(kernel_console);
 	if (broadcast)
 		sleepq_signal(&kernel_console_sleepq);
 	else
 		sleepq_signal_one(&kernel_console_sleepq);
+	CONSOLE_UNLOCK(kernel_console);
 }
 
 void

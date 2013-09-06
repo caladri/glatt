@@ -82,12 +82,8 @@ ENTRY(ipc_port_wait)
 END(ipc_port_wait)
 
 ENTRY(ipc_port_receive)
-	beqz	a2, 2f
 	move	t0, a2
 
-	/* 
-	 * ipc_port_receive(port, &ipch, &page);
-	 */
 	li	v0, SYSCALL_IPC_PORT_RECEIVE
 	li	v1, 2
 	syscall
@@ -95,18 +91,18 @@ ENTRY(ipc_port_receive)
 	beqz	v1, 1f
 	nop
 
-	sd	a0, 0(t0)
-
-1:	jr	ra
+	beqz	a2, 1f
 	nop
+
+	/* 
+	 * ipc_port_receive(port, &ipch, &page);
+	 */
+	sd	a0, 0(t0)
 
 	/*
 	 * ipc_port_receive(port, &ipch, NULL);
 	 */
-2:	li	v0, SYSCALL_IPC_PORT_RECEIVE
-	li	v1, 2
-	syscall
-	jr	ra
+1:	jr	ra
 	nop
 END(ipc_port_receive)
 

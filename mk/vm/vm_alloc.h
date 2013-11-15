@@ -10,5 +10,7 @@ int vm_alloc_range_wire(struct vm *, vaddr_t, vaddr_t, vaddr_t *)
 	__non_null(1, 4) __check_result;
 int vm_free(struct vm *, size_t, vaddr_t) __non_null(1) __check_result;
 int vm_free_page(struct vm *, vaddr_t) __non_null(1) __check_result;
+int vm_free_range_wire(struct vm *, vaddr_t, vaddr_t, vaddr_t)
+	__non_null(1) __check_result;
 
 #endif /* !_VM_VM_ALLOC_H_ */

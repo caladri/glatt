@@ -136,3 +136,34 @@ vm_free_page(struct vm *vm, vaddr_t vaddr)
 		return (error);
 	return (0);
 }
+
+int
+vm_free_range_wire(struct vm *vm, vaddr_t begin, vaddr_t end, vaddr_t kvaddr)
+{
+	struct vm_page *page;
+	size_t o, pages;
+	vaddr_t vaddr;
+	int error;
+
+	vaddr = PAGE_FLOOR(begin);
+	pages = PAGE_COUNT(end - vaddr);
+
+	if (vm == &kernel_vm)
+		panic("%s: can't unwire from kernel to kernel.", __func__);
+
+	for (o = 0; o < pages; o++) {
+		error = page_extract(&kernel_vm, kvaddr + o * PAGE_SIZE, &page);
+		if (error != 0)
+			panic("%s: page_extract failed: %m", __func__, error);
+
+		error = page_unmap(&kernel_vm, kvaddr + o * PAGE_SIZE, page);
+		if (error != 0)
+			panic("%s: page_unmap failed: %m", __func__, error);
+	}
+
+	error = vm_free_address(&kernel_vm, kvaddr);
+	if (error != 0)
+		panic("%s: failed to free address: %m", __func__, error);
+
+	return (0);
+}

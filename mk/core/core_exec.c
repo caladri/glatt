@@ -207,7 +207,7 @@ exec_elf64_load(struct vm *vm, void **entryp, fs_file_read_op_t *readf, fs_conte
 	/*
 	 * Unwire program data.
 	 */
-	error = vm_free_address(&kernel_vm, kvaddr);
+	error = vm_free_range_wire(vm, low, high, kvaddr);
 	if (error != 0)
 		panic("%s: could not unwire progam data: %m", __func__, error);
 

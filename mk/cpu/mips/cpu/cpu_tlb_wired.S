@@ -1,5 +1,6 @@
 #include <core/_macro.h>
 #include <cpu/asm.h>
+#include <cpu/memory.h>
 
 	NOREORDER
 
@@ -12,7 +13,33 @@ next:	ld	t3, TWE_ENTRYHI(t2)
 	beqz	t3, skip
 	nop
 	dmtc0	t3, CP0_TLBENTRYHI
-	ld	t3, TWE_ENTRYLO0(t2)
+
+	/*
+	 * Is the entry we're about to wire already in the TLB?
+	 */
+	tlbp
+	mfc0	t8, CP0_TLBINDEX
+	bltz	t8, enter
+	nop
+
+	/*
+	 * Is already in the TLB.  Invalidate.
+	 *
+	 * (Follows tlb.c's tlb_invalidate_one.)
+	 */
+	dsll	t8, PAGE_SHIFT
+	daddu	t8, KSEG2_BASE
+	dmtc0	t8, CP0_TLBENTRYHI
+	dmtc0	zero, CP0_TLBENTRYLO0
+	dmtc0	zero, CP0_TLBENTRYLO1
+	tlbwi
+
+	/*
+	 * Restore the EntryHi to be wired.
+	 */
+	dmtc0	t3, CP0_TLBENTRYHI
+
+enter:	ld	t3, TWE_ENTRYLO0(t2)
 	dmtc0	t3, CP0_TLBENTRYLO0
 	ld	t3, TWE_ENTRYLO1(t2)
 	dmtc0	t3, CP0_TLBENTRYLO1

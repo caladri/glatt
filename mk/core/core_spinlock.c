@@ -23,8 +23,9 @@ spinlock_lock(struct spinlock *lock)
 		return;
 #ifndef	UNIPROCESSOR
 	critical_enter();
-	while (!atomic_cmpset64(&lock->s_owner, CPU_ID_INVALID, mp_whoami())) {
-		if (atomic_load64(&lock->s_owner) == (uint64_t)mp_whoami()) {
+	cpu_id_t self = mp_whoami();
+	while (!atomic_cmpset64(&lock->s_owner, CPU_ID_INVALID, self)) {
+		if (atomic_load64(&lock->s_owner) == (uint64_t)self) {
 			if ((lock->s_flags & SPINLOCK_FLAG_RECURSE) != 0) {
 				atomic_increment64(&lock->s_nest);
 				critical_exit();
@@ -39,6 +40,7 @@ spinlock_lock(struct spinlock *lock)
 		 * to fire while we spin.
 		 */
 		critical_enter();
+		self = mp_whoami();
 	}
 #else
 	critical_enter();
@@ -60,12 +62,13 @@ spinlock_unlock(struct spinlock *lock)
 	if (startup_early)
 		return;
 #ifndef	UNIPROCESSOR
-	if (atomic_load64(&lock->s_owner) == (uint64_t)mp_whoami()) {
+	cpu_id_t self = mp_whoami();
+	if (atomic_load64(&lock->s_owner) == (uint64_t)self) {
 		if (atomic_load64(&lock->s_nest) != 0) {
 			atomic_decrement64(&lock->s_nest);
 			return;
 		} else {
-			if (atomic_cmpset64(&lock->s_owner, mp_whoami(),
+			if (atomic_cmpset64(&lock->s_owner, self,
 					    CPU_ID_INVALID)) {
 				critical_exit();
 				return;

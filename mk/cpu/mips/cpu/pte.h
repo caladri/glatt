@@ -89,6 +89,10 @@ struct pmap {
  * god knows what else.) are unacknowledged by hardware.  They may be
  * written as anything, but otherwise they have as much meaning as
  * other 0 fields.
+ *
+ * Modern hardware uses more room for the PFN.  Update the comment
+ * and code at some point to use more and put the software bits
+ * high enough that they can't be part of a PFN.
  */
 #define	TLBLO_SWBITS_SHIFT	(30)
 #define	TLBLO_PFN_SHIFT		(6 + (PAGE_SHIFT - TLBMASK_SHIFT))

@@ -303,7 +303,11 @@ db_cpu_dump_tlb(void)
 		if (elo0 == 0 && elo1 == 0)
 			continue;
 
-		printf("#%u\t=> %lx pagemask %lx asid %u\n", i, ehi, pmask, (unsigned)ehi & 0xff);
+		printf("#%u\t=> %lx region %lx vpn2 %lx pagemask %lx", i, ehi, ehi & TLBHI_R_MASK, ehi & TLBHI_VPN2_MASK, pmask);
+		if ((elo0 & PG_G) != 0 && (elo1 & PG_G) != 0)
+			printf(" global\n");
+		else
+			printf(" asid %u\n", (unsigned)ehi & 0xff);
 		db_cpu_dump_tlb_lo(0, elo0);
 		db_cpu_dump_tlb_lo(1, elo1);
 	}

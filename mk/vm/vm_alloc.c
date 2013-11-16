@@ -167,3 +167,99 @@ vm_free_range_wire(struct vm *vm, vaddr_t begin, vaddr_t end, vaddr_t kvaddr)
 
 	return (0);
 }
+
+#include <core/console.h>
+int
+vm_wire(struct vm *vm, vaddr_t uvaddr, size_t len, vaddr_t *kvaddrp, size_t *offp)
+{
+	struct vm_page *page;
+	size_t o, pages;
+	vaddr_t kvaddr;
+	vaddr_t vaddr;
+	int error;
+
+	vaddr = PAGE_FLOOR(uvaddr);
+	pages = PAGE_COUNT((uvaddr + len) - vaddr);
+
+	if (vm == &kernel_vm)
+		panic("%s: can't wire from kernel to kernel.", __func__);
+
+#if !defined(VM_ALLOC_NO_DIRECT)
+	if (pages == 1) {
+		error = page_extract(vm, vaddr, &page);
+		if (error != 0)
+			panic("%s: page_extract failed: %m", __func__, error);
+
+		error = page_map_direct(&kernel_vm, page, kvaddrp);
+		if (error != 0)
+			panic("%s: page_map_direct failed: %m", __func__, error);
+
+		*offp = PAGE_OFFSET(uvaddr);
+		return (0);
+	}
+#endif
+
+	error = vm_alloc_address(&kernel_vm, &kvaddr, pages);
+	if (error != 0)
+		panic("%s: vm_alloc_address failed: %m", __func__, error);
+
+	for (o = 0; o < pages; o++) {
+		error = page_extract(vm, vaddr + o * PAGE_SIZE, &page);
+		if (error != 0)
+			panic("%s: page_extract failed: %m", __func__, error);
+
+		error = page_map(&kernel_vm, kvaddr + o * PAGE_SIZE, page);
+		if (error != 0)
+			panic("%s: page_map (kernel_vm) failed: %m", __func__, error);
+	}
+
+	*kvaddrp = kvaddr;
+	*offp = PAGE_OFFSET(uvaddr);
+
+	return (0);
+}
+
+int
+vm_unwire(struct vm *vm, vaddr_t uvaddr, size_t len, vaddr_t kvaddr)
+{
+	struct vm_page *page;
+	size_t o, pages;
+	vaddr_t vaddr;
+	int error;
+
+	vaddr = PAGE_FLOOR(uvaddr);
+	pages = PAGE_COUNT((uvaddr + len) - vaddr);
+
+	if (vm == &kernel_vm)
+		panic("%s: can't unwire from kernel to kernel.", __func__);
+
+#if !defined(VM_ALLOC_NO_DIRECT)
+	if (pages == 1) {
+		error = page_extract(vm, vaddr, &page);
+		if (error != 0)
+			panic("%s: page_extract failed: %m", __func__, error);
+
+		error = page_unmap_direct(&kernel_vm, page, kvaddr);
+		if (error != 0)
+			panic("%s: page_map_direct failed: %m", __func__, error);
+
+		return (0);
+	}
+#endif
+
+	for (o = 0; o < pages; o++) {
+		error = page_extract(&kernel_vm, kvaddr + o * PAGE_SIZE, &page);
+		if (error != 0)
+			panic("%s: page_extract failed: %m", __func__, error);
+
+		error = page_unmap(&kernel_vm, kvaddr + o * PAGE_SIZE, page);
+		if (error != 0)
+			panic("%s: page_unmap failed: %m", __func__, error);
+	}
+
+	error = vm_free_address(&kernel_vm, kvaddr);
+	if (error != 0)
+		panic("%s: failed to free address: %m", __func__, error);
+
+	return (0);
+}

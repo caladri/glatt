@@ -107,7 +107,23 @@ syscall_console_putc(register_t *params)
 static int
 syscall_console_puts(register_t *params)
 {
-	kcputsn((void *)(uintptr_t)params[0], params[1]); /* XXX copyinstr.  */
+	vaddr_t kvaddr, uvaddr;
+	size_t len, o;
+	int error;
+
+	uvaddr = params[0];
+	len = params[1];
+
+	error = vm_wire(current_task()->t_vm, uvaddr, len, &kvaddr, &o);
+	if (error != 0)
+		return (error);
+
+	kcputsn((void *)(uintptr_t)(kvaddr + o), len);
+
+	error = vm_unwire(current_task()->t_vm, uvaddr, len, kvaddr);
+	if (error != 0)
+		panic("%s: couldn't unwire string: %m", __func__, error);
+
 	return (0);
 }
 
@@ -128,10 +144,13 @@ syscall_console_getc(register_t *params)
 static int
 syscall_ipc_port_allocate(register_t *params)
 {
+	ipc_port_flags_t flags;
 	ipc_port_t port;
 	int error;
 
-	error = ipc_port_allocate(&port, (ipc_port_flags_t)params[0]);
+	flags = params[0];
+
+	error = ipc_port_allocate(&port, flags);
 	if (error != 0)
 		return (error);
 
@@ -142,17 +161,29 @@ syscall_ipc_port_allocate(register_t *params)
 static int
 syscall_ipc_port_send(register_t *params)
 {
-	struct ipc_header ipch;
+	const struct ipc_header *ipch;
+	vaddr_t kvaddr, uvaddr;
+	size_t len, o;
+	void *page;
 	int error;
 
-	/*
-	 * XXX
-	 * Would be nice to avoid so many copies of the header.
-	 */
-	memcpy(&ipch, (void *)(uintptr_t)params[0], sizeof ipch); /* XXX copyin.  */
-	error = ipc_port_send(&ipch, (void *)(uintptr_t)params[1]);
+	uvaddr = params[0];
+	len = sizeof *ipch;
+	page = (void *)(uintptr_t)params[1];
+
+	error = vm_wire(current_task()->t_vm, uvaddr, len, &kvaddr, &o);
 	if (error != 0)
 		return (error);
+	ipch = (const struct ipc_header *)(uintptr_t)(kvaddr + o);
+
+	error = ipc_port_send(ipch, page);
+	if (error != 0)
+		return (error);
+
+	error = vm_unwire(current_task()->t_vm, uvaddr, len, kvaddr);
+	if (error != 0)
+		panic("%s: couldn't unwire string: %m", __func__, error);
+
 	return (0);
 }
 
@@ -170,16 +201,32 @@ syscall_ipc_port_wait(register_t *params)
 static int
 syscall_ipc_port_receive(register_t *params)
 {
-	struct ipc_header ipch;
+	struct ipc_header *ipch;
+	vaddr_t kvaddr, uvaddr;
+	ipc_port_t port;
+	size_t len, o;
+	void *page;
 	int error;
-	void *p;
 
-	error = ipc_port_receive((ipc_port_t)params[0], &ipch, &p);
+	port = params[0];
+	uvaddr = params[1];
+	len = sizeof *ipch;
+
+	error = vm_wire(current_task()->t_vm, uvaddr, len, &kvaddr, &o);
+	if (error != 0)
+		return (error);
+	ipch = (struct ipc_header *)(uintptr_t)(kvaddr + o);
+
+	error = ipc_port_receive(port, ipch, &page);
 	if (error != 0)
 		return (error);
 
-	params[0] = (register_t)(intptr_t)p;
-	memcpy((void *)(uintptr_t)params[1], &ipch, sizeof ipch); /* XXX copyout */
+	error = vm_unwire(current_task()->t_vm, uvaddr, len, kvaddr);
+	if (error != 0)
+		panic("%s: couldn't unwire string: %m", __func__, error);
+
+	params[0] = (uintptr_t)page;
+
 	return (0);
 }
 

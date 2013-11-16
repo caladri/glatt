@@ -303,7 +303,7 @@ db_cpu_dump_tlb(void)
 		if (elo0 == 0 && elo1 == 0)
 			continue;
 
-		printf("#%u\t=> %lx region %lx vpn2 %lx pagemask %lx", i, ehi, ehi & TLBHI_R_MASK, ehi & TLBHI_VPN2_MASK, pmask);
+		printf("#%u\t=> %lx region %lx vpn2 %lx pagemask %lx", i, ehi, (ehi & TLBHI_R_MASK) >> TLBHI_R_SHIFT, ehi & TLBHI_VPN2_MASK, pmask);
 		if ((elo0 & PG_G) != 0 && (elo1 & PG_G) != 0)
 			printf(" global\n");
 		else

@@ -411,35 +411,37 @@ STARTUP_ITEM(pmap, STARTUP_PMAP, STARTUP_FIRST, pmap_startup, NULL);
 
 #if defined(DB)
 static void
-db_pmap_dump_pte(pt_entry_t pte)
+db_pmap_dump_pte(vaddr_t base, pt_entry_t pte)
 {
 	if (pte == 0)
 		return;
-	printf("\t\t\t%jx\n", (uintmax_t)pte);
+	printf("\t\t\t%p => %jx\n", (void *)base, (uintmax_t)pte);
 }
 
 static void
-db_pmap_dump_level1(struct pmap_lev1 *pml1, unsigned level)
+db_pmap_dump_level1(struct pmap_lev1 *pml1, vaddr_t base, unsigned level)
 {
 	unsigned i;
 
 	if (level == 1) {
-		printf("\t\t%p\n", pml1);
+		printf("\t\t%p => %p\n", (void *)base, pml1);
 		return;
 	}
 
 	printf("\t\tpage table entries:\n");
-	for (i = 0; i < NPTEL1; i++)
-		db_pmap_dump_pte(pml1->pml1_entries[i]);
+	for (i = 0; i < NPTEL1; i++) {
+		db_pmap_dump_pte(base, pml1->pml1_entries[i]);
+		base += PAGE_SIZE;
+	}
 }
 
 static void
-db_pmap_dump_level0(struct pmap_lev0 *pml0, unsigned level)
+db_pmap_dump_level0(struct pmap_lev0 *pml0, vaddr_t base, unsigned level)
 {
 	unsigned i;
 
 	if (level == 0) {
-		printf("\t%p\n", pml0);
+		printf("\t%p => %p\n", (void *)base, pml0);
 		return;
 	}
 
@@ -447,9 +449,9 @@ db_pmap_dump_level0(struct pmap_lev0 *pml0, unsigned level)
 	for (i = 0; i < NL1PL0; i++) {
 		struct pmap_lev1 *pml1 = pml0->pml0_level1[i];
 
-		if (pml1 == NULL)
-			continue;
-		db_pmap_dump_level1(pml1, level);
+		if (pml1 != NULL)
+			db_pmap_dump_level1(pml1, base, level);
+		base += PAGE_SIZE * NPTEL1;
 	}
 }
 
@@ -457,6 +459,7 @@ static void
 db_pmap_dump_pmap(struct vm *vm, unsigned level)
 {
 	struct pmap *pm = vm->vm_pmap;
+	vaddr_t base;
 	unsigned i;
 
 	printf("VM %p PMAP %p\n", vm, pm);
@@ -466,13 +469,13 @@ db_pmap_dump_pmap(struct vm *vm, unsigned level)
 	printf("\tasid %u begin %p end %p\n", pm->pm_asid,
 		 (void *)pm->pm_base, (void *)pm->pm_end);
 
+	base = pm->pm_base;
 	printf("level 0 pointers:\n");
 	for (i = 0; i < NL0PMAP; i++) {
 		struct pmap_lev0 *pml0 = pm->pm_level0[i];
-
-		if (pml0 == NULL)
-			continue;
-		db_pmap_dump_level0(pml0, level);
+		if (pml0 != NULL)
+			db_pmap_dump_level0(pml0, base, level);
+		base += PAGE_SIZE * NPTEL1 * NL1PL0;
 	}
 }
 

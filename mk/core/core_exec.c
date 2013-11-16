@@ -73,7 +73,7 @@ exec_elf64_load(struct vm *vm, void **entryp, fs_file_read_op_t *readf, fs_conte
 	vaddr_t begin, end;
 	vaddr_t low, high;
 	vaddr_t kvaddr;
-	size_t len;
+	size_t len, o;
 	unsigned i;
 	int error;
 
@@ -178,11 +178,17 @@ exec_elf64_load(struct vm *vm, void **entryp, fs_file_read_op_t *readf, fs_conte
 	/*
 	 * Wire program data address range into the kernel for program load.
 	 */
-	error = vm_alloc_range_wire(vm, low, high, &kvaddr);
+	error = vm_alloc_range_wire(vm, low, high, &kvaddr, &o);
 	if (error != 0) {
 		printf("%s: could not allocate requested program address range: %m\n", __func__, error);
 		return (error);
 	}
+	ASSERT(o == 0, ("cannot have offset into what should be an aligned page."));
+
+	/*
+	 * Zero everything.
+	 */
+	memset((void *)kvaddr, 0, high - low);
 
 	/*
 	 * Load program headers.
@@ -207,7 +213,7 @@ exec_elf64_load(struct vm *vm, void **entryp, fs_file_read_op_t *readf, fs_conte
 	/*
 	 * Unwire program data.
 	 */
-	error = vm_free_range_wire(vm, low, high, kvaddr);
+	error = vm_unwire(vm, low, high - low, kvaddr);
 	if (error != 0)
 		panic("%s: could not unwire progam data: %m", __func__, error);
 

@@ -6,4 +6,4 @@ KERNEL_TEXT=	0xa800000000100000
 .endif
 
 # Set the machine type for GXemul.
-KERNEL_MACHINE=	oldtestmips
+KERNEL_MACHINE=	testmips

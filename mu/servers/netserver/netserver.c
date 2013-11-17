@@ -36,6 +36,7 @@ struct if_context {
 	struct ipc_dispatch *ifc_dispatch;
 	const struct ipc_dispatch_handler *ifc_get_info_handler;
 	const struct ipc_dispatch_handler *ifc_receive_handler;
+	char ifc_ifname[128];
 	ipc_port_t ifc_ifport;
 
 	uint8_t ifc_addr[ETHERNET_ADDRESS_SIZE];
@@ -62,11 +63,15 @@ main(int argc, char *argv[])
 	if (argc != 2)
 		usage();
 
+	strlcpy(ifc.ifc_ifname, argv[1], sizeof ifc.ifc_ifname);
+
 	/*
 	 * Wait for the network interface.
 	 */
-	while ((ifc.ifc_ifport = ns_lookup(argv[1])) == IPC_PORT_UNKNOWN)
+	while ((ifc.ifc_ifport = ns_lookup(ifc.ifc_ifname)) == IPC_PORT_UNKNOWN)
 		continue;
+
+	printf("%s: ipc-port 0x%x\n", ifc.ifc_ifname, ifc.ifc_ifport);
 
 	ifc.ifc_dispatch = ipc_dispatch_allocate(IPC_PORT_UNKNOWN,
 						 IPC_PORT_FLAG_DEFAULT);
@@ -223,19 +228,26 @@ if_get_info_callback(const struct ipc_dispatch *id,
 	addr = page;
 	addr += sizeof rhdr;
 
+	switch (rhdr.type) {
+	case NETWORK_INTERFACE_ETHERNET:
+		printf(" ether");
+		for (i = 0; i < rhdr.addrlen; i++)
+			printf("%c%x%x", i == 0 ? ' ' : ':', (addr[i] & 0xf0) >> 4,
+			       addr[i] & 0x0f);
+		printf("\n");
+		break;
+	default:
+		printf(" unknown address:\n");
+		hexdump(addr, rhdr.addrlen);
+		break;
+	}
+
 	if (rhdr.addrlen != sizeof ifc->ifc_addr) {
 		printf("%s: preposterous interface address length.\n", __func__);
 		return;
 	}
 	memcpy(ifc->ifc_addr, addr, rhdr.addrlen);
 
-	printf("Interface address:");
-	for (i = 0; i < rhdr.addrlen; i++)
-		printf("%c%x%x", i == 0 ? ' ' : ':', (addr[i] & 0xf0) >> 4,
-		       addr[i] & 0x0f);
-	printf("\n");
-
-	printf("Sending ARP request.\n");
 	arp_request(ifc, 0x0a000001, 0x0a0000fe);
 }
 

@@ -11,13 +11,16 @@
 #endif
 #include <vm/vm.h>
 #include <vm/vm_page.h>
-#include <vm/vm_pageq.h>
 
 struct vm_page_tree_page;
 
 #ifdef DB
 DB_COMMAND_TREE(page, vm, vm_page);
 #endif
+
+struct vm_page_queue {
+	TAILQ_HEAD(, struct vm_page) pq_queue;
+};
 
 struct vm_page_tree {
 	BTREE_NODE(struct vm_page_tree_page) pt_tree;

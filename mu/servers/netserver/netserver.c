@@ -99,10 +99,52 @@ main(int argc, char *argv[])
 static void
 arp_input(struct if_context *ifc, const void *data, size_t datalen)
 {
+	uint8_t mac[ETHERNET_ADDRESS_SIZE];
+	struct arp_header ah;
+	const uint8_t *p;
+	uint32_t ip;
+	unsigned i;
+
 	(void)ifc;
 
-	printf("Received ARP packet:\n");
-	hexdump(data, datalen);
+	p = data;
+	p += sizeof (struct ethernet_header);
+	datalen -= sizeof (struct ethernet_header);
+
+	if (datalen < sizeof ah)
+		return;
+	memcpy(&ah, p, sizeof ah);
+	p += sizeof ah;
+	datalen -= sizeof ah;
+
+	if (ah.ah_hrd[0] != 0x00 || ah.ah_hrd[1] != 0x01)
+		return;
+	if (ah.ah_pro[0] != 0x08 || ah.ah_pro[1] != 0x00)
+		return;
+	if (ah.ah_hln != sizeof mac)
+		return;
+	if (ah.ah_pln != sizeof ip)
+		return;
+	if (ah.ah_op[0] != 0x00 || ah.ah_op[1] != 0x02)
+		return;
+
+	if (datalen < sizeof mac + sizeof ip)
+		return;
+	memcpy(mac, p, sizeof mac);
+	p += sizeof mac;
+	datalen -= sizeof mac;
+
+	memcpy(&ip, p, sizeof ip);
+	p += sizeof ip;
+	datalen -= sizeof ip;
+
+	/* XXX Just ignore the destination stuff here.  */
+
+	printf("%x is-at", ip);
+	for (i = 0; i < sizeof mac; i++)
+		printf("%c%x%x", i == 0 ? ' ' : ':', (mac[i] & 0xf0) >> 4,
+		       mac[i] & 0x0f);
+	printf("\n");
 }
 
 static void

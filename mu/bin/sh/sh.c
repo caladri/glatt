@@ -8,6 +8,7 @@
 #include <vm/vm_page.h>
 
 #include <libmu/common.h>
+#include <libmu/process.h>
 
 static const char *paths[] = {
 	"/bin", "/sbin", NULL
@@ -128,6 +129,9 @@ process_line(ipc_port_t fs, char *line)
 	error = splitargs(line, &argc, argv, 128, " ");
 	if (error != 0)
 		fatal("splitargs failed", error);
+
+	if (strcmp(argv[0], "exit") == 0)
+		exit();
 
 	path = argv[0];
 	if (path[0] == '/') {

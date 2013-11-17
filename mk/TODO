@@ -1,3 +1,7 @@
+o) Need to add back a task hierarchy and provide an in-kernel guarantee that a
+   parent will find out when a child terminates.
+o) Also need to allow port groups, so we can effectively wait on multiple ports.
+
 o) Is it really desirable to allow multiple receive rights?
 o) Bound IPC ports, i.e. ipc_connect(my_port, ns) and then my_port can send to
    ns, and ns can reply, but no other messages may come over it.  Either that, or

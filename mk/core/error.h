@@ -28,7 +28,9 @@ static const char *error_strings[] __used = {
 	"Facility not available.",
 #define	ERROR_FULL		(0x000c)
 	"No space available.",
-#define	ERROR_COUNT		(0x000d)
+#define	ERROR_WRONG_KIND	(0x000d)
+	"Wrong kind of component.",
+#define	ERROR_COUNT		(0x000e)
 };
 
 #endif /* !_CORE_ERROR_H_ */

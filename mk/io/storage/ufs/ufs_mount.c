@@ -139,9 +139,15 @@ ufs_op_file_open(fs_context_t fsc, const char *name, fs_file_context_t *fsfcp)
 	}
 
 	/*
-	 * XXX
 	 * Check file type.
 	 */
+	if ((fc->f_in.in_mode & UFS_INODE_MODE_FTYPE_MASK) != UFS_INODE_MODE_FTYPE_REGULAR) {
+		error = vm_free(&kernel_vm, sizeof *fc, vaddr);
+		if (error != 0)
+			panic("%s: vm_free failed: %m", __func__, error);
+
+		return (ERROR_WRONG_KIND);
+	}
 
 	*fsfcp = fc;
 
@@ -225,9 +231,16 @@ ufs_op_directory_open(fs_context_t fsc, const char *name, fs_directory_context_t
 	}
 
 	/*
-	 * XXX
 	 * Check file type.
 	 */
+	if ((dc->d_in.in_mode & UFS_INODE_MODE_FTYPE_MASK) != UFS_INODE_MODE_FTYPE_DIRECTORY) {
+		error = vm_free(&kernel_vm, sizeof *dc, vaddr);
+		if (error != 0)
+			panic("%s: vm_free failed: %m", __func__, error);
+
+		return (ERROR_WRONG_KIND);
+	}
+
 
 	*fsdcp = dc;
 

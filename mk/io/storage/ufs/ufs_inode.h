@@ -8,6 +8,10 @@ struct ufs_superblock;
 #define	UFS_INODE_NDIRECT	(12)
 #define	UFS_INODE_NINDIRECT	(3)
 
+#define	UFS_INODE_MODE_FTYPE_MASK	(0xf000)
+#define	UFS_INODE_MODE_FTYPE_DIRECTORY	(0x4000)
+#define	UFS_INODE_MODE_FTYPE_REGULAR	(0x8000)
+
 struct ufs2_inode {
 	uint16_t in_mode;
 	int16_t in_unused1[7];

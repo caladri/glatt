@@ -3,4 +3,7 @@
 
 #define	UFS_MAX_BSIZE	(65536)
 
+#define	UFS_FTYPE_DIRECTORY	(0x04)
+#define	UFS_FTYPE_REGULAR	(0x08)
+
 #endif /* !_IO_STORAGE_UFS_UFS_PARAM_H_ */

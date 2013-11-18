@@ -141,7 +141,7 @@ ufs_op_file_open(fs_context_t fsc, const char *name, fs_file_context_t *fsfcp)
 	/*
 	 * Check file type.
 	 */
-	if ((fc->f_in.in_mode & UFS_INODE_MODE_FTYPE_MASK) != UFS_INODE_MODE_FTYPE_REGULAR) {
+	if (UFS_INODE_FTYPE(&fc->f_in) != UFS_FTYPE_REGULAR) {
 		error = vm_free(&kernel_vm, sizeof *fc, vaddr);
 		if (error != 0)
 			panic("%s: vm_free failed: %m", __func__, error);
@@ -233,7 +233,7 @@ ufs_op_directory_open(fs_context_t fsc, const char *name, fs_directory_context_t
 	/*
 	 * Check file type.
 	 */
-	if ((dc->d_in.in_mode & UFS_INODE_MODE_FTYPE_MASK) != UFS_INODE_MODE_FTYPE_DIRECTORY) {
+	if (UFS_INODE_FTYPE(&dc->d_in) != UFS_FTYPE_DIRECTORY) {
 		error = vm_free(&kernel_vm, sizeof *dc, vaddr);
 		if (error != 0)
 			panic("%s: vm_free failed: %m", __func__, error);
@@ -348,9 +348,12 @@ ufs_lookup(struct ufs_mount *um, const char *path, uint32_t *inodep)
 
 			p += clen;
 
-			/* XXX Check if this is a directory.  */
-			while (*p == '/')
+			while (*p == '/') {
+				/* Check if this is a directory.  */
+				if (dc->d_entry.de_type != UFS_FTYPE_DIRECTORY)
+					return (ERROR_WRONG_KIND);
 				p++;
+			}
 
 			/* Now look for the next component under inode.  */
 			if (*p != '\0')

@@ -385,7 +385,7 @@ ipc_port_right_send(ipc_port_t dst, ipc_port_t src, ipc_port_right_t right)
 }
 
 int
-ipc_port_send(struct ipc_header *ipch, void *vpage)
+ipc_port_send(const struct ipc_header *ipch, void *vpage)
 {
 	struct vm_page *page;
 	struct task *task;
@@ -432,7 +432,7 @@ ipc_port_send(struct ipc_header *ipch, void *vpage)
  * NB: Don't check recsize or reclen.
  */
 int
-ipc_port_send_data(struct ipc_header *ipch, const void *p, size_t len)
+ipc_port_send_data(const struct ipc_header *ipch, const void *p, size_t len)
 {
 	struct vm_page *page;
 	struct task *task;
@@ -487,7 +487,7 @@ ipc_port_send_data(struct ipc_header *ipch, const void *p, size_t len)
 }
 
 int
-ipc_port_send_page(struct ipc_header *ipch, struct vm_page *page)
+ipc_port_send_page(const struct ipc_header *ipch, struct vm_page *page)
 {
 	struct ipc_message *ipcmsg;
 	struct ipc_port *ipcp;

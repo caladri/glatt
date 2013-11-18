@@ -33,10 +33,10 @@ int ipc_port_right_drop(ipc_port_t, ipc_port_right_t) __check_result;
 int ipc_port_right_grant(struct task *, ipc_port_t, ipc_port_right_t) __non_null(1) __check_result;
 #endif
 int ipc_port_right_send(ipc_port_t, ipc_port_t, ipc_port_right_t) __check_result;
-int ipc_port_send(struct ipc_header *, void *) __non_null(1) __check_result;
-int ipc_port_send_data(struct ipc_header *, const void *, size_t) __non_null(1) __check_result;
+int ipc_port_send(const struct ipc_header *, void *) __non_null(1) __check_result;
+int ipc_port_send_data(const struct ipc_header *, const void *, size_t) __non_null(1) __check_result;
 #ifdef MK
-int ipc_port_send_page(struct ipc_header *, struct vm_page *) __non_null(1) __check_result;
+int ipc_port_send_page(const struct ipc_header *, struct vm_page *) __non_null(1) __check_result;
 #endif
 int ipc_port_wait(ipc_port_t) __check_result;
 

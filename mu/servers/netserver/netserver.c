@@ -63,6 +63,7 @@ static void if_receive_callback(const struct ipc_dispatch *,
 				const struct ipc_header *, void *);
 static void if_input(struct if_context *, const void *, size_t);
 static void if_transmit(struct if_context *, const void *, size_t);
+static void format_ip(char *, size_t, uint32_t);
 static int parse_ip(const char *, uint32_t *);
 static void usage(void);
 
@@ -135,7 +136,7 @@ arp_input(struct if_context *ifc, const void *data, size_t datalen)
 	struct arp_header ah;
 	struct arp_entry *ae;
 	const uint8_t *p;
-	uint32_t ip;
+	char ip[16];
 	unsigned i;
 
 	(void)ifc;
@@ -156,7 +157,7 @@ arp_input(struct if_context *ifc, const void *data, size_t datalen)
 		return;
 	if (ah.ah_hln != sizeof mac)
 		return;
-	if (ah.ah_pln != sizeof ip)
+	if (ah.ah_pln != sizeof ae->ae_ip)
 		return;
 	if (ah.ah_op[0] != 0x00 || ah.ah_op[1] != 0x02)
 		return;
@@ -176,7 +177,8 @@ arp_input(struct if_context *ifc, const void *data, size_t datalen)
 	datalen -= sizeof ae->ae_ip;
 
 	STAILQ_INSERT_TAIL(&ifc->ifc_arp, ae, ae_link);
-	printf("%u.%u.%u.%u is-at", (ae->ae_ip >> 24) & 0xff, (ae->ae_ip >> 16) & 0xff, (ae->ae_ip >> 8) & 0xff, ae->ae_ip & 0xff);
+	format_ip(ip, sizeof ip, ae->ae_ip);
+	printf("%s is-at", ip);
 	for (i = 0; i < sizeof ae->ae_ether; i++)
 		printf("%c%x%x", i == 0 ? ' ' : ':', (ae->ae_ether[i] & 0xf0) >> 4,
 		       ae->ae_ether[i] & 0x0f);
@@ -241,6 +243,7 @@ if_get_info_callback(const struct ipc_dispatch *id,
 		     const struct ipc_header *ipch, void *page)
 {
 	struct network_interface_get_info_response_header rhdr;
+	char ip[16], netmask[16], gw[16];
 	struct if_context *ifc;
 	uint8_t *addr;
 	unsigned i;
@@ -278,6 +281,11 @@ if_get_info_callback(const struct ipc_dispatch *id,
 		return;
 	}
 	memcpy(ifc->ifc_addr, addr, rhdr.addrlen);
+
+	format_ip(ip, sizeof ip, ifc->ifc_ip);
+	format_ip(netmask, sizeof netmask, ifc->ifc_netmask);
+	format_ip(gw, sizeof gw, ifc->ifc_gw);
+	printf("\tinet %s netmask %s gateway %s\n", ip, netmask, gw);
 
 	arp_request(ifc, ifc->ifc_gw);
 }
@@ -359,6 +367,12 @@ if_transmit(struct if_context *ifc, const void *data, size_t datalen)
 	error = ipc_request(&req, NULL);
 	if (error != 0)
 		fatal("ipc_request failed", error);
+}
+
+static void
+format_ip(char *buf, size_t buflen, uint32_t ip)
+{
+	snprintf(buf, buflen, "%u.%u.%u.%u", (ip >> 24) & 0xff, (ip >> 16) & 0xff, (ip >> 8) & 0xff, ip & 0xff);
 }
 
 static int

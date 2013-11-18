@@ -76,6 +76,10 @@ main(int argc, char *argv[])
 	ifc.ifc_dispatch = ipc_dispatch_allocate(IPC_PORT_UNKNOWN,
 						 IPC_PORT_FLAG_DEFAULT);
 
+	error = ns_register("netserver", ifc.ifc_dispatch->id_port);
+	if (error != 0)
+		fatal("could not register netserver service", error);
+
 	ifc.ifc_get_info_handler = ipc_dispatch_register(ifc.ifc_dispatch,
 							 if_get_info_callback,
 							 &ifc);
@@ -145,7 +149,7 @@ arp_input(struct if_context *ifc, const void *data, size_t datalen)
 
 	/* XXX Just ignore the destination stuff here.  */
 
-	printf("%x is-at", ip);
+	printf("%u.%u.%u.%u is-at", (ip >> 24) & 0xff, (ip >> 16) & 0xff, (ip >> 8) & 0xff, ip & 0xff);
 	for (i = 0; i < sizeof mac; i++)
 		printf("%c%x%x", i == 0 ? ' ' : ':', (mac[i] & 0xf0) >> 4,
 		       mac[i] & 0x0f);

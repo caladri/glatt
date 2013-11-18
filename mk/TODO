@@ -1,3 +1,11 @@
+Need to decide between the loose coupling that Unix systems with Mach microkernels
+tend to use and a tighter coupling.  The former means so much duplication, which
+really sucks.  The microkernel needs some fs support but so does the Unix server.
+The microkernel needs to be able to load programs, but so does the Unix server
+or emulator or whatever.  We've been going so loosely-coupled, but then it's so
+impractical to do just about everything.  Going even more loosely-coupled would be
+an option.
+
 o) Need to add back a task hierarchy and provide an in-kernel guarantee that a
    parent will find out when a child terminates.
 o) Also need to allow port groups, so we can effectively wait on multiple ports.

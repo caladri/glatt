@@ -21,7 +21,8 @@ struct syscall_vector {
 	syscall_handler_t *sv_handler;
 };
 
-static syscall_handler_t syscall_exit;
+static syscall_handler_t syscall_thread_exit,
+			 syscall_thread_create;
 
 static syscall_handler_t syscall_console_putc,
 			 syscall_console_puts,
@@ -39,7 +40,8 @@ static syscall_handler_t syscall_vm_page_get,
 			 syscall_vm_free;
 
 static struct syscall_vector syscall_vector[SYSCALL_LAST + 1] = {
-	[SYSCALL_EXIT] =		{ 0, 0, syscall_exit },
+	[SYSCALL_THREAD_EXIT] =		{ 0, 0, syscall_thread_exit },
+	[SYSCALL_THREAD_CREATE] =	{ 1, 0, syscall_thread_create },
 
 	[SYSCALL_CONSOLE_PUTC] =	{ 1, 0, syscall_console_putc },
 	[SYSCALL_CONSOLE_PUTS] =	{ 2, 0, syscall_console_puts },
@@ -90,11 +92,36 @@ syscall(unsigned number, register_t *cnt, register_t *params)
 }
 
 static int
-syscall_exit(register_t *params)
+syscall_thread_exit(register_t *params)
 {
 	(void)params;
 	thread_exit();
 	/* NOTREACHED */
+}
+
+static int
+syscall_thread_create(register_t *params)
+{
+	struct thread *td;
+	struct task *task;
+	void *entry;
+	int error;
+
+	entry = (void *)(vaddr_t)params[0];
+
+	task = current_task();
+	error = thread_create(&td, task, "XXX", THREAD_DEFAULT);
+	if (error != 0)
+		return (error);
+
+	/*
+	 * Set up userland trampoline.
+	 */
+	thread_set_upcall(td, cpu_thread_user_trampoline, entry);
+
+	scheduler_thread_runnable(td);
+
+	return (0);
 }
 
 static int

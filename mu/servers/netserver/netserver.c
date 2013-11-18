@@ -1,6 +1,7 @@
 #include <core/types.h>
 #include <core/error.h>
 #include <core/printf.h>
+#include <core/queue.h>
 #include <core/string.h>
 #include <io/network/interface.h>
 #include <ipc/ipc.h>
@@ -32,6 +33,12 @@ struct arp_header {
 	/* Target protocol address.  */
 };
 
+struct arp_entry {
+	uint32_t ae_ip;
+	uint8_t ae_ether[ETHERNET_ADDRESS_SIZE];
+	STAILQ_ENTRY(struct arp_entry) ae_link;
+};
+
 struct if_context {
 	struct ipc_dispatch *ifc_dispatch;
 	const struct ipc_dispatch_handler *ifc_get_info_handler;
@@ -40,10 +47,14 @@ struct if_context {
 	ipc_port_t ifc_ifport;
 
 	uint8_t ifc_addr[ETHERNET_ADDRESS_SIZE];
+	uint32_t ifc_ip;
+	uint32_t ifc_netmask;
+	uint32_t ifc_gw;
+	STAILQ_HEAD(, struct arp_entry) ifc_arp;
 };
 
 static void arp_input(struct if_context *, const void *, size_t);
-static void arp_request(struct if_context *, uint32_t, uint32_t);
+static void arp_request(struct if_context *, uint32_t);
 static void if_get_info_callback(const struct ipc_dispatch *,
 				 const struct ipc_dispatch_handler *,
 				 const struct ipc_header *, void *);
@@ -52,6 +63,7 @@ static void if_receive_callback(const struct ipc_dispatch *,
 				const struct ipc_header *, void *);
 static void if_input(struct if_context *, const void *, size_t);
 static void if_transmit(struct if_context *, const void *, size_t);
+static int parse_ip(const char *, uint32_t *);
 static void usage(void);
 
 void
@@ -60,16 +72,27 @@ main(int argc, char *argv[])
 	struct if_context ifc;
 	int error;
 
-	if (argc != 2)
+	if (argc != 5)
 		usage();
 
 	strlcpy(ifc.ifc_ifname, argv[1], sizeof ifc.ifc_ifname);
+	error = parse_ip(argv[2], &ifc.ifc_ip);
+	if (error != 0)
+		fatal("could not parse ip", error);
+	error = parse_ip(argv[3], &ifc.ifc_netmask);
+	if (error != 0)
+		fatal("could not parse netmask", error);
+	error = parse_ip(argv[4], &ifc.ifc_gw);
+	if (error != 0)
+		fatal("could not parse gw", error);
 
 	/*
 	 * Wait for the network interface.
 	 */
 	while ((ifc.ifc_ifport = ns_lookup(ifc.ifc_ifname)) == IPC_PORT_UNKNOWN)
 		continue;
+
+	STAILQ_INIT(&ifc.ifc_arp);
 
 	printf("%s: ipc-port 0x%x\n", ifc.ifc_ifname, ifc.ifc_ifport);
 
@@ -110,6 +133,7 @@ arp_input(struct if_context *ifc, const void *data, size_t datalen)
 {
 	uint8_t mac[ETHERNET_ADDRESS_SIZE];
 	struct arp_header ah;
+	struct arp_entry *ae;
 	const uint8_t *p;
 	uint32_t ip;
 	unsigned i;
@@ -137,27 +161,30 @@ arp_input(struct if_context *ifc, const void *data, size_t datalen)
 	if (ah.ah_op[0] != 0x00 || ah.ah_op[1] != 0x02)
 		return;
 
-	if (datalen < sizeof mac + sizeof ip)
-		return;
-	memcpy(mac, p, sizeof mac);
-	p += sizeof mac;
-	datalen -= sizeof mac;
-
-	memcpy(&ip, p, sizeof ip);
-	p += sizeof ip;
-	datalen -= sizeof ip;
-
 	/* XXX Just ignore the destination stuff here.  */
+	if (datalen < sizeof ae->ae_ether + sizeof ae->ae_ip)
+		return;
 
-	printf("%u.%u.%u.%u is-at", (ip >> 24) & 0xff, (ip >> 16) & 0xff, (ip >> 8) & 0xff, ip & 0xff);
-	for (i = 0; i < sizeof mac; i++)
-		printf("%c%x%x", i == 0 ? ' ' : ':', (mac[i] & 0xf0) >> 4,
-		       mac[i] & 0x0f);
+	ae = malloc(sizeof *ae);
+
+	memcpy(ae->ae_ether, p, sizeof ae->ae_ether);
+	p += sizeof ae->ae_ether;
+	datalen -= sizeof ae->ae_ether;
+
+	memcpy(&ae->ae_ip, p, sizeof ae->ae_ip);
+	p += sizeof ae->ae_ip;
+	datalen -= sizeof ae->ae_ip;
+
+	STAILQ_INSERT_TAIL(&ifc->ifc_arp, ae, ae_link);
+	printf("%u.%u.%u.%u is-at", (ae->ae_ip >> 24) & 0xff, (ae->ae_ip >> 16) & 0xff, (ae->ae_ip >> 8) & 0xff, ae->ae_ip & 0xff);
+	for (i = 0; i < sizeof ae->ae_ether; i++)
+		printf("%c%x%x", i == 0 ? ' ' : ':', (ae->ae_ether[i] & 0xf0) >> 4,
+		       ae->ae_ether[i] & 0x0f);
 	printf("\n");
 }
 
 static void
-arp_request(struct if_context *ifc, uint32_t ip_src, uint32_t ip_dst)
+arp_request(struct if_context *ifc, uint32_t ip_dst)
 {
 	struct ethernet_header eh;
 	struct arp_header ah;
@@ -166,7 +193,7 @@ arp_request(struct if_context *ifc, uint32_t ip_src, uint32_t ip_dst)
 	uint8_t *p;
 
 	pktlen = sizeof eh + sizeof ah + (2 * sizeof eh.eh_shost) +
-		(2 * sizeof ip_src);
+		(2 * sizeof ifc->ifc_ip);
 	pkt = malloc(pktlen);
 	if (pkt == NULL)
 		fatal("could not allocate memory for packet", ERROR_UNEXPECTED);
@@ -185,7 +212,7 @@ arp_request(struct if_context *ifc, uint32_t ip_src, uint32_t ip_dst)
 	ah.ah_pro[0] = 0x08; /* IP's Ethernet protocol type is 0x0800.  */
 	ah.ah_pro[1] = 0x00;
 	ah.ah_hln = sizeof eh.eh_shost;
-	ah.ah_pln = sizeof ip_src;
+	ah.ah_pln = sizeof ifc->ifc_ip;
 	ah.ah_op[0] = 0; /* REQUEST is ARP operation 1.  */
 	ah.ah_op[1] = 1;
 
@@ -195,8 +222,8 @@ arp_request(struct if_context *ifc, uint32_t ip_src, uint32_t ip_dst)
 	memcpy(p, eh.eh_shost, sizeof eh.eh_shost);
 	p += sizeof eh.eh_shost;
 
-	memcpy(p, &ip_src, sizeof ip_src);
-	p += sizeof ip_src;
+	memcpy(p, &ifc->ifc_ip, sizeof ifc->ifc_ip);
+	p += sizeof ifc->ifc_ip;
 
 	memcpy(p, eh.eh_dhost, sizeof eh.eh_dhost);
 	p += sizeof eh.eh_dhost;
@@ -234,14 +261,14 @@ if_get_info_callback(const struct ipc_dispatch *id,
 
 	switch (rhdr.type) {
 	case NETWORK_INTERFACE_ETHERNET:
-		printf(" ether");
+		printf("\tether");
 		for (i = 0; i < rhdr.addrlen; i++)
 			printf("%c%x%x", i == 0 ? ' ' : ':', (addr[i] & 0xf0) >> 4,
 			       addr[i] & 0x0f);
 		printf("\n");
 		break;
 	default:
-		printf(" unknown address:\n");
+		printf("\tunknown address:\n");
 		hexdump(addr, rhdr.addrlen);
 		break;
 	}
@@ -252,7 +279,7 @@ if_get_info_callback(const struct ipc_dispatch *id,
 	}
 	memcpy(ifc->ifc_addr, addr, rhdr.addrlen);
 
-	arp_request(ifc, 0x0a000001, 0x0a0000fe);
+	arp_request(ifc, ifc->ifc_gw);
 }
 
 static void
@@ -334,9 +361,40 @@ if_transmit(struct if_context *ifc, const void *data, size_t datalen)
 		fatal("ipc_request failed", error);
 }
 
+static int
+parse_ip(const char *s, uint32_t *ip)
+{
+	unsigned octet;
+
+	for (octet = 4; octet != 0; octet--) {
+		uint8_t v;
+
+		v = 0;
+		while (*s != '.' && *s != '\0') {
+			uint8_t d;
+			if (*s < '0' || *s > '9')
+				return (ERROR_INVALID);
+			d = *s - '0';
+			if ((256 - (v * 10)) <= d)
+				return (ERROR_INVALID);
+			v = (v * 10) + d;
+			s++;
+		}
+		*ip &= ~(0xff << ((octet - 1) * 8));
+		if (v != 0)
+			*ip |= v << ((octet - 1) * 8);
+		if (*s == '\0')
+			break;
+		s++;
+	}
+	if (*s != '\0')
+		return (ERROR_INVALID);
+	return (0);
+}
+
 static void
 usage(void)
 {
-	printf("usage: netserver interface\n");
+	printf("usage: netserver interface ip netmask gw\n");
 	exit();
 }

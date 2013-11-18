@@ -4,7 +4,7 @@ echo MOTD:
 /bin/cat /etc/motd
 
 echo Starting netserver.
-/servers/netserver tmether0
+/servers/netserver tmether0 10.0.0.1 255.0.0.0 10.0.0.254
 
 echo Launching single-user shell.
 /bin/sh

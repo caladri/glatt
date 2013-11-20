@@ -11,6 +11,7 @@
 #include <ipc/port.h>
 #include <vm/vm.h>
 #include <vm/vm_alloc.h>
+#include <vm/vm_index.h>
 #include <vm/vm_page.h>
 
 typedef	int (syscall_handler_t)(register_t *);
@@ -37,7 +38,8 @@ static syscall_handler_t syscall_ipc_port_allocate,
 static syscall_handler_t syscall_vm_page_get,
 			 syscall_vm_page_free,
 			 syscall_vm_alloc,
-			 syscall_vm_free;
+			 syscall_vm_free,
+			 syscall_vm_alloc_range;
 
 static struct syscall_vector syscall_vector[SYSCALL_LAST + 1] = {
 	[SYSCALL_THREAD_EXIT] =		{ 0, 0, syscall_thread_exit },
@@ -57,6 +59,7 @@ static struct syscall_vector syscall_vector[SYSCALL_LAST + 1] = {
 	[SYSCALL_VM_PAGE_FREE] =	{ 1, 0, syscall_vm_page_free },
 	[SYSCALL_VM_ALLOC] =		{ 1, 1, syscall_vm_alloc },
 	[SYSCALL_VM_FREE] =		{ 2, 0, syscall_vm_free },
+	[SYSCALL_VM_ALLOC_RANGE] =	{ 2, 0, syscall_vm_alloc_range },
 };
 
 int
@@ -327,6 +330,43 @@ syscall_vm_free(register_t *params)
 	error = vm_free(td->td_task->t_vm, (size_t)params[1], (vaddr_t)params[0]);
 	if (error != 0)
 		return (error);
+
+	return (0);
+}
+
+static int
+syscall_vm_alloc_range(register_t *params)
+{
+	struct vm *vm;
+	size_t pages, o;
+	vaddr_t begin, end;
+	int error;
+
+	begin = params[0];
+	end = params[1];
+	pages = PAGE_COUNT(end - begin);
+
+	if (PAGE_OFFSET(begin) != 0 || PAGE_OFFSET(end) != 0 || end <= begin)
+		return (ERROR_INVALID);
+
+	vm = current_task()->t_vm;
+
+	error = vm_alloc_range(vm, begin, end);
+	if (error != 0)
+		return (error);
+
+	if (vm == &kernel_vm)
+		panic("%s: can't wire from kernel to kernel.", __func__);
+
+	error = vm_alloc_range(vm, begin, end);
+	if (error != 0)
+		return (error);
+
+	for (o = 0; o < pages; o++) {
+		error = page_alloc_map(vm, PAGE_FLAG_DEFAULT, begin + o * PAGE_SIZE);
+		if (error != 0) /* XXX Free and unmap instead.  */
+			panic("%s: page_alloc_map failed: %m", __func__, error);
+	}
 
 	return (0);
 }

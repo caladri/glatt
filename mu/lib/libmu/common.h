@@ -7,6 +7,7 @@ int vm_page_get(void **);
 int vm_page_free(void *);
 
 int vm_alloc(void **, size_t);
+int vm_alloc_range(void *, void *);
 int vm_free(void *, size_t);
 
 int getchar(void);

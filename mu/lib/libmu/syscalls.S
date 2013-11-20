@@ -12,7 +12,7 @@ ENTRY(_start)
 END(_start)
 
 ENTRY(exit)
-	li	v0, SYSCALL_EXIT
+	li	v0, SYSCALL_THREAD_EXIT
 	li	v1, 0
 	syscall
 END(exit)
@@ -166,3 +166,11 @@ ENTRY(vm_free)
 	jr	ra
 	nop
 END(vm_free)
+
+ENTRY(vm_alloc_range)
+	li	v0, SYSCALL_VM_ALLOC_RANGE
+	li	v1, 2
+	syscall
+	jr	ra
+	nop
+END(vm_alloc_range)

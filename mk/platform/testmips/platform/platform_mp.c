@@ -157,6 +157,10 @@ platform_mp_start_all(void *arg)
 	} else {
 		platform_mp_attach_cpu(true);
 	}
+	/*
+	 * Once all CPUs are ready to handle PCPU information, switch mp_whoami implementation.
+	 */
+	mp_whoami = mp_whoami_pcpu;
 #else
 	platform_mp_attach_cpu(true);
 #endif

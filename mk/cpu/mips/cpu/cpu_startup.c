@@ -62,9 +62,7 @@ cpu_startup(paddr_t pcpu_addr)
 
 	/* Now we can take VM-related exceptions appropriately.  */
 	pcpu->pc_flags = PCPU_FLAG_RUNNING;
-#ifndef UNIPROCESSOR
-	mp_whoami = mp_whoami_pcpu;
-#endif
+
 	startup_early = false;
 }
 

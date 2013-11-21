@@ -46,7 +46,7 @@ void mp_cpu_running(cpu_id_t);
 cpu_bitmask_t mp_cpu_running_mask(void) __check_result;
 void mp_cpu_stopped(cpu_id_t);
 
-void mp_hokusai_master(void (*)(void *), void *, void (*)(void *), void *) __non_null(3);
+void mp_hokusai_origin(void (*)(void *), void *, void (*)(void *), void *) __non_null(3);
 void mp_hokusai_synchronize(void (*)(void *), void *) __non_null(1);
 
 void mp_ipi_receive(enum ipi_type);

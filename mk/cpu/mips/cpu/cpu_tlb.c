@@ -113,7 +113,7 @@ tlb_invalidate(struct pmap *pm, vaddr_t vaddr)
 		shootdown.pmap = pm;
 		shootdown.vaddr = vaddr;
 
-		mp_hokusai_master(NULL, NULL,
+		mp_hokusai_origin(NULL, NULL,
 				  tlb_shootdown, &shootdown);
 	}
 #endif

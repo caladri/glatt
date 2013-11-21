@@ -19,21 +19,21 @@ static void mp_hokusai_ipi(void *, enum ipi_type);
 static void mp_hokusai_ipi_send(void);
 
 void
-mp_hokusai_master(void (*masterf)(void *), void *masterp,
-		  void (*slavef)(void *), void *slavep)
+mp_hokusai_origin(void (*originf)(void *), void *originp,
+		  void (*otherf)(void *), void *otherp)
 {
 	ASSERT(mp_hokusai_ipi_registered, "Hokusai system must be ready.");
 
 	spinlock_lock(&mp_hokusai_lock);
 
-	mp_hokusai_callback = slavef;
-	mp_hokusai_arg = slavep;
+	mp_hokusai_callback = otherf;
+	mp_hokusai_arg = otherp;
 
 	mp_hokusai_clear();
 
 	mp_hokusai_ipi_send();
 
-	mp_hokusai(masterf, masterp);
+	mp_hokusai(originf, originp);
 
 	spinlock_unlock(&mp_hokusai_lock);
 }
@@ -41,7 +41,7 @@ mp_hokusai_master(void (*masterf)(void *), void *masterp,
 void
 mp_hokusai_synchronize(void (*callback)(void *), void *p)
 {
-	mp_hokusai_master(callback, p, callback, p);
+	mp_hokusai_origin(callback, p, callback, p);
 }
 
 static void

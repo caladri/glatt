@@ -202,7 +202,7 @@ platform_mp_start_one(cpu_id_t cpu)
 	vaddr_t stack;
 	int error;
 
-#ifdef VERBOSE
+#ifdef VERBOSE_DEBUG
 	bus_printf(platform_mp_bus, "launching cpu%u...", cpu);
 #endif
 
@@ -240,7 +240,7 @@ platform_mp_start_one(cpu_id_t cpu)
 	while (startup_early)
 		continue;
 
-#ifdef VERBOSE
+#ifdef VERBOSE_DEBUG
 	bus_printf(platform_mp_bus, "launched cpu%u.", cpu);
 #endif
 }

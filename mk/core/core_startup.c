@@ -164,7 +164,8 @@ startup_main_thread(void *arg)
 		spinlock_unlock(lock);
 
 #ifdef VERBOSE
-	printf("STARTUP: cpu%u starting main thread.\n", mp_whoami());
+	if (mp_ncpus() != 1)
+		printf("STARTUP: cpu%u starting main thread.\n", mp_whoami());
 #endif
 
 #ifdef ENTER_DEBUGGER

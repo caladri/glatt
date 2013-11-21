@@ -179,7 +179,14 @@ platform_mp_start_cpu(void)
 
 	cpu_startup(pcpu_addr);
 
+	/* Clear BEV.  */
+	cpu_write_status(cpu_read_status() & ~CP0_STATUS_BEV);
+
 	cpu_interrupt_setup();
+
+	/* Install an IPI interrupt handler.  */
+	cpu_interrupt_establish(TEST_MP_DEV_IPI_INTERRUPT,
+				platform_mp_ipi_interrupt, NULL);
 
 	mp_cpu_running(mp_whoami());
 	while (mp_cpu_running_mask() != mp_cpu_present_mask())
@@ -255,13 +262,11 @@ platform_mp_attach_cpu(bool bootstrap)
 		panic("%s: bus_enumerate_child_generic failed: %m", __func__,
 		      error);
 
-#ifndef	UNIPROCESSOR
-	/* Install an IPI interrupt handler.  */
-	cpu_interrupt_establish(TEST_MP_DEV_IPI_INTERRUPT,
-				platform_mp_ipi_interrupt, NULL);
-#endif
-
 	if (bootstrap) {
+		/* Install an IPI interrupt handler.  */
+		cpu_interrupt_establish(TEST_MP_DEV_IPI_INTERRUPT,
+					platform_mp_ipi_interrupt, NULL);
+
 		error = bus_enumerate_child_generic(platform_mp_bus, "mpbus");
 		if (error != 0)
 			panic("%s: bus_enumerate_child_generic failed: %m",

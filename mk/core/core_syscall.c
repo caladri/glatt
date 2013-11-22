@@ -148,7 +148,7 @@ syscall_console_puts(register_t *params)
 	if (error != 0)
 		return (error);
 
-	kcputsn((void *)(uintptr_t)(kvaddr + o), len);
+	kcputsn((const char *)(uintptr_t)(kvaddr + o), len);
 
 	error = vm_unwire(current_task()->t_vm, uvaddr, len, kvaddr);
 	if (error != 0)
@@ -242,7 +242,7 @@ syscall_ipc_port_receive(register_t *params)
 	uvaddr = params[1];
 	len = sizeof *ipch;
 
-	error = vm_wire(current_task()->t_vm, uvaddr, len, &kvaddr, &o, false);
+	error = vm_wire(current_task()->t_vm, uvaddr, len, &kvaddr, &o, true);
 	if (error != 0)
 		return (error);
 	ipch = (struct ipc_header *)(uintptr_t)(kvaddr + o);

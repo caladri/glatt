@@ -47,6 +47,11 @@ vm_init_index(void)
 	return (0);
 }
 
+/*
+ * XXX
+ * Would like to be able to request a range near the top or
+ * near the bottom (e.g. for stack or for code/data.)
+ */
 int
 vm_alloc_address(struct vm *vm, vaddr_t *vaddrp, size_t pages)
 {

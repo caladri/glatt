@@ -89,9 +89,6 @@ vm_setup(struct vm **vmp, vaddr_t base, vaddr_t end)
 	*vmp = vm;
 	VM_UNLOCK(vm);
 
-	error = vm_alloc_range(vm, USER_STACK_BOT, USER_STACK_TOP);
-	if (error != 0)
-		panic("%s: could not allocate range for stack: %m", __func__, error);
 	return (0);
 }
 

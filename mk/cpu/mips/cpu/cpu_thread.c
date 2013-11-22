@@ -6,9 +6,10 @@
 #include <cpu/pmap.h>
 #include <vm/vm.h>
 #include <vm/vm_alloc.h>
+#include <vm/vm_index.h>
 #include <vm/vm_page.h>
 
-static void cpu_thread_exception(void *);
+static void cpu_thread_exception(struct thread *, void *);
 
 void
 cpu_thread_activate(struct thread *td)
@@ -36,7 +37,7 @@ cpu_thread_free(struct thread *td)
 }
 
 void
-cpu_thread_set_upcall(struct thread *td, void (*function)(void *), void *arg)
+cpu_thread_set_upcall(struct thread *td, void (*function)(struct thread *, void *), void *arg)
 {
 	td->td_context.c_regs[CONTEXT_RA] = (uintptr_t)&thread_trampoline;
 	td->td_context.c_regs[CONTEXT_S0] = (uintptr_t)td;
@@ -47,7 +48,7 @@ cpu_thread_set_upcall(struct thread *td, void (*function)(void *), void *arg)
 int
 cpu_thread_setup(struct thread *td)
 {
-	vaddr_t kstack, mbox;
+	vaddr_t kstack, mbox, ustack;
 	unsigned off;
 	int error;
 
@@ -76,14 +77,23 @@ cpu_thread_setup(struct thread *td)
 				       td->td_task->t_vm->vm_pmap, mbox + off);
 	}
 
+	if ((td->td_flags & THREAD_USTACK) != 0) {
+		error = vm_alloc_address(td->td_task->t_vm, &ustack, USTACK_SIZE / PAGE_SIZE);
+		if (error != 0)
+			return (error);
+		td->td_ustack_bottom = ustack;
+		td->td_ustack_top = ustack + USTACK_SIZE;
+	} else {
+		td->td_ustack_top = 0;
+		td->td_ustack_bottom = 0;
+	}
+
 	return (0);
 }
 
 static void
-cpu_thread_exception(void *arg)
+cpu_thread_exception(struct thread *td, void *arg)
 {
-	struct thread *td;
-
-	td = arg;
+	ASSERT(td == arg, ("thread and argument mismatch"));
 	panic("%s: upcall not set on thread %p", __func__, (void *)td);
 }

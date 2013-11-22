@@ -113,7 +113,7 @@ syscall_thread_create(register_t *params)
 	entry = (void *)(vaddr_t)params[0];
 
 	task = current_task();
-	error = thread_create(&td, task, "XXX", THREAD_DEFAULT);
+	error = thread_create(&td, task, "XXX", THREAD_DEFAULT | THREAD_USTACK);
 	if (error != 0)
 		return (error);
 
@@ -144,7 +144,7 @@ syscall_console_puts(register_t *params)
 	uvaddr = params[0];
 	len = params[1];
 
-	error = vm_wire(current_task()->t_vm, uvaddr, len, &kvaddr, &o);
+	error = vm_wire(current_task()->t_vm, uvaddr, len, &kvaddr, &o, false);
 	if (error != 0)
 		return (error);
 
@@ -201,7 +201,7 @@ syscall_ipc_port_send(register_t *params)
 	len = sizeof *ipch;
 	page = (void *)(uintptr_t)params[1];
 
-	error = vm_wire(current_task()->t_vm, uvaddr, len, &kvaddr, &o);
+	error = vm_wire(current_task()->t_vm, uvaddr, len, &kvaddr, &o, false);
 	if (error != 0)
 		return (error);
 	ipch = (const struct ipc_header *)(uintptr_t)(kvaddr + o);
@@ -242,7 +242,7 @@ syscall_ipc_port_receive(register_t *params)
 	uvaddr = params[1];
 	len = sizeof *ipch;
 
-	error = vm_wire(current_task()->t_vm, uvaddr, len, &kvaddr, &o);
+	error = vm_wire(current_task()->t_vm, uvaddr, len, &kvaddr, &o, false);
 	if (error != 0)
 		return (error);
 	ipch = (struct ipc_header *)(uintptr_t)(kvaddr + o);

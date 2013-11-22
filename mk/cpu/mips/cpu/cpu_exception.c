@@ -162,8 +162,12 @@ exception(struct frame *frame)
 			printf("Kernel page fault.\n");
 			break;
 		}
+		if (td == NULL) {
+			printf("Userland page fault without a thread.\n");
+			break;
+		}
 		vaddr = frame->f_regs[FRAME_BADVADDR];
-		if (vaddr > USER_STACK_BOT && vaddr <= USER_STACK_TOP) {
+		if (vaddr >= td->td_ustack_bottom && vaddr < td->td_ustack_top) {
 			error = vm_fault_stack(td, vaddr);
 			if (error != 0) {
 				printf("%s: vm_fault_stack failed: %m\n", __func__, error);

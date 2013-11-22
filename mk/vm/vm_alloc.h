@@ -12,7 +12,7 @@ int vm_free(struct vm *, size_t, vaddr_t) __non_null(1) __check_result;
 int vm_free_page(struct vm *, vaddr_t) __non_null(1) __check_result;
 
 	/* Virtual memory wiring without allocation.  */
-int vm_wire(struct vm *, vaddr_t, size_t, vaddr_t *, size_t *)
+int vm_wire(struct vm *, vaddr_t, size_t, vaddr_t *, size_t *, bool)
 	__non_null(1, 4, 5) __check_result;
 int vm_unwire(struct vm *, vaddr_t, size_t, vaddr_t)
 	__non_null(1) __check_result;

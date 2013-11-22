@@ -19,6 +19,7 @@ vm_fault_stack(struct thread *td, vaddr_t vaddr)
 
 	vaddr = PAGE_FLOOR(vaddr);
 
+	/* XXX Check for an existing mapping?  */
 	error = page_alloc_map(vm, PAGE_FLAG_ZERO, vaddr);
 	if (error != 0)
 		return (error);

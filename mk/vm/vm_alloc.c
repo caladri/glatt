@@ -62,12 +62,7 @@ vm_alloc_page(struct vm *vm, vaddr_t *vaddrp)
 int
 vm_alloc_range_wire(struct vm *vm, vaddr_t begin, vaddr_t end, vaddr_t *kvaddrp, size_t *offp)
 {
-	size_t o, pages;
-	vaddr_t vaddr;
 	int error;
-
-	vaddr = PAGE_FLOOR(begin);
-	pages = PAGE_COUNT(end - vaddr);
 
 	if (vm == &kernel_vm)
 		panic("%s: can't wire from kernel to kernel.", __func__);
@@ -76,13 +71,7 @@ vm_alloc_range_wire(struct vm *vm, vaddr_t begin, vaddr_t end, vaddr_t *kvaddrp,
 	if (error != 0)
 		return (error);
 
-	for (o = 0; o < pages; o++) {
-		error = page_alloc_map(vm, PAGE_FLAG_DEFAULT, vaddr + o * PAGE_SIZE);
-		if (error != 0)
-			panic("%s: page_alloc_map failed: %m", __func__, error);
-	}
-
-	error = vm_wire(vm, begin, end - begin, kvaddrp, offp);
+	error = vm_wire(vm, begin, end - begin, kvaddrp, offp, true);
 	if (error != 0)
 		panic("%s: vm_wire failed: %m", __func__, error);
 
@@ -126,7 +115,7 @@ vm_free_page(struct vm *vm, vaddr_t vaddr)
 }
 
 int
-vm_wire(struct vm *vm, vaddr_t uvaddr, size_t len, vaddr_t *kvaddrp, size_t *offp)
+vm_wire(struct vm *vm, vaddr_t uvaddr, size_t len, vaddr_t *kvaddrp, size_t *offp, bool fault)
 {
 	struct vm_page *page;
 	size_t o, pages;
@@ -143,8 +132,20 @@ vm_wire(struct vm *vm, vaddr_t uvaddr, size_t len, vaddr_t *kvaddrp, size_t *off
 #if !defined(VM_ALLOC_NO_DIRECT)
 	if (pages == 1) {
 		error = page_extract(vm, vaddr, &page);
-		if (error != 0)
-			panic("%s: page_extract failed: %m", __func__, error);
+		if (error != 0) {
+			if (fault && error == ERROR_NOT_FOUND) {
+				error = page_alloc(PAGE_FLAG_ZERO, &page);
+				if (error != 0)
+					panic("%s: page_alloc failed: %m", __func__, error);
+
+				error = page_map(vm, vaddr, page);
+				if (error != 0)
+					panic("%s: page_map failed: %m", __func__, error);
+			} else {
+				panic("%s: page_extract failed: %m", __func__, error);
+			}
+
+		}
 
 		error = page_map_direct(&kernel_vm, page, kvaddrp);
 		if (error != 0)
@@ -161,8 +162,20 @@ vm_wire(struct vm *vm, vaddr_t uvaddr, size_t len, vaddr_t *kvaddrp, size_t *off
 
 	for (o = 0; o < pages; o++) {
 		error = page_extract(vm, vaddr + o * PAGE_SIZE, &page);
-		if (error != 0)
-			panic("%s: page_extract failed: %m", __func__, error);
+		if (error != 0) {
+			if (fault && error == ERROR_NOT_FOUND) {
+				error = page_alloc(PAGE_FLAG_ZERO, &page);
+				if (error != 0)
+					panic("%s: page_alloc failed: %m", __func__, error);
+
+				error = page_map(vm, vaddr + o * PAGE_SIZE, page);
+				if (error != 0)
+					panic("%s: page_map failed: %m", __func__, error);
+			} else {
+				panic("%s: page_extract failed: %m", __func__, error);
+			}
+
+		}
 
 		error = page_map(&kernel_vm, kvaddr + o * PAGE_SIZE, page);
 		if (error != 0)

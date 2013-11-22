@@ -42,7 +42,7 @@ struct ipc_service_context {
 #ifdef SERVICE_TRACING
 static void ipc_service_dump(const struct ipc_service_context *, const struct ipc_header *);
 #endif
-static void ipc_service_main(void *);
+static void ipc_service_main(struct thread *, void *);
 
 int
 ipc_service(const char *name, ipc_port_t port, ipc_port_flags_t flags,
@@ -130,12 +130,14 @@ ipc_service_dump(const struct ipc_service_context *ipcsc, const struct ipc_heade
 #endif
 
 static void
-ipc_service_main(void *arg)
+ipc_service_main(struct thread *td, void *arg)
 {
 	struct ipc_service_context *ipcsc = arg;
 	struct ipc_header ipch;
 	int error;
 	void *p;
+
+	(void)td;
 
 	/* Register with the NS if requested.  */
 	if ((ipcsc->ipcsc_port_flags & IPC_PORT_FLAG_PUBLIC) != 0 &&

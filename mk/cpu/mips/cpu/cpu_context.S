@@ -90,13 +90,15 @@ END(cpu_context_save)
 
 #ifdef EXEC
 	/*
-	 * void cpu_thread_user_trampoline(void *a0);
-	 * a0 = entry.
+	 * void cpu_thread_user_trampoline(struct thread *a0, void *a1);
+	 * a0 = thread.
+	 * a1 = entry.
 	 */
 ENTRY(cpu_thread_user_trampoline)
 	move	ra, zero
 
-	move	v0, a0
+	ld	a0, TD_USTACK_TOP(a0)
+	teq	a0, zero
 
 	dli	t0, PCPU_VIRTUAL
 	ld	t0, PC_INTERRUPT_MASK(t0)
@@ -105,14 +107,11 @@ ENTRY(cpu_thread_user_trampoline)
 	ori	t0, CP0_STATUS_EXL
 	mtc0	t0, CP0_STATUS
 
-	/*
-	 * XXX Should we be anding off more bits?
-	 */
-	dli	sp, USER_STACK_TOP
-	dli	t0, ~7
-	and	sp, t0
+	/* Now that we've set user status, switch to user stack.  */
+	move	sp, a0
+	/* Cannot take a fault beyond this point!  */
 
-	dmtc0	v0, CP0_EXCPC
+	dmtc0	a1, CP0_EXCPC
 	eret
 END(cpu_thread_user_trampoline)
 #endif

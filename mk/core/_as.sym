@@ -12,4 +12,5 @@ DEFINE(T_VM,	offsetof(struct task, t_vm));
 DEFINE(TD_TASK,		offsetof(struct thread, td_task));
 DEFINE(TD_CONTEXT,	offsetof(struct thread,	td_context));
 DEFINE(TD_KSTACK,	offsetof(struct thread, td_kstack));
+DEFINE(TD_USTACK_TOP,	offsetof(struct thread, td_ustack_top));
 DEFINE(TD_CPUTHREAD,	offsetof(struct thread,	td_cputhread));

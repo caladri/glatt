@@ -67,9 +67,11 @@ cpu_startup(paddr_t pcpu_addr)
 }
 
 void
-cpu_startup_thread(void *arg)
+cpu_startup_thread(struct thread *td, void *arg)
 {
 	void (*callback)(void *);
+
+	(void)td;
 
 	callback = (void (*)(void *))(uintptr_t)arg;
 	platform_startup_thread();

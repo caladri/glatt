@@ -45,7 +45,7 @@ exec_task(ipc_port_t parent, ipc_port_t *childp, const char *name, fs_file_read_
 	if (childp != NULL)
 		*childp = task->t_ipc.ipct_task_port;
 
-	error = thread_create(&td, task, name, THREAD_DEFAULT);
+	error = thread_create(&td, task, name, THREAD_DEFAULT | THREAD_USTACK);
 	if (error != 0) {
 		printf("%s: thread_create for %s failed: %m\n", __func__, name, error);
 		return (error);

@@ -7,7 +7,7 @@
 
 static struct pool thread_pool;
 
-static void thread_error(void *);
+static void thread_error(struct thread *, void *);
 
 void
 thread_init(void)
@@ -76,7 +76,7 @@ thread_free(struct thread *td)
 }
 
 void
-thread_set_upcall(struct thread *td, void (*function)(void *), void *arg)
+thread_set_upcall(struct thread *td, void (*function)(struct thread *, void *), void *arg)
 {
 	cpu_thread_set_upcall(td, function, arg);
 }
@@ -102,20 +102,19 @@ thread_switch(struct thread *otd, struct thread *td)
 }
 
 void
-thread_trampoline(struct thread *td, void (*function)(void *), void *arg)
+thread_trampoline(struct thread *td, void (*function)(struct thread *, void *), void *arg)
 {
 	scheduler_activate(td);
 	ASSERT(td == current_thread(), "Thread must be current thread.");
 	ASSERT(function != NULL, "Function must not be NULL.");
-	function(arg);
+	function(td, arg);
 	panic("%s: function returned!", __func__);
 }
 
 static void
-thread_error(void *arg)
+thread_error(struct thread *td, void *arg)
 {
-	struct thread *td = arg;
-
+	ASSERT(td == arg, ("thread and argument mismatch"));
 	panic("%s: context re-used for thread %p (%s)", __func__, td,
 	      td->td_name);
 }

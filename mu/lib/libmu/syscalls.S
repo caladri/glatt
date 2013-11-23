@@ -21,6 +21,8 @@ ENTRY(thread_create)
 	li	v0, SYSCALL_THREAD_CREATE
 	li	v1, 2
 	syscall
+	jr	ra
+	nop
 END(thread_create)
 
 ENTRY(putchar)

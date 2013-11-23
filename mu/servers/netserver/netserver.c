@@ -55,9 +55,8 @@ struct if_context {
 
 static void arp_input(struct if_context *, const void *, size_t);
 static void arp_request(struct if_context *, uint32_t);
-static void if_get_info_callback(const struct ipc_dispatch *,
-				 const struct ipc_dispatch_handler *,
-				 const struct ipc_header *, void *);
+static void if_get_info_callback(struct if_context *,
+				 ipc_parameter_t, void *);
 static void if_receive_callback(const struct ipc_dispatch *,
 				const struct ipc_dispatch_handler *,
 				const struct ipc_header *, void *);
@@ -70,6 +69,8 @@ static void usage(void);
 void
 main(int argc, char *argv[])
 {
+	struct ipc_response_message resp;
+	struct ipc_request_message req;
 	struct if_context ifc;
 	int error;
 
@@ -97,22 +98,29 @@ main(int argc, char *argv[])
 
 	printf("%s: ipc-port 0x%x\n", ifc.ifc_ifname, ifc.ifc_ifport);
 
+	req.src = IPC_PORT_UNKNOWN;
+	req.dst = ifc.ifc_ifport;
+	req.msg = NETWORK_INTERFACE_MSG_GET_INFO;
+	req.param = 0;
+	req.data = NULL;
+	req.datalen = 0;
+	req.page = NULL;
+
+	resp.data = true;
+
+	error = ipc_request(&req, &resp);
+	if (error != 0)
+		fatal("could not get interface info", error);
+	if (resp.error != 0)
+		fatal("driver gave error in response to get info request", resp.error);
+	if_get_info_callback(&ifc, resp.param, resp.page);
+
 	ifc.ifc_dispatch = ipc_dispatch_allocate(IPC_PORT_UNKNOWN,
 						 IPC_PORT_FLAG_DEFAULT);
 
 	error = ns_register("netserver", ifc.ifc_dispatch->id_port);
 	if (error != 0)
 		fatal("could not register netserver service", error);
-
-	ifc.ifc_get_info_handler = ipc_dispatch_register(ifc.ifc_dispatch,
-							 if_get_info_callback,
-							 &ifc);
-	error = ipc_dispatch_send(ifc.ifc_dispatch, ifc.ifc_get_info_handler,
-				  ifc.ifc_ifport,
-				  NETWORK_INTERFACE_MSG_GET_INFO,
-				  IPC_PORT_RIGHT_SEND_ONCE, NULL, 0);
-	if (error != 0)
-		fatal("could not send get info message", error);
 
 	ifc.ifc_receive_handler = ipc_dispatch_register(ifc.ifc_dispatch,
 							if_receive_callback,
@@ -238,25 +246,15 @@ arp_request(struct if_context *ifc, uint32_t ip_dst)
 }
 
 static void
-if_get_info_callback(const struct ipc_dispatch *id,
-		     const struct ipc_dispatch_handler *idh,
-		     const struct ipc_header *ipch, void *page)
+if_get_info_callback(struct if_context *ifc, ipc_parameter_t param, void *page)
 {
 	struct network_interface_get_info_response_header rhdr;
 	char ip[16], netmask[16], gw[16];
-	struct if_context *ifc;
 	uint8_t *addr;
 	unsigned i;
 
-	ifc = idh->idh_softc;
-
-	(void)id;
-
-	if (ipch->ipchdr_msg != IPC_MSG_REPLY(NETWORK_INTERFACE_MSG_GET_INFO) ||
-	    ipch->ipchdr_param < sizeof rhdr || page == NULL) {
-		ipc_message_drop(ipch, page);
+	if (param < sizeof rhdr || page == NULL)
 		return;
-	}
 
 	memcpy(&rhdr, page, sizeof rhdr);
 	addr = page;

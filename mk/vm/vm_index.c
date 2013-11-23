@@ -73,6 +73,9 @@ vm_alloc_address(struct vm *vm, vaddr_t *vaddrp, size_t pages, bool high)
 				VM_UNLOCK(vm);
 				return (error);
 			}
+			*vaddrp = vmi->vmi_base;
+			VM_UNLOCK(vm);
+			return (0);
 		} else {
 			vaddr_t start, end;
 
@@ -86,10 +89,10 @@ vm_alloc_address(struct vm *vm, vaddr_t *vaddrp, size_t pages, bool high)
 				VM_UNLOCK(vm);
 				return (error);
 			}
+			*vaddrp = start;
+			VM_UNLOCK(vm);
+			return (0);
 		}
-		*vaddrp = vmi->vmi_base;
-		VM_UNLOCK(vm);
-		return (0);
 	}
 	/* XXX Look for adjacent entries, collapse, etc..  */
 	VM_UNLOCK(vm);

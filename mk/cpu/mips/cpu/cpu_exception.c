@@ -272,6 +272,10 @@ cpu_exception_state_dump(void)
 
 		printf("thread              = %p (%s)\n",
 			 (void *)td, td->td_name);
+		if ((td->td_flags & THREAD_USTACK) != 0)
+			printf("stack               = %p..%p\n",
+			       (void *)td->td_ustack_bottom,
+			       (void *)td->td_ustack_top);
 		printf("task                = %p (%s)\n", (void *)td->td_task,
 			 td->td_task == NULL ? "nil" : td->td_task->t_name);
 	} else {

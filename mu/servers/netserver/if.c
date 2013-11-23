@@ -49,6 +49,7 @@ static void if_get_info_callback(struct if_context *,
 static void if_receive_callback(const struct ipc_dispatch *,
 				const struct ipc_dispatch_handler *,
 				const struct ipc_header *, void *);
+static void if_receive_thread(void *);
 
 void
 if_attach(struct if_context *ifc, const char *ifname)
@@ -89,10 +90,6 @@ if_attach(struct if_context *ifc, const char *ifname)
 	ifc->ifc_dispatch = ipc_dispatch_allocate(IPC_PORT_UNKNOWN,
 						 IPC_PORT_FLAG_DEFAULT);
 
-	error = ns_register("netserver", ifc->ifc_dispatch->id_port);
-	if (error != 0)
-		fatal("could not register netserver service", error);
-
 	ifc->ifc_receive_handler = ipc_dispatch_register(ifc->ifc_dispatch,
 							 if_receive_callback,
 							 ifc);
@@ -103,9 +100,9 @@ if_attach(struct if_context *ifc, const char *ifname)
 	if (error != 0)
 		fatal("could not send receive registration message", error);
 
-	ipc_dispatch(ifc->ifc_dispatch);
+	arp_request(ifc, ifc->ifc_gw);
 
-	ipc_dispatch_free(ifc->ifc_dispatch);
+	thread_create(if_receive_thread, ifc);
 }
 
 static void
@@ -255,8 +252,6 @@ if_get_info_callback(struct if_context *ifc, ipc_parameter_t param, void *page)
 	format_ip(netmask, sizeof netmask, ifc->ifc_netmask);
 	format_ip(gw, sizeof gw, ifc->ifc_gw);
 	printf("\tinet %s netmask %s gateway %s\n", ip, netmask, gw);
-
-	arp_request(ifc, ifc->ifc_gw);
 }
 
 static void
@@ -298,6 +293,15 @@ if_receive_callback(const struct ipc_dispatch *id,
 	if_input(ifc, page, ipch->ipchdr_param);
 }
 
+static void
+if_receive_thread(void *arg)
+{
+	struct if_context *ifc = arg;
+
+	ipc_dispatch(ifc->ifc_dispatch);
+
+	ipc_dispatch_free(ifc->ifc_dispatch);
+}
 
 void
 if_input(struct if_context *ifc, const void *data, size_t datalen)

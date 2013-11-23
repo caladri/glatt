@@ -88,17 +88,31 @@ ENTRY(cpu_context_save)
 	li	v0, FALSE
 END(cpu_context_save)
 
+	/*
+	 * void cpu_thread_trampoline(struct thread *a0, void (*a1)(struct thread *, void *), void *a2)
+	 * Begin running a1(a0, a2) in a thread.
+	 * NB: s[0-7] alias a[0-7] so no need to save inbound arguments.
+	 */
+ENTRY(cpu_thread_trampoline)
+	jal	scheduler_activate
+	nop
+	move	a0, s0
+	jr	s1
+	move	a1, s2
+END(cpu_thread_trampoline)
+
 #ifdef EXEC
 	/*
-	 * void cpu_thread_user_trampoline(struct thread *a0, void *a1);
-	 * a0 = thread.
-	 * a1 = entry.
+	 * void cpu_thread_trampoline_user(struct thread *a0, void (*a1)(void *), void *a2)
+	 * Begin running a1(a2) in a user thread.
+	 * NB: s[0-7] alias a[0-7] so no need to save inbound arguments.
 	 */
-ENTRY(cpu_thread_user_trampoline)
-	move	ra, zero
+ENTRY(cpu_thread_trampoline_user)
+	jal	scheduler_activate
+	nop
 
-	ld	a0, TD_USTACK_TOP(a0)
-	teq	a0, zero
+	ld	t2, TD_USTACK_TOP(s0)
+	teq	t2, zero
 
 	dli	t0, PCPU_VIRTUAL
 	ld	t0, PC_INTERRUPT_MASK(t0)
@@ -108,10 +122,12 @@ ENTRY(cpu_thread_user_trampoline)
 	mtc0	t0, CP0_STATUS
 
 	/* Now that we've set user status, switch to user stack.  */
-	move	sp, a0
+	move	sp, t2
 	/* Cannot take a fault beyond this point!  */
 
-	dmtc0	a1, CP0_EXCPC
+	move	a0, s2
+
+	dmtc0	s1, CP0_EXCPC
 	eret
-END(cpu_thread_user_trampoline)
+END(cpu_thread_trampoline_user)
 #endif

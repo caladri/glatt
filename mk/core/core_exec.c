@@ -13,11 +13,11 @@
 #include <vm/vm_index.h>
 #include <vm/vm_page.h>
 
-static int exec_elf64_load(struct vm *, void **, fs_file_read_op_t *, fs_context_t, fs_file_context_t);
+static int exec_elf64_load(struct vm *, vaddr_t *, fs_file_read_op_t *, fs_context_t, fs_file_context_t);
 static int exec_read(fs_file_read_op_t *, fs_context_t, fs_file_context_t, void *, off_t, size_t);
 
 int
-exec_load(struct vm *vm, void **entryp, const char *name, fs_file_read_op_t *readf, fs_context_t fsc, fs_file_context_t fsfc)
+exec_load(struct vm *vm, vaddr_t *entryp, const char *name, fs_file_read_op_t *readf, fs_context_t fsc, fs_file_context_t fsfc)
 {
 	int error;
 
@@ -35,7 +35,7 @@ exec_task(ipc_port_t parent, ipc_port_t *childp, const char *name, fs_file_read_
 {
 	struct thread *td;
 	struct task *task;
-	void *entry;
+	vaddr_t entry;
 	int error;
 
 	error = task_create(parent, &task, name, TASK_DEFAULT);
@@ -56,9 +56,9 @@ exec_task(ipc_port_t parent, ipc_port_t *childp, const char *name, fs_file_read_
 		return (error);
 
 	/*
-	 * Set up userland trampoline.
+	 * Set up userland entry-point.
 	 */
-	thread_set_upcall(td, cpu_thread_user_trampoline, entry);
+	thread_set_upcall_user(td, entry, 0);
 
 	scheduler_thread_runnable(td);
 
@@ -66,7 +66,7 @@ exec_task(ipc_port_t parent, ipc_port_t *childp, const char *name, fs_file_read_
 }
 
 static int
-exec_elf64_load(struct vm *vm, void **entryp, fs_file_read_op_t *readf, fs_context_t fsc, fs_file_context_t fsfc)
+exec_elf64_load(struct vm *vm, vaddr_t *entryp, fs_file_read_op_t *readf, fs_context_t fsc, fs_file_context_t fsfc)
 {
 	struct elf64_program_header ph;
 	struct elf64_header eh;
@@ -217,7 +217,7 @@ exec_elf64_load(struct vm *vm, void **entryp, fs_file_read_op_t *readf, fs_conte
 	if (error != 0)
 		panic("%s: could not unwire progam data: %m", __func__, error);
 
-	*entryp = (void *)(uintptr_t)eh.eh_entry;
+	*entryp = (vaddr_t)eh.eh_entry;
 
 	return (0);
 }

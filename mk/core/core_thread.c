@@ -82,6 +82,12 @@ thread_set_upcall(struct thread *td, void (*function)(struct thread *, void *), 
 }
 
 void
+thread_set_upcall_user(struct thread *td, vaddr_t function, register_t arg)
+{
+	cpu_thread_set_upcall_user(td, function, arg);
+}
+
+void
 thread_switch(struct thread *otd, struct thread *td)
 {
 	ASSERT(critical_section(), "cannot switch outside a critical section.");
@@ -99,16 +105,6 @@ thread_switch(struct thread *otd, struct thread *td)
 		}
 	}
 	cpu_context_restore(td);
-}
-
-void
-thread_trampoline(struct thread *td, void (*function)(struct thread *, void *), void *arg)
-{
-	scheduler_activate(td);
-	ASSERT(td == current_thread(), "Thread must be current thread.");
-	ASSERT(function != NULL, "Function must not be NULL.");
-	function(td, arg);
-	panic("%s: function returned!", __func__);
 }
 
 static void

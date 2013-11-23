@@ -31,7 +31,7 @@ int thread_create(struct thread **, struct task *, const char *, unsigned) __non
 void thread_exit(void) __noreturn;
 void thread_free(struct thread *) __non_null(1);
 void thread_set_upcall(struct thread *, void (*)(struct thread *, void *), void *) __non_null(1, 2);
+void thread_set_upcall_user(struct thread *, vaddr_t, register_t) __non_null(1);
 void thread_switch(struct thread *, struct thread *) __non_null(2);
-void thread_trampoline(struct thread *, void (*)(struct thread *, void *), void *) __non_null(1, 2);
 
 #endif /* !_CORE_THREAD_H_ */

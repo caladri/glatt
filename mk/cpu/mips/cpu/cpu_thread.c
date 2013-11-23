@@ -39,10 +39,21 @@ cpu_thread_free(struct thread *td)
 void
 cpu_thread_set_upcall(struct thread *td, void (*function)(struct thread *, void *), void *arg)
 {
-	td->td_context.c_regs[CONTEXT_RA] = (uintptr_t)&thread_trampoline;
+	td->td_context.c_regs[CONTEXT_RA] = (uintptr_t)&cpu_thread_trampoline;
 	td->td_context.c_regs[CONTEXT_S0] = (uintptr_t)td;
 	td->td_context.c_regs[CONTEXT_S1] = (uintptr_t)function;
 	td->td_context.c_regs[CONTEXT_S2] = (uintptr_t)arg;
+	td->td_context.c_regs[CONTEXT_SP] = td->td_kstack + KSTACK_SIZE;
+}
+
+void
+cpu_thread_set_upcall_user(struct thread *td, vaddr_t function, register_t arg)
+{
+	td->td_context.c_regs[CONTEXT_RA] = (uintptr_t)&cpu_thread_trampoline_user;
+	td->td_context.c_regs[CONTEXT_S0] = (uintptr_t)td;
+	td->td_context.c_regs[CONTEXT_S1] = (uintptr_t)function;
+	td->td_context.c_regs[CONTEXT_S2] = (uintptr_t)arg;
+	td->td_context.c_regs[CONTEXT_SP] = td->td_kstack + KSTACK_SIZE;
 }
 
 int
@@ -65,7 +76,6 @@ cpu_thread_setup(struct thread *td)
 		tlb_wired_wire(&td->td_cputhread.td_tlbwired, kernel_vm.vm_pmap,
 			       kstack + off);
 	memset(&td->td_context, 0, sizeof td->td_context);
-	td->td_context.c_regs[CONTEXT_SP] = kstack + KSTACK_SIZE;
 
 	if ((td->td_task->t_flags & TASK_KERNEL) == 0) {
 		error = vm_alloc(td->td_task->t_vm, MAILBOX_SIZE, &mbox);

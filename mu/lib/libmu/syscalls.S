@@ -17,6 +17,12 @@ ENTRY(exit)
 	syscall
 END(exit)
 
+ENTRY(thread_create)
+	li	v0, SYSCALL_THREAD_CREATE
+	li	v1, 2
+	syscall
+END(thread_create)
+
 ENTRY(putchar)
 	li	v0, SYSCALL_CONSOLE_PUTC
 	li	v1, 1

@@ -9,5 +9,6 @@ void bootstrap_main(void);
 void exit(void) __noreturn;
 void mu_main(void);
 int process_start_data(void **, unsigned, const char **);
+void thread_create(void (*)(void *), void *);
 
 #endif /* !PROCESS_H */

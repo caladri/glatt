@@ -13,6 +13,8 @@
 #include <libmu/ipc_request.h>
 #include <libmu/process.h>
 
+#include "util.h"
+
 #define	ETHERNET_ADDRESS_SIZE	6
 
 struct ethernet_header {
@@ -62,8 +64,6 @@ static void if_receive_callback(const struct ipc_dispatch *,
 				const struct ipc_header *, void *);
 static void if_input(struct if_context *, const void *, size_t);
 static void if_transmit(struct if_context *, const void *, size_t);
-static void format_ip(char *, size_t, uint32_t);
-static int parse_ip(const char *, uint32_t *);
 static void usage(void);
 
 void
@@ -365,43 +365,6 @@ if_transmit(struct if_context *ifc, const void *data, size_t datalen)
 	error = ipc_request(&req, NULL);
 	if (error != 0)
 		fatal("ipc_request failed", error);
-}
-
-static void
-format_ip(char *buf, size_t buflen, uint32_t ip)
-{
-	snprintf(buf, buflen, "%u.%u.%u.%u", (ip >> 24) & 0xff, (ip >> 16) & 0xff, (ip >> 8) & 0xff, ip & 0xff);
-}
-
-static int
-parse_ip(const char *s, uint32_t *ip)
-{
-	unsigned octet;
-
-	for (octet = 4; octet != 0; octet--) {
-		uint8_t v;
-
-		v = 0;
-		while (*s != '.' && *s != '\0') {
-			uint8_t d;
-			if (*s < '0' || *s > '9')
-				return (ERROR_INVALID);
-			d = *s - '0';
-			if ((256 - (v * 10)) <= d)
-				return (ERROR_INVALID);
-			v = (v * 10) + d;
-			s++;
-		}
-		*ip &= ~(0xff << ((octet - 1) * 8));
-		if (v != 0)
-			*ip |= v << ((octet - 1) * 8);
-		if (*s == '\0')
-			break;
-		s++;
-	}
-	if (*s != '\0')
-		return (ERROR_INVALID);
-	return (0);
 }
 
 static void

@@ -47,23 +47,23 @@ vm_init_index(void)
 	return (0);
 }
 
-/*
- * XXX
- * Would like to be able to request a range near the top or
- * near the bottom (e.g. for stack or for code/data.)
- */
 int
-vm_alloc_address(struct vm *vm, vaddr_t *vaddrp, size_t pages)
+vm_alloc_address(struct vm *vm, vaddr_t *vaddrp, size_t pages, bool high)
 {
 	struct vm_index *vmi;
 	int error;
 
 	VM_LOCK(vm);
-	/* XXX Why isn't this a BTREE_FIND?  */
-	BTREE_MIN(vmi, &vm->vm_index_free, vmi_free_tree);
+	if (!high)
+		BTREE_MIN(vmi, &vm->vm_index_free, vmi_free_tree);
+	else
+		BTREE_MAX(vmi, &vm->vm_index_free, vmi_free_tree);
 	while (vmi != NULL) {
 		if (vmi->vmi_size < pages) {
-			BTREE_NEXT(vmi, vmi_free_tree);
+			if (!high)
+				BTREE_NEXT(vmi, vmi_free_tree);
+			else
+				BTREE_PREV(vmi, vmi_free_tree);
 			continue;
 		}
 
@@ -74,9 +74,14 @@ vm_alloc_address(struct vm *vm, vaddr_t *vaddrp, size_t pages)
 				return (error);
 			}
 		} else {
-			error = vm_claim_range(vm, vmi->vmi_base,
-					       vmi->vmi_base +
-					       PAGE_TO_ADDR(pages), vmi);
+			vaddr_t start, end;
+
+			start = vmi->vmi_base;
+			if (high)
+				start += PAGE_TO_ADDR(vmi->vmi_size - pages);
+			end = start + PAGE_TO_ADDR(pages);
+
+			error = vm_claim_range(vm, start, end, vmi);
 			if (error != 0) {
 				VM_UNLOCK(vm);
 				return (error);

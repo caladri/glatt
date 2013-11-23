@@ -250,7 +250,7 @@ ipc_port_receive(ipc_port_t port, struct ipc_header *ipch, void **vpagep)
 				/*
 				 * User task.
 				 */
-				error = vm_alloc_address(task->t_vm, &vaddr, 1);
+				error = vm_alloc_address(task->t_vm, &vaddr, 1, false);
 				if (error != 0) {
 					page_release(ipcmsg->ipcmsg_page);
 					free(ipcmsg);

@@ -23,7 +23,7 @@ vm_alloc(struct vm *vm, size_t size, vaddr_t *vaddrp)
 		return (page_alloc_direct(vm, PAGE_FLAG_DEFAULT, vaddrp));
 #endif
 
-	error = vm_alloc_address(vm, &vaddr, pages);
+	error = vm_alloc_address(vm, &vaddr, pages, false);
 	if (error != 0)
 		return (error);
 	for (o = 0; o < pages; o++) {
@@ -46,7 +46,7 @@ vm_alloc_page(struct vm *vm, vaddr_t *vaddrp)
 		return (page_alloc_direct(vm, PAGE_FLAG_DEFAULT, vaddrp));
 #endif
 
-	error = vm_alloc_address(vm, &vaddr, 1);
+	error = vm_alloc_address(vm, &vaddr, 1, false);
 	if (error != 0)
 		return (error);
 
@@ -156,7 +156,7 @@ vm_wire(struct vm *vm, vaddr_t uvaddr, size_t len, vaddr_t *kvaddrp, size_t *off
 	}
 #endif
 
-	error = vm_alloc_address(&kernel_vm, &kvaddr, pages);
+	error = vm_alloc_address(&kernel_vm, &kvaddr, pages, false);
 	if (error != 0)
 		panic("%s: vm_alloc_address failed: %m", __func__, error);
 

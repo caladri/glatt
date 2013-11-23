@@ -124,6 +124,23 @@
 		BTREE_MIN_SUB((var), (tree)->child, field);		\
 	} while (0)
 
+#define	BTREE_MAX_SUB(var, node, field)					\
+	do {								\
+		if ((node) == NULL) {					\
+			(var) = NULL;					\
+			break;						\
+		}							\
+		for ((var) = (node);					\
+		     (var)->field.right != NULL;			\
+		     (var) = (var)->field.right)			\
+			continue;					\
+	} while (0)
+
+#define	BTREE_MAX(var, tree, field)					\
+	do {								\
+		BTREE_MAX_SUB((var), (tree)->child, field);		\
+	} while (0)
+
 #define	BTREE_NEXT(var, field)						\
 	do {								\
 		if ((var)->field.right != NULL) {			\
@@ -136,6 +153,25 @@
 				break;					\
 			}						\
 			if ((var)->field.parent->field.left == (var)) {	\
+				(var) = (var)->field.parent;		\
+				break;					\
+			}						\
+			(var) = (var)->field.parent;			\
+		}							\
+	} while (0)
+
+#define	BTREE_PREV(var, field)						\
+	do {								\
+		if ((var)->field.left != NULL) {			\
+			BTREE_MAX_SUB((var), (var)->field.left, field);	\
+			break;						\
+		}							\
+		for (;;) {						\
+			if ((var)->field.parent == NULL) {		\
+				(var) = NULL;				\
+				break;					\
+			}						\
+			if ((var)->field.parent->field.right == (var)) {\
 				(var) = (var)->field.parent;		\
 				break;					\
 			}						\

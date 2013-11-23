@@ -88,7 +88,7 @@ cpu_thread_setup(struct thread *td)
 	}
 
 	if ((td->td_flags & THREAD_USTACK) != 0) {
-		error = vm_alloc_address(td->td_task->t_vm, &ustack, USTACK_SIZE / PAGE_SIZE);
+		error = vm_alloc_address(td->td_task->t_vm, &ustack, USTACK_SIZE / PAGE_SIZE, true);
 		if (error != 0)
 			return (error);
 		td->td_ustack_bottom = ustack;

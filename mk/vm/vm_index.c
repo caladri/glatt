@@ -59,6 +59,7 @@ vm_alloc_address(struct vm *vm, vaddr_t *vaddrp, size_t pages)
 	int error;
 
 	VM_LOCK(vm);
+	/* XXX Why isn't this a BTREE_FIND?  */
 	BTREE_MIN(vmi, &vm->vm_index_free, vmi_free_tree);
 	while (vmi != NULL) {
 		if (vmi->vmi_size < pages) {

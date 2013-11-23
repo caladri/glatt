@@ -29,7 +29,7 @@ DB_COMMAND_TREE(index, vm, vm_index);
 
 static struct pool vm_index_pool;
 
-static int vm_claim_range(struct vm *, vaddr_t, vaddr_t);
+static int vm_claim_range(struct vm *, vaddr_t, vaddr_t, struct vm_index *);
 static struct vm_index *vm_find_index(struct vm *, vaddr_t);
 static void vm_free_index(struct vm *, struct vm_index *);
 static int vm_insert_index(struct vm *, struct vm_index **, vaddr_t, size_t);
@@ -76,7 +76,7 @@ vm_alloc_address(struct vm *vm, vaddr_t *vaddrp, size_t pages)
 		} else {
 			error = vm_claim_range(vm, vmi->vmi_base,
 					       vmi->vmi_base +
-					       PAGE_TO_ADDR(pages));
+					       PAGE_TO_ADDR(pages), vmi);
 			if (error != 0) {
 				VM_UNLOCK(vm);
 				return (error);
@@ -98,7 +98,7 @@ vm_alloc_range(struct vm *vm, vaddr_t begin, vaddr_t end)
 
 	VM_LOCK(vm);
 
-	error = vm_claim_range(vm, PAGE_FLOOR(begin), PAGE_ROUNDUP(end));
+	error = vm_claim_range(vm, PAGE_FLOOR(begin), PAGE_ROUNDUP(end), NULL);
 	if (error != 0) {
 		VM_UNLOCK(vm);
 		return (error);
@@ -152,9 +152,9 @@ vm_insert_range(struct vm *vm, vaddr_t begin, vaddr_t end)
 }
 
 static int
-vm_claim_range(struct vm *vm, vaddr_t begin, vaddr_t end)
+vm_claim_range(struct vm *vm, vaddr_t begin, vaddr_t end, struct vm_index *vmi)
 {
-	struct vm_index *vmi, *nvmi;
+	struct vm_index *nvmi;
 	size_t leader, trailer;
 	size_t range;
 	size_t size;
@@ -162,9 +162,11 @@ vm_claim_range(struct vm *vm, vaddr_t begin, vaddr_t end)
 
 	range = end - begin;
 
-	vmi = vm_find_index(vm, begin);
-	if (vmi == NULL)
-		return (ERROR_NOT_FOUND);
+	if (vmi == NULL) {
+		vmi = vm_find_index(vm, begin);
+		if (vmi == NULL)
+			return (ERROR_NOT_FOUND);
+	}
 	if ((vmi->vmi_flags & VM_INDEX_FLAG_INUSE) != 0)
 		return (ERROR_NOT_FREE);
 	size = PAGE_TO_ADDR(vmi->vmi_size);

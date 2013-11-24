@@ -82,7 +82,7 @@ ufs_mount(struct storage_device *sdev)
 	vaddr_t umaddr;
 	int error, error2;
 
-	error = vm_alloc(&kernel_vm, sizeof *um, &umaddr);
+	error = vm_alloc(&kernel_vm, sizeof *um, &umaddr, VM_ALLOC_DEFAULT);
 	if (error != 0)
 		return (error);
 
@@ -115,7 +115,7 @@ ufs_op_file_open(fs_context_t fsc, const char *name, fs_file_context_t *fsfcp)
 	vaddr_t vaddr;
 	int error, error2;
 
-	error = vm_alloc(&kernel_vm, sizeof *fc, &vaddr);
+	error = vm_alloc(&kernel_vm, sizeof *fc, &vaddr, VM_ALLOC_DEFAULT);
 	if (error != 0)
 		return (error);
 	fc = (struct ufs_file_context *)vaddr;
@@ -207,7 +207,7 @@ ufs_op_directory_open(fs_context_t fsc, const char *name, fs_directory_context_t
 	vaddr_t vaddr;
 	int error, error2;
 
-	error = vm_alloc(&kernel_vm, sizeof *dc, &vaddr);
+	error = vm_alloc(&kernel_vm, sizeof *dc, &vaddr, VM_ALLOC_DEFAULT);
 	if (error != 0)
 		return (error);
 	dc = (struct ufs_directory_context *)vaddr;

@@ -313,7 +313,7 @@ syscall_vm_alloc(register_t *params)
 
 	td = current_thread();
 
-	error = vm_alloc(td->td_task->t_vm, (size_t)params[0], &vaddr);
+	error = vm_alloc(td->td_task->t_vm, (size_t)params[0], &vaddr, VM_ALLOC_DEFAULT);
 	if (error != 0)
 		return (error);
 	params[0] = vaddr;

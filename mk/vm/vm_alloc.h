@@ -3,8 +3,11 @@
 
 struct vm;
 
+#define	VM_ALLOC_DEFAULT	(0x00000000)
+#define	VM_ALLOC_HIGH		(0x00000001)
+
 	/* Virtual memory allocator.  */
-int vm_alloc(struct vm *, size_t, vaddr_t *) __non_null(1, 3) __check_result;
+int vm_alloc(struct vm *, size_t, vaddr_t *, unsigned) __non_null(1, 3) __check_result;
 int vm_alloc_page(struct vm *, vaddr_t *) __non_null(1, 2) __check_result;
 int vm_alloc_range_wire(struct vm *, vaddr_t, vaddr_t, vaddr_t *, size_t *)
 	__non_null(1, 4, 5) __check_result;

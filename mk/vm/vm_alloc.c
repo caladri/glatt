@@ -7,7 +7,7 @@
 #include <vm/vm_page.h>
 
 int
-vm_alloc(struct vm *vm, size_t size, vaddr_t *vaddrp)
+vm_alloc(struct vm *vm, size_t size, vaddr_t *vaddrp, unsigned flags)
 {
 	size_t o, pages;
 	vaddr_t vaddr;
@@ -23,7 +23,7 @@ vm_alloc(struct vm *vm, size_t size, vaddr_t *vaddrp)
 		return (page_alloc_direct(vm, PAGE_FLAG_DEFAULT, vaddrp));
 #endif
 
-	error = vm_alloc_address(vm, &vaddr, pages, false);
+	error = vm_alloc_address(vm, &vaddr, pages, (flags & VM_ALLOC_HIGH) != 0);
 	if (error != 0)
 		return (error);
 	for (o = 0; o < pages; o++) {

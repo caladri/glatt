@@ -68,7 +68,7 @@ cpu_thread_setup(struct thread *td)
 	tlb_wired_init(&td->td_cputhread.td_tlbwired);
 	cpu_thread_set_upcall(td, cpu_thread_exception, td);
 
-	error = vm_alloc(&kernel_vm, KSTACK_SIZE, &kstack);
+	error = vm_alloc(&kernel_vm, KSTACK_SIZE, &kstack, VM_ALLOC_DEFAULT | VM_ALLOC_HIGH);
 	if (error != 0)
 		return (error);
 	td->td_kstack = kstack;
@@ -78,7 +78,7 @@ cpu_thread_setup(struct thread *td)
 	memset(&td->td_context, 0, sizeof td->td_context);
 
 	if ((td->td_task->t_flags & TASK_KERNEL) == 0) {
-		error = vm_alloc(td->td_task->t_vm, MAILBOX_SIZE, &mbox);
+		error = vm_alloc(td->td_task->t_vm, MAILBOX_SIZE, &mbox, VM_ALLOC_DEFAULT);
 		if (error != 0)
 			return (error);
 		td->td_cputhread.td_mbox = mbox;

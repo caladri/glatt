@@ -39,7 +39,7 @@ framebuffer_init(struct framebuffer *fb, unsigned width, unsigned height)
 	vaddr_t vaddr;
 	int error;
 
-	error = vm_alloc(&kernel_vm, width * height * FB_BYTES, &vaddr);
+	error = vm_alloc(&kernel_vm, width * height * FB_BYTES, &vaddr, false);
 	if (error != 0)
 		panic("%s: vm_alloc failed: %m", __func__, error);
 

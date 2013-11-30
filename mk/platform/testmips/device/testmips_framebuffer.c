@@ -4,7 +4,7 @@
 #include <core/string.h>
 #include <cpu/memory.h>
 #include <io/bus/bus.h>
-#include <io/console/framebuffer.h>
+#include <io/framebuffer/framebuffer.h>
 
 static void
 tmfb_load(struct framebuffer *fb, const uint8_t *buffer)

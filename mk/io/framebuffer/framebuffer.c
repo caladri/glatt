@@ -207,6 +207,8 @@ framebuffer_clear(struct framebuffer *fb, bool consbox)
 		framebuffer_drawxy(fb, version[i], i * fb->fb_font->f_width, 0, &white, NULL);
 	}
 
+	/* XXX Always need to fill in whatever portion of the consbox isn't covered by characters due to font incongruence with display resolution.  */
+
 	if (!consbox)
 		return;
 

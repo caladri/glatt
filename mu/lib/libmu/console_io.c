@@ -6,9 +6,6 @@
 
 #include <libmu/common.h>
 
-static void printf_putc(void *, char);
-static void printf_puts(void *, const char *, size_t);
-
 void
 puts(const char *s)
 {
@@ -153,20 +150,8 @@ printf(const char *fmt, ...)
 void
 vprintf(const char *fmt, va_list ap)
 {
-	kfvprintf(printf_putc, printf_puts, NULL, fmt, ap);
-}
+	char linebuf[1024];
 
-static void
-printf_putc(void *arg, char ch)
-{
-	(void)arg;
-	putchar(ch);
-}
-
-static void
-printf_puts(void *arg, const char *s, size_t len)
-{
-	(void)arg;
-
-	putsn(s, len);
+	vsnprintf(linebuf, sizeof linebuf, fmt, ap);
+	putsn(linebuf, strlen(linebuf));
 }

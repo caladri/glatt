@@ -95,6 +95,15 @@ framebuffer_append(struct framebuffer *fb, char ch)
 		return;
 	}
 
+	if (ch == '\010') {
+		/* Clear out possible cursor location.  */
+		framebuffer_putxy(fb, ' ', fb->fb_column, fb->fb_row, NULL, &background);
+
+		if (fb->fb_column != 0)
+			fb->fb_column--;
+		return;
+	}
+
 	if (ch == '\t') {
 		unsigned i;
 

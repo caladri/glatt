@@ -30,9 +30,15 @@ static struct rgb foreground = {
 	.blue = 0xd0,
 };
 
+static struct rgb background = {
+	.red = 0x87,
+	.green = 0x6c,
+	.blue = 0xb0,
+};
+
 static void framebuffer_append(struct framebuffer *, char);
-static void framebuffer_background(struct rgb *, unsigned, unsigned);
 static void framebuffer_clear(struct framebuffer *, bool);
+static void framebuffer_drawxy(struct framebuffer *, char, unsigned, unsigned, const struct rgb *, const struct rgb *);
 static void framebuffer_flush(void *);
 static int framebuffer_getc(void *, char *);
 static void framebuffer_putc(void *, char);
@@ -105,14 +111,6 @@ framebuffer_append(struct framebuffer *fb, char ch)
 		fb->fb_column = 0;
 	}
 
-}
-
-static void
-framebuffer_background(struct rgb *color, unsigned x, unsigned y)
-{
-	color->red = 0x87;
-	color->green = 0x6c;
-	color->blue = 0xb0;
 }
 
 static void
@@ -200,6 +198,42 @@ framebuffer_clear(struct framebuffer *fb, bool consbox)
 }
 
 static void
+framebuffer_drawxy(struct framebuffer *fb, char ch, unsigned x, unsigned y, const struct rgb *fg, const struct rgb *bg)
+{
+	struct font *font;
+	uint8_t *glyph;
+	unsigned r, c;
+
+	font = fb->fb_font;
+	glyph = &font->f_charset[ch * fb->fb_font->f_height];
+
+	for (r = 0; r < font->f_height; r++) {
+		for (c = 0; c < font->f_width; c++) {
+			const struct rgb *color;
+			uint8_t *pixel;
+			unsigned p, s, px, py;
+
+			px = x + c;
+			py = y + r;
+			p = px + (py * fb->fb_width);
+			pixel = &fb->fb_buffer[p * FB_BYTES];
+
+			s = glyph[r] & (1 << (font->f_width - c));
+			if (s == 0) {
+				if (bg == NULL)
+					continue;
+				color = bg;
+			} else {
+				color = fg;
+			}
+			pixel[FB_BYTE_RED] = color->red;
+			pixel[FB_BYTE_GREEN] = color->green;
+			pixel[FB_BYTE_BLUE] = color->blue;
+		}
+	}
+}
+
+static void
 framebuffer_flush(void *sc)
 {
 	struct framebuffer *fb;
@@ -248,35 +282,15 @@ static void
 framebuffer_putxy(struct framebuffer *fb, char ch, unsigned x, unsigned y)
 {
 	struct font *font;
-	uint8_t *glyph;
-	unsigned r, c;
+	unsigned px, py;
 
 	font = fb->fb_font;
-	glyph = &font->f_charset[ch * fb->fb_font->f_height];
+	px = x * font->f_width;
+	py = y * font->f_height;
+	px += FB_PADWIDTH(fb) + FB_BEZWIDTH(fb);
+	py += FB_PADHEIGHT(fb) + FB_BEZHEIGHT(fb);
 
-	for (r = 0; r < font->f_height; r++) {
-		for (c = 0; c < font->f_width; c++) {
-			struct rgb color;
-			uint8_t *pixel;
-			unsigned p, s, px, py;
-
-			px = x * font->f_width + c;
-			py = y * font->f_height + r;
-			px += FB_PADWIDTH(fb) + FB_BEZWIDTH(fb);
-			py += FB_PADHEIGHT(fb) + FB_BEZHEIGHT(fb);
-			p = px + (py * fb->fb_width);
-			pixel = &fb->fb_buffer[p * FB_BYTES];
-
-			s = glyph[r] & (1 << (font->f_width - c));
-			if (s == 0)
-				framebuffer_background(&color, px, py);
-			else
-				color = foreground;
-			pixel[FB_BYTE_RED] = color.red;
-			pixel[FB_BYTE_GREEN] = color.green;
-			pixel[FB_BYTE_BLUE] = color.blue;
-		}
-	}
+	framebuffer_drawxy(fb, ch, px, py, &foreground, &background);
 }
 
 static void

@@ -129,6 +129,11 @@ tmcons_setup(struct bus_instance *bi)
 	sc->sc_console.c_name = "testmips";
 	sc->sc_console.c_getc = testmips_console_getc;
 
+#ifdef	FRAMEBUFFER
+	/* Disable console output if we're using a framebuffer instead.  */
+	sc->sc_console.c_putc = NULL;
+#endif
+
 	console_init(&sc->sc_console);
 
 	cpu_interrupt_establish(TEST_CONSOLE_DEV_IRQ, tmcons_interrupt, sc);

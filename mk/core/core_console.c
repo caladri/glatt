@@ -6,8 +6,8 @@
 #include <core/console.h>
 #include <core/consoledev.h>
 
-static struct sleepq kernel_console_sleepq;
-static struct console *kernel_console;
+static struct sleepq kernel_input_sleepq;
+static struct console *kernel_input, *kernel_output;
 
 static void cflush(struct console *);
 static void cputc_noflush(void *, char);
@@ -20,14 +20,22 @@ void
 console_init(struct console *console)
 {
 	spinlock_init(&console->c_lock, "console", SPINLOCK_FLAG_DEFAULT);
-	/* XXX Push sleepq into console?  */
-	if (kernel_console == NULL)
-		sleepq_init(&kernel_console_sleepq, &console->c_lock);
-	else
-		kernel_console_sleepq.sq_lock = &console->c_lock; /* XXX Filthy.  */
 
-	kernel_console = console;
-	printf("Switched to console: %s\n", console->c_name);
+	if (console->c_putc != NULL) {
+		kernel_output = console;
+		printf("Switched to output console: %s\n", console->c_name);
+	}
+
+	if (console->c_getc != NULL) {
+		/* XXX Push sleepq into console?  */
+		if (kernel_input == NULL)
+			sleepq_init(&kernel_input_sleepq, &console->c_lock);
+		else
+			kernel_input_sleepq.sq_lock = &console->c_lock; /* XXX Filthy.  */
+
+		kernel_input = console;
+		printf("Switched to input console: %s\n", console->c_name);
+	}
 }
 
 int
@@ -36,9 +44,9 @@ kcgetc(char *chp)
 	char ch;
 	int error;
 
-	CONSOLE_LOCK(kernel_console);
-	error = kernel_console->c_getc(kernel_console->c_softc, &ch);
-	CONSOLE_UNLOCK(kernel_console);
+	CONSOLE_LOCK(kernel_input);
+	error = kernel_input->c_getc(kernel_input->c_softc, &ch);
+	CONSOLE_UNLOCK(kernel_input);
 	if (error != 0)
 		return (error);
 	*chp = ch;
@@ -52,15 +60,15 @@ kcgetc_wait(char *chp)
 	int error;
 
 	for (;;) {
-		CONSOLE_LOCK(kernel_console);
-		error = kernel_console->c_getc(kernel_console->c_softc, &ch);
+		CONSOLE_LOCK(kernel_input);
+		error = kernel_input->c_getc(kernel_input->c_softc, &ch);
 		switch (error) {
 		case ERROR_AGAIN:
-			sleepq_enter(&kernel_console_sleepq);
+			sleepq_enter(&kernel_input_sleepq);
 			/* sleepq_enter drops console lock.  */
 			continue;
 		default:
-			CONSOLE_UNLOCK(kernel_console);
+			CONSOLE_UNLOCK(kernel_input);
 			if (error != 0)
 				return (error);
 			*chp = ch;
@@ -72,39 +80,39 @@ kcgetc_wait(char *chp)
 void
 kcgetc_wakeup(bool broadcast)
 {
-	CONSOLE_LOCK(kernel_console);
+	CONSOLE_LOCK(kernel_input);
 	if (broadcast)
-		sleepq_signal(&kernel_console_sleepq);
+		sleepq_signal(&kernel_input_sleepq);
 	else
-		sleepq_signal_one(&kernel_console_sleepq);
-	CONSOLE_UNLOCK(kernel_console);
+		sleepq_signal_one(&kernel_input_sleepq);
+	CONSOLE_UNLOCK(kernel_input);
 }
 
 void
 kcputc(char ch)
 {
-	CONSOLE_LOCK(kernel_console);
-	cputc_noflush(kernel_console, ch);
-	cflush(kernel_console);
-	CONSOLE_UNLOCK(kernel_console);
+	CONSOLE_LOCK(kernel_output);
+	cputc_noflush(kernel_output, ch);
+	cflush(kernel_output);
+	CONSOLE_UNLOCK(kernel_output);
 }
 
 void
 kcputs(const char *s)
 {
-	CONSOLE_LOCK(kernel_console);
-	cputs_noflush(kernel_console, s, strlen(s));
-	cflush(kernel_console);
-	CONSOLE_UNLOCK(kernel_console);
+	CONSOLE_LOCK(kernel_output);
+	cputs_noflush(kernel_output, s, strlen(s));
+	cflush(kernel_output);
+	CONSOLE_UNLOCK(kernel_output);
 }
 
 void
 kcputsn(const char *s, size_t len)
 {
-	CONSOLE_LOCK(kernel_console);
-	cputs_noflush(kernel_console, s, len);
-	cflush(kernel_console);
-	CONSOLE_UNLOCK(kernel_console);
+	CONSOLE_LOCK(kernel_output);
+	cputs_noflush(kernel_output, s, len);
+	cflush(kernel_output);
+	CONSOLE_UNLOCK(kernel_output);
 }
 
 void
@@ -120,10 +128,10 @@ printf(const char *s, ...)
 void
 vprintf(const char *s, va_list ap)
 {
-	CONSOLE_LOCK(kernel_console);
-	kfvprintf(cputc_noflush, cputs_noflush, kernel_console, s, ap);
-	cflush(kernel_console);
-	CONSOLE_UNLOCK(kernel_console);
+	CONSOLE_LOCK(kernel_output);
+	kfvprintf(cputc_noflush, cputs_noflush, kernel_output, s, ap);
+	cflush(kernel_output);
+	CONSOLE_UNLOCK(kernel_output);
 }
 
 static void

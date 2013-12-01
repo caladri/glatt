@@ -24,9 +24,7 @@ again:		ch = getchar();
 			return (ERROR_UNEXPECTED);
 		if (ch == '\010') {
 			if (i != 0) {
-				putchar(ch);
-				putchar(' ');
-				putchar(ch);
+				putsn("\010 \010", 3);
 				i--;
 			}
 			goto again;

@@ -41,7 +41,6 @@ static void framebuffer_append(struct framebuffer *, char);
 static void framebuffer_clear(struct framebuffer *, bool);
 static void framebuffer_drawxy(struct framebuffer *, char, unsigned, unsigned, const struct rgb *, const struct rgb *);
 static void framebuffer_flush(void *);
-static int framebuffer_getc(void *, char *);
 static void framebuffer_putc(void *, char);
 static void framebuffer_puts(void *, const char *, size_t);
 static void framebuffer_putxy(struct framebuffer *, char, unsigned, unsigned);
@@ -59,7 +58,7 @@ framebuffer_init(struct framebuffer *fb, unsigned width, unsigned height)
 
 	fb->fb_console.c_name = "framebuffer";
 	fb->fb_console.c_softc = fb;
-	fb->fb_console.c_getc = framebuffer_getc;
+	fb->fb_console.c_getc = NULL;
 	fb->fb_console.c_putc = framebuffer_putc;
 	fb->fb_console.c_puts = framebuffer_puts;
 	fb->fb_console.c_flush = framebuffer_flush;
@@ -261,12 +260,6 @@ framebuffer_flush(void *sc)
 	spinlock_lock(&fb->fb_lock);
 	fb->fb_load(fb, fb->fb_buffer);
 	spinlock_unlock(&fb->fb_lock);
-}
-
-static int
-framebuffer_getc(void *sc, char *chp)
-{
-	return (ERROR_NOT_IMPLEMENTED);
 }
 
 static void

@@ -196,6 +196,12 @@ framebuffer_clear(struct framebuffer *fb, bool consbox)
 			.blue = 0xff,
 			.green = 0xff,
 		};
+		static const struct rgb black = {
+			.red = 0x00,
+			.blue = 0x00,
+			.green = 0x00,
+		};
+		framebuffer_drawxy(fb, version[i], i * fb->fb_font->f_width + 1, 1, &black, NULL);
 		framebuffer_drawxy(fb, version[i], i * fb->fb_font->f_width, 0, &white, NULL);
 	}
 

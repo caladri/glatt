@@ -1,5 +1,6 @@
 #include <core/types.h>
 #include <core/error.h>
+#include <core/copyright.h>
 #include <core/string.h>
 #include <io/framebuffer/framebuffer.h>
 #include <vm/vm.h>
@@ -116,8 +117,10 @@ framebuffer_append(struct framebuffer *fb, char ch)
 static void
 framebuffer_clear(struct framebuffer *fb, bool consbox)
 {
+	const char *version = MK_NAME " " MK_VERSION;
 	uint8_t *pixel;
 	unsigned x, y, p;
+	unsigned i;
 
 	for (x = 0; x < fb->fb_width; x++) {
 		for (y = 0; y < fb->fb_height; y++) {
@@ -185,6 +188,15 @@ framebuffer_clear(struct framebuffer *fb, bool consbox)
 			pixel[FB_BYTE_GREEN] = color.green;
 			pixel[FB_BYTE_BLUE] = color.blue;
 		}
+	}
+
+	for (i = 0; version[i] != '\0'; i++) {
+		static const struct rgb white = {
+			.red = 0xff,
+			.blue = 0xff,
+			.green = 0xff,
+		};
+		framebuffer_drawxy(fb, version[i], i * fb->fb_font->f_width, 0, &white, NULL);
 	}
 
 	if (!consbox)

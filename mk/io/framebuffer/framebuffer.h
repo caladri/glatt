@@ -5,9 +5,10 @@
 #include <core/consoledev.h>
 
 struct font {
-	uint8_t *f_charset;	/* Charset in 8-bit bitmap format.  */
+	const uint8_t *f_charset;	/* Charset in 8-bit bitmap format.  */
 	unsigned f_width;	/* Character width.  */
 	unsigned f_height;	/* Character height.  */
+	uint8_t f_first;	/* First character in font.  */
 };
 
 struct rgb {
@@ -19,7 +20,7 @@ struct rgb {
 struct framebuffer {
 	struct console fb_console;	/* Associated console.  */
 	struct spinlock fb_lock;	/* Protects data.  */
-	struct font *fb_font;		/* Current font.  */
+	const struct font *fb_font;	/* Current font.  */
 	uint8_t *fb_buffer;
 	unsigned fb_width;		/* How many pixels wide?  */
 	unsigned fb_height;		/* How many pixels high?  */
@@ -29,7 +30,7 @@ struct framebuffer {
 	void (*fb_load)(struct framebuffer *, const uint8_t *);
 };
 
-extern struct font framebuffer_font_miklic_bold8x16;
+extern const struct font framebuffer_font_qvss8x15;
 
 void framebuffer_init(struct framebuffer *, unsigned, unsigned);
 

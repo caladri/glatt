@@ -67,7 +67,7 @@ framebuffer_init(struct framebuffer *fb, unsigned width, unsigned height)
 	spinlock_init(&fb->fb_lock, "framebuffer", SPINLOCK_FLAG_DEFAULT);
 
 	spinlock_lock(&fb->fb_lock);
-	fb->fb_font = &framebuffer_font_miklic_bold8x16;
+	fb->fb_font = &framebuffer_font_qvss8x15;
 	fb->fb_buffer = (uint8_t *)vaddr;
 
 	fb->fb_width = width;
@@ -233,12 +233,12 @@ framebuffer_cursor(struct framebuffer *fb)
 static void
 framebuffer_drawxy(struct framebuffer *fb, char ch, unsigned x, unsigned y, const struct rgb *fg, const struct rgb *bg)
 {
-	struct font *font;
-	uint8_t *glyph;
+	const struct font *font;
+	const uint8_t *glyph;
 	unsigned r, c;
 
 	font = fb->fb_font;
-	glyph = &font->f_charset[ch * fb->fb_font->f_height];
+	glyph = &font->f_charset[((uint8_t)ch - fb->fb_font->f_first) * fb->fb_font->f_height];
 
 	for (r = 0; r < font->f_height; r++) {
 		for (c = 0; c < font->f_width; c++) {
@@ -309,12 +309,10 @@ framebuffer_puts(void *sc, const char *s, size_t len)
 static void
 framebuffer_putxy(struct framebuffer *fb, char ch, unsigned x, unsigned y, const struct rgb *fg, const struct rgb *bg)
 {
-	struct font *font;
 	unsigned px, py;
 
-	font = fb->fb_font;
-	px = x * font->f_width;
-	py = y * font->f_height;
+	px = x * fb->fb_font->f_width;
+	py = y * fb->fb_font->f_height;
 	px += FB_PADWIDTH(fb) + FB_BEZWIDTH(fb);
 	py += FB_PADHEIGHT(fb) + FB_BEZHEIGHT(fb);
 

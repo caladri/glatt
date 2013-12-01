@@ -237,6 +237,10 @@ framebuffer_drawxy(struct framebuffer *fb, char ch, unsigned x, unsigned y, cons
 	const uint8_t *glyph;
 	unsigned r, c;
 
+	if ((uint8_t)ch < fb->fb_font->f_first) {
+		ch = '?';
+	}
+
 	font = fb->fb_font;
 	glyph = &font->f_charset[((uint8_t)ch - fb->fb_font->f_first) * fb->fb_font->f_height];
 

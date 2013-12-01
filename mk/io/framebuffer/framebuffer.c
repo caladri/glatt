@@ -125,8 +125,8 @@ framebuffer_clear(struct framebuffer *fb, bool consbox)
 		for (y = 0; y < fb->fb_height; y++) {
 			struct rgb color, scale;
 
-			if (x < FB_PADWIDTH(fb) || x > fb->fb_width - FB_PADWIDTH(fb) ||
-			    y < FB_PADHEIGHT(fb) || y > fb->fb_height - FB_PADHEIGHT(fb)) {
+			if (x < FB_PADWIDTH(fb) || x >= fb->fb_width - FB_PADWIDTH(fb) ||
+			    y < FB_PADHEIGHT(fb) || y >= fb->fb_height - FB_PADHEIGHT(fb)) {
 				/* Draw background padding.  */
 				color.red = 0x40;
 				color.green = 0xd6;
@@ -140,25 +140,25 @@ framebuffer_clear(struct framebuffer *fb, bool consbox)
 				color.green -= scale.green;
 				color.blue -= scale.blue;
 			} else if (x < FB_PADWIDTH(fb) + FB_BEZWIDTH(fb) ||
-				   x > fb->fb_width - (FB_PADWIDTH(fb) + FB_BEZWIDTH(fb)) ||
+				   x >= fb->fb_width - (FB_PADWIDTH(fb) + FB_BEZWIDTH(fb)) ||
 				   y < FB_PADHEIGHT(fb) + FB_BEZHEIGHT(fb) ||
-				   y > fb->fb_height - (FB_PADHEIGHT(fb) + FB_BEZHEIGHT(fb))) {
+				   y >= fb->fb_height - (FB_PADHEIGHT(fb) + FB_BEZHEIGHT(fb))) {
 				/* Draw bezel.  */
 				if (x < FB_PADWIDTH(fb) + 1 || y < FB_PADHEIGHT(fb) + 1) {
 					/* White highlight outside top and left.  */
 					color.red = 0xff;
 					color.blue = 0xff;
 					color.green = 0xff;
-				} else if (x > fb->fb_width - (FB_PADWIDTH(fb) + 1) ||
-					   y > fb->fb_height - (FB_PADHEIGHT(fb) + 1)) {
+				} else if (x >= fb->fb_width - (FB_PADWIDTH(fb) + 1) ||
+					   y >= fb->fb_height - (FB_PADHEIGHT(fb) + 1)) {
 					/* Black shadow outside bottom and right.  */
 					color.red = 0x00;
 					color.blue = 0x00;
 					color.green = 0x00;
 				} else if (x < FB_PADWIDTH(fb) + FB_BEZWIDTH(fb) - 1 ||
-					   x > fb->fb_width - (FB_PADWIDTH(fb) + FB_BEZWIDTH(fb) - 1) ||
+					   x >= fb->fb_width - (FB_PADWIDTH(fb) + FB_BEZWIDTH(fb) - 1) ||
 					   y < FB_PADHEIGHT(fb) + FB_BEZHEIGHT(fb) - 1 ||
-					   y > fb->fb_height - (FB_PADHEIGHT(fb) + FB_BEZHEIGHT(fb) - 1)) {
+					   y >= fb->fb_height - (FB_PADHEIGHT(fb) + FB_BEZHEIGHT(fb) - 1)) {
 					/* Gray (hint of blue) body.  */
 					color.red = 0xce;
 					color.blue = 0xde;

@@ -10,8 +10,19 @@
 #define	FB_BYTE_GREEN	1
 #define	FB_BYTE_BLUE	2
 #define	FB_BYTES	3
-#define	FB_COLUMNS(fb)	((fb)->fb_width / (fb)->fb_font->f_width)
-#define	FB_ROWS(fb)	((fb)->fb_height / (fb)->fb_font->f_height)
+
+#define	FB_BEZCOLS	(2)
+#define	FB_BEZROWS	(1)
+#define	FB_BEZWIDTH(fb)		((fb)->fb_font->f_width * FB_BEZCOLS)
+#define	FB_BEZHEIGHT(fb)	((fb)->fb_font->f_height * FB_BEZROWS)
+
+#define	FB_PADCOLS	(5)
+#define	FB_PADROWS	(2)
+#define	FB_PADWIDTH(fb)		((fb)->fb_font->f_width * FB_PADCOLS)
+#define	FB_PADHEIGHT(fb)	((fb)->fb_font->f_height * FB_PADROWS)
+
+#define	FB_COLUMNS(fb)	(((fb)->fb_width - 2 * (FB_PADWIDTH((fb)) + FB_BEZWIDTH((fb)))) / (fb)->fb_font->f_width)
+#define	FB_ROWS(fb)	(((fb)->fb_height - 2 * (FB_PADHEIGHT((fb)) + FB_BEZHEIGHT((fb)))) / (fb)->fb_font->f_height)
 
 static struct rgb foreground = {
 	.red = 0xd0,
@@ -19,12 +30,7 @@ static struct rgb foreground = {
 	.blue = 0xd0,
 };
 
-static struct rgb background = {
-	.red = 0x00,
-	.green = 0x00,
-	.blue = 0xff,
-};
-
+static void framebuffer_background(struct rgb *, unsigned, unsigned);
 static void framebuffer_clear(struct framebuffer *);
 static void framebuffer_flush(void *);
 static int framebuffer_getc(void *, char *);
@@ -68,13 +74,86 @@ framebuffer_init(struct framebuffer *fb, unsigned width, unsigned height)
 }
 
 static void
+framebuffer_background(struct rgb *color, unsigned x, unsigned y)
+{
+	color->red = 0x87;
+	color->green = 0x6c;
+	color->blue = 0xb0;
+}
+
+static void
 framebuffer_clear(struct framebuffer *fb)
 {
-	unsigned x, y;
+	uint8_t *pixel;
+	unsigned x, y, p;
 
-	for (x = 0; x < FB_COLUMNS(fb); x++)
-		for (y = 0; y < FB_ROWS(fb); y++)
-			framebuffer_putxy(fb, ' ', x, y);
+	for (x = 0; x < fb->fb_width; x++) {
+		for (y = 0; y < fb->fb_height; y++) {
+			struct rgb color, scale;
+
+			if (x < FB_PADWIDTH(fb) || x > fb->fb_width - FB_PADWIDTH(fb) ||
+			    y < FB_PADHEIGHT(fb) || y > fb->fb_height - FB_PADHEIGHT(fb)) {
+				/* Draw background padding.  */
+				color.red = 0x40;
+				color.green = 0xd6;
+				color.blue = 0xff;
+
+				scale.red = (color.red * y) / fb->fb_height;
+				scale.green = (color.green * y) / fb->fb_height;
+				scale.blue = ((color.blue / 4) * y) / fb->fb_height;
+
+				color.red -= scale.red;
+				color.green -= scale.green;
+				color.blue -= scale.blue;
+			} else if (x < FB_PADWIDTH(fb) + FB_BEZWIDTH(fb) ||
+				   x > fb->fb_width - (FB_PADWIDTH(fb) + FB_BEZWIDTH(fb)) ||
+				   y < FB_PADHEIGHT(fb) + FB_BEZHEIGHT(fb) ||
+				   y > fb->fb_height - (FB_PADHEIGHT(fb) + FB_BEZHEIGHT(fb))) {
+				/* Draw bezel.  */
+				if (x < FB_PADWIDTH(fb) + 1 || y < FB_PADHEIGHT(fb) + 1) {
+					/* White highlight outside top and left.  */
+					color.red = 0xff;
+					color.blue = 0xff;
+					color.green = 0xff;
+				} else if (x > fb->fb_width - (FB_PADWIDTH(fb) + 1) ||
+					   y > fb->fb_height - (FB_PADHEIGHT(fb) + 1)) {
+					/* Black shadow outside bottom and right.  */
+					color.red = 0x00;
+					color.blue = 0x00;
+					color.green = 0x00;
+				} else if (x < FB_PADWIDTH(fb) + FB_BEZWIDTH(fb) - 1 ||
+					   x > fb->fb_width - (FB_PADWIDTH(fb) + FB_BEZWIDTH(fb) - 1) ||
+					   y < FB_PADHEIGHT(fb) + FB_BEZHEIGHT(fb) - 1 ||
+					   y > fb->fb_height - (FB_PADHEIGHT(fb) + FB_BEZHEIGHT(fb) - 1)) {
+					/* Gray (hint of blue) body.  */
+					color.red = 0xce;
+					color.blue = 0xde;
+					color.green = 0xce;
+				} else if (x == FB_PADWIDTH(fb) + FB_BEZWIDTH(fb) - 1 ||
+					   y == FB_PADHEIGHT(fb) + FB_BEZHEIGHT(fb) - 1) {
+					/* Black shadow inside top and left.  */
+					color.red = 0x00;
+					color.blue = 0x00;
+					color.green = 0x00;
+				} else {
+					/* White highlight inside bottom and right.  */
+					color.red = 0xff;
+					color.blue = 0xff;
+					color.green = 0xff;
+				}
+			} else {
+				/* Draw console background.  */
+				framebuffer_background(&color, x, y);
+			}
+
+			p = x + (y * fb->fb_width);
+			pixel = &fb->fb_buffer[p * FB_BYTES];
+
+			pixel[FB_BYTE_RED] = color.red;
+			pixel[FB_BYTE_GREEN] = color.green;
+			pixel[FB_BYTE_BLUE] = color.blue;
+		}
+	}
 }
 
 static void
@@ -171,22 +250,25 @@ framebuffer_putxy(struct framebuffer *fb, char ch, unsigned x, unsigned y)
 
 	for (r = 0; r < font->f_height; r++) {
 		for (c = 0; c < font->f_width; c++) {
-			struct rgb *color;
+			struct rgb color;
 			uint8_t *pixel;
-			unsigned p, s;
+			unsigned p, s, px, py;
 
-			p = (x * font->f_width + c) +
-				((y * font->f_height + r) * fb->fb_width);
+			px = x * font->f_width + c;
+			py = y * font->f_height + r;
+			px += FB_PADWIDTH(fb) + FB_BEZWIDTH(fb);
+			py += FB_PADHEIGHT(fb) + FB_BEZHEIGHT(fb);
+			p = px + (py * fb->fb_width);
 			pixel = &fb->fb_buffer[p * FB_BYTES];
 
 			s = glyph[r] & (1 << (font->f_width - c));
 			if (s == 0)
-				color = &background;
+				framebuffer_background(&color, px, py);
 			else
-				color = &foreground;
-			pixel[FB_BYTE_RED] = color->red;
-			pixel[FB_BYTE_GREEN] = color->green;
-			pixel[FB_BYTE_BLUE] = color->blue;
+				color = foreground;
+			pixel[FB_BYTE_RED] = color.red;
+			pixel[FB_BYTE_GREEN] = color.green;
+			pixel[FB_BYTE_BLUE] = color.blue;
 		}
 	}
 }
@@ -196,6 +278,8 @@ framebuffer_scroll(struct framebuffer *fb)
 {
 	unsigned c;
 	unsigned lh, skip;
+
+	panic("%s: not yet reimplemented.", __func__);
 
 	/*
 	 * Shift up by one line-height.

@@ -30,6 +30,7 @@ static struct rgb foreground = {
 	.blue = 0xd0,
 };
 
+static void framebuffer_append(struct framebuffer *, char);
 static void framebuffer_background(struct rgb *, unsigned, unsigned);
 static void framebuffer_clear(struct framebuffer *);
 static void framebuffer_flush(void *);
@@ -71,6 +72,39 @@ framebuffer_init(struct framebuffer *fb, unsigned width, unsigned height)
 	spinlock_unlock(&fb->fb_lock);
 
 	console_init(&fb->fb_console);
+}
+
+static void
+framebuffer_append(struct framebuffer *fb, char ch)
+{
+	if (ch == '\n') {
+		if (fb->fb_row == FB_ROWS(fb) - 1)
+			framebuffer_scroll(fb);
+		else
+			fb->fb_row++;
+		fb->fb_column = 0;
+		return;
+	}
+
+	if (ch == '\t') {
+		unsigned i;
+
+		/* XXX Actually go to next tabstop rather than expanding a tab character in situ.  Easy enough.  */
+		for (i = 0; i < 8; i++)
+			framebuffer_append(fb, ' ');
+		return;
+	}
+
+	framebuffer_putxy(fb, ch, fb->fb_column, fb->fb_row);
+
+	if (fb->fb_column++ == FB_COLUMNS(fb) - 1) {
+		if (fb->fb_row == FB_ROWS(fb) - 1)
+			framebuffer_scroll(fb);
+		else
+			fb->fb_row++;
+		fb->fb_column = 0;
+	}
+
 }
 
 static void
@@ -182,25 +216,7 @@ framebuffer_putc(void *sc, char ch)
 	fb = sc;
 
 	spinlock_lock(&fb->fb_lock);
-	if (ch == '\n') {
-		if (fb->fb_row == FB_ROWS(fb) - 1)
-			framebuffer_scroll(fb);
-		else
-			fb->fb_row++;
-		fb->fb_column = 0;
-		spinlock_unlock(&fb->fb_lock);
-		return;
-	}
-
-	framebuffer_putxy(fb, ch, fb->fb_column, fb->fb_row);
-
-	if (fb->fb_column++ == FB_COLUMNS(fb) - 1) {
-		if (fb->fb_row == FB_ROWS(fb) - 1)
-			framebuffer_scroll(fb);
-		else
-			fb->fb_row++;
-		fb->fb_column = 0;
-	}
+	framebuffer_append(fb, ch);
 	spinlock_unlock(&fb->fb_lock);
 }
 
@@ -214,26 +230,7 @@ framebuffer_puts(void *sc, const char *s, size_t len)
 
 	spinlock_lock(&fb->fb_lock);
 	for (i = 0; i < len; i++) {
-		char ch = s[i];
-
-		if (ch == '\n') {
-			if (fb->fb_row == FB_ROWS(fb) - 1)
-				framebuffer_scroll(fb);
-			else
-				fb->fb_row++;
-			fb->fb_column = 0;
-			continue;
-		}
-
-		framebuffer_putxy(fb, ch, fb->fb_column, fb->fb_row);
-
-		if (fb->fb_column++ == FB_COLUMNS(fb) - 1) {
-			if (fb->fb_row == FB_ROWS(fb) - 1)
-				framebuffer_scroll(fb);
-			else
-				fb->fb_row++;
-			fb->fb_column = 0;
-		}
+		framebuffer_append(fb, s[i]);
 	}
 	spinlock_unlock(&fb->fb_lock);
 }

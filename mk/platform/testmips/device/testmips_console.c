@@ -117,6 +117,8 @@ tmcons_setup(struct bus_instance *bi)
 {
 	struct tmcons_softc *sc;
 
+	return (ERROR_NOT_IMPLEMENTED);
+
 	bus_set_description(bi, "testmips simulated console device.");
 
 	sc = bus_softc_allocate(bi, sizeof *sc);

@@ -32,7 +32,7 @@ static struct rgb foreground = {
 
 static void framebuffer_append(struct framebuffer *, char);
 static void framebuffer_background(struct rgb *, unsigned, unsigned);
-static void framebuffer_clear(struct framebuffer *);
+static void framebuffer_clear(struct framebuffer *, bool);
 static void framebuffer_flush(void *);
 static int framebuffer_getc(void *, char *);
 static void framebuffer_putc(void *, char);
@@ -68,7 +68,7 @@ framebuffer_init(struct framebuffer *fb, unsigned width, unsigned height)
 	fb->fb_column = 0;
 	fb->fb_row = 0;
 
-	framebuffer_clear(fb);
+	framebuffer_clear(fb, true);
 	spinlock_unlock(&fb->fb_lock);
 
 	console_init(&fb->fb_console);
@@ -116,7 +116,7 @@ framebuffer_background(struct rgb *color, unsigned x, unsigned y)
 }
 
 static void
-framebuffer_clear(struct framebuffer *fb)
+framebuffer_clear(struct framebuffer *fb, bool consbox)
 {
 	uint8_t *pixel;
 	unsigned x, y, p;
@@ -176,8 +176,8 @@ framebuffer_clear(struct framebuffer *fb)
 					color.green = 0xff;
 				}
 			} else {
-				/* Draw console background.  */
-				framebuffer_background(&color, x, y);
+				/* Skip console background.  */
+				continue;
 			}
 
 			p = x + (y * fb->fb_width);
@@ -186,6 +186,15 @@ framebuffer_clear(struct framebuffer *fb)
 			pixel[FB_BYTE_RED] = color.red;
 			pixel[FB_BYTE_GREEN] = color.green;
 			pixel[FB_BYTE_BLUE] = color.blue;
+		}
+	}
+
+	if (!consbox)
+		return;
+
+	for (x = 0; x < FB_COLUMNS(fb); x++) {
+		for (y = 0; y < FB_ROWS(fb); y++) {
+			framebuffer_putxy(fb, ' ', x, y);
 		}
 	}
 }
@@ -276,8 +285,6 @@ framebuffer_scroll(struct framebuffer *fb)
 	unsigned c;
 	unsigned lh, skip;
 
-	panic("%s: not yet reimplemented.", __func__);
-
 	/*
 	 * Shift up by one line-height.
 	 */
@@ -285,6 +292,15 @@ framebuffer_scroll(struct framebuffer *fb)
 	skip = lh * fb->fb_width;
 	memcpy(fb->fb_buffer, &fb->fb_buffer[skip * FB_BYTES],
 	       ((fb->fb_height - lh) * fb->fb_width) * FB_BYTES);
+
+	/*
+	 * Redraw padding and bevel.
+	 */
+	framebuffer_clear(fb, false);
+
+	/*
+	 * Blank final line.
+	 */
 	for (c = 0; c < FB_COLUMNS(fb); c++)
 		framebuffer_putxy(fb, ' ', c, FB_ROWS(fb) - 1);
 }

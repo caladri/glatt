@@ -17,7 +17,7 @@
 #define	TEST_CONSOLE_DEV_WRITE(v)					\
 	*TEST_CONSOLE_DEV_MAP() = (v)
 
-#define	TMCONS_LOCK(sc)	spinlock_lock(&(sc)->sc_lock)
+#define	TMCONS_LOCK(sc)		spinlock_lock(&(sc)->sc_lock)
 #define	TMCONS_UNLOCK(sc)	spinlock_unlock(&(sc)->sc_lock)
 
 static int testmips_console_early_getc(void *, char *);
@@ -74,7 +74,7 @@ testmips_console_getc(void *arg, char *chp)
 		return (0);
 	}
 	*chp = sc->sc_buf[sc->sc_buffo];
-	sc->sc_buffo = (sc->sc_buffo + 1) % sizeof sc->sc_buffo;
+	sc->sc_buffo = (sc->sc_buffo + 1) % sizeof sc->sc_buf;
 	sc->sc_avail--;
 	TMCONS_UNLOCK(sc);
 

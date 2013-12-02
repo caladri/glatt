@@ -188,8 +188,13 @@ framebuffer_clear(struct framebuffer *fb, bool consbox)
 					color.green = 0xff;
 				}
 			} else {
-				/* Skip console background.  */
-				continue;
+				if (x < FB_PADWIDTH(fb) + FB_BEZWIDTH + (fb->fb_font->f_width * FB_COLUMNS(fb)) &&
+				    y < FB_PADHEIGHT(fb) + FB_BEZHEIGHT + (fb->fb_font->f_height * FB_ROWS(fb))) {
+					/* Skip console text background.  */
+					continue;
+				}
+				/* Background around console box not covered by text.  */
+				color = background;
 			}
 
 			p = x + (y * fb->fb_width);

@@ -67,7 +67,7 @@ framebuffer_init(struct framebuffer *fb, unsigned width, unsigned height)
 	spinlock_lock(&fb->fb_lock);
 	fb->fb_font = &framebuffer_font_qvss8x15;
 	fb->fb_buffer = (uint8_t *)vaddr;
-	fb->fb_dirty_start = width * height * FB_BYTES;
+	fb->fb_dirty_start = width * height;
 	fb->fb_dirty_end = 0;
 
 	fb->fb_width = width;
@@ -136,7 +136,7 @@ framebuffer_clear(struct framebuffer *fb, bool consbox)
 	unsigned i;
 
 	fb->fb_dirty_start = 0;
-	fb->fb_dirty_end = fb->fb_width * fb->fb_height * FB_BYTES;
+	fb->fb_dirty_end = fb->fb_width * fb->fb_height;
 
 	for (x = 0; x < fb->fb_width; x++) {
 		for (y = 0; y < fb->fb_height; y++) {
@@ -301,8 +301,11 @@ framebuffer_flush(void *sc)
 
 	spinlock_lock(&fb->fb_lock);
 	framebuffer_cursor(fb);
-	if (fb->fb_dirty_end > fb->fb_dirty_start)
-		fb->fb_load(fb, fb->fb_buffer, fb->fb_dirty_start, fb->fb_dirty_end);
+	if (fb->fb_dirty_end > fb->fb_dirty_start) {
+		fb->fb_load(fb, fb->fb_buffer, fb->fb_dirty_start * FB_BYTES, fb->fb_dirty_end * FB_BYTES);
+		fb->fb_dirty_start = fb->fb_width * fb->fb_height;
+		fb->fb_dirty_end = 0;
+	}
 	spinlock_unlock(&fb->fb_lock);
 }
 

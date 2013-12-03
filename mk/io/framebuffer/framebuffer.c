@@ -79,8 +79,8 @@ framebuffer_init(struct framebuffer *fb, unsigned width, unsigned height)
 	if (error != 0)
 		panic("%s: vm_alloc failed: %m", __func__, error);
 	fb->fb_text = (char *)vaddr;
-	for (x = 0; x < FB_COLUMNS; x++) {
-		for (y = 0; y < FB_ROWS(fb); y++) {
+	for (y = 0; y < FB_ROWS(fb); y++) {
+		for (x = 0; x < FB_COLUMNS; x++) {
 			framebuffer_putxy(fb, ' ', x, y, NULL, &background, true);
 		}
 	}
@@ -147,8 +147,8 @@ framebuffer_clear(struct framebuffer *fb)
 	fb->fb_dirty_start = 0;
 	fb->fb_dirty_end = fb->fb_width * fb->fb_height;
 
-	for (x = 0; x < fb->fb_width; x++) {
-		for (y = 0; y < fb->fb_height; y++) {
+	for (y = 0; y < fb->fb_height; y++) {
+		for (x = 0; x < fb->fb_width; x++) {
 			struct rgb color, scale;
 
 			if (x < fb->fb_padwidth || x >= fb->fb_width - fb->fb_padwidth ||
@@ -362,14 +362,15 @@ framebuffer_scroll(struct framebuffer *fb)
 	/*
 	 * Shift up by one row.
 	 */
-	for (x = 0; x < FB_COLUMNS; x++) {
-		for (y = 1; y < FB_ROWS(fb); y++) {
-			t = &fb->fb_text[(y * FB_COLUMNS) + x];
-			framebuffer_putxy(fb, *t, x, y - 1, &foreground, &background, false);
-		}
-		/*
-		 * Blank final line.
-		 */
-		framebuffer_putxy(fb, ' ', x, FB_ROWS(fb) - 1, NULL, &background, false);
+	for (y = 1; y < FB_ROWS(fb); y++) {
+		t = &fb->fb_text[(y * FB_COLUMNS)];
+		for (x = 0; x < FB_COLUMNS; x++)
+			framebuffer_putxy(fb, t[x], x, y - 1, &foreground, &background, false);
 	}
+
+	/*
+	 * Blank final line.
+	 */
+	for (x = 0; x < FB_COLUMNS; x++)
+		framebuffer_putxy(fb, ' ', x, FB_ROWS(fb) - 1, NULL, &background, false);
 }

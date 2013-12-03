@@ -28,6 +28,7 @@ struct framebuffer {
 	unsigned fb_height;		/* How many pixels high?  */
 	unsigned fb_column;		/* Current column.  */
 	unsigned fb_row;		/* Current row.  */
+	unsigned fb_padwidth;		/* Padding width.  */
 	void *fb_softc;
 	void (*fb_load)(struct framebuffer *, const uint8_t *, unsigned, unsigned);
 };

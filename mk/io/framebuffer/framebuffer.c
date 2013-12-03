@@ -33,14 +33,14 @@ static struct rgb background = {
 	.blue = 0xb0,
 };
 
-static void framebuffer_append(struct framebuffer *, char);
+static void framebuffer_append(struct framebuffer *, char, bool);
 static void framebuffer_clear(struct framebuffer *);
 static void framebuffer_cursor(struct framebuffer *);
 static void framebuffer_drawxy(struct framebuffer *, char, unsigned, unsigned, const struct rgb *, const struct rgb *);
 static void framebuffer_flush(void *);
 static void framebuffer_putc(void *, char);
 static void framebuffer_puts(void *, const char *, size_t);
-static void framebuffer_putxy(struct framebuffer *, char, unsigned, unsigned, const struct rgb *, const struct rgb *);
+static void framebuffer_putxy(struct framebuffer *, char, unsigned, unsigned, const struct rgb *, const struct rgb *, bool);
 static void framebuffer_scroll(struct framebuffer *);
 
 void
@@ -79,11 +79,9 @@ framebuffer_init(struct framebuffer *fb, unsigned width, unsigned height)
 	if (error != 0)
 		panic("%s: vm_alloc failed: %m", __func__, error);
 	fb->fb_text = (char *)vaddr;
-	memset(fb->fb_text, 0, FB_COLUMNS * FB_ROWS(fb));
-
 	for (x = 0; x < FB_COLUMNS; x++) {
 		for (y = 0; y < FB_ROWS(fb); y++) {
-			framebuffer_putxy(fb, ' ', x, y, NULL, &background);
+			framebuffer_putxy(fb, ' ', x, y, NULL, &background, true);
 		}
 	}
 
@@ -95,11 +93,11 @@ framebuffer_init(struct framebuffer *fb, unsigned width, unsigned height)
 }
 
 static void
-framebuffer_append(struct framebuffer *fb, char ch)
+framebuffer_append(struct framebuffer *fb, char ch, bool first)
 {
 	if (ch == '\n') {
 		/* Clear out possible cursor location.  */
-		framebuffer_putxy(fb, ' ', fb->fb_column, fb->fb_row, NULL, &background);
+		framebuffer_putxy(fb, ' ', fb->fb_column, fb->fb_row, NULL, &background, true);
 
 		if (fb->fb_row == FB_ROWS(fb) - 1)
 			framebuffer_scroll(fb);
@@ -111,7 +109,7 @@ framebuffer_append(struct framebuffer *fb, char ch)
 
 	if (ch == '\010') {
 		/* Clear out possible cursor location.  */
-		framebuffer_putxy(fb, ' ', fb->fb_column, fb->fb_row, NULL, &background);
+		framebuffer_putxy(fb, ' ', fb->fb_column, fb->fb_row, NULL, &background, true);
 
 		if (fb->fb_column != 0)
 			fb->fb_column--;
@@ -123,11 +121,11 @@ framebuffer_append(struct framebuffer *fb, char ch)
 
 		/* XXX Actually go to next tabstop rather than expanding a tab character in situ.  Easy enough.  */
 		for (i = 0; i < 8; i++)
-			framebuffer_append(fb, ' ');
+			framebuffer_append(fb, ' ', i == 0 ? first : false);
 		return;
 	}
 
-	framebuffer_putxy(fb, ch, fb->fb_column, fb->fb_row, &foreground, &background);
+	framebuffer_putxy(fb, ch, fb->fb_column, fb->fb_row, &foreground, &background, first);
 
 	if (fb->fb_column++ == FB_COLUMNS - 1) {
 		if (fb->fb_row == FB_ROWS(fb) - 1)
@@ -136,7 +134,6 @@ framebuffer_append(struct framebuffer *fb, char ch)
 			fb->fb_row++;
 		fb->fb_column = 0;
 	}
-
 }
 
 static void
@@ -247,7 +244,7 @@ framebuffer_cursor(struct framebuffer *fb)
 		.blue = 0x50,
 		.green = 0xff,
 	};
-	framebuffer_putxy(fb, ' ', fb->fb_column, fb->fb_row, NULL, &cursor);
+	framebuffer_putxy(fb, ' ', fb->fb_column, fb->fb_row, NULL, &cursor, true);
 }
 
 static void
@@ -318,7 +315,7 @@ framebuffer_putc(void *sc, char ch)
 	fb = sc;
 
 	spinlock_lock(&fb->fb_lock);
-	framebuffer_append(fb, ch);
+	framebuffer_append(fb, ch, true);
 	spinlock_unlock(&fb->fb_lock);
 }
 
@@ -332,13 +329,13 @@ framebuffer_puts(void *sc, const char *s, size_t len)
 
 	spinlock_lock(&fb->fb_lock);
 	for (i = 0; i < len; i++) {
-		framebuffer_append(fb, s[i]);
+		framebuffer_append(fb, s[i], i == 0);
 	}
 	spinlock_unlock(&fb->fb_lock);
 }
 
 static void
-framebuffer_putxy(struct framebuffer *fb, char ch, unsigned x, unsigned y, const struct rgb *fg, const struct rgb *bg)
+framebuffer_putxy(struct framebuffer *fb, char ch, unsigned x, unsigned y, const struct rgb *fg, const struct rgb *bg, bool force)
 {
 	unsigned px, py;
 	char *t;
@@ -349,7 +346,7 @@ framebuffer_putxy(struct framebuffer *fb, char ch, unsigned x, unsigned y, const
 	py += FB_PADHEIGHT(fb) + FB_BEZHEIGHT;
 
 	t = &fb->fb_text[(y * FB_COLUMNS) + x];
-	if (*t == ch)
+	if (!force && *t == ch)
 		return;
 	*t = ch;
 
@@ -368,11 +365,11 @@ framebuffer_scroll(struct framebuffer *fb)
 	for (x = 0; x < FB_COLUMNS; x++) {
 		for (y = 1; y < FB_ROWS(fb); y++) {
 			t = &fb->fb_text[(y * FB_COLUMNS) + x];
-			framebuffer_putxy(fb, *t, x, y - 1, &foreground, &background);
+			framebuffer_putxy(fb, *t, x, y - 1, &foreground, &background, false);
 		}
 		/*
 		 * Blank final line.
 		 */
-		framebuffer_putxy(fb, ' ', x, FB_ROWS(fb) - 1, NULL, &background);
+		framebuffer_putxy(fb, ' ', x, FB_ROWS(fb) - 1, NULL, &background, false);
 	}
 }

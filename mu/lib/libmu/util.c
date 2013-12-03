@@ -20,44 +20,53 @@ fatal(const char *msg, int error)
 void
 hexdump(const void *p, size_t len)
 {
+	static const char *hexstrs[] = {
+		"0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
+		"a", "b", "c", "d", "e", "f"
+	};
+	static char line[128];
 	const uint8_t *buf;
 	unsigned i;
 
 	buf = p;
 
 	while (len != 0) {
-		printf("  ");
+		line[0] = '\0';
+
+		strlcat(line, "  ", sizeof line);
 		for (i = 0; i < 16; i++) {
 			if (len <= i) {
 				if (i % 4 == 0)
-					printf(" ");
-				printf("   ");
+					strlcat(line, " ", sizeof line);
+				strlcat(line, "   ", sizeof line);
 				continue;
 			}
 			if (i != 0) {
-				printf(" ");
+				strlcat(line, " ", sizeof line);
 				if (i % 4 == 0)
-					printf(" ");
+					strlcat(line, " ", sizeof line);
 			}
-			if (buf[i] < 0x10)
-				printf("0");
-			printf("%x", buf[i]);
+			strlcat(line, hexstrs[buf[i] >> 4], sizeof line);
+			strlcat(line, hexstrs[buf[i] & 0xf], sizeof line);
 		}
 
-		printf(" | ");
+		strlcat(line, " | ", sizeof line);
 		for (i = 0; i < 16; i++) {
 			if (i != 0 && i % 4 == 0)
-				printf(" ");
+				strlcat(line, " ", sizeof line);
 			if (len <= i) {
-				printf(" ");
+				strlcat(line, " ", sizeof line);
 				continue;
 			}
-			if (buf[i] >= 0x20 && buf[i] <= 0x7e)
-				printf("%c", buf[i]);
-			else
-				printf(".");
+			if (buf[i] >= 0x20 && buf[i] <= 0x7e) {
+				const char t[] = { buf[i], '\0' };
+				strlcat(line, t, sizeof line);
+			} else {
+				strlcat(line, ".", sizeof line);
+			}
 		}
-		printf(" |\n");
+		strlcat(line, " |\n", sizeof line);
+		putsn(line, strlen(line));
 		if (len <= i)
 			break;
 		buf += i;

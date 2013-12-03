@@ -363,7 +363,7 @@ framebuffer_scroll(struct framebuffer *fb)
 	 * Shift up by one row.
 	 */
 	for (y = 1; y < FB_ROWS(fb); y++) {
-		t = &fb->fb_text[(y * FB_COLUMNS)];
+		t = &fb->fb_text[y * FB_COLUMNS];
 		for (x = 0; x < FB_COLUMNS; x++)
 			framebuffer_putxy(fb, t[x], x, y - 1, &foreground, &background, false);
 	}

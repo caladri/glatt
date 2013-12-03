@@ -67,6 +67,8 @@ framebuffer_init(struct framebuffer *fb, unsigned width, unsigned height)
 	spinlock_lock(&fb->fb_lock);
 	fb->fb_font = &framebuffer_font_qvss8x15;
 	fb->fb_buffer = (uint8_t *)vaddr;
+	fb->fb_dirty_start = width * height * FB_BYTES;
+	fb->fb_dirty_end = 0;
 
 	fb->fb_width = width;
 	fb->fb_height = height;
@@ -132,6 +134,9 @@ framebuffer_clear(struct framebuffer *fb, bool consbox)
 	uint8_t *pixel;
 	unsigned x, y, p;
 	unsigned i;
+
+	fb->fb_dirty_start = 0;
+	fb->fb_dirty_end = fb->fb_width * fb->fb_height * FB_BYTES;
 
 	for (x = 0; x < fb->fb_width; x++) {
 		for (y = 0; y < fb->fb_height; y++) {
@@ -258,6 +263,9 @@ framebuffer_drawxy(struct framebuffer *fb, char ch, unsigned x, unsigned y, cons
 	font = fb->fb_font;
 	glyph = &font->f_charset[((uint8_t)ch - fb->fb_font->f_first) * fb->fb_font->f_height];
 
+	fb->fb_dirty_start = MIN(fb->fb_dirty_start, (y * fb->fb_width) + x);
+	fb->fb_dirty_end = MAX(fb->fb_dirty_end, ((y + font->f_height) * fb->fb_width) + x + font->f_width);
+
 	for (r = 0; r < font->f_height; r++) {
 		for (c = 0; c < font->f_width; c++) {
 			const struct rgb *color;
@@ -293,7 +301,8 @@ framebuffer_flush(void *sc)
 
 	spinlock_lock(&fb->fb_lock);
 	framebuffer_cursor(fb);
-	fb->fb_load(fb, fb->fb_buffer);
+	if (fb->fb_dirty_end > fb->fb_dirty_start)
+		fb->fb_load(fb, fb->fb_buffer, fb->fb_dirty_start, fb->fb_dirty_end);
 	spinlock_unlock(&fb->fb_lock);
 }
 

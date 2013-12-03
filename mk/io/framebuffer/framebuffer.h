@@ -22,12 +22,14 @@ struct framebuffer {
 	struct spinlock fb_lock;	/* Protects data.  */
 	const struct font *fb_font;	/* Current font.  */
 	uint8_t *fb_buffer;
+	unsigned fb_dirty_start;	/* Dirty range start.  */
+	unsigned fb_dirty_end;		/* Dirty range end.  */
 	unsigned fb_width;		/* How many pixels wide?  */
 	unsigned fb_height;		/* How many pixels high?  */
 	unsigned fb_column;		/* Current column.  */
 	unsigned fb_row;		/* Current row.  */
 	void *fb_softc;
-	void (*fb_load)(struct framebuffer *, const uint8_t *);
+	void (*fb_load)(struct framebuffer *, const uint8_t *, unsigned, unsigned);
 };
 
 extern const struct font framebuffer_font_qvss8x15;

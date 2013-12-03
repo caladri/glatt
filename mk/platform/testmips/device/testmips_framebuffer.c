@@ -29,10 +29,11 @@
 #define	TMFB_RESOLUTION_MINHEIGHT	(768)
 
 static void
-tmfb_load(struct framebuffer *fb, const uint8_t *buffer)
+tmfb_load(struct framebuffer *fb, const uint8_t *buffer, unsigned start, unsigned end)
 {
-	memcpy(fb->fb_softc, buffer,
-	       3 * fb->fb_width * fb->fb_height);
+	if (start == end)
+		return;
+	memcpy((uint8_t *)fb->fb_softc + start, buffer + start, end - start);
 }
 
 static struct framebuffer tmfb_softc = {

@@ -21,6 +21,7 @@ struct framebuffer {
 	struct console fb_console;	/* Associated console.  */
 	struct spinlock fb_lock;	/* Protects data.  */
 	const struct font *fb_font;	/* Current font.  */
+	char *fb_text;
 	uint8_t *fb_buffer;
 	unsigned fb_dirty_start;	/* Dirty range start.  */
 	unsigned fb_dirty_end;		/* Dirty range end.  */

@@ -34,7 +34,7 @@ static struct rgb background = {
 };
 
 static void framebuffer_append(struct framebuffer *, char);
-static void framebuffer_clear(struct framebuffer *, bool);
+static void framebuffer_clear(struct framebuffer *);
 static void framebuffer_cursor(struct framebuffer *);
 static void framebuffer_drawxy(struct framebuffer *, char, unsigned, unsigned, const struct rgb *, const struct rgb *);
 static void framebuffer_flush(void *);
@@ -46,6 +46,7 @@ static void framebuffer_scroll(struct framebuffer *);
 void
 framebuffer_init(struct framebuffer *fb, unsigned width, unsigned height)
 {
+	unsigned x, y;
 	vaddr_t vaddr;
 	int error;
 
@@ -74,7 +75,19 @@ framebuffer_init(struct framebuffer *fb, unsigned width, unsigned height)
 	fb->fb_row = 0;
 	fb->fb_padwidth = ((fb->fb_width - (FB_COLUMNS * fb->fb_font->f_width)) / 2) - FB_BEZWIDTH;
 
-	framebuffer_clear(fb, true);
+	error = vm_alloc(&kernel_vm, MAX(PAGE_SIZE, FB_COLUMNS * FB_ROWS(fb)), &vaddr, false);
+	if (error != 0)
+		panic("%s: vm_alloc failed: %m", __func__, error);
+	fb->fb_text = (char *)vaddr;
+	memset(fb->fb_text, 0, FB_COLUMNS * FB_ROWS(fb));
+
+	for (x = 0; x < FB_COLUMNS; x++) {
+		for (y = 0; y < FB_ROWS(fb); y++) {
+			framebuffer_putxy(fb, ' ', x, y, NULL, &background);
+		}
+	}
+
+	framebuffer_clear(fb);
 
 	spinlock_unlock(&fb->fb_lock);
 
@@ -127,7 +140,7 @@ framebuffer_append(struct framebuffer *fb, char ch)
 }
 
 static void
-framebuffer_clear(struct framebuffer *fb, bool consbox)
+framebuffer_clear(struct framebuffer *fb)
 {
 	const char *version = MK_NAME " " MK_VERSION;
 	uint8_t *pixel;
@@ -223,17 +236,6 @@ framebuffer_clear(struct framebuffer *fb, bool consbox)
 		};
 		framebuffer_drawxy(fb, version[i], i * fb->fb_font->f_width + 1, 1, &black, NULL);
 		framebuffer_drawxy(fb, version[i], i * fb->fb_font->f_width, 0, &white, NULL);
-	}
-
-	/* XXX Always need to fill in whatever portion of the consbox isn't covered by characters due to font incongruence with display resolution.  */
-
-	if (!consbox)
-		return;
-
-	for (x = 0; x < FB_COLUMNS; x++) {
-		for (y = 0; y < FB_ROWS(fb); y++) {
-			framebuffer_putxy(fb, ' ', x, y, NULL, &background);
-		}
 	}
 }
 
@@ -339,11 +341,17 @@ static void
 framebuffer_putxy(struct framebuffer *fb, char ch, unsigned x, unsigned y, const struct rgb *fg, const struct rgb *bg)
 {
 	unsigned px, py;
+	char *t;
 
 	px = x * fb->fb_font->f_width;
 	py = y * fb->fb_font->f_height;
 	px += fb->fb_padwidth + FB_BEZWIDTH;
 	py += FB_PADHEIGHT(fb) + FB_BEZHEIGHT;
+
+	t = &fb->fb_text[(y * FB_COLUMNS) + x];
+	if (*t == ch)
+		return;
+	*t = ch;
 
 	framebuffer_drawxy(fb, ch, px, py, fg, bg);
 }
@@ -351,25 +359,20 @@ framebuffer_putxy(struct framebuffer *fb, char ch, unsigned x, unsigned y, const
 static void
 framebuffer_scroll(struct framebuffer *fb)
 {
-	unsigned c;
-	unsigned lh, skip;
+	const char *t;
+	unsigned x, y;
 
 	/*
-	 * Shift up by one line-height.
+	 * Shift up by one row.
 	 */
-	lh = fb->fb_font->f_height;
-	skip = lh * fb->fb_width;
-	memcpy(fb->fb_buffer, &fb->fb_buffer[skip * FB_BYTES],
-	       ((fb->fb_height - lh) * fb->fb_width) * FB_BYTES);
-
-	/*
-	 * Redraw padding and bevel.
-	 */
-	framebuffer_clear(fb, false);
-
-	/*
-	 * Blank final line.
-	 */
-	for (c = 0; c < FB_COLUMNS; c++)
-		framebuffer_putxy(fb, ' ', c, FB_ROWS(fb) - 1, NULL, &background);
+	for (x = 0; x < FB_COLUMNS; x++) {
+		for (y = 1; y < FB_ROWS(fb); y++) {
+			t = &fb->fb_text[(y * FB_COLUMNS) + x];
+			framebuffer_putxy(fb, *t, x, y - 1, &foreground, &background);
+		}
+		/*
+		 * Blank final line.
+		 */
+		framebuffer_putxy(fb, ' ', x, FB_ROWS(fb) - 1, NULL, &background);
+	}
 }

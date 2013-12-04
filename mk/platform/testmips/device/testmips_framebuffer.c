@@ -47,11 +47,6 @@ tmfb_setup(struct bus_instance *bi)
 	unsigned xres, yres;
 	struct framebuffer *fb;
 
-#ifndef	FRAMEBUFFER
-	if (true)
-		return (ERROR_NOT_IMPLEMENTED);
-#endif
-
 	bus_set_description(bi, "testmips simulated framebuffer");
 
 	fb = bus_softc_allocate(bi, sizeof *fb);

@@ -25,8 +25,8 @@
 #define	TEST_FBCTRL_DEV_COMMAND_SETRES	(0x01)
 #define	TEST_FBCTRL_DEV_COMMAND_GETRES	(0x02)
 
-#define	TMFB_RESOLUTION_MINWIDTH	(1024)
-#define	TMFB_RESOLUTION_MINHEIGHT	(768)
+#define	TMFB_RESOLUTION_MINWIDTH	(800)
+#define	TMFB_RESOLUTION_MINHEIGHT	(600)
 
 static void
 tmfb_load(struct framebuffer *fb, const uint8_t *buffer, unsigned start, unsigned end)

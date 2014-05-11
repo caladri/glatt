@@ -1,6 +1,6 @@
 SHARED_VARS+=	GLATT_SRC
 
-VENDOR_SRC?=	${GLATT_SRC}/../vendor-src
+VENDOR_SRC?=	${GLATT_SRC}/aux/vendor-src
 SHARED_VARS+=	VENDOR_SRC
 
 .if !defined(TOOLCHAIN_ROOT)

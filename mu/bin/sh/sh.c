@@ -16,7 +16,7 @@ static const char *paths[] = {
 
 static void process_console_line(ipc_port_t);
 static void process_file(ipc_port_t, const char *);
-static int process_line(bool, ipc_port_t, char *);
+static int process_line(ipc_port_t, char *);
 
 void
 main(int argc, char *argv[])
@@ -53,7 +53,7 @@ process_console_line(ipc_port_t fs)
 	if (error != 0)
 		fatal("getline failed", error);
 
-	error = process_line(true, fs, buf);
+	error = process_line(fs, buf);
 	if (error != 0)
 		printf("sh: exec line failed: %m\n", error);
 }
@@ -99,7 +99,7 @@ process_file(ipc_port_t fs, const char *path)
 		if (i == len)
 			fatal("line longer than a page", ERROR_UNEXPECTED);
 
-		error = process_line(false, fs, buf);
+		error = process_line(fs, buf);
 		if (error != 0)
 			fatal("exec line failed", error);
 
@@ -113,7 +113,7 @@ process_file(ipc_port_t fs, const char *path)
 }
 
 static int
-process_line(bool wait, ipc_port_t fs, char *line)
+process_line(ipc_port_t fs, char *line)
 {
 	const char **prefixp;
 	const char *argv[128];
@@ -121,17 +121,36 @@ process_line(bool wait, ipc_port_t fs, char *line)
 	const char *path;
 	ipc_port_t file;
 	unsigned argc;
+	bool wait;
 	int error;
 
 	if (line[0] == '\0' || line[0] == '#')
 		return (0);
 
-	error = splitargs(line, &argc, argv, 128, " ");
+	/*
+	 * XXX
+	 * First split by semicolons into separate lines?
+	 */
+
+	error = splitargs(line, &argc, argv, 128, "\t ");
 	if (error != 0)
 		fatal("splitargs failed", error);
 
+	if (argc == 0)
+		return (0);
+
 	if (strcmp(argv[0], "exit") == 0)
 		exit();
+
+	wait = true;
+	if (strcmp(argv[argc - 1], "&") == 0) {
+		argv[argc - 1] = NULL;
+		argc--;
+		wait = false;
+	}
+
+	if (argc == 0)
+		return (0);
 
 	path = argv[0];
 	if (path[0] == '/') {

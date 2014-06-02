@@ -36,7 +36,7 @@ void free(void *);
 int open(ipc_port_t, const char *, ipc_port_t *);
 int read(ipc_port_t, void **, off_t, size_t *);
 int close(ipc_port_t);
-int exec(ipc_port_t, ipc_port_t *, unsigned, const char **);
+int exec(ipc_port_t, ipc_port_t *, bool, unsigned, const char **);
 
 struct fs_directory_entry;
 int opendir(ipc_port_t, const char *, ipc_port_t *);

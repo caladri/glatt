@@ -16,7 +16,7 @@ static const char *paths[] = {
 
 static void process_console_line(ipc_port_t);
 static void process_file(ipc_port_t, const char *);
-static int process_line(ipc_port_t, char *);
+static int process_line(bool, ipc_port_t, char *);
 
 void
 main(int argc, char *argv[])
@@ -53,7 +53,7 @@ process_console_line(ipc_port_t fs)
 	if (error != 0)
 		fatal("getline failed", error);
 
-	error = process_line(fs, buf);
+	error = process_line(true, fs, buf);
 	if (error != 0)
 		printf("sh: exec line failed: %m\n", error);
 }
@@ -99,7 +99,7 @@ process_file(ipc_port_t fs, const char *path)
 		if (i == len)
 			fatal("line longer than a page", ERROR_UNEXPECTED);
 
-		error = process_line(fs, buf);
+		error = process_line(false, fs, buf);
 		if (error != 0)
 			fatal("exec line failed", error);
 
@@ -113,7 +113,7 @@ process_file(ipc_port_t fs, const char *path)
 }
 
 static int
-process_line(ipc_port_t fs, char *line)
+process_line(bool wait, ipc_port_t fs, char *line)
 {
 	const char **prefixp;
 	const char *argv[128];
@@ -154,10 +154,7 @@ process_line(ipc_port_t fs, char *line)
 			return (ERROR_NOT_FOUND);
 	}
 
-	/*
-	 * XXX wait?
-	 */
-	error = exec(file, NULL, argc, argv);
+	error = exec(file, NULL, wait, argc, argv);
 	if (error != 0) {
 		printf("%s: exec of %s failed: %m\n", __func__, argv[0], error);
 		return (error);

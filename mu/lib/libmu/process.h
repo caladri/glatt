@@ -2,6 +2,7 @@
 #define	PROCESS_H
 
 #define	PROCESS_MSG_START	(1)
+#define	PROCESS_MSG_WAIT	(2)
 
 extern char __progname[];
 

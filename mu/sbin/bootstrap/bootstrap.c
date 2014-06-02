@@ -28,10 +28,7 @@ bootstrap_main(void)
 	if (error != 0)
 		fatal("open failed", error);
 
-	/*
-	 * XXX wait?
-	 */
-	error = exec(file, NULL, sizeof argv / sizeof argv[0], argv);
+	error = exec(file, NULL, false, sizeof argv / sizeof argv[0], argv);
 	if (error != 0)
 		printf("%s: exec of %s failed: %m\n", __func__, argv[0], error);
 

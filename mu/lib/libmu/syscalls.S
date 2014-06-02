@@ -12,7 +12,13 @@ ENTRY(_start)
 END(_start)
 
 ENTRY(exit)
-	li	v0, SYSCALL_THREAD_EXIT
+	dla	t0, atexit
+	ld	t0, 0(t0)
+	beqz	t0, 1f
+	nop
+	jalr	t0
+	nop
+1:	li	v0, SYSCALL_THREAD_EXIT
 	li	v1, 0
 	syscall
 END(exit)

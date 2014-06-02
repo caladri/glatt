@@ -8,15 +8,19 @@
 #include <libmu/common.h>
 #include <libmu/process.h>
 
+void (*atexit)(void);
 char __progname[128];
+
+static struct ipc_header start_msg;
 
 void bootstrap_main(void) __attribute__ ((__weak__));
 int main(int, char *[]) __attribute__ ((__weak__));
 
+static void process_reply(void);
+
 void
 mu_main(void)
 {
-	struct ipc_header ipch;
 	ipc_port_t task_port;
 	uintptr_t *reloc;
 	unsigned argc;
@@ -43,7 +47,7 @@ mu_main(void)
 	argc = 0;
 	argv = NULL;
 	for (;;) {
-		error = ipc_port_receive(task_port, &ipch, &page);
+		error = ipc_port_receive(task_port, &start_msg, &page);
 		if (error != 0) {
 			if (error == ERROR_AGAIN) {
 				error = ipc_port_wait(task_port);
@@ -54,7 +58,13 @@ mu_main(void)
 			fatal("ipc_port_receive on task port failed", error);
 		}
 
-		if (ipch.ipchdr_msg != PROCESS_MSG_START) {
+		switch (start_msg.ipchdr_msg) {
+		case PROCESS_MSG_START:
+			break;
+		case PROCESS_MSG_WAIT:
+			atexit = process_reply;
+			break;
+		default:
 			if (page != NULL) {
 				error = vm_page_free(page);
 				if (error != 0)
@@ -66,7 +76,7 @@ mu_main(void)
 		if (page == NULL)
 			break;
 
-		argc = ipch.ipchdr_param;
+		argc = start_msg.ipchdr_param;
 		reloc = page;
 		for (i = 0; i < argc; i++) {
 			if (reloc[i] > PAGE_SIZE)
@@ -75,10 +85,8 @@ mu_main(void)
 		}
 		argv = page;
 
-		ipch = IPC_HEADER_REPLY(&ipch);
-		error = ipc_port_send(&ipch, NULL);
-		if (error != 0)
-			fatal("could not send start reply to parent", error);
+		if (start_msg.ipchdr_msg == PROCESS_MSG_START)
+			process_reply();
 
 		if (argc != 0)
 			strlcpy(__progname, argv[0], sizeof __progname);
@@ -115,4 +123,18 @@ process_start_data(void **pagep, unsigned argc, const char **argv)
 	*pagep = page;
 
 	return (0);
+}
+
+static void
+process_reply(void)
+{
+	struct ipc_header ipch;
+	int error;
+
+	atexit = NULL;
+
+	ipch = IPC_HEADER_REPLY(&start_msg);
+	error = ipc_port_send(&ipch, NULL);
+	if (error != 0)
+		fatal("could not send start reply to parent", error);
 }

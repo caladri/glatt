@@ -109,7 +109,7 @@ close(ipc_port_t file)
 }
 
 int
-exec(ipc_port_t file, ipc_port_t *taskp, unsigned argc, const char **argv)
+exec(ipc_port_t file, ipc_port_t *taskp, bool wait, unsigned argc, const char **argv)
 {
 	struct ipc_request_message req;
 	struct ipc_response_message resp;
@@ -143,7 +143,10 @@ exec(ipc_port_t file, ipc_port_t *taskp, unsigned argc, const char **argv)
 
 	req.src = IPC_PORT_UNKNOWN;
 	req.dst = task;
-	req.msg = PROCESS_MSG_START;
+	if (!wait)
+		req.msg = PROCESS_MSG_START;
+	else
+		req.msg = PROCESS_MSG_WAIT;
 	req.param = argc;
 
 	resp.data = false;

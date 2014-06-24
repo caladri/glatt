@@ -6,6 +6,7 @@
  */
 static inline const void *memchr(const void *, int, size_t) __non_null(1) __check_result;
 static inline void memcpy(void *, const void *, size_t) __non_null(1, 2);
+static inline void memmove(void *, const void *, size_t) __non_null(1, 2);
 static inline void memset(void *, int, size_t) __non_null(1);
 static inline const char *strchr(const char *, char) __non_null(1) __check_result;
 static inline int strcmp(const char *, const char *) __non_null(1, 2) __check_result;
@@ -70,6 +71,28 @@ memcpy(void *dst, const void *src, size_t len)
 
 	while (len--)
 		*d++ = *s++;
+}
+
+static inline void
+memmove(void *dst, const void *src, size_t len)
+{
+	uint8_t *d;
+	const uint8_t *s;
+
+	d = dst;
+	s = src;
+
+	if (dst < src) {
+		/* Copy forwards.  */
+		while (len--)
+			*d++ = *s++;
+	} else {
+		/* Copy backwards.  */
+		d += len;
+		s += len;
+		while (len--)
+			*--d = *--s;
+	}
 }
 
 static inline void

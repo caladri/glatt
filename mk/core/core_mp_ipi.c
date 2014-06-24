@@ -43,7 +43,7 @@ mp_ipi_receive(enum ipi_type ipi)
 {
 	struct ipi_handler *ih;
 
-	ASSERT(ipi >= IPI_FIRST || ipi <= IPI_LAST, "invalid IPI");
+	ASSERT(ipi >= IPI_FIRST && ipi <= IPI_LAST, "invalid IPI");
 	ih = &ipi_handlers[ipi];
 	spinlock_lock(&ih->ih_lock);
 	if (ih->ih_handler == NULL) {
@@ -70,7 +70,7 @@ mp_ipi_register(enum ipi_type ipi, mp_ipi_handler_t handler, void *arg)
 {
 	struct ipi_handler *ih;
 
-	ASSERT(ipi >= IPI_FIRST || ipi <= IPI_LAST, "invalid IPI");
+	ASSERT(ipi >= IPI_FIRST && ipi <= IPI_LAST, "invalid IPI");
 	ih = &ipi_handlers[ipi];
 	spinlock_lock(&ih->ih_lock);
 	ASSERT(ih->ih_handler == NULL, "cannot share ipi");
@@ -83,7 +83,7 @@ mp_ipi_register(enum ipi_type ipi, mp_ipi_handler_t handler, void *arg)
 void
 mp_ipi_send(cpu_id_t cpu, enum ipi_type ipi)
 {
-	ASSERT(ipi >= IPI_FIRST || ipi <= IPI_LAST, "invalid IPI");
+	ASSERT(ipi >= IPI_FIRST && ipi <= IPI_LAST, "invalid IPI");
 	if (cpu == mp_whoami()) {
 		mp_ipi_receive(ipi);
 	} else {
@@ -94,7 +94,7 @@ mp_ipi_send(cpu_id_t cpu, enum ipi_type ipi)
 void
 mp_ipi_send_all(enum ipi_type ipi)
 {
-	ASSERT(ipi >= IPI_FIRST || ipi <= IPI_LAST, "invalid IPI");
+	ASSERT(ipi >= IPI_FIRST && ipi <= IPI_LAST, "invalid IPI");
 	mp_ipi_send_but(mp_whoami(), ipi);
 	mp_ipi_send(mp_whoami(), ipi);
 }
@@ -102,7 +102,7 @@ mp_ipi_send_all(enum ipi_type ipi)
 void
 mp_ipi_send_but(cpu_id_t cpu, enum ipi_type ipi)
 {
-	ASSERT(ipi >= IPI_FIRST || ipi <= IPI_LAST, "invalid IPI");
+	ASSERT(ipi >= IPI_FIRST && ipi <= IPI_LAST, "invalid IPI");
 	cpu_mp_ipi_send_but(cpu, ipi);
 }
 

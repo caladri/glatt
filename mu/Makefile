@@ -2,7 +2,6 @@ SUBDIRS+=	lib
 SUBDIRS+=	bin
 SUBDIRS+=	sbin
 SUBDIRS+=	servers
-SUBDIRS+=	test
 
 SUBDIRS+=	etc
 

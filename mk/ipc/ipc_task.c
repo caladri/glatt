@@ -47,6 +47,12 @@ ipc_task_setup(ipc_port_t parent, struct task *task)
 		error = ipc_port_right_send(parent, ipct->ipct_task_port, IPC_PORT_RIGHT_SEND);
 		if (error != 0)
 			panic("%s: ipc_port_right_grant (send) failed: %m", __func__, error);
+
+		/*
+		 * XXX
+		 * We should cache the parent port here, and have some kind of hooks
+		 * so that we clear it if it closes, etc., to prevent reuse issues.
+		 */
 	}
 
 	/*

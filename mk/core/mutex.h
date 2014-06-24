@@ -10,13 +10,11 @@ struct mutex {
 	struct spinlock mtx_lock;
 	struct sleepq mtx_sleepq;
 	struct thread *mtx_owner;
-	unsigned mtx_nested;
 	unsigned mtx_waiters;
 	unsigned mtx_flags;
 };
 
 #define	MUTEX_FLAG_DEFAULT	(0x00000000)
-#define	MUTEX_FLAG_RECURSE	(0x00000001)
 
 #define	MUTEX_HELD(mtx)							\
 	((mtx)->mtx_owner != NULL && (mtx)->mtx_owner == current_thread())

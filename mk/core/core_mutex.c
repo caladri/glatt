@@ -12,7 +12,6 @@ mutex_init(struct mutex *mtx, const char *name, unsigned flags)
 	spinlock_init(&mtx->mtx_lock, name, SPINLOCK_FLAG_DEFAULT);
 	sleepq_init(&mtx->mtx_sleepq, &mtx->mtx_lock);
 	mtx->mtx_owner = NULL;
-	mtx->mtx_nested = 0;
 	mtx->mtx_waiters = 0;
 	mtx->mtx_flags = flags;
 }
@@ -41,17 +40,10 @@ mutex_lock(struct mutex *mtx)
 
 	for (;;) {
 		MTX_SPINLOCK(mtx);
-		if (mtx->mtx_owner == td) {
-			if ((mtx->mtx_flags & MUTEX_FLAG_RECURSE) != 0) {
-				mtx->mtx_nested++;
-				MTX_SPINUNLOCK(mtx);
-				return;
-			}
+		if (mtx->mtx_owner == td)
 			panic("%s: cannot recurse on mutex %s", __func__,
 			      mtx->mtx_lock.s_name);
-		}
 		if (mtx->mtx_owner == NULL) {
-			mtx->mtx_nested++;
 			mtx->mtx_owner = td;
 			MTX_SPINUNLOCK(mtx);
 			return;
@@ -78,10 +70,8 @@ mutex_unlock(struct mutex *mtx)
 
 	MTX_SPINLOCK(mtx);
 	ASSERT(mtx->mtx_owner == td, "Not my lock to unlock.");
-	if (mtx->mtx_nested-- == 1) {
-		mtx->mtx_owner = NULL;
-		if (mtx->mtx_waiters != 0)
-			sleepq_signal_one(&mtx->mtx_sleepq);
-	}
+	mtx->mtx_owner = NULL;
+	if (mtx->mtx_waiters != 0)
+		sleepq_signal_one(&mtx->mtx_sleepq);
 	MTX_SPINUNLOCK(mtx);
 }

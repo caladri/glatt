@@ -146,7 +146,7 @@ ipc_service_main(struct thread *td, void *arg)
 
 		ipch.ipchdr_src = ipcsc->ipcsc_port;
 		ipch.ipchdr_dst = IPC_PORT_NS;
-		ipch.ipchdr_msg = NS_MESSAGE_REGISTER;
+		ipch.ipchdr_msg = NS_MSG_REGISTER;
 		ipch.ipchdr_right = IPC_PORT_RIGHT_SEND_ONCE;
 		ipch.ipchdr_cookie = 0;
 
@@ -191,10 +191,10 @@ ipc_service_main(struct thread *td, void *arg)
 				continue;
 			}
 
-			if (ipch.ipchdr_msg == IPC_MSG_ERROR(NS_MESSAGE_REGISTER))
+			if (ipch.ipchdr_msg == IPC_MSG_ERROR(NS_MSG_REGISTER))
 				panic("%s: could not register with ns.", ipcsc->ipcsc_name);
 
-			if (ipch.ipchdr_msg != IPC_MSG_REPLY(NS_MESSAGE_REGISTER)) {
+			if (ipch.ipchdr_msg != IPC_MSG_REPLY(NS_MSG_REGISTER)) {
 #ifdef SERVICE_TRACING
 				printf("%s: unexpected message type from ns.\n",
 					 ipcsc->ipcsc_name);

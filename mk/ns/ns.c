@@ -83,9 +83,9 @@ static int
 ns_handler(void *arg, struct ipc_header *ipch, void *p)
 {
 	switch (ipch->ipchdr_msg) {
-	case NS_MESSAGE_LOOKUP:
+	case NS_MSG_LOOKUP:
 		return (ns_handle_lookup(ipch, p));
-	case NS_MESSAGE_REGISTER:
+	case NS_MSG_REGISTER:
 		return (ns_handle_register(ipch, p));
 	default:
 		/* Don't respond to nonsense.  */

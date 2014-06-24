@@ -24,7 +24,7 @@ ns_lookup(const char *service)
 
 	req.src = IPC_PORT_UNKNOWN;
 	req.dst = IPC_PORT_NS;
-	req.msg = NS_MESSAGE_LOOKUP;
+	req.msg = NS_MSG_LOOKUP;
 	req.data = &nsreq;
 	req.datalen = sizeof nsreq;
 
@@ -55,7 +55,7 @@ ns_register(const char *service, ipc_port_t port)
 
 	req.src = IPC_PORT_UNKNOWN;
 	req.dst = IPC_PORT_NS;
-	req.msg = NS_MESSAGE_REGISTER;
+	req.msg = NS_MSG_REGISTER;
 	req.data = &nsreq;
 	req.datalen = sizeof nsreq;
 

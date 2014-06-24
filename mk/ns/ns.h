@@ -7,13 +7,13 @@
 
 	/* Message numbers and structures.  */
 
-#define	NS_MESSAGE_LOOKUP	(0x00000001)
+#define	NS_MSG_LOOKUP	(0x00000001)
 
 struct ns_lookup_request {
 	char service_name[NS_SERVICE_NAME_LENGTH];
 };
 
-#define	NS_MESSAGE_REGISTER	(0x00000002)
+#define	NS_MSG_REGISTER	(0x00000002)
 
 struct ns_register_request {
 	char service_name[NS_SERVICE_NAME_LENGTH];

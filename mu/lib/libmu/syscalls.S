@@ -12,6 +12,8 @@ ENTRY(_start)
 END(_start)
 
 ENTRY(exit)
+	jal	flushout
+	nop
 	dla	t0, atexit
 	ld	t0, 0(t0)
 	beqz	t0, 1f

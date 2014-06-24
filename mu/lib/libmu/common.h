@@ -13,6 +13,7 @@ int vm_free(void *, size_t);
 int getchar(void);
 void putchar(int);
 void putsn(const char *, size_t);
+void flushout(void);
 int getline(char *, size_t);
 int getargs(char *, size_t, unsigned *, const char **, size_t, const char *);
 

@@ -4,9 +4,13 @@
 #include <core/printf.h>
 #include <core/string.h>
 #include <ipc/ipc.h>
+#include <vm/vm_page.h>
 
 #include <libmu/common.h>
 #include <libmu/ipc_request.h>
+
+static char *console_buffer;
+static size_t console_buffer_length;
 
 int
 getchar(void)
@@ -14,6 +18,8 @@ getchar(void)
 	struct ipc_request_message req;
 	struct ipc_response_message resp;
 	int error;
+
+	flushout();
 
 	memset(&req, 0, sizeof req);
 	memset(&resp, 0, sizeof resp);
@@ -43,6 +49,8 @@ putchar(int ch)
 	struct ipc_request_message req;
 	int error;
 
+	flushout();
+
 	memset(&req, 0, sizeof req);
 
 	req.src = IPC_PORT_UNKNOWN;
@@ -60,21 +68,53 @@ putchar(int ch)
 void
 putsn(const char *s, size_t n)
 {
+	void *page;
+	int error;
+
+	if (console_buffer_length != 0 &&
+	    console_buffer_length + n > PAGE_SIZE)
+		flushout();
+
+	if (console_buffer == NULL) {
+		if (n > PAGE_SIZE)
+			fatal("string larger than a page in putsn", ERROR_INVALID);
+		error = vm_page_get(&page);
+		if (error != 0)
+			fatal("vm_page_get failed in putsn", error);
+		console_buffer = page;
+	}
+
+	memcpy(&console_buffer[console_buffer_length], s, n);
+	console_buffer_length += n;
+
+	if (console_buffer_length == PAGE_SIZE ||
+	    memchr(console_buffer, '\n', console_buffer_length) != NULL)
+		flushout();
+}
+
+void
+flushout(void)
+{
 	struct ipc_request_message req;
 	int error;
+
+	if (console_buffer_length == 0)
+		return;
 
 	memset(&req, 0, sizeof req);
 
 	req.src = IPC_PORT_UNKNOWN;
 	req.dst = IPC_PORT_CONSOLE;
 	req.msg = CONSOLE_MSG_PUTS;
-	req.param = n;
-	req.data = s;
-	req.datalen = n;
+	req.param = console_buffer_length;
+	req.page = console_buffer;
 
 	error = ipc_request(&req, NULL);
 	if (error != 0)
-		fatal("ipc_request in putsn", error);
+		fatal("ipc_request in flushout", error);
+
+	console_buffer = NULL;
+	console_buffer_length = 0;
 }
 
 void

@@ -4,6 +4,7 @@
 /*
  * Need declarations in order to set attributes.
  */
+static inline const void *memchr(const void *, int, size_t) __non_null(1) __check_result;
 static inline void memcpy(void *, const void *, size_t) __non_null(1, 2);
 static inline void memset(void *, int, size_t) __non_null(1);
 static inline const char *strchr(const char *, char) __non_null(1) __check_result;
@@ -12,6 +13,21 @@ static inline size_t strlcpy(char *, const char *, size_t) __non_null(1, 2);
 static inline size_t strlcat(char *, const char *, size_t) __non_null(1, 2);
 static inline size_t strlen(const char *) __non_null(1) __check_result;
 static inline int strncmp(const char *, const char *, size_t) __non_null(1, 2) __check_result;
+
+static inline const void *
+memchr(const void *mem, int ch, size_t len)
+{
+	const char *p;
+
+	p = mem;
+	while (len != 0) {
+		if (*p == ch)
+			return (p);
+		p++;
+		len--;
+	}
+	return (NULL);
+}
 
 static inline void
 memcpy(void *dst, const void *src, size_t len)

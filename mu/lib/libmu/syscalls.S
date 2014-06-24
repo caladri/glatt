@@ -31,37 +31,6 @@ ENTRY(thread_create)
 	nop
 END(thread_create)
 
-ENTRY(putchar)
-	li	v0, SYSCALL_CONSOLE_PUTC
-	li	v1, 1
-	syscall
-	jr	ra
-	nop
-END(putchar)
-
-ENTRY(putsn)
-	li	v0, SYSCALL_CONSOLE_PUTS
-	li	v1, 2
-	syscall
-	jr	ra
-	nop
-END(putsn)
-
-ENTRY(getchar)
-	li	v0, SYSCALL_CONSOLE_GETC
-	li	v1, 0
-	syscall
-
-	beqz	v1, 1f
-	nop
-
-	jr	ra
-	move	v0, a0
-
-1:	jr	ra
-	li	v0, -1
-END(getchar)
-
 ENTRY(ipc_port_allocate)
 	move	t0, a0
 	move	a0, a1

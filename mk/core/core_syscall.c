@@ -6,7 +6,6 @@
 #include <core/thread.h>
 #include <cpu/pcpu.h>
 #include <cpu/register.h>
-#include <core/console.h>
 #include <ipc/ipc.h>
 #include <ipc/port.h>
 #include <vm/vm.h>
@@ -25,10 +24,6 @@ struct syscall_vector {
 static syscall_handler_t syscall_thread_exit,
 			 syscall_thread_create;
 
-static syscall_handler_t syscall_console_putc,
-			 syscall_console_puts,
-			 syscall_console_getc;
-
 static syscall_handler_t syscall_ipc_port_allocate,
 			 syscall_ipc_port_send,
 			 syscall_ipc_port_wait,
@@ -44,10 +39,6 @@ static syscall_handler_t syscall_vm_page_get,
 static struct syscall_vector syscall_vector[SYSCALL_LAST + 1] = {
 	[SYSCALL_THREAD_EXIT] =		{ 0, 0, syscall_thread_exit },
 	[SYSCALL_THREAD_CREATE] =	{ 2, 0, syscall_thread_create },
-
-	[SYSCALL_CONSOLE_PUTC] =	{ 1, 0, syscall_console_putc },
-	[SYSCALL_CONSOLE_PUTS] =	{ 2, 0, syscall_console_puts },
-	[SYSCALL_CONSOLE_GETC] =	{ 0, 1, syscall_console_getc },
 
 	[SYSCALL_IPC_PORT_ALLOCATE] =	{ 1, 1, syscall_ipc_port_allocate },
 	[SYSCALL_IPC_PORT_SEND] =	{ 2, 0, syscall_ipc_port_send },
@@ -126,50 +117,6 @@ syscall_thread_create(register_t *params)
 
 	scheduler_thread_runnable(td);
 
-	return (0);
-}
-
-static int
-syscall_console_putc(register_t *params)
-{
-	kcputc(params[0]);
-	return (0);
-}
-
-static int
-syscall_console_puts(register_t *params)
-{
-	vaddr_t kvaddr, uvaddr;
-	size_t len, o;
-	int error;
-
-	uvaddr = params[0];
-	len = params[1];
-
-	error = vm_wire(current_task()->t_vm, uvaddr, len, &kvaddr, &o, false);
-	if (error != 0)
-		return (error);
-
-	kcputsn((const char *)(uintptr_t)(kvaddr + o), len);
-
-	error = vm_unwire(current_task()->t_vm, uvaddr, len, kvaddr);
-	if (error != 0)
-		panic("%s: couldn't unwire string: %m", __func__, error);
-
-	return (0);
-}
-
-static int
-syscall_console_getc(register_t *params)
-{
-	int error;
-	char ch;
-
-	error = kcgetc_wait(&ch);
-	if (error != 0)
-		return (error);
-
-	params[0] = ch;
 	return (0);
 }
 

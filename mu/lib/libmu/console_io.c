@@ -1,10 +1,81 @@
 #include <core/types.h>
+#include <core/console.h>
 #include <core/error.h>
 #include <core/printf.h>
 #include <core/string.h>
 #include <ipc/ipc.h>
 
 #include <libmu/common.h>
+#include <libmu/ipc_request.h>
+
+int
+getchar(void)
+{
+	struct ipc_request_message req;
+	struct ipc_response_message resp;
+	int error;
+
+	memset(&req, 0, sizeof req);
+	memset(&resp, 0, sizeof resp);
+
+	req.src = IPC_PORT_UNKNOWN;
+	req.dst = IPC_PORT_CONSOLE;
+	req.msg = CONSOLE_MSG_GETC;
+	req.param = 0;
+	req.data = NULL;
+	req.datalen = 0;
+
+	resp.data = false;
+
+	error = ipc_request(&req, &resp);
+	if (error != 0)
+		return (-1);
+
+	if (resp.error != 0)
+		return (-1);
+
+	return (resp.param);
+}
+
+void
+putchar(int ch)
+{
+	struct ipc_request_message req;
+	int error;
+
+	memset(&req, 0, sizeof req);
+
+	req.src = IPC_PORT_UNKNOWN;
+	req.dst = IPC_PORT_CONSOLE;
+	req.msg = CONSOLE_MSG_PUTC;
+	req.param = ch;
+	req.data = NULL;
+	req.datalen = 0;
+
+	error = ipc_request(&req, NULL);
+	if (error != 0)
+		fatal("ipc_request in putchar", error);
+}
+
+void
+putsn(const char *s, size_t n)
+{
+	struct ipc_request_message req;
+	int error;
+
+	memset(&req, 0, sizeof req);
+
+	req.src = IPC_PORT_UNKNOWN;
+	req.dst = IPC_PORT_CONSOLE;
+	req.msg = CONSOLE_MSG_PUTS;
+	req.param = n;
+	req.data = s;
+	req.datalen = n;
+
+	error = ipc_request(&req, NULL);
+	if (error != 0)
+		fatal("ipc_request in putchar", error);
+}
 
 void
 puts(const char *s)

@@ -14,7 +14,8 @@ typedef	uint64_t	ipc_parameter_t;
 
 #define	IPC_PORT_UNKNOWN		(0)
 #define	IPC_PORT_NS			(1)
-#define	IPC_PORT_UNRESERVED_START	(2)
+#define	IPC_PORT_CONSOLE		(2)
+#define	IPC_PORT_UNRESERVED_START	(3)
 
 #define	IPC_PORT_RIGHT_NONE		(0x0000)
 #define	IPC_PORT_RIGHT_SEND		(0x0001)

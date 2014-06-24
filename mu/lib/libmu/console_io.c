@@ -74,7 +74,7 @@ putsn(const char *s, size_t n)
 
 	error = ipc_request(&req, NULL);
 	if (error != 0)
-		fatal("ipc_request in putchar", error);
+		fatal("ipc_request in putsn", error);
 }
 
 void

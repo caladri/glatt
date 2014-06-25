@@ -410,12 +410,18 @@ ipc_port_send(const struct ipc_header *ipch, void *vpage)
 		error = page_extract(vm, (vaddr_t)vpage, &page);
 		if (error != 0)
 			return (error);
-		error = page_unmap(vm, (vaddr_t)vpage, page);
-		if (error != 0)
-			panic("%s: could not unmap source page: %m", __func__, error);
-		error = vm_free_address(vm, (vaddr_t)vpage);
-		if (error != 0)
-			panic("%s: could not free source page address: %m", __func__, error);
+		if (vm == &kernel_vm) {
+			error = page_unmap_direct(vm, page, (vaddr_t)vpage);
+			if (error != 0)
+				panic("%s: could not unmap direct page: %m", __func__, error);
+		} else {
+			error = page_unmap(vm, (vaddr_t)vpage, page);
+			if (error != 0)
+				panic("%s: could not unmap source page: %m", __func__, error);
+			error = vm_free_address(vm, (vaddr_t)vpage);
+			if (error != 0)
+				panic("%s: could not free source page address: %m", __func__, error);
+		}
 	}
 
 	error = ipc_port_send_page(ipch, page);

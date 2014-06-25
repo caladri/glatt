@@ -25,8 +25,8 @@ struct fs_open_file_request {
 
 #ifdef MK
 ipc_service_t fs_ipc_handler;
-int fs_ipc_open_file_handler(struct fs *, const struct ipc_header *, void *);
-int fs_ipc_open_directory_handler(struct fs *, const struct ipc_header *, void *);
+int fs_ipc_open_file_handler(struct fs *, const struct ipc_header *, void **);
+int fs_ipc_open_directory_handler(struct fs *, const struct ipc_header *, void **);
 #endif
 
 /*

@@ -14,6 +14,8 @@
 #include <ipc/port.h>
 #include <ipc/service.h>
 #include <ns/ns.h>
+#include <vm/vm.h>
+#include <vm/vm_alloc.h>
 
 #if defined(VERBOSE) && 0
 #define	SERVICE_TRACING
@@ -249,12 +251,17 @@ ipc_service_main(struct thread *td, void *arg)
 		ipc_service_dump(ipcsc, &ipch);
 #endif
 
-		error = ipcsc->ipcsc_handler(ipcsc->ipcsc_arg, &ipch, p);
+		if (p == NULL)
+			error = ipcsc->ipcsc_handler(ipcsc->ipcsc_arg, &ipch, NULL);
+		else
+			error = ipcsc->ipcsc_handler(ipcsc->ipcsc_arg, &ipch, &p);
 		if (error != 0)
 			printf("%s: service handler failed: %m\n", __func__, error);
 
 		if (p != NULL) {
-			/* XXX Free page in p?  */
+			error = vm_free_page(&kernel_vm, (vaddr_t)p);
+			if (error != 0)
+				panic("%s: vm_free_page failed: %m", __func__, error);
 		}
 	}
 }

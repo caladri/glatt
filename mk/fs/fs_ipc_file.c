@@ -26,15 +26,15 @@ struct fs_file {
 	fs_file_context_t fsf_context;
 };
 
-static int fs_file_ipc_read_handler(struct fs_file *, const struct ipc_header *, void *);
-static int fs_file_ipc_close_handler(struct fs_file *, const struct ipc_header *, void *);
+static int fs_file_ipc_read_handler(struct fs_file *, const struct ipc_header *, void **);
+static int fs_file_ipc_close_handler(struct fs_file *, const struct ipc_header *, void **);
 #ifdef EXEC
-static int fs_file_ipc_exec_handler(struct fs_file *, const struct ipc_header *, void *);
+static int fs_file_ipc_exec_handler(struct fs_file *, const struct ipc_header *, void **);
 #endif
 static int fs_file_ipc_service_start(struct fs_file *, ipc_port_t *);
 
 int
-fs_ipc_open_file_handler(struct fs *fs, const struct ipc_header *reqh, void *p)
+fs_ipc_open_file_handler(struct fs *fs, const struct ipc_header *reqh, void **pagep)
 {
 	struct fs_open_file_request *req;
 	struct ipc_header ipch;
@@ -43,9 +43,9 @@ fs_ipc_open_file_handler(struct fs *fs, const struct ipc_header *reqh, void *p)
 	ipc_port_t port;
 	int error;
 
-	if (p == NULL)
+	if (pagep == NULL)
 		return (ERROR_INVALID);
-	req = p;
+	req = *pagep;
 
 	error = fs->fs_ops->fs_file_open(fs->fs_context, req->path, &fsfc);
 	if (error != 0) {
@@ -109,18 +109,18 @@ fs_ipc_open_file_handler(struct fs *fs, const struct ipc_header *reqh, void *p)
 }
 
 static int
-fs_file_ipc_handler(void *softc, struct ipc_header *ipch, void *p)
+fs_file_ipc_handler(void *softc, struct ipc_header *ipch, void **pagep)
 {
 	struct fs_file *fsf = softc;
 
 	switch (ipch->ipchdr_msg) {
 	case FS_FILE_MSG_READ:
-		return (fs_file_ipc_read_handler(fsf, ipch, p));
+		return (fs_file_ipc_read_handler(fsf, ipch, pagep));
 	case FS_FILE_MSG_CLOSE:
-		return (fs_file_ipc_close_handler(fsf, ipch, p));
+		return (fs_file_ipc_close_handler(fsf, ipch, pagep));
 #ifdef EXEC
 	case FS_FILE_MSG_EXEC:
-		return (fs_file_ipc_exec_handler(fsf, ipch, p));
+		return (fs_file_ipc_exec_handler(fsf, ipch, pagep));
 #endif
 	default:
 		/* Don't respond to nonsense.  */
@@ -129,7 +129,7 @@ fs_file_ipc_handler(void *softc, struct ipc_header *ipch, void *p)
 }
 
 static int
-fs_file_ipc_read_handler(struct fs_file *fsf, const struct ipc_header *reqh, void *p)
+fs_file_ipc_read_handler(struct fs_file *fsf, const struct ipc_header *reqh, void **pagep)
 {
 	fs_file_context_t fsfc = fsf->fsf_context;
 	struct fs *fs = fsf->fsf_fs;
@@ -138,9 +138,9 @@ fs_file_ipc_read_handler(struct fs_file *fsf, const struct ipc_header *reqh, voi
 	size_t length;
 	int error;
 
-	if (p == NULL)
+	if (pagep == NULL)
 		return (ERROR_INVALID);
-	req = p;
+	req = *pagep;
 
 	if (req->length == 0)
 		return (ERROR_INVALID);
@@ -149,7 +149,7 @@ fs_file_ipc_read_handler(struct fs_file *fsf, const struct ipc_header *reqh, voi
 	 * Note that we reuse p as a buffer.
 	 */
 	length = req->length > PAGE_SIZE ? PAGE_SIZE : req->length;
-	error = fs->fs_ops->fs_file_read(fs->fs_context, fsfc, p, req->offset, &length);
+	error = fs->fs_ops->fs_file_read(fs->fs_context, fsfc, *pagep, req->offset, &length);
 	if (error != 0) {
 		ipch = IPC_HEADER_ERROR(reqh, error);
 
@@ -158,19 +158,12 @@ fs_file_ipc_read_handler(struct fs_file *fsf, const struct ipc_header *reqh, voi
 		ipch = IPC_HEADER_REPLY(reqh);
 		ipch.ipchdr_param = length;
 
-		/*
-		 * XXX
-		 * We don't just send p directly because ipc_service is still
-		 * messy about whether pages are freed or not, to say nothing
-		 * of error handling.  Better to copy for now.
-		 */
 		if (length == 0) {
-			error = vm_free_page(&kernel_vm, (vaddr_t)p);
-			if (error != 0)
-				panic("%s: vm_free_page failed: %m", __func__, error);
 			error = ipc_port_send_data(&ipch, NULL, 0);
 		} else {
-			error = ipc_port_send_data(&ipch, p, length);
+			error = ipc_port_send(&ipch, *pagep);
+			/* XXX Does ipc_port_send always consume the page [on error]?  */
+			*pagep = NULL;
 		}
 	}
 
@@ -180,14 +173,14 @@ fs_file_ipc_read_handler(struct fs_file *fsf, const struct ipc_header *reqh, voi
 }
 
 static int
-fs_file_ipc_close_handler(struct fs_file *fsf, const struct ipc_header *reqh, void *p)
+fs_file_ipc_close_handler(struct fs_file *fsf, const struct ipc_header *reqh, void **pagep)
 {
 	fs_file_context_t fsfc = fsf->fsf_context;
 	struct fs *fs = fsf->fsf_fs;
 	struct ipc_header ipch;
 	int error;
 
-	if (p != NULL)
+	if (pagep != NULL)
 		return (ERROR_INVALID);
 
 	/*
@@ -222,7 +215,7 @@ fs_file_ipc_close_handler(struct fs_file *fsf, const struct ipc_header *reqh, vo
 
 #ifdef EXEC
 static int
-fs_file_ipc_exec_handler(struct fs_file *fsf, const struct ipc_header *reqh, void *p)
+fs_file_ipc_exec_handler(struct fs_file *fsf, const struct ipc_header *reqh, void **pagep)
 {
 	fs_file_context_t fsfc = fsf->fsf_context;
 	struct fs *fs = fsf->fsf_fs;
@@ -230,7 +223,7 @@ fs_file_ipc_exec_handler(struct fs_file *fsf, const struct ipc_header *reqh, voi
 	ipc_port_t child;
 	int error;
 
-	if (p != NULL)
+	if (pagep != NULL)
 		return (ERROR_INVALID);
 
 	error = exec_task(reqh->ipchdr_src, &child, fsf->fsf_path, fs->fs_ops->fs_file_read, fs->fs_context, fsfc);

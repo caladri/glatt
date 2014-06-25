@@ -10,9 +10,9 @@
 #include <ns/service_directory.h>
 
 static int ns_handle_gibberish(const struct ipc_header *);
-static int ns_handle_lookup(const struct ipc_header *, void *);
-static int ns_handle_register(const struct ipc_header *, void *);
-static int ns_handler(void *, struct ipc_header *, void *);
+static int ns_handle_lookup(const struct ipc_header *, void **);
+static int ns_handle_register(const struct ipc_header *, void **);
+static int ns_handler(void *, struct ipc_header *, void **);
 
 static int
 ns_handle_gibberish(const struct ipc_header *reqh)
@@ -22,17 +22,17 @@ ns_handle_gibberish(const struct ipc_header *reqh)
 }
 
 static int
-ns_handle_lookup(const struct ipc_header *reqh, void *p)
+ns_handle_lookup(const struct ipc_header *reqh, void **pagep)
 {
 	const struct ns_lookup_request *req;
 	struct ipc_header ipch;
 	ipc_port_t port;
 	int error;
 
-	if (p == NULL)
+	if (pagep == NULL)
 		return (ns_handle_gibberish(reqh));
 
-	req = p;
+	req = *pagep;
 
 	error = service_directory_lookup(req->service_name, &port);
 	if (error != 0) {
@@ -52,16 +52,16 @@ ns_handle_lookup(const struct ipc_header *reqh, void *p)
 }
 
 static int
-ns_handle_register(const struct ipc_header *reqh, void *p)
+ns_handle_register(const struct ipc_header *reqh, void **pagep)
 {
 	const struct ns_register_request *req;
 	struct ipc_header ipch;
 	int error;
 
-	if (p == NULL)
+	if (pagep == NULL)
 		return (ns_handle_gibberish(reqh));
 
-	req = p;
+	req = *pagep;
 
 	error = service_directory_enter(req->service_name, req->port);
 	if (error != 0) {
@@ -80,13 +80,13 @@ ns_handle_register(const struct ipc_header *reqh, void *p)
 }
 
 static int
-ns_handler(void *arg, struct ipc_header *ipch, void *p)
+ns_handler(void *arg, struct ipc_header *ipch, void **pagep)
 {
 	switch (ipch->ipchdr_msg) {
 	case NS_MSG_LOOKUP:
-		return (ns_handle_lookup(ipch, p));
+		return (ns_handle_lookup(ipch, pagep));
 	case NS_MSG_REGISTER:
-		return (ns_handle_register(ipch, p));
+		return (ns_handle_register(ipch, pagep));
 	default:
 		/* Don't respond to nonsense.  */
 		return (ERROR_INVALID);

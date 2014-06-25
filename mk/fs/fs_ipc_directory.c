@@ -23,12 +23,12 @@ struct fs_directory {
 	fs_directory_context_t fsd_context;
 };
 
-static int fs_directory_ipc_read_handler(struct fs_directory *, const struct ipc_header *, void *);
-static int fs_directory_ipc_close_handler(struct fs_directory *, const struct ipc_header *, void *);
+static int fs_directory_ipc_read_handler(struct fs_directory *, const struct ipc_header *, void **);
+static int fs_directory_ipc_close_handler(struct fs_directory *, const struct ipc_header *, void **);
 static int fs_directory_ipc_service_start(struct fs_directory *, ipc_port_t *);
 
 int
-fs_ipc_open_directory_handler(struct fs *fs, const struct ipc_header *reqh, void *p)
+fs_ipc_open_directory_handler(struct fs *fs, const struct ipc_header *reqh, void **pagep)
 {
 	struct fs_open_file_request *req;
 	struct ipc_header ipch;
@@ -37,9 +37,9 @@ fs_ipc_open_directory_handler(struct fs *fs, const struct ipc_header *reqh, void
 	ipc_port_t port;
 	int error;
 
-	if (p == NULL)
+	if (pagep == NULL)
 		return (ERROR_INVALID);
-	req = p;
+	req = *pagep;
 
 	error = fs->fs_ops->fs_directory_open(fs->fs_context, req->path, &fsdc);
 	if (error != 0) {
@@ -103,15 +103,15 @@ fs_ipc_open_directory_handler(struct fs *fs, const struct ipc_header *reqh, void
 }
 
 static int
-fs_directory_ipc_handler(void *softc, struct ipc_header *ipch, void *p)
+fs_directory_ipc_handler(void *softc, struct ipc_header *ipch, void **pagep)
 {
 	struct fs_directory *fsd = softc;
 
 	switch (ipch->ipchdr_msg) {
 	case FS_DIRECTORY_MSG_READ:
-		return (fs_directory_ipc_read_handler(fsd, ipch, p));
+		return (fs_directory_ipc_read_handler(fsd, ipch, pagep));
 	case FS_DIRECTORY_MSG_CLOSE:
-		return (fs_directory_ipc_close_handler(fsd, ipch, p));
+		return (fs_directory_ipc_close_handler(fsd, ipch, pagep));
 	default:
 		/* Don't respond to nonsense.  */
 		return (ERROR_INVALID);
@@ -119,7 +119,7 @@ fs_directory_ipc_handler(void *softc, struct ipc_header *ipch, void *p)
 }
 
 static int
-fs_directory_ipc_read_handler(struct fs_directory *fsd, const struct ipc_header *reqh, void *p)
+fs_directory_ipc_read_handler(struct fs_directory *fsd, const struct ipc_header *reqh, void **pagep)
 {
 	fs_directory_context_t fsdc = fsd->fsd_context;
 	struct fs *fs = fsd->fsd_fs;
@@ -130,15 +130,15 @@ fs_directory_ipc_read_handler(struct fs_directory *fsd, const struct ipc_header 
 	size_t cnt;
 	int error;
 
-	if (p == NULL)
+	if (pagep == NULL)
 		return (ERROR_INVALID);
-	req = p;
+	req = *pagep;
 
 	/*
 	 * Note that we reuse p as a buffer.
 	 */
 	offset = req->offset;
-	resp = p;
+	resp = *pagep;
 	error = fs->fs_ops->fs_directory_read(fs->fs_context, fsdc, &resp->entry, &offset, &cnt);
 	if (error != 0) {
 		ipch = IPC_HEADER_ERROR(reqh, error);
@@ -150,13 +150,8 @@ fs_directory_ipc_read_handler(struct fs_directory *fsd, const struct ipc_header 
 
 		resp->next = offset;
 
-		/*
-		 * XXX
-		 * We don't just send p directly because ipc_service is still
-		 * messy about whether pages are freed or not, to say nothing
-		 * of error handling.  Better to copy for now.
-		 */
-		error = ipc_port_send_data(&ipch, resp, sizeof *resp);
+		error = ipc_port_send(&ipch, *pagep);
+		*pagep = NULL;
 	}
 
 	if (error != 0)
@@ -165,14 +160,14 @@ fs_directory_ipc_read_handler(struct fs_directory *fsd, const struct ipc_header 
 }
 
 static int
-fs_directory_ipc_close_handler(struct fs_directory *fsd, const struct ipc_header *reqh, void *p)
+fs_directory_ipc_close_handler(struct fs_directory *fsd, const struct ipc_header *reqh, void **pagep)
 {
 	fs_directory_context_t fsdc = fsd->fsd_context;
 	struct fs *fs = fsd->fsd_fs;
 	struct ipc_header ipch;
 	int error;
 
-	if (p != NULL)
+	if (pagep != NULL)
 		return (ERROR_INVALID);
 
 	/*

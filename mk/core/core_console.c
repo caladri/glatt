@@ -18,7 +18,7 @@ static void cflush(struct console *);
 static void cputc_noflush(void *, char);
 static void cputs_noflush(void *, const char *, size_t);
 
-static int console_handler(void *, struct ipc_header *, void *);
+static int console_handler(void *, struct ipc_header *, void **);
 static void console_startup(void *);
 
 #define	CONSOLE_LOCK(c)		spinlock_lock(&(c)->c_lock)
@@ -177,7 +177,7 @@ cputs_noflush(void *arg, const char *s, size_t len)
 }
 
 static int
-console_handler(void *arg, struct ipc_header *reqh, void *p)
+console_handler(void *arg, struct ipc_header *reqh, void **pagep)
 {
 	struct ipc_header ipch;
 	int error;
@@ -185,16 +185,18 @@ console_handler(void *arg, struct ipc_header *reqh, void *p)
 
 	switch (reqh->ipchdr_msg) {
 	case CONSOLE_MSG_PUTC:
-		if (p != NULL)
+		if (pagep != NULL)
 			return (ERROR_INVALID);
 		kcputc(reqh->ipchdr_param);
 		return (0);
 	case CONSOLE_MSG_PUTS:
-		if (p == NULL || reqh->ipchdr_param > PAGE_SIZE)
+		if (pagep == NULL || reqh->ipchdr_param > PAGE_SIZE)
 			return (ERROR_INVALID);
-		kcputsn(p, reqh->ipchdr_param);
+		kcputsn(*pagep, reqh->ipchdr_param);
 		return (0);
 	case CONSOLE_MSG_GETC:
+		if (pagep != NULL)
+			return (ERROR_INVALID);
 		error = kcgetc_wait(&ch);
 		if (error != 0) {
 			ipch = IPC_HEADER_ERROR(reqh, error);

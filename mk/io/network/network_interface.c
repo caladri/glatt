@@ -11,9 +11,9 @@
 #include <ipc/service.h>
 
 static ipc_service_t network_interface_ipc_handler;
-static int network_interface_ipc_handle_get_info(struct network_interface *, const struct ipc_header *, const void *);
-static int network_interface_ipc_handle_receive(struct network_interface *, const struct ipc_header *, const void *);
-static int network_interface_ipc_handle_transmit(struct network_interface *, const struct ipc_header *, const void *);
+static int network_interface_ipc_handle_get_info(struct network_interface *, const struct ipc_header *, void **);
+static int network_interface_ipc_handle_receive(struct network_interface *, const struct ipc_header *, void **);
+static int network_interface_ipc_handle_transmit(struct network_interface *, const struct ipc_header *, void **);
 
 int
 network_interface_attach(struct network_interface *netif,
@@ -65,17 +65,17 @@ network_interface_receive(struct network_interface *netif,
 }
 
 static int
-network_interface_ipc_handler(void *softc, struct ipc_header *ipch, void *p)
+network_interface_ipc_handler(void *softc, struct ipc_header *ipch, void **pagep)
 {
 	struct network_interface *netif = softc;
 
 	switch (ipch->ipchdr_msg) {
 	case NETWORK_INTERFACE_MSG_TRANSMIT:
-		return (network_interface_ipc_handle_transmit(netif, ipch, p));
+		return (network_interface_ipc_handle_transmit(netif, ipch, pagep));
 	case NETWORK_INTERFACE_MSG_RECEIVE:
-		return (network_interface_ipc_handle_receive(netif, ipch, p));
+		return (network_interface_ipc_handle_receive(netif, ipch, pagep));
 	case NETWORK_INTERFACE_MSG_GET_INFO:
-		return (network_interface_ipc_handle_get_info(netif, ipch, p));
+		return (network_interface_ipc_handle_get_info(netif, ipch, pagep));
 	default:
 		/* Don't respond to nonsense.  */
 		return (ERROR_INVALID);
@@ -83,14 +83,14 @@ network_interface_ipc_handler(void *softc, struct ipc_header *ipch, void *p)
 }
 
 static int
-network_interface_ipc_handle_get_info(struct network_interface *netif, const struct ipc_header *reqh, const void *p)
+network_interface_ipc_handle_get_info(struct network_interface *netif, const struct ipc_header *reqh, void **pagep)
 {
 	struct network_interface_get_info_response_header rhdr;
 	struct ipc_header ipch;
 	uint8_t *data;
 	int error;
 
-	if (p != NULL)
+	if (pagep != NULL)
 		return (ERROR_INVALID);
 
 	if (netif->ni_handler == NULL)
@@ -146,12 +146,12 @@ network_interface_ipc_handle_get_info(struct network_interface *netif, const str
 }
 
 static int
-network_interface_ipc_handle_receive(struct network_interface *netif, const struct ipc_header *reqh, const void *p)
+network_interface_ipc_handle_receive(struct network_interface *netif, const struct ipc_header *reqh, void **pagep)
 {
 	struct ipc_header ipch;
 	int error;
 
-	if (p != NULL)
+	if (pagep != NULL)
 		return (ERROR_INVALID);
 
 	if (reqh->ipchdr_right != IPC_PORT_RIGHT_SEND)
@@ -182,18 +182,18 @@ network_interface_ipc_handle_receive(struct network_interface *netif, const stru
 }
 
 static int
-network_interface_ipc_handle_transmit(struct network_interface *netif, const struct ipc_header *reqh, const void *p)
+network_interface_ipc_handle_transmit(struct network_interface *netif, const struct ipc_header *reqh, void **pagep)
 {
 	struct ipc_header ipch;
 	int error;
 
-	if (p == NULL)
+	if (pagep == NULL)
 		return (ERROR_INVALID);
 
 	if (netif->ni_transmit == NULL)
 		return (ERROR_NOT_IMPLEMENTED);
 
-	error = netif->ni_transmit(netif->ni_softc, p, reqh->ipchdr_param);
+	error = netif->ni_transmit(netif->ni_softc, *pagep, reqh->ipchdr_param);
 
 	/*
 	 * If we weren't given a reply right, don't send back a status.

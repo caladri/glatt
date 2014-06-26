@@ -1,4 +1,5 @@
 SUBDIRS+=	netserver
+SUBDIRS+=	uxserver
 
 .if !defined(GLATT_SRC) && exists(${.CURDIR}/../../config.mk)
 GLATT_SRC=	${.CURDIR}/../..

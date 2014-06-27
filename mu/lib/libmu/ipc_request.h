@@ -11,7 +11,7 @@ struct ipc_request_message {
 	 * Messages can send a copy of data.
 	 */
 	const void *data;
-	ipc_size_t datalen;
+	size_t datalen;
 
 	/*
 	 * Or they can flip a page.

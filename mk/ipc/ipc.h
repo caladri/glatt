@@ -6,10 +6,9 @@
 #endif
 
 typedef	uint32_t	ipc_port_t;
-typedef	uint16_t	ipc_msg_t;
 typedef	uint16_t	ipc_port_right_t;
+typedef	uint16_t	ipc_msg_t;
 typedef	uint64_t	ipc_cookie_t;
-typedef	uint16_t	ipc_size_t;
 typedef	uint64_t	ipc_parameter_t;
 
 #define	IPC_PORT_UNKNOWN		(0)

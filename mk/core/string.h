@@ -5,10 +5,11 @@
  * Need declarations in order to set attributes.
  */
 static inline const void *memchr(const void *, int, size_t) __non_null(1) __check_result;
+static inline int memcmp(const void *, const void *, size_t) __non_null(1, 2) __check_result;
 static inline void memcpy(void *, const void *, size_t) __non_null(1, 2);
 static inline void memmove(void *, const void *, size_t) __non_null(1, 2);
 static inline void memset(void *, int, size_t) __non_null(1);
-static inline const char *strchr(const char *, char) __non_null(1) __check_result;
+static inline char *strchr(const char *, char) __non_null(1) __check_result;
 static inline int strcmp(const char *, const char *) __non_null(1, 2) __check_result;
 static inline size_t strlcpy(char *, const char *, size_t) __non_null(1, 2);
 static inline size_t strlcat(char *, const char *, size_t) __non_null(1, 2);
@@ -28,6 +29,27 @@ memchr(const void *mem, int ch, size_t len)
 		len--;
 	}
 	return (NULL);
+}
+
+static inline int
+memcmp(const void *p, const void *q, size_t len)
+{
+	const uint8_t *a, *b;
+
+	if (len == 0)
+		return (0);
+
+	a = p;
+	b = q;
+
+	while (*a == *b) {
+		len--;
+		if (len == 0)
+			break;
+		a++;
+		b++;
+	}
+	return ((int)*a - (int)*b);
 }
 
 static inline void
@@ -148,18 +170,23 @@ memset(void *dst, int val, size_t len)
 		*d++ = val;
 }
 
-static inline const char *
+static inline char *
 strchr(const char *str, char ch)
 {
-	const char *p;
+	char *p;
 
-	for (p = str; *p != '\0'; p++) {
+	for (p = (char *)(uintptr_t)str; *p != '\0'; p++) {
 		if (*p != ch)
 			continue;
 		return (p);
 	}
 	return (NULL);
 }
+
+/*
+ * Preserve constness of parameter to strchr.
+ */
+#define strchr(s, c) ((__typeof__(&(s)[0]))strchr((s), (c)))
 
 static inline int
 strcmp(const char *a, const char *b)

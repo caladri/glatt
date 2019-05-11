@@ -38,6 +38,12 @@ KERNEL_CPPFLAGS+=-DVERBOSE
 .if !defined(MP)
 KERNEL_CPPFLAGS+=-DUNIPROCESSOR
 .endif
+.if defined(TARFS)
+KERNEL_CPPFLAGS+=-DTARFS
+.endif
+.if defined(UFS)
+KERNEL_CPPFLAGS+=-DUFS
+.endif
 
 KERNEL_CFLAGS+= -O2 -Wuninitialized
 KERNEL_CFLAGS+=	${KERNEL_ABI} ${KERNEL_CPU} -nostdinc

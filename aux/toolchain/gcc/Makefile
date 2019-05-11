@@ -15,6 +15,9 @@ CONFIGURE+=	--enable-languages=c
 CONFIGURE_ENV+=	CFLAGS="-I${PREFIX}/include"
 CONFIGURE_ENV+=	LDFLAGS="-L${PREFIX}/lib"
 
+# XXX portability issues.
+CONFIGURE_ENV+=	MAKEINFO=missing
+
 USE_GNUMAKE=	true
 
 .include "${GLATT_SRC}/aux/build/vendor.mk"

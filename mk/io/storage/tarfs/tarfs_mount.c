@@ -87,6 +87,9 @@ struct tarfs_mount {
 
 	STAILQ_ENTRY(struct tarfs_mount) tm_link;
 
+	char tm_linkbuf[PAGE_SIZE];
+	size_t tm_linklen;
+
 	uint8_t tm_scratch[PAGE_SIZE]; /* XXX */
 };
 
@@ -129,6 +132,7 @@ tarfs_mount(struct storage_device *sdev)
 	tm = (struct tarfs_mount *)tmaddr;
 	tm->tm_flags = TARFS_MOUNT_DEFAULT;
 	tm->tm_sdev = sdev;
+	tm->tm_linklen = 0;
 
 	error = tarfs_read_header(tm, 0, NULL);
 	if (error != 0) {
@@ -151,6 +155,8 @@ tarfs_op_file_open(fs_context_t fsc, const char *name, fs_file_context_t *fsfcp)
 	struct tarfs_file_context *fc;
 	struct tarfs_mount *tm = fsc;
 	vaddr_t vaddr;
+	size_t linkleft, linkuse;
+	char *linkname;
 	int error, error2;
 
 	error = vm_alloc(&kernel_vm, sizeof *fc, &vaddr, VM_ALLOC_DEFAULT);
@@ -170,7 +176,44 @@ tarfs_op_file_open(fs_context_t fsc, const char *name, fs_file_context_t *fsfcp)
 	/*
 	 * Check file type.
 	 */
-	if (fc->f_header.th_typeflag != '0') {
+	switch (fc->f_header.th_typeflag) {
+	case '0': /* Regular file.  */
+		break;
+	case '1': /* Link.  */
+		if (memchr(fc->f_header.th_linkname, '\0', sizeof fc->f_header.th_linkname) == NULL) {
+			error = vm_free(&kernel_vm, sizeof *fc, vaddr);
+			if (error != 0)
+				panic("%s: vm_free failed: %m", __func__, error);
+			return (ERROR_INVALID);
+		}
+
+		ASSERT(tm->tm_linklen <= sizeof tm->tm_linkbuf, "Must be in buffer bounds.");
+		linkleft = sizeof tm->tm_linkbuf - tm->tm_linklen;
+		linkname = tm->tm_linkbuf + tm->tm_linklen;
+		linkuse = strlcpy(linkname, (const char *)(const void *)fc->f_header.th_linkname, linkleft);
+		if (linkuse >= linkleft) {
+			error = vm_free(&kernel_vm, sizeof *fc, vaddr);
+			if (error != 0)
+				panic("%s: vm_free failed: %m", __func__, error);
+			return (ERROR_INVALID);
+		}
+
+		error = vm_free(&kernel_vm, sizeof *fc, vaddr);
+		if (error != 0)
+			panic("%s: vm_free failed: %m", __func__, error);
+
+		/* Skip over the . in ./ if present.  */
+		if (strncmp(linkname, "./", 2) == 0)
+			linkname++;
+
+		/*
+		 * Perform an open of the linked-to file.
+		 */
+		tm->tm_linklen += linkuse;
+		error = tarfs_op_file_open(fsc, linkname, fsfcp);
+		tm->tm_linklen -= linkuse;
+		return (error);
+	default:
 		error = vm_free(&kernel_vm, sizeof *fc, vaddr);
 		if (error != 0)
 			panic("%s: vm_free failed: %m", __func__, error);
@@ -344,6 +387,10 @@ tarfs_lookup(struct tarfs_mount *tm, const char *path, struct tarfs_file_context
 
 		if (!tar_header_decode(tm->tm_header.th_size, sizeof tm->tm_header.th_size, &dsize))
 			return (ERROR_INVALID);
+
+		/*
+		 * XXX Handle directory links?
+		 */
 
 		if (!tarfs_lookup_match(tm, fc, tm->tm_header.th_name, sizeof tm->tm_header.th_name, false)) {
 			offset += TARFS_BSIZE + ROUNDUP(dsize, TARFS_BSIZE); /* Skip header block and data size.  */

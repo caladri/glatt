@@ -1,4 +1,5 @@
 #include <core/types.h>
+#include <core/console.h>
 #include <core/mp.h>
 #include <core/spinlock.h>
 #include <core/startup.h>
@@ -42,6 +43,7 @@ mp_cpu_stopped(cpu_id_t cpu)
 	if (!cpu_bitmask_is_set(&mp_cpu_present_bitmask, cpu))
 		panic("%s: cpu%u is not present!", __func__, cpu);
 	if (!cpu_bitmask_is_set(&mp_cpu_running_bitmask, cpu))
-		panic("%s: cpu%u is already stopped!", __func__, cpu);
-	cpu_bitmask_clear(&mp_cpu_running_bitmask, cpu);
+		printf("%s: cpu%u is already stopped!\n", __func__, cpu);
+	else
+		cpu_bitmask_clear(&mp_cpu_running_bitmask, cpu);
 }

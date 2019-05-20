@@ -1,10 +1,16 @@
 #ifndef	_CPU_MEMORY_H_
 #define	_CPU_MEMORY_H_
 
+#ifdef ASSEMBLER
+#define	ADDRESS_C(a)	(a)
+#else
+#define	ADDRESS_C(a)	(a ## ull)
+#endif
+
 	/* 64-bit user virtual address space.  */
 
-#define	XUSEG_BASE	(0x0000000000000000)
-#define	XUSEG_END	(0x000000ffffffffff)
+#define	XUSEG_BASE	ADDRESS_C(0x0000000000000000)
+#define	XUSEG_END	ADDRESS_C(0x000000ffffffffff)
 
 	/* Address space to use for userland.  */
 
@@ -13,28 +19,28 @@
 
 	/* 64-bit direct-mapped kernel address space.  */
 
-#define	XKPHYS_BASE	(0x8000000000000000)
-#define	XKPHYS_END	(0xbfffffffffffffff)
+#define	XKPHYS_BASE	ADDRESS_C(0x8000000000000000)
+#define	XKPHYS_END	ADDRESS_C(0xbfffffffffffffff)
 
 	/* 64-bit kernel virtual address space.  */
 
-#define	XKSEG_BASE	(0xc000000000000000)
-#define	XKSEG_END	(0xc00000ff7fffffff)
+#define	XKSEG_BASE	ADDRESS_C(0xc000000000000000)
+#define	XKSEG_END	ADDRESS_C(0xc00000ff7fffffff)
 
 	/* 32-bit cached direct-mapped kernel address space.  */
 
-#define	KSEG0_BASE	(0xffffffff80000000)
-#define	KSEG0_END	(0xffffffff9fffffff)
+#define	KSEG0_BASE	ADDRESS_C(0xffffffff80000000)
+#define	KSEG0_END	ADDRESS_C(0xffffffff9fffffff)
 
 	/* 32-bit uncached direct-mapped kernel address space.  */
 
-#define	KSEG1_BASE	(0xffffffffa0000000)
-#define	KSEG1_END	(0xffffffffbfffffff)
+#define	KSEG1_BASE	ADDRESS_C(0xffffffffa0000000)
+#define	KSEG1_END	ADDRESS_C(0xffffffffbfffffff)
 
 	/* 32-bit kernel virtual address space.  */
 
-#define	KSEG2_BASE	(0xffffffffc0000000)
-#define	KSEG2_END	(0xffffffffffffffff)
+#define	KSEG2_BASE	ADDRESS_C(0xffffffffc0000000)
+#define	KSEG2_END	ADDRESS_C(0xffffffffffffffff)
 
 	/* Address space to use for the kernel.  */
 

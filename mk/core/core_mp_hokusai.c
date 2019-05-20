@@ -20,9 +20,10 @@ static void mp_hokusai_ipi(void *, enum ipi_type);
 static void mp_hokusai_ipi_send(void);
 
 void
-mp_hokusai_origin(void (*originf)(void *), void *originp,
-		  void (*otherf)(void *), void *otherp)
+mp_hokusai_synchronize(cpu_bitmask_t target, void (*callback)(void *), void *p)
 {
+	bool justwait;
+
 	ASSERT(mp_hokusai_ipi_registered, "Hokusai system must be ready.");
 
 	/*
@@ -34,37 +35,33 @@ mp_hokusai_origin(void (*originf)(void *), void *originp,
 	 */
 	ASSERT(!critical_section(), "Must not already be in a critical section.");
 
-	for (;;) {
-		spinlock_lock(&mp_hokusai_lock);
-		if (mp_hokusai_callback == NULL)
-			break;
-		spinlock_unlock(&mp_hokusai_lock);
-		continue;
+	spinlock_lock(&mp_hokusai_lock);
+	if (!cpu_bitmask_is_set(&target, mp_whoami())) {
+		cpu_bitmask_set(&target, mp_whoami());
+		justwait = true;
+	} else {
+		justwait = false;
 	}
 
-	mp_hokusai_callback = otherf;
-	mp_hokusai_arg = otherp;
+	ASSERT(mp_hokusai_callback == NULL, "Hokusai system must not be in-use.");
+
+	mp_hokusai_callback = callback;
+	mp_hokusai_arg = p;
 
 	mp_hokusai_clear();
 
-	mp_hokusai_target_bitmask = mp_cpu_running_mask();
+	mp_hokusai_target_bitmask = target;
 
 	mp_hokusai_ipi_send();
 
-	spinlock_unlock(&mp_hokusai_lock);
+	if (justwait)
+		mp_hokusai(NULL, NULL);
+	else
+		mp_hokusai(callback, p);
 
-	mp_hokusai(originf, originp);
-
-	spinlock_lock(&mp_hokusai_lock);
 	mp_hokusai_callback = NULL;
 	mp_hokusai_arg = NULL;
 	spinlock_unlock(&mp_hokusai_lock);
-}
-
-void
-mp_hokusai_synchronize(void (*callback)(void *), void *p)
-{
-	mp_hokusai_origin(callback, p, callback, p);
 }
 
 static void
@@ -102,7 +99,8 @@ mp_hokusai_exit(void)
 static void
 mp_hokusai_ipi(void *arg, enum ipi_type ipi)
 {
-	mp_hokusai(mp_hokusai_callback, mp_hokusai_arg);
+	if (cpu_bitmask_is_set(&mp_hokusai_target_bitmask, mp_whoami()))
+		mp_hokusai(mp_hokusai_callback, mp_hokusai_arg);
 }
 
 static void

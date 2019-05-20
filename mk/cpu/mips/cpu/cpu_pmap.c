@@ -96,7 +96,10 @@ pmap_activate(struct vm *vm)
 	 * This also needs to happen if the ASID we have is from a prior
 	 * generation.
 	 */
-	pmap_alloc_asid(vm->vm_pmap);
+	if (!cpu_bitmask_is_set(&vm->vm_pmap->pm_active, mp_whoami())) {
+		pmap_alloc_asid(vm->vm_pmap);
+		cpu_bitmask_set(&vm->vm_pmap->pm_active, mp_whoami());
+	}
 	cpu_write_tlb_entryhi(pmap_asid(vm->vm_pmap));
 }
 
@@ -285,12 +288,14 @@ pmap_alloc_asid(struct pmap *pm)
 	 * current one, just reuse it rather than generating a new one and
 	 * possibly forcing a TLB flush.
 	 */
+	ASSERT(critical_section(), "Must already be in a critical section.");
 	critical_enter();
 	asid = PCPU_GET(asidnext);
 	if (asid == PMAP_ASID_MAX) {
 		PCPU_SET(asidnext, PMAP_ASID_FIRST);
 		/* XXX Do something with an asid generation like *BSD? */
 		/* XXX Flush TLB.  ASIDs may be reused.  */
+		printf("%s: ASID wrap\n", __func__);
 	} else {
 		PCPU_SET(asidnext, asid + 1);
 	}
@@ -386,7 +391,12 @@ pmap_pinit(struct pmap *pm, vaddr_t base, vaddr_t end)
 {
 	unsigned l0;
 
-	pmap_alloc_asid(pm);
+	if (pm != kernel_vm.vm_pmap) {
+		pm->pm_active = 0;
+	} else {
+		pm->pm_active = mp_cpu_present_mask();
+	}
+	pmap_alloc_asid(pm); /* XXX Premature.  */
 	ASSERT(pmap_index0(base) == 0, "Base must be aligned.");
 	ASSERT(pmap_index1(base) == 0, "Base must be aligned.");
 	ASSERT(pmap_index_pte(base) == 0, "Base must be aligned.");
@@ -526,7 +536,7 @@ static void
 db_pmap_dump_task_pte(void)
 {
 	struct task *task;
-	
+
 	task = current_task();
 
 	if (task == NULL) {
@@ -546,7 +556,7 @@ static void
 db_pmap_dump_task_l1(void)
 {
 	struct task *task;
-	
+
 	task = current_task();
 
 	if (task == NULL) {
@@ -566,7 +576,7 @@ static void
 db_pmap_dump_task_l0(void)
 {
 	struct task *task;
-	
+
 	task = current_task();
 
 	if (task == NULL) {

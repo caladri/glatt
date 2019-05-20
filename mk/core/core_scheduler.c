@@ -235,6 +235,15 @@ scheduler_switch(struct scheduler_entry *ose, struct scheduler_entry *se)
 	if (otd != td)
 		thread_switch(otd, td);
 	SCHEDULER_UNLOCK();
+
+	if (critical_section()) {
+		unsigned i;
+		for (i = 0; i < 2; i++) {
+		printf("%s: cpu%d: PCPU_GET(critical_count) %ju\n", __func__, mp_whoami(), (uintmax_t)PCPU_GET(critical_count));
+		printf("%s: cpu%d: PCPU_GET(critical_section) %ju\n", __func__, mp_whoami(), (uintmax_t)PCPU_GET(critical_section));
+		}
+		ASSERT(!critical_section(), "Must not be in a critical section post-switch.");
+	}
 }
 
 #ifdef DB

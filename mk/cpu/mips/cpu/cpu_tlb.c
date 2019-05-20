@@ -102,9 +102,9 @@ tlb_init(paddr_t pcpu_addr, unsigned ntlbs)
 void
 tlb_invalidate(struct pmap *pm, vaddr_t vaddr)
 {
+#ifdef	UNIPROCESSOR
 	tlb_invalidate_addr(pm, vaddr);
-
-#ifndef	UNIPROCESSOR
+#else
 	/*
 	 * XXX
 	 * Check if this VA is active on any other CPUs.
@@ -115,8 +115,9 @@ tlb_invalidate(struct pmap *pm, vaddr_t vaddr)
 		shootdown.pmap = pm;
 		shootdown.vaddr = vaddr;
 
-		mp_hokusai_origin(NULL, NULL,
-				  tlb_shootdown, &shootdown);
+		mp_hokusai_synchronize(pm->pm_active, tlb_shootdown, &shootdown);
+	} else {
+		tlb_invalidate_addr(pm, vaddr);
 	}
 #endif
 }

@@ -6,6 +6,7 @@
 static inline uint64_t
 atomic_load64(const volatile uint64_t *p)
 {
+	asm volatile ("" : : : "memory");
 	return (*p);
 }
 
@@ -13,6 +14,7 @@ static inline void
 atomic_store64(volatile uint64_t *p, uint64_t v)
 {
 	*p = v;
+	asm volatile ("" : : : "memory");
 }
 
 static inline bool

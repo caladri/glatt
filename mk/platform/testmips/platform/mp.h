@@ -11,6 +11,12 @@ typedef	uint64_t	cpu_bitmask_t;
 
 #ifndef UNIPROCESSOR
 static inline bool
+cpu_bitmask_equal(const volatile cpu_bitmask_t *mask1p, const volatile cpu_bitmask_t *mask2p)
+{
+	return (atomic_load64(mask1p) == atomic_load64(mask2p));
+}
+
+static inline bool
 cpu_bitmask_is_set(const volatile cpu_bitmask_t *maskp, cpu_id_t cpu)
 {
 #ifdef INVARIANTS

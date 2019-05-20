@@ -25,9 +25,24 @@ mp_hokusai_origin(void (*originf)(void *), void *originp,
 {
 	ASSERT(mp_hokusai_ipi_registered, "Hokusai system must be ready.");
 
-	spinlock_lock(&mp_hokusai_lock);
+	/*
+	 * XXX
+	 * If we are in a critical section already in this code path, then it's
+	 * simply a matter of a race to our caller, at which point we will
+	 * deadlock.  This happens.  Need to rethink some of the higher levels
+	 * that can lead here?
+	 */
+#if 0
+	ASSERT(!critical_section(), "Must not already be in a critical section.");
+#endif
 
-	ASSERT(mp_hokusai_callback == NULL, "Hokusai system must not be in use.");
+	for (;;) {
+		spinlock_lock(&mp_hokusai_lock);
+		if (mp_hokusai_callback == NULL)
+			break;
+		spinlock_unlock(&mp_hokusai_lock);
+		continue;
+	}
 
 	mp_hokusai_callback = otherf;
 	mp_hokusai_arg = otherp;
@@ -38,11 +53,13 @@ mp_hokusai_origin(void (*originf)(void *), void *originp,
 
 	mp_hokusai_ipi_send();
 
+	spinlock_unlock(&mp_hokusai_lock);
+
 	mp_hokusai(originf, originp);
 
+	spinlock_lock(&mp_hokusai_lock);
 	mp_hokusai_callback = NULL;
 	mp_hokusai_arg = NULL;
-
 	spinlock_unlock(&mp_hokusai_lock);
 }
 
@@ -72,7 +89,7 @@ static void
 mp_hokusai_enter(void)
 {
 	cpu_bitmask_set(&mp_hokusai_ready_bitmask, mp_whoami());
-	while (mp_hokusai_ready_bitmask != mp_hokusai_target_bitmask)
+	while (!cpu_bitmask_equal(&mp_hokusai_ready_bitmask, &mp_hokusai_target_bitmask))
 		continue;
 }
 
@@ -80,7 +97,7 @@ static void
 mp_hokusai_exit(void)
 {
 	cpu_bitmask_set(&mp_hokusai_done_bitmask, mp_whoami());
-	while (mp_hokusai_done_bitmask != mp_hokusai_target_bitmask)
+	while (!cpu_bitmask_equal(&mp_hokusai_done_bitmask, &mp_hokusai_target_bitmask))
 		continue;
 }
 

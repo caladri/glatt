@@ -15,7 +15,7 @@
 #include <ipc/service.h>
 #include <ns/ns.h>
 #include <vm/vm.h>
-#include <vm/vm_alloc.h>
+#include <vm/vm_page.h>
 
 #if defined(VERBOSE) && 0
 #define	SERVICE_TRACING
@@ -175,7 +175,7 @@ ipc_service_main(struct thread *td, void *arg)
 				panic("%s: ipc_port_wait failed: %m", __func__,
 				      error);
 
-			error = ipc_port_receive(ipcsc->ipcsc_port, &ipch, &p);
+			error = ipc_port_receive(ipcsc->ipcsc_port, &ipch, NULL);
 			if (error != 0) {
 				if (error == ERROR_AGAIN)
 					continue;
@@ -207,14 +207,6 @@ ipc_service_main(struct thread *td, void *arg)
 			if (ipch.ipchdr_cookie != 0) {
 #ifdef SERVICE_TRACING
 				printf("%s: unexpected cookie from ns.\n",
-					 ipcsc->ipcsc_name);
-#endif
-				continue;
-			}
-
-			if (p != NULL) {
-#ifdef SERVICE_TRACING
-				printf("%s: unexpected data from ns.\n",
 					 ipcsc->ipcsc_name);
 #endif
 				continue;
@@ -259,9 +251,9 @@ ipc_service_main(struct thread *td, void *arg)
 			printf("%s: service handler failed: %m\n", __func__, error);
 
 		if (p != NULL) {
-			error = vm_free_page(&kernel_vm, (vaddr_t)p);
+			error = page_free_direct(&kernel_vm, (vaddr_t)p);
 			if (error != 0)
-				panic("%s: vm_free_page failed: %m", __func__, error);
+				panic("%s: page_free_direct failed: %m", __func__, error);
 		}
 	}
 }

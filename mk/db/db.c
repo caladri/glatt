@@ -7,6 +7,10 @@
 #include <db/db_command.h>
 #include <core/console.h>
 
+#ifndef	UNIPROCESSOR
+static cpu_id_t db_cpu = CPU_ID_INVALID;
+#endif
+
 void
 db_init(void)
 {
@@ -22,7 +26,16 @@ db_enter(void)
 #ifndef	UNIPROCESSOR
 	/*
 	 * Ask other CPUs to stop.
+	 *
+	 * XXX Atomics.  Use Hokusai system to hold other CPUs?
 	 */
+	if (db_cpu != CPU_ID_INVALID) {
+		printf("DB: Already running on cpu%d.\n", (int)db_cpu);
+		for (;;)
+			continue;
+	}
+	db_cpu = mp_whoami();
+
 	mp_ipi_send_but(mp_whoami(), IPI_STOP);
 #endif
 

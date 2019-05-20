@@ -151,18 +151,27 @@ startup_boot_thread(void *arg)
 	NOTREACHED();
 }
 
+/*
+ * After this, we allow other threads to run during startup.
+ *
+ * We do this so that we can do things that cannot be done in a critical
+ * section, and which can be reasonably expected to handle their own
+ * synchronization, e.g. loading the bootstrap executable.
+ */
+static void
+startup_unlock(void *arg)
+{
+	struct spinlock *lock;
+
+	lock = arg;
+
+	spinlock_unlock(lock);
+}
+STARTUP_ITEM(unlock, STARTUP_UNLOCK, STARTUP_FIRST, startup_unlock, &startup_lock);
+
 static void
 startup_main_thread(void *arg)
 {
-	struct spinlock *lock = arg;
-
-	/*
-	 * The boot thread will come here and need to unlock the startup
-	 * spinlock.
-	 */
-	if (lock != NULL)
-		spinlock_unlock(lock);
-
 #ifdef VERBOSE
 	if (mp_ncpus() != 1)
 		printf("STARTUP: cpu%u starting main thread.\n", mp_whoami());
@@ -176,4 +185,4 @@ startup_main_thread(void *arg)
 	for (;;)
 		ttk_idle();
 }
-STARTUP_ITEM(main, STARTUP_MAIN, STARTUP_FIRST, startup_main_thread, &startup_lock);
+STARTUP_ITEM(main, STARTUP_MAIN, STARTUP_FIRST, startup_main_thread, NULL);

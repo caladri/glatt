@@ -139,6 +139,8 @@ pmap_extract(struct vm *vm, vaddr_t vaddr, paddr_t *paddrp)
 	pte = pmap_find(pm, vaddr);
 	if (pte == NULL)
 		return (ERROR_NOT_FOUND);
+	if (!pte_test(pte, PG_V))
+		return (ERROR_NOT_FOUND);
 	*paddrp = TLBLO_PTE_TO_PA(*pte);
 	return (0);
 }

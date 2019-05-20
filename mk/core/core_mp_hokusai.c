@@ -10,6 +10,7 @@ static void *mp_hokusai_arg;
 
 static volatile cpu_bitmask_t mp_hokusai_ready_bitmask;
 static volatile cpu_bitmask_t mp_hokusai_done_bitmask;
+static volatile cpu_bitmask_t mp_hokusai_target_bitmask;
 
 static void mp_hokusai(void (*)(void *), void *);
 static void mp_hokusai_clear(void);
@@ -26,14 +27,21 @@ mp_hokusai_origin(void (*originf)(void *), void *originp,
 
 	spinlock_lock(&mp_hokusai_lock);
 
+	ASSERT(mp_hokusai_callback == NULL, "Hokusai system must not be in use.");
+
 	mp_hokusai_callback = otherf;
 	mp_hokusai_arg = otherp;
 
 	mp_hokusai_clear();
 
+	mp_hokusai_target_bitmask = mp_cpu_running_mask();
+
 	mp_hokusai_ipi_send();
 
 	mp_hokusai(originf, originp);
+
+	mp_hokusai_callback = NULL;
+	mp_hokusai_arg = NULL;
 
 	spinlock_unlock(&mp_hokusai_lock);
 }
@@ -63,38 +71,17 @@ mp_hokusai_clear(void)
 static void
 mp_hokusai_enter(void)
 {
-	cpu_bitmask_t mask;
-
-	mask = mp_cpu_running_mask();
-
 	cpu_bitmask_set(&mp_hokusai_ready_bitmask, mp_whoami());
-
-	while (mp_hokusai_ready_bitmask != mask)
+	while (mp_hokusai_ready_bitmask != mp_hokusai_target_bitmask)
 		continue;
 }
 
 static void
 mp_hokusai_exit(void)
 {
-	cpu_bitmask_t mask;
-
-	/*
-	 * If I'm the last hold-out, then don't spin.
-	 */
-	mask = mp_cpu_running_mask();
-
-	cpu_bitmask_clear(&mask, mp_whoami());
-
-	if (mp_hokusai_done_bitmask == mask) {
-		cpu_bitmask_set(&mp_hokusai_done_bitmask, mp_whoami());
-	} else {
-		cpu_bitmask_set(&mp_hokusai_done_bitmask, mp_whoami());
-
-		mask = mp_cpu_running_mask();
-
-		while (mp_hokusai_done_bitmask != mask)
-			continue;
-	}
+	cpu_bitmask_set(&mp_hokusai_done_bitmask, mp_whoami());
+	while (mp_hokusai_done_bitmask != mp_hokusai_target_bitmask)
+		continue;
 }
 
 static void

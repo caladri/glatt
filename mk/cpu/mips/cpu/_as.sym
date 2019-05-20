@@ -1,6 +1,7 @@
 #include <core/thread.h>
 #include <cpu/context.h>
 #include <cpu/frame.h>
+#include <cpu/mp.h>
 #include <cpu/register.h>
 #include <cpu/page.h>
 #include <cpu/pcpu.h>

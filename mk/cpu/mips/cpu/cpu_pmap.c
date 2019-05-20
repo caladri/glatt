@@ -75,7 +75,11 @@ unsigned
 pmap_asid(struct pmap *pm)
 {
 	ASSERT(pm != NULL, "cannot get ASID for NULL pmap");
+#ifdef UNIPROCESSOR
 	return (pm->pm_asid);
+#else
+	return (pm->pm_asid[mp_whoami()]);
+#endif
 }
 
 void
@@ -87,9 +91,7 @@ pmap_activate(struct vm *vm)
 	 * XXX
 	 * If need be, allocate an ASID.
 	 *
-	 * This needs to happen when we have migrated CPUs, or we need ASIDs to
-	 * be independent of CPU.  The ASID is not really a property of the
-	 * pmap but of the thread.
+	 * This needs to happen if we have never run on this CPU.
 	 *
 	 * This also needs to happen if the ASID we have is from a prior
 	 * generation.
@@ -266,9 +268,15 @@ static void
 pmap_alloc_asid(struct pmap *pm)
 {
 	unsigned asid;
+	cpu_id_t cpu;
 
 	if (pm == kernel_vm.vm_pmap) {
+#ifdef UNIPROCESSOR
 		pm->pm_asid = PMAP_ASID_RESERVED;
+#else
+		for (cpu = 0; cpu < MAXCPUS; cpu++)
+			pm->pm_asid[cpu] = PMAP_ASID_RESERVED;
+#endif
 		return;
 	}
 	/*
@@ -288,7 +296,11 @@ pmap_alloc_asid(struct pmap *pm)
 	}
 	critical_exit();
 
+#ifdef UNIPROCESSOR
 	pm->pm_asid = asid;
+#else
+	pm->pm_asid[mp_whoami()] = asid;
+#endif
 }
 
 static int
@@ -476,7 +488,7 @@ db_pmap_dump_pmap(struct vm *vm, unsigned level)
 	if (pm == NULL)
 		return;
 
-	printf("\tasid %u begin %p end %p\n", pm->pm_asid,
+	printf("\tasid %u begin %p end %p\n", pmap_asid(pm),
 		 (void *)pm->pm_base, (void *)pm->pm_end);
 
 	base = pm->pm_base;

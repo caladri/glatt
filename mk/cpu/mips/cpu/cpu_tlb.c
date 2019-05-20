@@ -6,6 +6,7 @@
 #include <cpu/cpu.h>
 #include <cpu/cpuinfo.h>
 #include <cpu/memory.h>
+#include <cpu/mp.h>
 #include <cpu/pcpu.h>
 #include <cpu/pmap.h>
 #include <cpu/pte.h>

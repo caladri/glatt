@@ -59,7 +59,11 @@ struct pmap {
 	struct pmap_lev0 *pm_level0[NL0PMAP];
 	vaddr_t pm_base;
 	vaddr_t pm_end;
+#ifdef UNIPROCESSOR
 	unsigned pm_asid;
+#else
+	unsigned pm_asid[MAXCPUS];
+#endif
 };
 
 /*

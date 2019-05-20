@@ -83,6 +83,18 @@ pmap_activate(struct vm *vm)
 {
 	ASSERT(vm != NULL, "cannot activate pmap for NULL VM");
 
+	/*
+	 * XXX
+	 * If need be, allocate an ASID.
+	 *
+	 * This needs to happen when we have migrated CPUs, or we need ASIDs to
+	 * be independent of CPU.  The ASID is not really a property of the
+	 * pmap but of the thread.
+	 *
+	 * This also needs to happen if the ASID we have is from a prior
+	 * generation.
+	 */
+	pmap_alloc_asid(vm->vm_pmap);
 	cpu_write_tlb_entryhi(pmap_asid(vm->vm_pmap));
 }
 

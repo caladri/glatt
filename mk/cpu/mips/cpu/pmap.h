@@ -8,6 +8,10 @@
 struct vm;
 struct vm_page;
 
+#define	PMAP_ASID_RESERVED	(0)
+#define	PMAP_ASID_FIRST		(1)
+#define	PMAP_ASID_MAX		(255)
+
 /*
  * A quicker extract routine when the page layer knows the address is in the
  * direct-mapped region.  If we ever support pages which cannot be direct-mapped

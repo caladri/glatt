@@ -7,6 +7,7 @@
 #include <cpu/cpuinfo.h>
 #include <cpu/memory.h>
 #include <cpu/pcpu.h>
+#include <cpu/pmap.h>
 #include <cpu/pte.h>
 #include <cpu/tlb.h>
 #ifdef DB
@@ -77,8 +78,8 @@ tlb_init(paddr_t pcpu_addr, unsigned ntlbs)
 	for (i = 0; i < ntlbs; i++)
 		tlb_invalidate_one(i);
 
-	/* XXX Set address-space ID to the kernel's ASID.  */
-	cpu_write_tlb_entryhi(0);
+	/* Set address-space ID to the kernel's ASID.  */
+	cpu_write_tlb_entryhi(PMAP_ASID_RESERVED);
 
 	/* Don't keep any old wired entries.  */
 	cpu_write_tlb_wired(0);
@@ -92,7 +93,7 @@ tlb_init(paddr_t pcpu_addr, unsigned ntlbs)
 	 * PCPU data to get the number of TLB entries, which needs to be
 	 * mapped to work.
 	 */
-	tlb_wired_entry(&twe, PCPU_VIRTUAL, 0,
+	tlb_wired_entry(&twe, PCPU_VIRTUAL, PMAP_ASID_RESERVED,
 			TLBLO_PA_TO_PFN(pcpu_addr) | PG_V | PG_D | PG_G | PG_C_CNC);
 	tlb_wired_insert(TLB_WIRED_PCPU, &twe);
 }

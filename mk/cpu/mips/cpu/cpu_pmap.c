@@ -26,10 +26,6 @@ DB_COMMAND_TREE_DECLARE(pmap);
 DB_COMMAND_TREE(pmap, cpu, pmap);
 #endif
 
-#define	PMAP_ASID_RESERVED	(0)
-#define	PMAP_ASID_FIRST		(1)
-#define	PMAP_ASID_MAX		(255)
-
 /*
  * Make sure our page structures are correctly-sized.
  */

@@ -65,8 +65,6 @@ thread_free(struct thread *td)
 
 	STAILQ_REMOVE(&task->t_threads, td, struct thread, td_link);
 
-	scheduler_thread_free(td);
-
 	cpu_thread_free(td);
 
 	pool_free(td);

@@ -115,7 +115,10 @@ restart:
 		       "exiting thread must not be in queue.");
 		if ((se->se_flags & SCHEDULER_RUNNING) != 0)
 			continue;
+		TAILQ_REMOVE(&scheduler_queue.sq_exiting, se, se_link);
+		SCHEDULER_UNLOCK();
 		thread_free(se->se_thread);
+		SCHEDULER_LOCK();
 		goto restart;
 	}
 
@@ -161,18 +164,6 @@ scheduler_thread_exiting(void)
 	TAILQ_INSERT_TAIL(&scheduler_queue.sq_exiting, se, se_link);
 
 	SCHEDULER_UNLOCK();
-}
-
-void
-scheduler_thread_free(struct thread *td)
-{
-	struct scheduler_entry *se = &td->td_sched;
-
-	SCHEDULER_ASSERT_LOCKED();
-
-	if ((se->se_flags & SCHEDULER_EXITING) == 0)
-		panic("%s: thread not exiting.", __func__);
-	TAILQ_REMOVE(&scheduler_queue.sq_exiting, se, se_link);
 }
 
 void

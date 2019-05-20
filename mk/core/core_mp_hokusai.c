@@ -32,9 +32,7 @@ mp_hokusai_origin(void (*originf)(void *), void *originp,
 	 * deadlock.  This happens.  Need to rethink some of the higher levels
 	 * that can lead here?
 	 */
-#if 0
 	ASSERT(!critical_section(), "Must not already be in a critical section.");
-#endif
 
 	for (;;) {
 		spinlock_lock(&mp_hokusai_lock);

@@ -93,7 +93,7 @@ tlb_init(paddr_t pcpu_addr, unsigned ntlbs)
 	 * mapped to work.
 	 */
 	tlb_wired_entry(&twe, PCPU_VIRTUAL, 0,
-			TLBLO_PA_TO_PFN(pcpu_addr) | PG_V | PG_D | PG_G);
+			TLBLO_PA_TO_PFN(pcpu_addr) | PG_V | PG_D | PG_G | PG_C_CNC);
 	tlb_wired_insert(TLB_WIRED_PCPU, &twe);
 }
 

@@ -14,9 +14,14 @@ cpu_critical_enter(void)
 
 	s = cpu_interrupt_disable();
 
-	if (PCPU_GET(critical_count) == 0)
+	if (PCPU_GET(critical_count) == 0) {
 		PCPU_SET(critical_section, s);
-	PCPU_SET(critical_count, PCPU_GET(critical_count) + 1);
+		PCPU_SET(critical_count, 1);
+	} else {
+		PCPU_SET(critical_count, PCPU_GET(critical_count) + 1);
+	}
+	ASSERT(PCPU_GET(critical_count) > 0,
+	       "Must be in a critical section after entering one.");
 }
 
 void
@@ -29,9 +34,15 @@ cpu_critical_exit(void)
 
 	s = PCPU_GET(critical_section);
 
-	PCPU_SET(critical_count, PCPU_GET(critical_count) - 1);
-	if (PCPU_GET(critical_count) == 0)
+	ASSERT(PCPU_GET(critical_count) > 0,
+	       "Must be in a critical section to exit one.");
+	if (PCPU_GET(critical_count) == 1) {
+		PCPU_SET(critical_section, 0);
+		PCPU_SET(critical_count, 0);
 		cpu_interrupt_restore(s);
+	} else {
+		PCPU_SET(critical_count, PCPU_GET(critical_count) - 1);
+	}
 }
 
 bool
